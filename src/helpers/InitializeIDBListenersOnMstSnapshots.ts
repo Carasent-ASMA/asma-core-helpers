@@ -1,6 +1,6 @@
 import { del, get, set } from 'idb-keyval'
-import { applySnapshot, onSnapshot, isStateTreeNode } from 'mobx-state-tree'
-function setIDBListenersOnSnapshots<T, K extends keyof T>(store: T, omit: K[] = []) {
+import { applySnapshot, onSnapshot, isStateTreeNode, IStateTreeNode, IType } from 'mobx-state-tree'
+function setIDBListenersOnSnapshots<T extends Object, K extends keyof T>(store: T, omit: K[] = []) {
     const keys = (Object.keys(store) as Array<keyof typeof store>).filter((k) => !omit.includes(k as K))
 
     keys.forEach((key) => {
@@ -14,7 +14,7 @@ function setIDBListenersOnSnapshots<T, K extends keyof T>(store: T, omit: K[] = 
     })
 }
 
-async function checkForIDBData<T>(main_store: T) {
+async function checkForIDBData<T extends Object>(main_store: T) {
     const keys = Object.keys(main_store) as Array<keyof typeof main_store>
 
     const stores_promises: Promise<void>[] = []
@@ -28,18 +28,18 @@ async function checkForIDBData<T>(main_store: T) {
     await myPromiseAllSettled(promises)
 }
 
-export function initiatieIDBListenersOnMstSnaphsots<T, K extends keyof T>(store: T, omit: K[] = []) {
+export function initiatieIDBListenersOnMstSnaphsots<T extends Object, K extends keyof T>(store: T, omit: K[] = []) {
     setIDBListenersOnSnapshots(store, omit)
 
     return checkForIDBData(store)
 }
 
-async function applySnapshotOnResolvedIDBGetPromise<T>(key: keyof T, main_store: T): Promise<void> {
+async function applySnapshotOnResolvedIDBGetPromise<T extends Object >(key: keyof T, main_store: T): Promise<void> {
     try {
         const res = await get(String(key))
 
         if (res) {
-            applySnapshot(main_store[key], res)
+            applySnapshot(main_store[key] as IStateTreeNode<IType<any, any, any>>, res)
         }
     } catch (e) {
         del(String(key))
