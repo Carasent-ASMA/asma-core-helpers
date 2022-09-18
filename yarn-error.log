@@ -28,7 +28,7 @@ Trace:
 
 npm manifest: 
   {
-      "name": "asma-app-lib-helpers",
+      "name": "asma-helpers",
       "version": "1.5.28",
       "description": "TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project.",
       "main": "lib/index.js",
@@ -38,7 +38,7 @@ npm manifest:
       },
       "repository": {
           "type": "git",
-          "url": "https://avanssoma@dev.azure.com/avanssoma/Arbeidoginkludering/_git/asma-app-lib-helpers"
+          "url": "https://avanssoma@dev.azure.com/avanssoma/Arbeidoginkludering/_git/asma-helpers"
       },
       "keywords": [],
       "author": "",

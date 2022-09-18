@@ -1,6 +1,4 @@
-import { notification } from 'antd'
-
-export function processServerError(error: string | Record<string, any>, operationName?: string): void {
+export function processServerError(error: string | Record<string, any>): string {
     console['error'](error)
 
     let errorMessage = getServerErrorMessage(error)
@@ -9,7 +7,8 @@ export function processServerError(error: string | Record<string, any>, operatio
         ;(errorMessage = (window as any).strings)[errorMessage]
     } */
 
-    showErrorMessage(operationName || 'Error', errorMessage)
+    //showErrorMessage(operationName || 'Error', errorMessage)
+    return errorMessage
 }
 
 export function getServerErrorMessage(error: Record<string, any> | string): string {
@@ -21,14 +20,13 @@ export function getServerErrorMessage(error: Record<string, any> | string): stri
     if (Array.isArray(error)) {
         return getArrayErrorsMessage(error)
     }
-    if(Array.isArray(error?.['errors'])){
+    if (Array.isArray(error?.['errors'])) {
         return getArrayErrorsMessage(error['errors'])
     }
     //graphql
     else if (error['bodyText']) {
         return error['bodyText']
     } else if (error['response'] && error['response'].data) {
-
         const data = error['response'].data?.['error'] ?? error['response'].data
 
         if (typeof data == 'string') {
@@ -79,25 +77,6 @@ export function getServerErrorMessage(error: Record<string, any> | string): stri
     } else {
         return "Missing field: Couldn't process error"
     }
-}
-export function showErrorMessage(title: string, message: string | any, duration = 5): void {
-    let notificationMessage: string
-
-    if (typeof message == 'object') {
-        notificationMessage = message['message']
-    }
-
-    if (!message) {
-        notificationMessage = "An unexpected error has occurred. We'll fix it soon"
-    } else {
-        notificationMessage = message
-    }
-
-    notification['error']({
-        message: title,
-        description: notificationMessage,
-        duration,
-    })
 }
 
 function getArrayErrorsMessage(error: Record<string, unknown>[]): string {
