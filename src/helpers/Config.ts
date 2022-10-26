@@ -40,8 +40,12 @@ function getDynamicSrvUrl(env_var: string) {
     }
     return
 }
-export function httpToWs(url: string) {
-    return url.replace('http', 'ws').replace('https', 'wss')
+export const httpToWs = (http_url = '') => {
+    if (http_url.includes('local')) {
+        return http_url.replace('http', 'ws')
+    }
+
+    return http_url.replace('https', 'wss')
 }
 
 export function httpToWs2(url: string) {
