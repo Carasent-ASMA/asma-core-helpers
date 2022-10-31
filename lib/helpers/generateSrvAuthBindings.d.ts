@@ -19,5 +19,13 @@ export interface IGenerateSRVAuthBindings {
     accessTokenHasExpired(): boolean;
 }
 export declare function generateSrvAuthBindings(SRV_AUTH: () => string, DEVELOPMENT: () => boolean, EnvironmentToOperateFn: () => string, logout?: () => void): IGenerateSRVAuthBindings;
+/**
+ * @deprecated use generateSrvAuthBindings
+ * @param SRV_AUTH
+ * @param DEVELOPMENT
+ * @param ENVIRONMENT_TO_OPERATE
+ * @param logout
+ * @returns
+ */
 export declare function generateSrvAuthBindingsMicroApp(SRV_AUTH: () => string, DEVELOPMENT: () => boolean, ENVIRONMENT_TO_OPERATE: () => EnvironmentEnums, logout?: () => void): IGenerateSRVAuthBindings;
 //# sourceMappingURL=generateSrvAuthBindings.d.ts.map
