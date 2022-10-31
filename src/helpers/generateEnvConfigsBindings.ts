@@ -1,4 +1,4 @@
-import type { EnvironmentsUrls } from "./EnvironmentsUrls"
+import type { EnvironmentsUrls } from './EnvironmentsUrls'
 
 interface IBasicEnv {
     DEVELOPMENT: boolean
