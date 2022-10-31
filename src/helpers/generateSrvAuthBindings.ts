@@ -16,7 +16,7 @@ export interface IGenerateSRVAuthBindings {
 export function generateSrvAuthBindings(
     SRV_AUTH: () => string,
     DEVELOPMENT: () => boolean,
-    ENVIRONMENT_TO_OPERATE: () => EnvironmentEnums,
+    EnvironmentToOperateFn: () => string,
     logout?: () => void,
 ): IGenerateSRVAuthBindings {
     let jwtToken = ''
@@ -30,10 +30,20 @@ export function generateSrvAuthBindings(
     const isJwtValid = () => !isJwtInvalid()
 
     async function srvAuthGet<R>(url: string, headers?: Record<string, string>) {
-        if (DEVELOPMENT() && ENVIRONMENT_TO_OPERATE()) {
-            url = `${url}&env=${ENVIRONMENT_TO_OPERATE()}`
+        if (DEVELOPMENT() && EnvironmentToOperateFn()) {
+            if (EnvironmentToOperateFn() in EnvironmentEnums) {
+                url = `${url}&env=${EnvironmentToOperateFn()}`
 
-            url = url.includes('&') && !url.includes('?') ? url.replace('&', '?') : url
+                url = url.includes('&') && !url.includes('?') ? url.replace('&', '?') : url
+            } else {
+                console.warn(
+                    'EnvironmentToOperateFn() is not a valid EnvironmentEnums',
+                    'shall be one of:',
+                    EnvironmentEnums,
+                    'actual value:',
+                    EnvironmentToOperateFn(),
+                )
+            }
         }
 
         return axios.get<unknown, AxiosResponse<R>>(`${SRV_AUTH()}${url}`, {
