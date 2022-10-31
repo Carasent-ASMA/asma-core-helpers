@@ -19,6 +19,9 @@ export function generateSrvAuthBindings(
     EnvironmentToOperateFn: () => string,
     logout?: () => void,
 ): IGenerateSRVAuthBindings {
+    if (window.__ASMA__SHELL__?.auth_bindings) {
+        return window.__ASMA__SHELL__.auth_bindings
+    }
     let jwtToken = ''
     let parsed_jwt: any | undefined = undefined
 
@@ -156,8 +159,7 @@ export function generateSrvAuthBindings(
         }
         return parsed_jwt
     }
-
-    return {
+    const auth_bindings = {
         isJwtValid,
         signin,
         srvAuthGet,
@@ -170,8 +172,20 @@ export function generateSrvAuthBindings(
         getJwtToken,
         accessTokenHasExpired,
     }
-}
+    window.__ASMA__SHELL__ = window.__ASMA__SHELL__ || {}
 
+    window.__ASMA__SHELL__.auth_bindings = auth_bindings
+
+    return auth_bindings
+}
+/**
+ * @deprecated use generateSrvAuthBindings
+ * @param SRV_AUTH
+ * @param DEVELOPMENT
+ * @param ENVIRONMENT_TO_OPERATE
+ * @param logout
+ * @returns
+ */
 export function generateSrvAuthBindingsMicroApp(
     SRV_AUTH: () => string,
     DEVELOPMENT: () => boolean,
