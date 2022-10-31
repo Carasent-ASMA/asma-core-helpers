@@ -89,3 +89,4 @@ export function environmentUrls(ENVIRONMENT_TO_OPERATE?: string) {
 
     return
 }
+export default environmentUrls
