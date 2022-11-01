@@ -18,7 +18,7 @@ export function generateEnvConfigsBindings<
     K extends (keyof T | IKeyEnvironmentUrls | IKeyEnvironmentUrlsWs) & string,
     S,
 >(envs_import: Promise<{ envs: T }>, required_envs: K[], static_env: S) {
-    type IEnvConfigs = T & IEnvironmentUrls
+    type IEnvConfigs = T & IEnvironmentUrls & Record<IKeyEnvironmentUrlsWs, string>
 
     let env_vars = {} as T
 

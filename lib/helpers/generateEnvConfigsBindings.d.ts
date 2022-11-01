@@ -22,7 +22,7 @@ export declare function generateEnvConfigsBindings<T extends IBasicEnv, K extend
         SRV_PROXY: string;
         SRV_NOTIFICATION: string;
         SRV_AO_DIRECTORY: string;
-    }, K extends "SRV_DIRECTORY" | "SRV_CALENDAR" | "SRV_PROXY_OLD" | "SRV_STORAGE" | "SRV_CHAT" | "SRV_CONNECTOR" | "SRV_ARTIFACT" | "SRV_ADVOCA" | "SRV_PROXY" | "SRV_NOTIFICATION" | "SRV_AO_DIRECTORY" | keyof T ? K : never> & S;
+    } & Record<"SRV_DIRECTORY_WS" | "SRV_CALENDAR_WS" | "SRV_PROXY_OLD_WS" | "SRV_STORAGE_WS" | "SRV_CHAT_WS" | "SRV_CONNECTOR_WS" | "SRV_ARTIFACT_WS" | "SRV_ADVOCA_WS" | "SRV_PROXY_WS" | "SRV_NOTIFICATION_WS" | "SRV_AO_DIRECTORY_WS", string>, K extends "SRV_DIRECTORY" | "SRV_CALENDAR" | "SRV_PROXY_OLD" | "SRV_STORAGE" | "SRV_CHAT" | "SRV_CONNECTOR" | "SRV_ARTIFACT" | "SRV_ADVOCA" | "SRV_PROXY" | "SRV_NOTIFICATION" | "SRV_AO_DIRECTORY" | "SRV_DIRECTORY_WS" | "SRV_CALENDAR_WS" | "SRV_PROXY_OLD_WS" | "SRV_STORAGE_WS" | "SRV_CHAT_WS" | "SRV_CONNECTOR_WS" | "SRV_ARTIFACT_WS" | "SRV_ADVOCA_WS" | "SRV_PROXY_WS" | "SRV_NOTIFICATION_WS" | "SRV_AO_DIRECTORY_WS" | keyof T ? K : never> & S;
     fetchConfigs: () => Promise<void>;
 };
 export {};
