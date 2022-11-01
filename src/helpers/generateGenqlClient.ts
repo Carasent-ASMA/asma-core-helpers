@@ -16,20 +16,21 @@ export function generateGenqlClient<T>({
     serviceUrlWs: () => string | undefined
     path?: string
 }) {
-    let directoryClient: T | null = null
+    let client: T | null = null
+    let wsClient: T | null = null
 
     async function getGenqlClient() {
-        if (accessTokenHasExpired() || directoryClient === null) {
-            directoryClient = await genqlClient()
+        if (accessTokenHasExpired() || client === null) {
+            client = await genqlClient()
 
-            return directoryClient
+            return client
         }
 
-        return directoryClient
+        return client
     }
 
     function resetGenqlClient() {
-        directoryClient = null
+        client = null
     }
 
     async function genqlClient(
@@ -57,18 +58,22 @@ export function generateGenqlClient<T>({
     async function genqlClientWs() {
         const req_headers = ((await setReqConfig()).headers ?? {}) as Record<string, string>
 
-        return createClient({
-            url: `${serviceUrlWs()}${path}`,
-            cache: 'reload',
-            subscription: {
-                timeout: 1,
-                reconnect: true,
-                reconnectionAttempts: 5,
-                headers: {
-                    ...req_headers,
+        if (accessTokenHasExpired() || !wsClient) {
+            wsClient = createClient({
+                url: `${serviceUrlWs()}${path}`,
+                cache: 'reload',
+                subscription: {
+                    timeout: 1,
+                    reconnect: true,
+                    reconnectionAttempts: 5,
+                    headers: {
+                        ...req_headers,
+                    },
                 },
-            },
-        })
+            })
+        }
+
+        return wsClient
     }
 
     return { getGenGqlClient: getGenqlClient, resetGenqlClient, genqlClient, genqlClientWs }
