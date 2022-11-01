@@ -40,26 +40,19 @@ function getDynamicSrvUrl(env_var: string) {
     }
     return
 }
-export const httpToWs = (http_url = '') => {
-    if (http_url.includes('local')) {
-        return http_url.replace('http', 'ws')
-    }
 
-    return http_url.replace('https', 'wss')
-}
-
-export function httpToWs2(url: string) {
+export function httpToWs(url: string) {
     url = absoluteUrl(url)
 
     return url.replace('http', 'ws').replace('https', 'wss')
 }
 
-const is_localhost = window.location.origin.includes('local') || window.location.origin.includes('172.17.0.1')
-
 function absoluteUrl(url: string) {
-    if (!is_localhost) {
-        url = window.location.origin + url
+    if (url.startsWith('http') || url.startsWith('https')) {
+        return url
     }
+
+    url = window.location.origin + url
 
     return url
 }
