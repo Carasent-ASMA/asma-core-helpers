@@ -33,7 +33,7 @@ export function generateEnvConfigsBindings<
 
         envConfigs = required_envs.reduce((acc, curr) => {
             if (!curr.endsWith('_WS')) {
-                const field = env_vars[curr as keyof T] || envUrls?.[curr as IKeyEnvironmentUrls]
+                const field = env_vars[curr as keyof T] ?? envUrls?.[curr as IKeyEnvironmentUrls]
                 // @ts-ignore
                 acc[curr] = field
             } else {
