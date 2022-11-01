@@ -46,7 +46,7 @@ export function generateEnvConfigsBindings<
                     // @ts-ignore
                     acc[curr] = field
                 } else {
-                    console.warn(`No URL found for ${String(curr)}`)
+                    console.warn(`No URL found for ${key}`)
                 }
             }
 
