@@ -1,19 +1,18 @@
 import type { AxiosRequestConfig } from 'axios'
 import type { ClientOptions } from '@genql/runtime'
+import { httpToWs } from './Config'
 
 export function generateGenqlClient<T>({
     accessTokenHasExpired,
     setReqConfig,
     createClient,
     serviceUrl,
-    serviceUrlWs,
     path = '/v1/graphql',
 }: {
     accessTokenHasExpired: () => boolean
     setReqConfig: () => Promise<AxiosRequestConfig<any>>
     createClient: (options?: ClientOptions | undefined) => T
-    serviceUrl: () => string | undefined
-    serviceUrlWs: () => string | undefined
+    serviceUrl: () => string
     path?: string
 }) {
     let client: T | null = null
@@ -60,7 +59,7 @@ export function generateGenqlClient<T>({
 
         if (accessTokenHasExpired() || !wsClient) {
             wsClient = createClient({
-                url: `${serviceUrlWs()}${path}`,
+                url: `${httpToWs(serviceUrl())}${path}`,
                 cache: 'reload',
                 subscription: {
                     timeout: 1,
