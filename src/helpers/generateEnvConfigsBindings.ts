@@ -31,9 +31,17 @@ export function generateEnvConfigsBindings<
             return envConfigs
         }
 
+        if (Object.keys(env_vars).length === 0) {
+            console.error(
+                'Env variables not loaded! Possible reasons: \n 1) You have a called EnvConfigsFn() before promises inside fetchConfigs() was resolved. \n This happens usually when one call EnvConfigsFn() on top level of a module',
+            )
+            return envConfigs
+        }
+
         envConfigs = required_envs.reduce((acc, curr) => {
             if (!curr.endsWith('_WS')) {
                 const field = env_vars[curr as keyof T] ?? envUrls?.[curr as IKeyEnvironmentUrls]
+
                 // @ts-ignore
                 acc[curr] = field
             } else {
