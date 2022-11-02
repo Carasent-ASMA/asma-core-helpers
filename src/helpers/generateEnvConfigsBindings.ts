@@ -11,18 +11,20 @@ type IEnvironmentUrls = typeof EnvironmentsUrls.local
 
 type IKeyEnvironmentUrls = keyof IEnvironmentUrls
 
-type IKeyEnvironmentUrlsWs = `${IKeyEnvironmentUrls}_WS`
+type ISrvKeysTransformToWs<T> = T extends `SRV_${infer K}` ? `SRV_${K}_WS` : never
+
+//type IKeyEnvironmentUrlsWs = `${IKeyEnvironmentUrls}_WS`
 
 export function generateEnvConfigsBindings<
     T extends IBasicEnv,
-    K extends (keyof T | IKeyEnvironmentUrls | IKeyEnvironmentUrlsWs) & string,
+    K extends (keyof T | IKeyEnvironmentUrls | ISrvKeysTransformToWs<keyof T | IKeyEnvironmentUrls>) & string,
     S,
 >(envs_import: Promise<{ envs: T }>, required_envs: K[], static_env: S) {
-    type IEnvConfigs = T & IEnvironmentUrls & Record<IKeyEnvironmentUrlsWs, string>
+    type IEnvConfigs = T & IEnvironmentUrls & Record<ISrvKeysTransformToWs<keyof T | IKeyEnvironmentUrls>, string>
 
     let env_vars = {} as T
 
-    let envConfigs = {} as Pick<IEnvConfigs, K extends keyof IEnvConfigs ? K : never> & S
+    let envConfigs = {} as Pick<IEnvConfigs, K extends (keyof IEnvConfigs)&string ? K : never> & S
 
     let envUrls: IEnvironmentUrls | undefined
 
