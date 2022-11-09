@@ -61,6 +61,7 @@ export function generateGenqlClient<T>({
             wsClient = createClient({
                 url: `${httpToWs(serviceUrl())}${path}`,
                 cache: 'reload',
+                batch: { batchInterval: 50, maxBatchSize: 100 },
                 subscription: {
                     timeout: 1,
                     reconnect: true,
