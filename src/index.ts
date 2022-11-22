@@ -18,6 +18,8 @@ export * from './helpers/clearCacheData'
 export * from './helpers/generateGenqlClient'
 export * from './helpers/generateEnvConfigsBindings'
 export * from './helpers/userTypingSignal'
+export * from './helpers/base64ToFile'
+
 
 export * from './utility/fetch'
 
