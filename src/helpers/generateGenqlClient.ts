@@ -2,6 +2,10 @@ import type { AxiosRequestConfig } from 'axios'
 import type { ClientOptions } from '@genql/runtime'
 import { httpToWs } from './Config'
 
+interface CliOptions extends Omit<ClientOptions, 'url'> {
+    anonymous?: boolean
+}
+
 export function generateGenqlClient<T>({
     accessTokenHasExpired,
     setReqConfig,
@@ -32,11 +36,11 @@ export function generateGenqlClient<T>({
         client = null
     }
 
-    async function genqlClient(
-        anonymous: boolean | undefined = undefined,
-        headers: Record<string, string> = {},
-    ): Promise<T> {
+    async function genqlClient(options: CliOptions = {}): Promise<T> {
         let req_headers: Record<string, string> = {}
+
+        const { anonymous, headers, ...rest } = options
+
         if (!serviceUrl()) {
             console.warn('requred param srv_url is undefined, please check EnvConfig object!')
         }
@@ -51,6 +55,7 @@ export function generateGenqlClient<T>({
                 ...headers,
             },
             batch: { batchInterval: 50, maxBatchSize: 100 },
+            ...rest,
         })
     }
 
@@ -76,5 +81,5 @@ export function generateGenqlClient<T>({
         return wsClient
     }
 
-    return { getGenGqlClient: getGenqlClient, resetGenqlClient, genqlClient, genqlClientWs }
+    return { getGenqlClient, resetGenqlClient, genqlClient, genqlClientWs }
 }

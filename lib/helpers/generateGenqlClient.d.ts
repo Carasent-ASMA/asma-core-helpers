@@ -1,5 +1,8 @@
 import type { AxiosRequestConfig } from 'axios';
 import type { ClientOptions } from '@genql/runtime';
+interface CliOptions extends Omit<ClientOptions, 'url'> {
+    anonymous?: boolean;
+}
 export declare function generateGenqlClient<T>({ accessTokenHasExpired, setReqConfig, createClient, serviceUrl, path, }: {
     accessTokenHasExpired: () => boolean;
     setReqConfig: () => Promise<AxiosRequestConfig<any>>;
@@ -7,9 +10,10 @@ export declare function generateGenqlClient<T>({ accessTokenHasExpired, setReqCo
     serviceUrl: () => string;
     path?: string;
 }): {
-    getGenGqlClient: () => Promise<T>;
+    getGenqlClient: () => Promise<T>;
     resetGenqlClient: () => void;
-    genqlClient: (anonymous?: boolean | undefined, headers?: Record<string, string>) => Promise<T>;
+    genqlClient: (options?: CliOptions) => Promise<T>;
     genqlClientWs: () => Promise<T>;
 };
+export {};
 //# sourceMappingURL=generateGenqlClient.d.ts.map
