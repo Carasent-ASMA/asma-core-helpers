@@ -172,6 +172,8 @@ export function generateSrvAuthBindings(
     function hasFeature(featureName: feature_names_enum) {
         return !!features?.has(featureName)
     }
+
+    hasFeature('')
     const auth_bindings = {
         hasFeature,
         getFeatures,
