@@ -160,10 +160,10 @@ asma-genql-directory@^1.0.59:
     asma-app-lib-helpers "^2.2.0"
     graphql "^16.6.0"
 
-asma-genql-directory@^1.0.70:
-  version "1.0.70"
-  resolved "https://registry.yarnpkg.com/asma-genql-directory/-/asma-genql-directory-1.0.70.tgz#73fec44b08d23bb925aed83dc953ccfb5ff4814e"
-  integrity sha512-HScMkQt9AaVhHav1eL1CRasGHoNK8186QlNNX5h6ahQnU2yAXtE4NQ2r8Enw59GeGz2JkGvjZtV1dhkSb0FGkg==
+asma-genql-directory@^1.0.71:
+  version "1.0.71"
+  resolved "https://registry.yarnpkg.com/asma-genql-directory/-/asma-genql-directory-1.0.71.tgz#7a44f462c81234873696a418b03a232a56d72d95"
+  integrity sha512-yxEe/cPGOXmVawhvk5ciK46voI2qvMpSZC+R5bVzZIKTAMAgO3MNj3rv2Q8xmD24oeJKibmi2EX9K3CRHbMH4g==
   dependencies:
     "@genql/runtime" "^2.10.0"
     asma-app-lib-helpers "^2.2.0"

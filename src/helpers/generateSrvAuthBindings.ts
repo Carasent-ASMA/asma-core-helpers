@@ -173,7 +173,6 @@ export function generateSrvAuthBindings(
         return !!features?.has(featureName)
     }
 
-    hasFeature('')
     const auth_bindings = {
         hasFeature,
         getFeatures,
