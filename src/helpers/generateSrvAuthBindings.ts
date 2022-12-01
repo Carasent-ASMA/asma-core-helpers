@@ -1,6 +1,7 @@
+import type { feature_names_enum } from 'asma-genql-directory/lib'
 import axios, { AxiosRequestConfig, AxiosResponse, ResponseType } from 'axios'
 import { EnvironmentEnums, parseJwt } from '..'
-export interface IGenerateSRVAuthBindings {
+/* export interface IGenerateSRVAuthBindings extends ReturnType<typeof generateSrvAuthBindings> {}  */ /*{
     isJwtValid: () => boolean
     signin(url: string, headers?: Record<string, string>): Promise<{ token: string }>
     srvAuthGet<R>(url: string, headers?: Record<string, string>): Promise<AxiosResponse<R, any>>
@@ -12,21 +13,25 @@ export interface IGenerateSRVAuthBindings {
     getParsedJwt<R = { user_id: string; exp: number }>(): R | undefined
     getJwtToken(): string
     accessTokenHasExpired(): boolean
-}
+} */
 export function generateSrvAuthBindings(
     SRV_AUTH: () => string,
     DEVELOPMENT: () => boolean,
     EnvironmentToOperateFn: () => string,
     logout?: () => void,
-): IGenerateSRVAuthBindings {
+) {
     if (window.__ASMA__SHELL__?.auth_bindings) {
-        return window.__ASMA__SHELL__.auth_bindings
+        return window.__ASMA__SHELL__.auth_bindings as typeof auth_bindings
     }
     let jwtToken = ''
-    let parsed_jwt: any | undefined = undefined
 
-    let fetchJwtPromise: Promise<{ data: { message: string; token?: string; errors: { message: string }[] } }> | null =
-        null
+    let features: Set<feature_names_enum> | undefined
+
+    let parsed_jwt: any | undefined
+
+    let fetchJwtPromise: Promise<{
+        data: { message: string; token?: string; features?: feature_names_enum[]; errors: { message: string }[] }
+    }> | null = null
 
     const isJwtInvalid = () => (jwtToken && accessTokenHasExpired()) || !jwtToken
 
@@ -70,24 +75,26 @@ export function generateSrvAuthBindings(
     }
 
     async function signin(url: string, headers?: Record<string, string>) {
-        const { data } = await srvAuthGet<{ token: string }>(url, headers)
+        const { data } = await srvAuthGet<{ token: string; features: feature_names_enum[] }>(url, headers)
 
-        setJwtToken(data.token)
+        setAuthData(data)
 
         return data
     }
 
     async function signoutAuth() {
-        setJwtToken('')
+        setAuthData({ token: '' })
         await srvAuthGet('/signout')
     }
     function getUserId(): string {
         return getParsedJwt()?.['user_id'] || '-1'
     }
 
-    function setJwtToken(token: string) {
-        jwtToken = token
+    function setAuthData(data: { token: string; features?: feature_names_enum[] }) {
+        jwtToken = data.token
+        features = new Set(data.features)
     }
+
     function getJwtToken() {
         return jwtToken
     }
@@ -136,7 +143,7 @@ export function generateSrvAuthBindings(
             if (!data.token) {
                 throw new Error('Token is not present in the result')
             }
-            setJwtToken(data.token ?? '')
+            setAuthData({ token: data.token || '', features: data.features || [] })
 
             fetchJwtPromise = null
 
@@ -159,7 +166,15 @@ export function generateSrvAuthBindings(
         }
         return parsed_jwt
     }
+    function getFeatures() {
+        return features
+    }
+    function hasFeature(featureName: feature_names_enum) {
+        return !!features?.has(featureName)
+    }
     const auth_bindings = {
+        hasFeature,
+        getFeatures,
         isJwtValid,
         signin,
         srvAuthGet,

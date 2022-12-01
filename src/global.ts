@@ -1,5 +1,6 @@
 import { type History, createBrowserHistory } from 'history'
-import type { IGenerateSRVAuthBindings } from './helpers/generateSrvAuthBindings'
+//import type { IGenerateSRVAuthBindings } from './helpers/generateSrvAuthBindings'
+//import type { IGenerateSRVAuthBindings } from './helpers/generateSrvAuthBindings'
 export {}
 
 declare global {
@@ -17,7 +18,7 @@ declare global {
         }[]
         __ASMA__SHELL__?: {
             history?: History
-            auth_bindings?: IGenerateSRVAuthBindings
+            auth_bindings?: unknown //IGenerateSRVAuthBindings
             isLogged?: () => boolean
             logoutUser?: () => void
         }

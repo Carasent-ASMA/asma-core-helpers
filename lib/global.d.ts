@@ -1,5 +1,4 @@
 import { type History, createBrowserHistory } from 'history';
-import type { IGenerateSRVAuthBindings } from './helpers/generateSrvAuthBindings';
 export {};
 declare global {
     interface Window {
@@ -16,7 +15,7 @@ declare global {
         }[];
         __ASMA__SHELL__?: {
             history?: History;
-            auth_bindings?: IGenerateSRVAuthBindings;
+            auth_bindings?: unknown;
             isLogged?: () => boolean;
             logoutUser?: () => void;
         };
