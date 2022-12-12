@@ -3,6 +3,8 @@ export declare const EnvironmentsUrls: {
         SRV_DIRECTORY: string;
         SRV_CALENDAR: string;
         SRV_PROXY_OLD: string;
+        SRV_PROXY_OLD_HELSE: string;
+        SRV_PROXY_OLD_WEB: string;
         SRV_STORAGE: string;
         SRV_CHAT: string;
         SRV_CONNECTOR: string;
@@ -16,6 +18,8 @@ export declare const EnvironmentsUrls: {
         SRV_DIRECTORY: string;
         SRV_CALENDAR: string;
         SRV_PROXY_OLD: string;
+        SRV_PROXY_OLD_HELSE: string;
+        SRV_PROXY_OLD_WEB: string;
         SRV_STORAGE: string;
         SRV_CHAT: string;
         SRV_CONNECTOR: string;
@@ -29,6 +33,8 @@ export declare const EnvironmentsUrls: {
         SRV_DIRECTORY: string;
         SRV_CALENDAR: string;
         SRV_PROXY_OLD: string;
+        SRV_PROXY_OLD_HELSE: string;
+        SRV_PROXY_OLD_WEB: string;
         SRV_STORAGE: string;
         SRV_CHAT: string;
         SRV_CONNECTOR: string;
@@ -42,6 +48,8 @@ export declare const EnvironmentsUrls: {
         SRV_DIRECTORY: string;
         SRV_CALENDAR: string;
         SRV_PROXY_OLD: string;
+        SRV_PROXY_OLD_HELSE: string;
+        SRV_PROXY_OLD_WEB: string;
         SRV_STORAGE: string;
         SRV_CHAT: string;
         SRV_CONNECTOR: string;
@@ -55,6 +63,8 @@ export declare const EnvironmentsUrls: {
         SRV_DIRECTORY: string;
         SRV_CALENDAR: string;
         SRV_PROXY_OLD: string;
+        SRV_PROXY_OLD_HELSE: string;
+        SRV_PROXY_OLD_WEB: string;
         SRV_STORAGE: string;
         SRV_CHAT: string;
         SRV_CONNECTOR: string;
@@ -69,6 +79,8 @@ export declare function environmentUrls(ENVIRONMENT_TO_OPERATE?: string): {
     SRV_DIRECTORY: string;
     SRV_CALENDAR: string;
     SRV_PROXY_OLD: string;
+    SRV_PROXY_OLD_HELSE: string;
+    SRV_PROXY_OLD_WEB: string;
     SRV_STORAGE: string;
     SRV_CHAT: string;
     SRV_CONNECTOR: string;
