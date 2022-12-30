@@ -277,6 +277,13 @@ history@^5.3.0:
   dependencies:
     "@babel/runtime" "^7.7.6"
 
+history@~5.0.0:
+  version "5.0.3"
+  resolved "https://registry.yarnpkg.com/history/-/history-5.0.3.tgz#23d0b3046f695623c95a870506545e2b67e82edb"
+  integrity sha512-LoyCVOpCBkNAgrsdpTDZP77fys7lFDg8JdxTr7s6GHueZbTplKf8NAJu3y6/QuJIjk6TFsEGrhtILVP814X8+A==
+  dependencies:
+    "@babel/runtime" "^7.7.6"
+
 idb-keyval@^6.2.0:
   version "6.2.0"
   resolved "https://registry.yarnpkg.com/idb-keyval/-/idb-keyval-6.2.0.tgz#3af94a3cc0689d6ee0bc9e045d2a3340ea897173"
