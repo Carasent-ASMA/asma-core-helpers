@@ -4,9 +4,9 @@ interface IBasicEnv {
     ENVIRONMENT_TO_OPERATE: string;
     ADVOCA_ACCESS_URL?: string;
 }
-type IEnvironmentUrls = typeof EnvironmentsUrls.local;
-type IKeyEnvironmentUrls = keyof IEnvironmentUrls;
-type ISrvKeysTransformToWs<T> = T extends `SRV_${infer K}` ? `SRV_${K}_WS` : never;
+declare type IEnvironmentUrls = typeof EnvironmentsUrls.local;
+declare type IKeyEnvironmentUrls = keyof IEnvironmentUrls;
+declare type ISrvKeysTransformToWs<T> = T extends `SRV_${infer K}` ? `SRV_${K}_WS` : never;
 export declare function generateEnvConfigsBindings<T extends IBasicEnv, K extends (keyof T | IKeyEnvironmentUrls | ISrvKeysTransformToWs<keyof T | IKeyEnvironmentUrls>) & string, S>(envs_import: Promise<{
     envs: T;
 }>, required_envs: K[], static_env: S): {

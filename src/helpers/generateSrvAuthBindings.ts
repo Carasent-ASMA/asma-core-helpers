@@ -93,6 +93,7 @@ export function generateSrvAuthBindings(
     function setAuthData(data: { token: string; features?: feature_names_enum[] }) {
         jwtToken = data.token
         features = new Set(data.features)
+        parsed_jwt = undefined
     }
 
     function getJwtToken() {
