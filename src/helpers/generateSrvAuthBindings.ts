@@ -1,4 +1,4 @@
-import axios, { AxiosHeaders, AxiosRequestConfig, AxiosResponse, ResponseType } from 'axios'
+import axios, { AxiosRequestConfig, AxiosResponse, ResponseType } from 'axios'
 import { EnvironmentEnums, parseJwt } from '..'
 /* export interface IGenerateSRVAuthBindings extends ReturnType<typeof generateSrvAuthBindings> {}  */ /*{
     isJwtValid: () => boolean
@@ -134,18 +134,14 @@ export function generateSrvAuthBindings(
     async function setReqConfig<T = unknown>(data?: T, responseType?: ResponseType): Promise<AxiosRequestConfig> {
         const token = await getJwtTokenAsync()
 
-        const res: AxiosRequestConfig = {
+        const res = {
             data: data,
             responseType: responseType,
-            headers: {},
+            headers: {} as Record<string, string>,
         }
 
         if (token) {
-            if (!res.headers) {
-                res.headers = {}
-            }
-
-            ;(res.headers as AxiosHeaders).set('Authorization', `Bearer ${token}`)
+            res.headers['Authorization'] = `Bearer ${token}`
         }
 
         return res
