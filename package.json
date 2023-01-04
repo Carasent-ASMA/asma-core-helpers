@@ -16,7 +16,6 @@
     "author": "",
     "license": "MIT",
     "devDependencies": {
-        "asma-genql-directory": "^1.0.80",
         "typescript": "^4.9.3"
     },
     "dependencies": {
