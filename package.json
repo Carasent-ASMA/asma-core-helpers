@@ -1,6 +1,6 @@
 {
     "name": "asma-helpers",
-    "version": "0.2.16",
+    "version": "0.2.21",
     "description": "helpers methods for asma",
     "main": "lib/index.js",
     "types": "lib",
@@ -16,11 +16,11 @@
     "author": "",
     "license": "MIT",
     "devDependencies": {
+        "asma-genql-directory": "^1.0.80",
         "typescript": "^4.9.3"
     },
     "dependencies": {
         "@genql/runtime": "^2.10.0",
-        "asma-genql-directory": "^1.0.78",
         "axios": "^0.27.2",
         "history": "~5.0.0",
         "idb-keyval": "^6.2.0",

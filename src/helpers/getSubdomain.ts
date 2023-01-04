@@ -1,5 +1,8 @@
+/**
+ * @deprecated moved to asma-genql-directory use from there
+ */
 function getSubdomain() {
-    const hostname_arr = window.location.hostname.split('.')// fretex-dfsf.advoca.no
+    const hostname_arr = window.location.hostname.split('.') // fretex-dfsf.advoca.no
 
     let subdomain = ''
 
@@ -18,9 +21,13 @@ function getSubdomain() {
     }
     return subdomain
 }
-
+/**
+ * @deprecated moved to asma-genql-directory use from there
+ */
 export const subdomain = getSubdomain()
-
+/**
+ * @deprecated moved to asma-genql-directory use from there
+ */
 export function redirectFromSubdomainToDomain() {
     const domain_hostname = `${createDomainUrlFromSubdomain()}${window.location.pathname}`
 
@@ -28,7 +35,9 @@ export function redirectFromSubdomainToDomain() {
 
     return null
 }
-
+/**
+ * @deprecated moved to asma-genql-directory use from there
+ */
 export function createDomainUrlFromSubdomain() {
     let hostname = window.location.hostname.replace(subdomain, '')
 

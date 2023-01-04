@@ -1,6 +1,6 @@
-import type { feature_names_enum } from 'asma-genql-directory/lib';
 import { AxiosRequestConfig, AxiosResponse, ResponseType } from 'axios';
 import { EnvironmentEnums } from '..';
+export type feature_names_enum = 'artifact_createQnrCustomContext' | 'autoImportableQnr' | 'calendar_BusyTimesAccess' | 'calendar_CoursesAccess' | 'calendar_EventsAccess' | 'calendar_EventsRequestsAccess' | 'calendar_TasksAccess' | 'calendar_access' | 'calendar_taskTemplatesCRUD' | 'dashboardTraceability' | 'directory_AdvocaCandidatProfile' | 'directory_AdvocaInvormationOnTiltak' | 'documentUploadFromAdopusPicker' | 'documentUploadFromDokkladPicker' | 'documentUploadFromLocalPicker' | 'documentUploadPickedDocuments' | 'experimental' | 'ordersOverviewOnSelectedRecipientsForQnr' | 'predefinedUserForQnr' | 'rejectableQnr' | 'signByTherapistDocument';
 export declare function generateSrvAuthBindings(SRV_AUTH: () => string, DEVELOPMENT: () => boolean, EnvironmentToOperateFn: () => string, logout?: () => void): {
     hasFeature: (featureName: feature_names_enum) => boolean;
     getFeatures: () => Set<feature_names_enum> | undefined;

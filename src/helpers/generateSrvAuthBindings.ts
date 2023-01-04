@@ -1,4 +1,3 @@
-import type { feature_names_enum } from 'asma-genql-directory/lib'
 import axios, { AxiosRequestConfig, AxiosResponse, ResponseType } from 'axios'
 import { EnvironmentEnums, parseJwt } from '..'
 /* export interface IGenerateSRVAuthBindings extends ReturnType<typeof generateSrvAuthBindings> {}  */ /*{
@@ -14,6 +13,28 @@ import { EnvironmentEnums, parseJwt } from '..'
     getJwtToken(): string
     accessTokenHasExpired(): boolean
 } */
+export type feature_names_enum =
+    | 'artifact_createQnrCustomContext'
+    | 'autoImportableQnr'
+    | 'calendar_BusyTimesAccess'
+    | 'calendar_CoursesAccess'
+    | 'calendar_EventsAccess'
+    | 'calendar_EventsRequestsAccess'
+    | 'calendar_TasksAccess'
+    | 'calendar_access'
+    | 'calendar_taskTemplatesCRUD'
+    | 'dashboardTraceability'
+    | 'directory_AdvocaCandidatProfile'
+    | 'directory_AdvocaInvormationOnTiltak'
+    | 'documentUploadFromAdopusPicker'
+    | 'documentUploadFromDokkladPicker'
+    | 'documentUploadFromLocalPicker'
+    | 'documentUploadPickedDocuments'
+    | 'experimental'
+    | 'ordersOverviewOnSelectedRecipientsForQnr'
+    | 'predefinedUserForQnr'
+    | 'rejectableQnr'
+    | 'signByTherapistDocument'
 export function generateSrvAuthBindings(
     SRV_AUTH: () => string,
     DEVELOPMENT: () => boolean,
