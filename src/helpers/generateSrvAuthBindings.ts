@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig, AxiosResponse, ResponseType } from 'axios'
+import axios, { AxiosHeaders, AxiosRequestConfig, AxiosResponse, ResponseType } from 'axios'
 import { EnvironmentEnums, parseJwt } from '..'
 /* export interface IGenerateSRVAuthBindings extends ReturnType<typeof generateSrvAuthBindings> {}  */ /*{
     isJwtValid: () => boolean
@@ -145,7 +145,7 @@ export function generateSrvAuthBindings(
                 res.headers = {}
             }
 
-            res.headers['Authorization'] = `Bearer ${token}`
+            ;(res.headers as AxiosHeaders).set('Authorization', `Bearer ${token}`)
         }
 
         return res
