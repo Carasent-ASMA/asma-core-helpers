@@ -1,4 +1,4 @@
-import { AxiosRequestConfig, AxiosResponse, ResponseType } from 'axios';
+import { AxiosResponse, ResponseType } from 'axios';
 import { EnvironmentEnums } from '..';
 export type feature_names_enum = 'artifact_createQnrCustomContext' | 'autoImportableQnr' | 'calendar_BusyTimesAccess' | 'calendar_CoursesAccess' | 'calendar_EventsAccess' | 'calendar_EventsRequestsAccess' | 'calendar_TasksAccess' | 'calendar_access' | 'calendar_taskTemplatesCRUD' | 'dashboardTraceability' | 'directory_AdvocaCandidatProfile' | 'directory_AdvocaInvormationOnTiltak' | 'documentUploadFromAdopusPicker' | 'documentUploadFromDokkladPicker' | 'documentUploadFromLocalPicker' | 'documentUploadPickedDocuments' | 'experimental' | 'ordersOverviewOnSelectedRecipientsForQnr' | 'predefinedUserForQnr' | 'rejectableQnr' | 'signByTherapistDocument';
 export declare function generateSrvAuthBindings(SRV_AUTH: () => string, DEVELOPMENT: () => boolean, EnvironmentToOperateFn: () => string, logout?: () => void): {
@@ -11,7 +11,11 @@ export declare function generateSrvAuthBindings(SRV_AUTH: () => string, DEVELOPM
     }>;
     srvAuthGet: <R>(url: string, headers?: Record<string, string>) => Promise<AxiosResponse<R, any>>;
     signoutAuth: () => Promise<void>;
-    setReqConfig: <T = unknown>(data?: T | undefined, responseType?: ResponseType) => Promise<AxiosRequestConfig>;
+    setReqConfig: <T = unknown>(data?: T | undefined, responseType?: ResponseType) => Promise<{
+        data: T | undefined;
+        responseType: ResponseType | undefined;
+        headers: Record<string, string>;
+    }>;
     getJwtTokenAsync: () => Promise<string>;
     getNewJwtToken: () => Promise<string>;
     getUserId: () => string;
