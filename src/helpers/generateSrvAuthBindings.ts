@@ -1,41 +1,7 @@
 import axios, { AxiosResponse, ResponseType } from 'axios'
 import { EnvironmentEnums, parseJwt } from '..'
-/* export interface IGenerateSRVAuthBindings extends ReturnType<typeof generateSrvAuthBindings> {}  */ /*{
-    isJwtValid: () => boolean
-    signin(url: string, headers?: Record<string, string>): Promise<{ token: string }>
-    srvAuthGet<R>(url: string, headers?: Record<string, string>): Promise<AxiosResponse<R, any>>
-    signoutAuth(): Promise<void>
-    setReqConfig<T = unknown>(data?: T, responseType?: ResponseType): Promise<AxiosRequestConfig>
-    getJwtTokenAsync(): Promise<string>
-    getNewJwtToken(): Promise<string>
-    getUserId(): string
-    getParsedJwt<R = { user_id: string; exp: number }>(): R | undefined
-    getJwtToken(): string
-    accessTokenHasExpired(): boolean
-} */
-export type feature_names_enum =
-    | 'artifact_createQnrCustomContext'
-    | 'autoImportableQnr'
-    | 'calendar_BusyTimesAccess'
-    | 'calendar_CoursesAccess'
-    | 'calendar_EventsAccess'
-    | 'calendar_EventsRequestsAccess'
-    | 'calendar_TasksAccess'
-    | 'calendar_access'
-    | 'calendar_taskTemplatesCRUD'
-    | 'dashboardTraceability'
-    | 'directory_AdvocaCandidatProfile'
-    | 'directory_AdvocaInvormationOnTiltak'
-    | 'documentUploadFromAdopusPicker'
-    | 'documentUploadFromDokkladPicker'
-    | 'documentUploadFromLocalPicker'
-    | 'documentUploadPickedDocuments'
-    | 'experimental'
-    | 'ordersOverviewOnSelectedRecipientsForQnr'
-    | 'predefinedUserForQnr'
-    | 'rejectableQnr'
-    | 'signByTherapistDocument'
-export function generateSrvAuthBindings(
+
+export function generateSrvAuthBindings<FeatureEnums = never>(
     SRV_AUTH: () => string,
     DEVELOPMENT: () => boolean,
     EnvironmentToOperateFn: () => string,
@@ -46,12 +12,12 @@ export function generateSrvAuthBindings(
     }
     let jwtToken = ''
 
-    let features: Set<feature_names_enum> | undefined
+    let features: Set<FeatureEnums> | undefined
 
     let parsed_jwt: any | undefined
 
     let fetchJwtPromise: Promise<{
-        data: { message: string; token?: string; features?: feature_names_enum[]; errors: { message: string }[] }
+        data: { message: string; token?: string; features?: FeatureEnums[]; errors: { message: string }[] }
     }> | null = null
 
     const isJwtInvalid = () => (jwtToken && accessTokenHasExpired()) || !jwtToken
@@ -96,7 +62,7 @@ export function generateSrvAuthBindings(
     }
 
     async function signin(url: string, headers?: Record<string, string>) {
-        const { data } = await srvAuthGet<{ token: string; features: feature_names_enum[] }>(url, headers)
+        const { data } = await srvAuthGet<{ token: string; features: FeatureEnums[] }>(url, headers)
 
         setAuthData(data)
 
@@ -111,7 +77,7 @@ export function generateSrvAuthBindings(
         return getParsedJwt()?.['user_id'] || '-1'
     }
 
-    function setAuthData(data: { token: string; features?: feature_names_enum[] }) {
+    function setAuthData(data: { token: string; features?: FeatureEnums[] }) {
         jwtToken = data.token
         features = new Set(data.features)
         parsed_jwt = undefined
@@ -187,7 +153,12 @@ export function generateSrvAuthBindings(
     function getFeatures() {
         return features
     }
-    function hasFeature(featureName: feature_names_enum) {
+    /**
+     *
+     * @param featureName feature_name_enums add this: generateSrvAuthBindings<feature_name_enums.>(...)
+     * @returns boolean
+     */
+    function hasFeature(featureName: FeatureEnums) {
         return !!features?.has(featureName)
     }
 
