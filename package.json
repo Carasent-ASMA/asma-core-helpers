@@ -1,6 +1,6 @@
 {
     "name": "asma-helpers",
-    "version": "0.2.32",
+    "version": "0.2.33",
     "description": "helpers methods for asma",
     "main": "lib/index.js",
     "types": "lib",
@@ -20,7 +20,7 @@
     },
     "dependencies": {
         "@genql/runtime": "^2.10.0",
-        "axios": "^1.2.2",
+        "axios": "^1.2.3",
         "history": "~5.0.0",
         "idb-keyval": "^6.2.0",
         "mobx": "^6.6.1",
