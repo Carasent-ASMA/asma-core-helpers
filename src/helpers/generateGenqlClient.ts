@@ -68,9 +68,9 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
             console.warn('requred param srv_url is undefined, please check EnvConfig object!')
         }
         //if (!anonymous) {
-            //req_headers = ((await setReqConfig()).headers ?? {}) as Record<string, string>
-            // setJwtExp(req_headers['Authorization'])
-       // }
+        //req_headers = ((await setReqConfig()).headers ?? {}) as Record<string, string>
+        // setJwtExp(req_headers['Authorization'])
+        // }
 
         return createClient({
             url: `${serviceUrl()}${path}`,

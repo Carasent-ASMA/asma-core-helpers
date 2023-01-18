@@ -3,15 +3,13 @@ import type { ClientOptions } from '@genql/runtime';
 interface CliOptions extends Omit<ClientOptions, 'url'> {
     anonymous?: boolean;
 }
-export declare function generateGenqlClient<T>({ accessTokenHasExpired, setReqConfig, createClient, serviceUrl, path, }: {
-    accessTokenHasExpired: () => boolean;
+export declare function generateGenqlClient<T extends ReturnType<typeof createClient>>({ setReqConfig, createClient, serviceUrl, path, }: {
     setReqConfig: () => Promise<AxiosRequestConfig<any>>;
     createClient: (options?: ClientOptions | undefined) => T;
     serviceUrl: () => string;
     path?: string;
 }): {
     getGenqlClient: () => Promise<T>;
-    resetGenqlClient: () => void;
     genqlClient: (options?: CliOptions) => Promise<T>;
     genqlClientWs: () => Promise<T>;
 };
