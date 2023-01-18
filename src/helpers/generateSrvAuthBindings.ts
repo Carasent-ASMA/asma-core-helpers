@@ -1,15 +1,25 @@
 import axios, {type  AxiosResponse, type ResponseType } from 'axios'
 import { EnvironmentEnums, parseJwt } from '..'
 
+let logoutsuccesfull = false
+
 export function generateSrvAuthBindings<FeatureEnums = never>(
     SRV_AUTH: () => string,
     DEVELOPMENT: () => boolean,
     EnvironmentToOperateFn: () => string,
     logout?: () => void,
 ) {
+    let logoutMfes: (() => void)[] = []
+
+    if (logout && window.__ASMA__SHELL__?.auth_bindings) {
+        logoutMfes.push(logout)
+    }
+
     if (window.__ASMA__SHELL__?.auth_bindings) {
+        window.__ASMA__SHELL__.logoutMfes = logoutMfes
         return window.__ASMA__SHELL__.auth_bindings as typeof auth_bindings
     }
+
     let jwtToken = ''
 
     let features: Set<FeatureEnums> | undefined
@@ -66,6 +76,8 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
 
         setAuthData(data)
 
+        logoutsuccesfull = false
+
         return data
     }
 
@@ -114,6 +126,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     }
 
     async function getNewJwtToken() {
+        if(logoutsuccesfull) return
         try {
             if (!fetchJwtPromise) {
                 fetchJwtPromise = srvAuthGet('/token')
@@ -121,24 +134,24 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
 
             const { data } = await fetchJwtPromise
 
-            if (!data || data.errors || data.message != 'Success') {
-                logout?.() || signoutAuth()
+            if (!data || data.errors || data.message != 'Success' || !data.token) {
+                logout?.()
+                logoutsuccesfull = true
+
+                //signoutAuth()
             }
-            if (!data.token) {
-                throw new Error('Token is not present in the result')
-            }
+
             setAuthData({ token: data.token || '', features: data.features || [] })
-
-            fetchJwtPromise = null
-
-            return jwtToken
         } catch (error) {
-            logout?.() || signoutAuth()
+            logout?.()
+            logoutsuccesfull = true
             //signoutAuth()
 
-            fetchJwtPromise = null
+            setAuthData({ token: '', features: [] })
 
             console.error(error)
+        } finally {
+            fetchJwtPromise = null
 
             return jwtToken
         }
