@@ -1,4 +1,4 @@
-import axios, { AxiosResponse, ResponseType } from 'axios'
+import axios, {type  AxiosResponse, type ResponseType } from 'axios'
 import { EnvironmentEnums, parseJwt } from '..'
 
 export function generateSrvAuthBindings<FeatureEnums = never>(

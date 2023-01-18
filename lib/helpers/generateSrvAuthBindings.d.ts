@@ -1,4 +1,4 @@
-import { AxiosResponse, ResponseType } from 'axios';
+import { type AxiosResponse, type ResponseType } from 'axios';
 import { EnvironmentEnums } from '..';
 export declare function generateSrvAuthBindings<FeatureEnums = never>(SRV_AUTH: () => string, DEVELOPMENT: () => boolean, EnvironmentToOperateFn: () => string, logout?: () => void): {
     hasFeature: (featureName: FeatureEnums) => boolean;
