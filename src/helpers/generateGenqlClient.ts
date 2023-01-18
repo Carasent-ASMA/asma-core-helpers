@@ -15,7 +15,7 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
 }: {
     // jwt_exp: number
     setReqConfig: () => Promise<AxiosRequestConfig<any>>
-    createClient: (options?: ClientOptions | undefined) => T | null
+    createClient: (options?: ClientOptions | undefined) => T
     serviceUrl: () => string
     path?: string
 }) {
@@ -33,7 +33,7 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
     //}
 
     async function getGenqlClient() {
-        if (/* accessTokenHasExpired() || */ !client) {
+        if (/* accessTokenHasExpired() || */ client === null) {
             client = await genqlClient()
 
             return client
@@ -59,23 +59,23 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
      * This is used for anonymous requests as well as authenticated requests
      *
      */
-    async function genqlClient(options: CliOptions = {}): Promise<T | null> {
-        let req_headers: Record<string, string> = {}
+    async function genqlClient(options: CliOptions = {}): Promise<T> {
+        //let req_headers: Record<string, string> = {}
 
         const { anonymous, headers, ...rest } = options
 
         if (!serviceUrl()) {
             console.warn('requred param srv_url is undefined, please check EnvConfig object!')
         }
-        if (!anonymous) {
-            req_headers = ((await setReqConfig()).headers ?? {}) as Record<string, string>
-            if (!req_headers['Authorization']) return null
-        }
+        //if (!anonymous) {
+        //req_headers = ((await setReqConfig()).headers ?? {}) as Record<string, string>
+        // setJwtExp(req_headers['Authorization'])
+        // }
 
         return createClient({
             url: `${serviceUrl()}${path}`,
             headers: async () => ({
-                ...req_headers,
+                ...(options.anonymous ? {} : (((await setReqConfig()).headers ?? {}) as Record<string, string>)),
                 ...headers,
             }),
             batch: { batchInterval: 50, maxBatchSize: 100 },
@@ -85,9 +85,7 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
 
     async function genqlClientWs() {
         if (/* accessTokenHasExpired() || */ !wsClient) {
-            const req_headers = ((await setReqConfig()).headers ?? {}) as Record<string, string>
-
-            if (!req_headers['Authorization']) return null
+            //const req_headers = ((await setReqConfig()).headers ?? {}) as Record<string, string>
 
             //setJwtExp(req_headers['Authorization'])
 
@@ -98,7 +96,7 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
                 subscription: {
                     reconnect: true,
                     reconnectionAttempts: 5,
-                    headers: async () => req_headers,
+                    headers: async () => ((await setReqConfig()).headers ?? {}) as Record<string, string>,
                 },
             })
         }

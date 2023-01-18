@@ -5,13 +5,13 @@ interface CliOptions extends Omit<ClientOptions, 'url'> {
 }
 export declare function generateGenqlClient<T extends ReturnType<typeof createClient>>({ setReqConfig, createClient, serviceUrl, path, }: {
     setReqConfig: () => Promise<AxiosRequestConfig<any>>;
-    createClient: (options?: ClientOptions | undefined) => T | null;
+    createClient: (options?: ClientOptions | undefined) => T;
     serviceUrl: () => string;
     path?: string;
 }): {
-    getGenqlClient: () => Promise<T | null>;
-    genqlClient: (options?: CliOptions) => Promise<T | null>;
-    genqlClientWs: () => Promise<T | null>;
+    getGenqlClient: () => Promise<T>;
+    genqlClient: (options?: CliOptions) => Promise<T>;
+    genqlClientWs: () => Promise<T>;
 };
 export {};
 //# sourceMappingURL=generateGenqlClient.d.ts.map
