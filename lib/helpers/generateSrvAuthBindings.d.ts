@@ -15,8 +15,8 @@ export declare function generateSrvAuthBindings<FeatureEnums = never>(SRV_AUTH: 
         responseType: ResponseType | undefined;
         headers: Record<string, string>;
     }>;
-    getJwtTokenAsync: () => Promise<string>;
-    getNewJwtToken: () => Promise<string>;
+    getJwtTokenAsync: () => Promise<string | undefined>;
+    getNewJwtToken: () => Promise<string | undefined>;
     getUserId: () => string;
     getParsedJwt: <R_1 = {
         user_id: string;
