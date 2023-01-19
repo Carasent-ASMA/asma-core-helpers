@@ -1,6 +1,6 @@
 import { type AxiosResponse, type ResponseType } from 'axios';
 import { EnvironmentEnums } from '..';
-export declare function cancelRequest(): boolean;
+export declare function getAbortController(): AbortController | undefined;
 export declare function generateSrvAuthBindings<FeatureEnums = never>(SRV_AUTH: () => string, DEVELOPMENT: () => boolean, EnvironmentToOperateFn: () => string, logout?: () => void): {
     hasFeature: (featureName: FeatureEnums) => boolean;
     getFeatures: () => Set<FeatureEnums> | undefined;
@@ -23,6 +23,7 @@ export declare function generateSrvAuthBindings<FeatureEnums = never>(SRV_AUTH: 
         user_id: string;
         exp: number;
     }>() => R_1 | undefined;
+    abortController: AbortController;
     getJwtToken: () => string;
     cancelRequest: () => boolean;
     accessTokenHasExpired: () => boolean;

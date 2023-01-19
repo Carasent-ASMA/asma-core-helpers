@@ -3,8 +3,10 @@ import { EnvironmentEnums, parseJwt } from '..'
 
 let logoutsuccesfull = false
 
-export function cancelRequest() {
-    return window.__ASMA__SHELL__?.cancelRequest?.() ?? false
+let abortController: AbortController | null = null
+
+export function getAbortController() {
+    return window.__ASMA__SHELL__?.abortController
 }
 
 export function generateSrvAuthBindings<FeatureEnums = never>(
@@ -60,6 +62,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         }
 
         return axios.get<unknown, AxiosResponse<R>>(`${SRV_AUTH()}${url}`, {
+            signal: getAbortController()?.signal,
             headers: {
                 ...headers,
                 'asma-origin': window.location.origin,
@@ -80,6 +83,8 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     }
 
     async function signin(url: string, headers?: Record<string, string>) {
+        abortController = new AbortController()
+
         const { data } = await srvAuthGet<{ token: string; features: FeatureEnums[] }>(url, headers)
 
         setAuthData(data)
@@ -145,7 +150,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
             if (!data || data.errors || data.message != 'Success' || !data.token) {
                 logout?.()
                 logoutsuccesfull = true
-
+                abortController?.abort()
                 //signoutAuth()
             }
 
@@ -153,6 +158,8 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         } catch (error) {
             logout?.()
             logoutsuccesfull = true
+            abortController?.abort()
+
             //signoutAuth()
 
             setAuthData({ token: '', features: [] })
@@ -183,6 +190,8 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         return !!features?.has(featureName)
     }
 
+    abortController = new AbortController()
+
     const auth_bindings = {
         hasFeature,
         getFeatures,
@@ -195,6 +204,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         getNewJwtToken,
         getUserId,
         getParsedJwt,
+        abortController,
         getJwtToken,
         cancelRequest,
         accessTokenHasExpired,

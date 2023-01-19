@@ -22,7 +22,7 @@ declare global {
              * @experimental need to be tested
              */
             logoutMfes?: (() => void)[];
-            cancelRequest?: () => boolean;
+            abortController?: AbortController;
         };
         _env_cloud?: Record<'adopus' | 'adcuris', Record<string, string>>;
         _srvUrls?: Record<string, string>;

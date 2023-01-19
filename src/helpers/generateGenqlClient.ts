@@ -1,7 +1,7 @@
 import type { AxiosRequestConfig } from 'axios'
 import type { ClientOptions, createClient } from '@genql/runtime'
 import { httpToWs } from './Config'
-import { cancelRequest } from './generateSrvAuthBindings'
+import { getAbortController } from './generateSrvAuthBindings'
 //import { parseJwt } from '../helpers/parseJwt'
 
 interface CliOptions extends Omit<ClientOptions, 'url'> {
@@ -42,11 +42,6 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
      * @returns genql client for gql requests
      */
     async function getGenqlClient() {
-        if (cancelRequest()) {
-            console.info(`${serviceUrl()}:, cancelRequest() is true, returning null`)
-            return null
-        }
-
         if (/* accessTokenHasExpired() || */ client === null) {
             client = await genqlClient()
 
@@ -76,11 +71,7 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
     async function genqlClient(options: CliOptions = {}): Promise<T | null> {
         //let req_headers: Record<string, string> = {}
 
-        const { anonymous, headers, ...rest } = options
-        if (cancelRequest() && anonymous) {
-            console.info(`${serviceUrl()}:, cancelRequest() is true, returning null`)
-            return null
-        }
+        const { anonymous, headers, signal, ...rest } = options
 
         if (!serviceUrl()) {
             console.warn('requred param srv_url is undefined, please check EnvConfig object!')
@@ -96,6 +87,7 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
                 ...(options.anonymous ? {} : (((await setReqConfig()).headers ?? {}) as Record<string, string>)),
                 ...headers,
             }),
+            signal: signal ?? getAbortController()?.signal,
             batch: { batchInterval: 50, maxBatchSize: 100 },
             ...rest,
         })
@@ -111,6 +103,7 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
                 url: `${httpToWs(serviceUrl())}${path}`,
                 cache: 'reload',
                 batch: { batchInterval: 50, maxBatchSize: 100 },
+                signal: getAbortController()?.signal,
                 subscription: {
                     reconnect: true,
                     reconnectionAttempts: 5,
