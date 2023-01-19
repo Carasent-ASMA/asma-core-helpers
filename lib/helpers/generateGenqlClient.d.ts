@@ -13,8 +13,8 @@ export declare function generateGenqlClient<T extends ReturnType<typeof createCl
      */
     path?: string;
 }): {
-    getGenqlClient: () => Promise<T | null>;
-    genqlClient: (options?: CliOptions) => Promise<T | null>;
+    getGenqlClient: () => Promise<T>;
+    genqlClient: (options?: CliOptions) => Promise<T>;
     genqlClientWs: () => Promise<T>;
 };
 export {};
