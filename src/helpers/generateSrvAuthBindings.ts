@@ -3,7 +3,7 @@ import { EnvironmentEnums, parseJwt } from '..'
 
 let logoutsuccesfull = false
 
-let abortController: AbortController | null = null
+let abortController = new AbortController()
 
 export function getAbortController() {
     return window.__ASMA__SHELL__?.abortController
@@ -83,7 +83,9 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     }
 
     async function signin(url: string, headers?: Record<string, string>) {
-        abortController = new AbortController()
+        if (abortController.signal.aborted) {
+            abortController = new AbortController()
+        }
 
         const { data } = await srvAuthGet<{ token: string; features: FeatureEnums[] }>(url, headers)
 
@@ -189,8 +191,6 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     function hasFeature(featureName: FeatureEnums) {
         return !!features?.has(featureName)
     }
-
-    abortController = new AbortController()
 
     const auth_bindings = {
         hasFeature,
