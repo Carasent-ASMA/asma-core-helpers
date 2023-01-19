@@ -68,7 +68,7 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
      * This is used for anonymous requests as well as authenticated requests
      *
      */
-    async function genqlClient(options: CliOptions = {}): Promise<T | null> {
+    async function genqlClient(options: CliOptions = {}): Promise<T> {
         //let req_headers: Record<string, string> = {}
 
         const { anonymous, headers, signal, ...rest } = options
