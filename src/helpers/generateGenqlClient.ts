@@ -1,6 +1,7 @@
 import type { AxiosRequestConfig } from 'axios'
 import type { ClientOptions, createClient } from '@genql/runtime'
 import { httpToWs } from './Config'
+import { cancelRequest } from './generateSrvAuthBindings'
 //import { parseJwt } from '../helpers/parseJwt'
 
 interface CliOptions extends Omit<ClientOptions, 'url'> {
@@ -17,6 +18,10 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
     setReqConfig: () => Promise<AxiosRequestConfig<any>>
     createClient: (options?: ClientOptions | undefined) => T
     serviceUrl: () => string
+    /**
+     * Returns true whenether token and refresh token is epired! this helps to cancel all concurent requests after first request is invalidated.
+     * @returns true if request should be cancelled
+     */
     path?: string
 }) {
     // let jwt_exp = 0
@@ -31,8 +36,17 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
     //    //set exp time -20sec for token to be refreshed early
     //    return jwt_exp - 10 <= nowTime
     //}
-
+    /**
+     * This method caches the client and returns it if token or/and access is not expired
+     * in case if request is cancelled it returns null
+     * @returns genql client for gql requests
+     */
     async function getGenqlClient() {
+        if (cancelRequest()) {
+            console.info(`${serviceUrl()}:, cancelRequest() is true, returning null`)
+            return null
+        }
+
         if (/* accessTokenHasExpired() || */ client === null) {
             client = await genqlClient()
 
@@ -59,10 +73,14 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
      * This is used for anonymous requests as well as authenticated requests
      *
      */
-    async function genqlClient(options: CliOptions = {}): Promise<T> {
+    async function genqlClient(options: CliOptions = {}): Promise<T | null> {
         //let req_headers: Record<string, string> = {}
 
         const { anonymous, headers, ...rest } = options
+        if (cancelRequest() && anonymous) {
+            console.info(`${serviceUrl()}:, cancelRequest() is true, returning null`)
+            return null
+        }
 
         if (!serviceUrl()) {
             console.warn('requred param srv_url is undefined, please check EnvConfig object!')

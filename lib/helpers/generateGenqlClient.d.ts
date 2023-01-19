@@ -7,10 +7,14 @@ export declare function generateGenqlClient<T extends ReturnType<typeof createCl
     setReqConfig: () => Promise<AxiosRequestConfig<any>>;
     createClient: (options?: ClientOptions | undefined) => T;
     serviceUrl: () => string;
+    /**
+     * Returns true whenether token and refresh token is epired! this helps to cancel all concurent requests after first request is invalidated.
+     * @returns true if request should be cancelled
+     */
     path?: string;
 }): {
-    getGenqlClient: () => Promise<T>;
-    genqlClient: (options?: CliOptions) => Promise<T>;
+    getGenqlClient: () => Promise<T | null>;
+    genqlClient: (options?: CliOptions) => Promise<T | null>;
     genqlClientWs: () => Promise<T>;
 };
 export {};

@@ -21,7 +21,11 @@ declare global {
             auth_bindings?: unknown //IGenerateSRVAuthBindings
             isLogged?: () => boolean
             logoutUser?: () => void
+            /**
+             * @experimental need to be tested
+             */
             logoutMfes?: (() => void)[]
+            cancelRequest?: () => boolean
         }
 
         _env_cloud?: Record<'adopus' | 'adcuris', Record<string, string>>

@@ -18,7 +18,11 @@ declare global {
             auth_bindings?: unknown;
             isLogged?: () => boolean;
             logoutUser?: () => void;
+            /**
+             * @experimental need to be tested
+             */
             logoutMfes?: (() => void)[];
+            cancelRequest?: () => boolean;
         };
         _env_cloud?: Record<'adopus' | 'adcuris', Record<string, string>>;
         _srvUrls?: Record<string, string>;

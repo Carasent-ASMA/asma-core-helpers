@@ -1,7 +1,11 @@
-import axios, {type  AxiosResponse, type ResponseType } from 'axios'
+import axios, { type AxiosResponse, type ResponseType } from 'axios'
 import { EnvironmentEnums, parseJwt } from '..'
 
 let logoutsuccesfull = false
+
+export function cancelRequest() {
+    return window.__ASMA__SHELL__?.cancelRequest?.() ?? false
+}
 
 export function generateSrvAuthBindings<FeatureEnums = never>(
     SRV_AUTH: () => string,
@@ -33,6 +37,10 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     const isJwtInvalid = () => (jwtToken && accessTokenHasExpired()) || !jwtToken
 
     const isJwtValid = () => !isJwtInvalid()
+
+    function cancelRequest() {
+        return logoutsuccesfull
+    }
 
     async function srvAuthGet<R>(url: string, headers?: Record<string, string>) {
         if (DEVELOPMENT() && EnvironmentToOperateFn()) {
@@ -126,7 +134,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     }
 
     async function getNewJwtToken() {
-        if(logoutsuccesfull) return
+        if (logoutsuccesfull) return
         try {
             if (!fetchJwtPromise) {
                 fetchJwtPromise = srvAuthGet('/token')
@@ -188,6 +196,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         getUserId,
         getParsedJwt,
         getJwtToken,
+        cancelRequest,
         accessTokenHasExpired,
     }
     window.__ASMA__SHELL__ = window.__ASMA__SHELL__ || {}
@@ -198,11 +207,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
 }
 /**
  * @deprecated use generateSrvAuthBindings
- * @param SRV_AUTH
- * @param DEVELOPMENT
- * @param ENVIRONMENT_TO_OPERATE
- * @param logout
- * @returns
+ *
  */
 export function generateSrvAuthBindingsMicroApp(
     SRV_AUTH: () => string,

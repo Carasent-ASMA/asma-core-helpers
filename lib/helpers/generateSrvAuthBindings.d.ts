@@ -1,5 +1,6 @@
 import { type AxiosResponse, type ResponseType } from 'axios';
 import { EnvironmentEnums } from '..';
+export declare function cancelRequest(): boolean;
 export declare function generateSrvAuthBindings<FeatureEnums = never>(SRV_AUTH: () => string, DEVELOPMENT: () => boolean, EnvironmentToOperateFn: () => string, logout?: () => void): {
     hasFeature: (featureName: FeatureEnums) => boolean;
     getFeatures: () => Set<FeatureEnums> | undefined;
@@ -23,15 +24,12 @@ export declare function generateSrvAuthBindings<FeatureEnums = never>(SRV_AUTH: 
         exp: number;
     }>() => R_1 | undefined;
     getJwtToken: () => string;
+    cancelRequest: () => boolean;
     accessTokenHasExpired: () => boolean;
 };
 /**
  * @deprecated use generateSrvAuthBindings
- * @param SRV_AUTH
- * @param DEVELOPMENT
- * @param ENVIRONMENT_TO_OPERATE
- * @param logout
- * @returns
+ *
  */
 export declare function generateSrvAuthBindingsMicroApp(SRV_AUTH: () => string, DEVELOPMENT: () => boolean, ENVIRONMENT_TO_OPERATE: () => EnvironmentEnums, logout?: () => void): {};
 //# sourceMappingURL=generateSrvAuthBindings.d.ts.map
