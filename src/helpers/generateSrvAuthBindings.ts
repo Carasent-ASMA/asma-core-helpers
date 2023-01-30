@@ -1,7 +1,8 @@
 import axios, { type AxiosResponse, type ResponseType } from 'axios'
+import { EventBus } from 'asma-event-bus/lib/event-buss'
 import { EnvironmentEnums, parseJwt } from '..'
 
-let logoutsuccesfull = false
+//let logoutsuccesfull = false
 
 let abortController = new AbortController()
 
@@ -32,6 +33,23 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
 
     let parsed_jwt: any | undefined
 
+    const { dispatch, register } = EventBus<{ jwt_changed: {} }>('auth-bindings')
+
+    let changed_jwt_notifier_registry: (() => void)[] = []
+
+    /**
+     *
+     * Regiser a callback to be called when the jwt token changes
+     */
+    function setCallbackToJwtNotifier(callback: () => void) {
+        changed_jwt_notifier_registry.push(callback)
+    }
+
+    function notifyChangedJwt() {
+        changed_jwt_notifier_registry.forEach((c) => c())
+        return () => {}
+    }
+
     let fetchJwtPromise: Promise<{
         data: { message: string; token?: string; features?: FeatureEnums[]; errors: { message: string }[] }
     }> | null = null
@@ -40,9 +58,9 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
 
     const isJwtValid = () => !isJwtInvalid()
 
-    function cancelRequest() {
-        return logoutsuccesfull
-    }
+    //function cancelRequest() {
+    //    return logoutsuccesfull
+    // }
 
     async function srvAuthGet<R>(url: string, headers?: Record<string, string>) {
         if (DEVELOPMENT() && EnvironmentToOperateFn()) {
@@ -91,7 +109,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
 
         setAuthData(data)
 
-        logoutsuccesfull = false
+        // logoutsuccesfull = false
 
         return data
     }
@@ -106,6 +124,11 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
 
     function setAuthData(data: { token: string; features?: FeatureEnums[] }) {
         jwtToken = data.token
+
+        if (jwtToken) {
+            dispatch('jwt_changed', {}, false)
+        }
+        notifyChangedJwt()
         features = new Set(data.features)
         parsed_jwt = undefined
     }
@@ -141,7 +164,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     }
 
     async function getNewJwtToken() {
-        if (logoutsuccesfull) return
+        //if (logoutsuccesfull) return
         try {
             if (!fetchJwtPromise) {
                 fetchJwtPromise = srvAuthGet('/token')
@@ -151,16 +174,18 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
 
             if (!data || data.errors || data.message != 'Success' || !data.token) {
                 logout?.()
-                logoutsuccesfull = true
+                //logoutsuccesfull = true
                 abortController?.abort()
+                logoutMfes.forEach((l) => l())
                 //signoutAuth()
             }
 
             setAuthData({ token: data.token || '', features: data.features || [] })
         } catch (error) {
-            logout?.()
-            logoutsuccesfull = true
+            // logout?.()
+            //  logoutsuccesfull = true
             abortController?.abort()
+            logoutMfes.forEach((l) => l())
 
             //signoutAuth()
 
@@ -202,11 +227,13 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         setReqConfig,
         getJwtTokenAsync,
         getNewJwtToken,
+        registerOnJwtChanges: register,
         getUserId,
+        setCallbackToJwtNotifier,
         getParsedJwt,
         abortController,
         getJwtToken,
-        cancelRequest,
+        // cancelRequest,
         accessTokenHasExpired,
     }
     window.__ASMA__SHELL__ = window.__ASMA__SHELL__ || {}

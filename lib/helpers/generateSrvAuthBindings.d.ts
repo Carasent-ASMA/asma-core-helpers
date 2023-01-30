@@ -16,16 +16,21 @@ export declare function generateSrvAuthBindings<FeatureEnums = never>(SRV_AUTH: 
         responseType: ResponseType | undefined;
         headers: Record<string, string>;
     }>;
-    getJwtTokenAsync: () => Promise<string | undefined>;
-    getNewJwtToken: () => Promise<string | undefined>;
+    getJwtTokenAsync: () => Promise<string>;
+    getNewJwtToken: () => Promise<string>;
+    registerOnJwtChanges: <Key_1 extends "jwt_changed">(event: Key_1, callback: (val: {
+        jwt_changed: {};
+    }[Key_1]) => void) => {
+        unregister: () => void;
+    };
     getUserId: () => string;
+    setCallbackToJwtNotifier: (callback: () => void) => void;
     getParsedJwt: <R_1 = {
         user_id: string;
         exp: number;
     }>() => R_1 | undefined;
     abortController: AbortController;
     getJwtToken: () => string;
-    cancelRequest: () => boolean;
     accessTokenHasExpired: () => boolean;
 };
 /**
