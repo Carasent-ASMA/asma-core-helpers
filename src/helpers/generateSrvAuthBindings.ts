@@ -67,6 +67,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
             if (EnvironmentToOperateFn() in EnvironmentEnums) {
                 url = `${url}&env=${EnvironmentToOperateFn()}`
 
+                // file deepcode ignore GlobalReplacementRegex: <it is intended to be replaced only first occurence>
                 url = url.includes('&') && !url.includes('?') ? url.replace('&', '?') : url
             } else {
                 console.warn(
