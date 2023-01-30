@@ -124,8 +124,9 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
 
     function setAuthData(data: { token: string; features?: FeatureEnums[] }) {
         jwtToken = data.token
+
         if (jwtToken) {
-            dispatch('jwt_changed', {})
+            dispatch('jwt_changed', {}, false)
         }
         notifyChangedJwt()
         features = new Set(data.features)
