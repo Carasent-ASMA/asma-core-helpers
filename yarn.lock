@@ -42,6 +42,18 @@
   dependencies:
     "@types/node" "*"
 
+asma-event-bus@^0.0.41:
+  version "0.0.41"
+  resolved "https://registry.yarnpkg.com/asma-event-bus/-/asma-event-bus-0.0.41.tgz#d293a4bde11794f47d63c4dcb026280bfa75d352"
+  integrity sha512-5yKHuiJIlI4NVxM0evAnU6lEddeJr3/nb594PvPD0pOb7arb9WX8Z/TbNHerFRz5pHIB3X55ep82Zqt+cGoqBg==
+  dependencies:
+    asma-types "^1.1.31"
+
+asma-types@^1.1.31:
+  version "1.1.40"
+  resolved "https://registry.yarnpkg.com/asma-types/-/asma-types-1.1.40.tgz#5200ed855a18d97b8090db52f14620e53354f4a5"
+  integrity sha512-xtd4X+iFAfpI8xiTkoYCk+ys2Yd4jDkXT7Z00GxKBjqetcCoYxeQjGWER0HlF8Hq7Mbv/ap5sB1e77c8x+/VWQ==
+
 async-limiter@~1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/async-limiter/-/async-limiter-1.0.1.tgz#dd379e94f0db8310b08291f9d64c3209766617fd"

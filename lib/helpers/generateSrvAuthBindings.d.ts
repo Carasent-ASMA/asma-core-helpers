@@ -1,5 +1,12 @@
 import { type AxiosResponse, type ResponseType } from 'axios';
 import { EnvironmentEnums } from '..';
+export declare const dispatch: <Key extends "jwt_changed">(event: Key, arg: {
+    jwt_changed: {};
+}[Key], shouldPersist?: boolean | undefined) => void, registerCallbackOnJwtChanged: <Key_1 extends "jwt_changed">(event: Key_1, callback: (val: {
+    jwt_changed: {};
+}[Key_1]) => void) => {
+    unregister: () => void;
+};
 export declare function generateSrvAuthBindings<FeatureEnums = never>(SRV_AUTH: () => string, DEVELOPMENT: () => boolean, EnvironmentToOperateFn: () => string, logout?: () => void): {
     hasFeature: (featureName: FeatureEnums) => boolean;
     getFeatures: () => Set<FeatureEnums> | undefined;

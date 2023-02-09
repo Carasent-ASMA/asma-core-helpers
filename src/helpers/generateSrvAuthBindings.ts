@@ -1,7 +1,10 @@
-import axios, {type  AxiosResponse, type ResponseType } from 'axios'
+import axios, { type AxiosResponse, type ResponseType } from 'axios'
+import { EventBus } from 'asma-event-bus/lib/event-buss'
 import { EnvironmentEnums, parseJwt } from '..'
 
 let logoutsuccesfull = false
+
+export const { dispatch, register: registerCallbackOnJwtChanged } = EventBus<{ jwt_changed: {} }>('auth-bindings')
 
 export function generateSrvAuthBindings<FeatureEnums = never>(
     SRV_AUTH: () => string,
@@ -93,6 +96,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         jwtToken = data.token
         features = new Set(data.features)
         parsed_jwt = undefined
+        dispatch('jwt_changed', {}, false)
     }
 
     function getJwtToken() {
@@ -126,7 +130,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     }
 
     async function getNewJwtToken() {
-        if(logoutsuccesfull) return
+        if (logoutsuccesfull) return
         try {
             if (!fetchJwtPromise) {
                 fetchJwtPromise = srvAuthGet('/token')
