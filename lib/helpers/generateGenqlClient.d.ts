@@ -14,6 +14,7 @@ export declare function generateGenqlClient<T extends ReturnType<typeof createCl
     path?: string;
 }): {
     getGenqlClient: () => Promise<T>;
+    resetGenqlClient: () => void;
     genqlClient: (options?: CliOptions) => Promise<T>;
     genqlClientWs: () => Promise<T>;
 };
