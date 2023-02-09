@@ -1,6 +1,14 @@
 import { type AxiosResponse, type ResponseType } from 'axios';
 import { EnvironmentEnums } from '..';
-export declare function getAbortController(): AbortController | undefined;
+export declare const dispatch: <Key extends "logout_event" | "jwt_changed">(event: Key, arg: {
+    jwt_changed: {};
+    logout_event: {};
+}[Key], shouldPersist?: boolean | undefined) => void, registerCallbackOnSrvAuthEvents: <Key_1 extends "logout_event" | "jwt_changed">(event: Key_1, callback: (val: {
+    jwt_changed: {};
+    logout_event: {};
+}[Key_1]) => void) => {
+    unregister: () => void;
+};
 export declare function generateSrvAuthBindings<FeatureEnums = never>(SRV_AUTH: () => string, DEVELOPMENT: () => boolean, EnvironmentToOperateFn: () => string, logout?: () => void): {
     hasFeature: (featureName: FeatureEnums) => boolean;
     getFeatures: () => Set<FeatureEnums> | undefined;

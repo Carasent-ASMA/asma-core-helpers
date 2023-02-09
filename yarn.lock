@@ -50,9 +50,9 @@ asma-event-bus@^0.0.41:
     asma-types "^1.1.31"
 
 asma-types@^1.1.31:
-  version "1.1.39"
-  resolved "https://registry.yarnpkg.com/asma-types/-/asma-types-1.1.39.tgz#1b70c09f252ee988eb2257443ef3a9a85fe35891"
-  integrity sha512-DxtTREmh6vqkZmVqI7yi9QqtxysGG+1mrgsu8Z6RWHZnGeQfBxGEXqaFMQgMq/Vt+EiGxv/MlVRFDPHj9ppnEw==
+  version "1.1.40"
+  resolved "https://registry.yarnpkg.com/asma-types/-/asma-types-1.1.40.tgz#5200ed855a18d97b8090db52f14620e53354f4a5"
+  integrity sha512-xtd4X+iFAfpI8xiTkoYCk+ys2Yd4jDkXT7Z00GxKBjqetcCoYxeQjGWER0HlF8Hq7Mbv/ap5sB1e77c8x+/VWQ==
 
 async-limiter@~1.0.0:
   version "1.0.1"

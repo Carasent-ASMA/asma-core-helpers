@@ -1,7 +1,7 @@
 import type { AxiosRequestConfig } from 'axios'
 import type { ClientOptions, createClient } from '@genql/runtime'
 import { httpToWs } from './Config'
-import { getAbortController } from './generateSrvAuthBindings'
+import { registerCallbackOnSrvAuthEvents } from './generateSrvAuthBindings'
 //import { parseJwt } from '../helpers/parseJwt'
 
 interface CliOptions extends Omit<ClientOptions, 'url'> {
@@ -24,25 +24,21 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
      */
     path?: string
 }) {
-    // let jwt_exp = 0
 
     let client: T | null = null
 
     let wsClient: T | null = null
 
-    //function accessTokenHasExpired() {
-    //    const nowTime = Math.floor(new Date().getTime() / 1000)
-    //
-    //    //set exp time -20sec for token to be refreshed early
-    //    return jwt_exp - 10 <= nowTime
-    //}
-    /**
-     * This method caches the client and returns it if token or/and access is not expired
-     * in case if request is cancelled it returns null
-     * @returns genql client for gql requests
-     */
+    function resetClients() {
+        client = null
+        wsClient = null
+    }
+
+    registerCallbackOnSrvAuthEvents('jwt_changed', resetClients)
+
+   
     async function getGenqlClient() {
-        if (/* accessTokenHasExpired() || */ client === null) {
+        if ( client === null) {
             client = await genqlClient()
 
             return client
@@ -56,31 +52,16 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
         wsClient = null
     }
 
-    // function setJwtExp(token?: string) {
-    //     if (!token) return
-    //
-    //     const parsed_jwt = parseJwt<{ exp: number }>(token)?.exp
-    //
-    //     jwt_exp = parsed_jwt || 0
-    // }
+    
+    async function genqlClient(options: CliOptions&{abortController?:AbortController} = {}): Promise<T> {
 
-    /**
-     *
-     * This is used for anonymous requests as well as authenticated requests
-     *
-     */
-    async function genqlClient(options: CliOptions = {}): Promise<T> {
-        //let req_headers: Record<string, string> = {}
-
-        const { anonymous, headers, signal, ...rest } = options
+        const { anonymous, headers, abortController, ...rest } = options
 
         if (!serviceUrl()) {
             console.warn('requred param srv_url is undefined, please check EnvConfig object!')
         }
-        //if (!anonymous) {
-        //req_headers = ((await setReqConfig()).headers ?? {}) as Record<string, string>
-        // setJwtExp(req_headers['Authorization'])
-        // }
+       
+        const localAbrotController = createabortControllerAndAbortOnLogoutEvent(abortController)
 
         return createClient({
             url: `${serviceUrl()}${path}`,
@@ -88,23 +69,23 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
                 ...(options.anonymous ? {} : (((await setReqConfig()).headers ?? {}) as Record<string, string>)),
                 ...headers,
             }),
-            signal: signal ?? getAbortController()?.signal,
+            signal: localAbrotController.signal,
             batch: { batchInterval: 50, maxBatchSize: 100 },
             ...rest,
         })
     }
 
     async function genqlClientWs() {
-        if (/* accessTokenHasExpired() || */ !wsClient) {
-            //const req_headers = ((await setReqConfig()).headers ?? {}) as Record<string, string>
+        if ( !wsClient) {
+           
+        const localAbrotController= createabortControllerAndAbortOnLogoutEvent()
 
-            //setJwtExp(req_headers['Authorization'])
 
             wsClient = createClient({
                 url: `${httpToWs(serviceUrl())}${path}`,
                 cache: 'reload',
                 batch: { batchInterval: 50, maxBatchSize: 100 },
-                signal: getAbortController()?.signal,
+                signal: localAbrotController.signal,
                 subscription: {
                     reconnect: true,
                     reconnectionAttempts: 5,
@@ -116,5 +97,22 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
         return wsClient
     }
 
+    function createabortControllerAndAbortOnLogoutEvent(abortController?:AbortController){
+        let localAbrotController = abortController || new AbortController()
+            
+        const {unregister} = registerCallbackOnSrvAuthEvents('logout_event',()=>{
+            localAbrotController?.abort()
+            
+            resetClients()
+            
+            unregister()
+        })
+    
+        return localAbrotController
+    }
+
     return { getGenqlClient, resetGenqlClient, genqlClient, genqlClientWs }
 }
+
+
+
