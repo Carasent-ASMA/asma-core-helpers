@@ -4,7 +4,9 @@ import { EnvironmentEnums, parseJwt } from '..'
 
 let logoutsuccesfull = false
 
-export const { dispatch, register: registerCallbackOnJwtChanged } = EventBus<{ jwt_changed: {} }>('auth-bindings')
+export const { dispatch, register: registerCallbackOnSrvAuthEvents } = EventBus<{ jwt_changed: {}; logout_event: {} }>(
+    'auth-bindings',
+)
 
 export function generateSrvAuthBindings<FeatureEnums = never>(
     SRV_AUTH: () => string,
@@ -12,14 +14,15 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     EnvironmentToOperateFn: () => string,
     logout?: () => void,
 ) {
-    let logoutMfes: (() => void)[] = []
+    // let logoutMfes: (() => void)[] = []
 
-    if (logout && window.__ASMA__SHELL__?.auth_bindings) {
-        logoutMfes.push(logout)
+    if (logout) {
+        registerCallbackOnSrvAuthEvents('logout_event', logout)
     }
 
     if (window.__ASMA__SHELL__?.auth_bindings) {
-        window.__ASMA__SHELL__.logoutMfes = logoutMfes
+        //window.__ASMA__SHELL__.logoutMfes = logoutMfes
+
         return window.__ASMA__SHELL__.auth_bindings as typeof auth_bindings
     }
 
@@ -85,8 +88,15 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     }
 
     async function signoutAuth() {
-        setAuthData({ token: '' })
-        await srvAuthGet('/signout')
+        try {
+            setAuthData({ token: '' })
+
+            await srvAuthGet('/signout')
+        } catch (e) {
+            console.error(e)
+        } finally {
+            dispatch('logout_event', {}, false)
+        }
     }
     function getUserId(): string {
         return getParsedJwt()?.['user_id'] || '-1'

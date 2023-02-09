@@ -1,9 +1,11 @@
 import { type AxiosResponse, type ResponseType } from 'axios';
 import { EnvironmentEnums } from '..';
-export declare const dispatch: <Key extends "jwt_changed">(event: Key, arg: {
+export declare const dispatch: <Key extends "logout_event" | "jwt_changed">(event: Key, arg: {
     jwt_changed: {};
-}[Key], shouldPersist?: boolean | undefined) => void, registerCallbackOnJwtChanged: <Key_1 extends "jwt_changed">(event: Key_1, callback: (val: {
+    logout_event: {};
+}[Key], shouldPersist?: boolean | undefined) => void, registerCallbackOnSrvAuthEvents: <Key_1 extends "logout_event" | "jwt_changed">(event: Key_1, callback: (val: {
     jwt_changed: {};
+    logout_event: {};
 }[Key_1]) => void) => {
     unregister: () => void;
 };

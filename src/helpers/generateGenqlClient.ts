@@ -1,7 +1,7 @@
 import type { AxiosRequestConfig } from 'axios'
 import type { ClientOptions, createClient } from '@genql/runtime'
 import { httpToWs } from './Config'
-import { registerCallbackOnJwtChanged } from './generateSrvAuthBindings'
+import { registerCallbackOnSrvAuthEvents } from './generateSrvAuthBindings'
 //import { parseJwt } from '../helpers/parseJwt'
 
 interface CliOptions extends Omit<ClientOptions, 'url'> {
@@ -26,7 +26,7 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
 
     let wsClient: T | null = null
 
-    registerCallbackOnJwtChanged('jwt_changed', () => {
+    registerCallbackOnSrvAuthEvents('jwt_changed', () => {
         client = null
         wsClient = null
     })
