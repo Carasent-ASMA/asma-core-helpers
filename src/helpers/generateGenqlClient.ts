@@ -51,9 +51,10 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
         return client
     }
 
-    //function resetGenqlClient() {
-    //    client = null
-    //}
+    function resetGenqlClient() {
+        client = null
+        wsClient = null
+    }
 
     // function setJwtExp(token?: string) {
     //     if (!token) return
@@ -115,5 +116,5 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
         return wsClient
     }
 
-    return { getGenqlClient, /* resetGenqlClient, */ genqlClient, genqlClientWs }
+    return { getGenqlClient, resetGenqlClient, genqlClient, genqlClientWs }
 }
