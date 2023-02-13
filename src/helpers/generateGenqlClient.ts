@@ -24,20 +24,20 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
 
     let wsClient: T | null = null
 
-    let local_abort_registry: (() => void)[] = []
+    let local_abort_registry: (() => void | undefined)[] = []
 
     registerCallbackOnSrvAuthEvents('logout_event', () => {
-        local_abort_registry.forEach((abort) => abort())
+        local_abort_registry.forEach((abort) => abort?.())
 
         resetClients()
-
-        local_abort_registry = []
     })
 
     function resetClients() {
         client = null
 
         wsClient = null
+
+        local_abort_registry = []
     }
 
     //registerCallbackOnSrvAuthEvents('logout_event', resetClients)
@@ -111,6 +111,3 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
 
     return { getGenqlClient, resetGenqlClient, genqlClient, genqlClientWs }
 }
-
-
-
