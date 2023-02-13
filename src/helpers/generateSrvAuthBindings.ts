@@ -4,10 +4,17 @@ import { EnvironmentEnums, parseJwt } from '..'
 
 //let logoutsuccesfull = false
 
-let abortController = new AbortController()
+export const { dispatch: dispatchSrvAuthEvents, register: registerCallbackOnSrvAuthEvents } = EventBus<{
+    jwt_changed: {}
+    logout_event: {}
+    customer_changed: {}
+}>('auth-bindings')
 
-export function getAbortController() {
-    return window.__ASMA__SHELL__?.abortController
+function dispatchLogoutEvent() {
+    dispatchSrvAuthEvents('logout_event', {}, false)
+}
+function dispatchJwtChangedEvent() {
+    dispatchSrvAuthEvents('jwt_changed', {}, false)
 }
 
 export function generateSrvAuthBindings<FeatureEnums = never>(
@@ -16,14 +23,11 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     EnvironmentToOperateFn: () => string,
     logout?: () => void,
 ) {
-    let logoutMfes: (() => void)[] = []
-
-    if (logout && window.__ASMA__SHELL__?.auth_bindings) {
-        logoutMfes.push(logout)
+    if (logout) {
+        registerCallbackOnSrvAuthEvents('logout_event', logout)
     }
 
     if (window.__ASMA__SHELL__?.auth_bindings) {
-        window.__ASMA__SHELL__.logoutMfes = logoutMfes
         return window.__ASMA__SHELL__.auth_bindings as typeof auth_bindings
     }
 
@@ -31,36 +35,13 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
 
     let features: Set<FeatureEnums> | undefined
 
-    let parsed_jwt: any | undefined
-
-    const { dispatch, register } = EventBus<{ jwt_changed: {} }>('auth-bindings')
-
-    let changed_jwt_notifier_registry: (() => void)[] = []
-
-    /**
-     *
-     * Regiser a callback to be called when the jwt token changes
-     */
-    function setCallbackToJwtNotifier(callback: () => void) {
-        changed_jwt_notifier_registry.push(callback)
-    }
-
-    function notifyChangedJwt() {
-        changed_jwt_notifier_registry.forEach((c) => c())
-        return () => {}
-    }
-
-    let fetchJwtPromise: Promise<{
-        data: { message: string; token?: string; features?: FeatureEnums[]; errors: { message: string }[] }
-    }> | null = null
+    let parsed_jwt: unknown | undefined
 
     const isJwtInvalid = () => (jwtToken && accessTokenHasExpired()) || !jwtToken
 
     const isJwtValid = () => !isJwtInvalid()
 
-    //function cancelRequest() {
-    //    return logoutsuccesfull
-    // }
+    const promiseRegistry: Record<string, Promise<unknown>> = <{}>{}
 
     async function srvAuthGet<R>(url: string, headers?: Record<string, string>) {
         if (DEVELOPMENT() && EnvironmentToOperateFn()) {
@@ -80,14 +61,30 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
             }
         }
 
-        return axios.get<unknown, AxiosResponse<R>>(`${SRV_AUTH()}${url}`, {
-            signal: getAbortController()?.signal,
-            headers: {
-                ...headers,
-                'asma-origin': window.location.origin,
-            },
-            withCredentials: true,
-        })
+        const promise =
+            promiseRegistry[url] ||
+            axios.get<unknown, AxiosResponse<R>>(`${SRV_AUTH()}${url}`, {
+                headers: {
+                    ...headers,
+                    'asma-origin': window.location.origin,
+                },
+                withCredentials: true,
+            })
+
+        if (!promiseRegistry[url]) {
+            promiseRegistry[url] = promise
+        }
+
+        try {
+            const res = await promise
+
+            return res as AxiosResponse<R, any>
+        } catch (e) {
+            console.warn(e)
+            return
+        } finally {
+            delete promiseRegistry[url]
+        }
     }
 
     function accessTokenHasExpired(): boolean {
@@ -97,43 +94,48 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
 
         const nowTime = Math.floor(new Date().getTime() / 1000)
 
-        //set exp time -20sec for token to be refreshed early
         return accessTokenExpDate - 10 <= nowTime
     }
 
     async function signin(url: string, headers?: Record<string, string>) {
-        if (abortController.signal.aborted) {
-            abortController = new AbortController()
-        }
+        const data = await srvAuthGet<{ token: string; features: FeatureEnums[] }>(url, headers)
 
-        const { data } = await srvAuthGet<{ token: string; features: FeatureEnums[] }>(url, headers)
-
-        setAuthData(data)
-
-        // logoutsuccesfull = false
+        setAuthData(data?.data)
 
         return data
     }
 
-    async function signoutAuth() {
-        setAuthData({ token: '' })
-        await srvAuthGet('/signout')
-    }
+    const { unregister } = registerCallbackOnSrvAuthEvents('logout_event', () => {
+        // setAuthData({ token: '' })
+
+        srvAuthGet('/signout')
+
+        unregister()
+    })
+
     function getUserId(): string {
         return getParsedJwt()?.['user_id'] || '-1'
     }
 
-    function setAuthData(data: { token: string; features?: FeatureEnums[] }) {
-        jwtToken = data.token
+    function setAuthData(data?: { token: string; features?: FeatureEnums[] }) {
+        if (data?.token) {
+            jwtToken = data?.token
 
-        if (jwtToken) {
-            dispatch('jwt_changed', {}, false)
+            features = new Set(data.features)
 
             parsed_jwt = parseJwt(jwtToken)
+
+            dispatchJwtChangedEvent()
+
+            return
         }
-        notifyChangedJwt()
-        features = new Set(data.features)
+        jwtToken = ''
+
         parsed_jwt = undefined
+
+        features = undefined
+
+        dispatchLogoutEvent()
     }
 
     function getJwtToken() {
@@ -167,36 +169,24 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     }
 
     async function getNewJwtToken() {
-        //if (logoutsuccesfull) return
         try {
-            if (!fetchJwtPromise) {
+            /*  if (!fetchJwtPromise) {
                 fetchJwtPromise = srvAuthGet('/token')
+            } */
+
+            const data = await srvAuthGet<{ errors?: string; token: string; features: FeatureEnums[] }>('/token')
+
+            if (!data || data.data?.errors || !data.data.token) {
+                setAuthData({ token: '' })
+                return
             }
 
-            const { data } = await fetchJwtPromise
-
-            if (!data || data.errors || data.message != 'Success' || !data.token) {
-                logout?.()
-                //logoutsuccesfull = true
-                abortController?.abort()
-                logoutMfes.forEach((l) => l())
-                //signoutAuth()
-            }
-
-            setAuthData({ token: data.token || '', features: data.features || [] })
+            setAuthData({ token: data.data.token, features: data.data.features || [] })
+            return jwtToken
         } catch (error) {
-            // logout?.()
-            //  logoutsuccesfull = true
-            abortController?.abort()
-            logoutMfes.forEach((l) => l())
-
-            //signoutAuth()
-
-            setAuthData({ token: '', features: [] })
+            setAuthData({ token: '' })
 
             console.error(error)
-        } finally {
-            fetchJwtPromise = null
 
             return jwtToken
         }
@@ -206,7 +196,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         if (!parsed_jwt) {
             parsed_jwt = parseJwt<R>(jwtToken)
         }
-        return parsed_jwt
+        return parsed_jwt as R
     }
     function getFeatures() {
         return features
@@ -226,15 +216,16 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         isJwtValid,
         signin,
         srvAuthGet,
-        signoutAuth,
+        signoutAuth: dispatchLogoutEvent,
         setReqConfig,
         getJwtTokenAsync,
         getNewJwtToken,
-        registerOnJwtChanges: register,
+        /**
+         * @deprecated use registerCallbackOnSrvAuthEvents directly
+         */
+        registerOnJwtChanges: registerCallbackOnSrvAuthEvents,
         getUserId,
-        setCallbackToJwtNotifier,
         getParsedJwt,
-        abortController,
         getJwtToken,
         // cancelRequest,
         accessTokenHasExpired,
