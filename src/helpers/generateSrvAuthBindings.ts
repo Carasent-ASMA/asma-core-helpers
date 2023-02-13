@@ -4,52 +4,44 @@ import { EnvironmentEnums, parseJwt } from '..'
 
 //let logoutsuccesfull = false
 
+export const { dispatch: dispatchSrvAuthEvents, register: registerCallbackOnSrvAuthEvents } = EventBus<{
+    jwt_changed: {}
+    logout_event: {}
+    customer_changed: {}
+}>('auth-bindings')
 
+function dispatchLogoutEvent() {
+    dispatchSrvAuthEvents('logout_event', {}, false)
+}
+function dispatchJwtChangedEvent() {
+    dispatchSrvAuthEvents('jwt_changed', {}, false)
+}
 
-export const { dispatch: dispatchSrvAuthEvents, register: registerCallbackOnSrvAuthEvents } = EventBus<{ jwt_changed: {}; logout_event: {} }>(
-    'auth-bindings',
-    )
-    
-    export function generateSrvAuthBindings<FeatureEnums = never>(
-        SRV_AUTH: () => string,
-        DEVELOPMENT: () => boolean,
-        EnvironmentToOperateFn: () => string,
-        logout?: () => void,
-        ) {
-            
-            if (logout) {
-                registerCallbackOnSrvAuthEvents('logout_event', logout)
-            }
-            
-            if (window.__ASMA__SHELL__?.auth_bindings) {
-                
-                return window.__ASMA__SHELL__.auth_bindings as typeof auth_bindings
-            }
-            
-    
+export function generateSrvAuthBindings<FeatureEnums = never>(
+    SRV_AUTH: () => string,
+    DEVELOPMENT: () => boolean,
+    EnvironmentToOperateFn: () => string,
+    logout?: () => void,
+) {
+    if (logout) {
+        registerCallbackOnSrvAuthEvents('logout_event', logout)
+    }
+
+    if (window.__ASMA__SHELL__?.auth_bindings) {
+        return window.__ASMA__SHELL__.auth_bindings as typeof auth_bindings
+    }
+
     let jwtToken = ''
 
     let features: Set<FeatureEnums> | undefined
 
     let parsed_jwt: unknown | undefined
 
-
-    
-  
-
-   /*  let fetchJwtPromise: Promise<{
-        data: { message: string; token?: string; features?: FeatureEnums[]; errors: { message: string }[] }
-    }> | null = null */
-
     const isJwtInvalid = () => (jwtToken && accessTokenHasExpired()) || !jwtToken
 
     const isJwtValid = () => !isJwtInvalid()
 
-    //function cancelRequest() {
-    //    return logoutsuccesfull
-    // }
-
-    const promiseRegistry: Record<string,Promise<unknown>> = <{}>{}
+    const promiseRegistry: Record<string, Promise<unknown>> = <{}>{}
 
     async function srvAuthGet<R>(url: string, headers?: Record<string, string>) {
         if (DEVELOPMENT() && EnvironmentToOperateFn()) {
@@ -68,31 +60,29 @@ export const { dispatch: dispatchSrvAuthEvents, register: registerCallbackOnSrvA
                 )
             }
         }
-        
 
-        
+        const promise =
+            promiseRegistry[url] ||
+            axios.get<unknown, AxiosResponse<R>>(`${SRV_AUTH()}${url}`, {
+                headers: {
+                    ...headers,
+                    'asma-origin': window.location.origin,
+                },
+                withCredentials: true,
+            })
 
-        const promise = promiseRegistry[url] ||axios.get<unknown, AxiosResponse<R>>(`${SRV_AUTH()}${url}`, {
-           
-            headers: {
-                ...headers,
-                'asma-origin': window.location.origin,
-            },
-            withCredentials: true,
-        })
-
-        if(!promiseRegistry[url]){
+        if (!promiseRegistry[url]) {
             promiseRegistry[url] = promise
         }
-        try{
+        try {
             const res = await promise
 
             return res as AxiosResponse<R, any>
-        }catch(e){
+        } catch (e) {
             console.error(e)
             return
-        }finally{
-            delete promiseRegistry[url] 
+        } finally {
+            delete promiseRegistry[url]
         }
     }
 
@@ -103,61 +93,53 @@ export const { dispatch: dispatchSrvAuthEvents, register: registerCallbackOnSrvA
 
         const nowTime = Math.floor(new Date().getTime() / 1000)
 
-        //set exp time -20sec for token to be refreshed early
         return accessTokenExpDate - 10 <= nowTime
     }
 
     async function signin(url: string, headers?: Record<string, string>) {
-      
-
         const data = await srvAuthGet<{ token: string; features: FeatureEnums[] }>(url, headers)
 
         setAuthData(data?.data)
 
-        // logoutsuccesfull = false
-
         return data
     }
 
-    const {unregister} =registerCallbackOnSrvAuthEvents('logout_event',()=>{
-        
+    const { unregister } = registerCallbackOnSrvAuthEvents('logout_event', () => {
         setAuthData({ token: '' })
-        
+
         srvAuthGet('/signout')
-        
+
         unregister()
     })
-
-    async function signoutAuth() {
-
-        dispatchSrvAuthEvents('logout_event', {}, false)
-            
-           // return srvAuthGet('/signout')
-           
-    }
 
     function getUserId(): string {
         return getParsedJwt()?.['user_id'] || '-1'
     }
 
     function setAuthData(data?: { token: string; features?: FeatureEnums[] }) {
-        if(data){
-            jwtToken = data?.token 
-            
-            features = new Set(data.features)
-           
-            parsed_jwt = parseJwt(jwtToken)
-        }
-        
-        dispatchSrvAuthEvents('jwt_changed', {}, false)
+        if (data?.token) {
+            jwtToken = data?.token
 
+            features = new Set(data.features)
+
+            parsed_jwt = parseJwt(jwtToken)
+
+            dispatchJwtChangedEvent()
+
+            return
+        }
+        jwtToken = ''
+
+        parsed_jwt = undefined
+
+        features = undefined
     }
 
     function getJwtToken() {
         return jwtToken
     }
 
-    async function getJwtTokenAsync() {
+    async function getCachedJwt() {
         if (isJwtInvalid()) {
             const new_jwt = await getNewJwtToken()
 
@@ -168,7 +150,7 @@ export const { dispatch: dispatchSrvAuthEvents, register: registerCallbackOnSrvA
     }
 
     async function setReqConfig<T = unknown>(data?: T, responseType?: ResponseType) {
-        const token = await getJwtTokenAsync()
+        const token = await getCachedJwt()
 
         const res = {
             data: data,
@@ -185,29 +167,24 @@ export const { dispatch: dispatchSrvAuthEvents, register: registerCallbackOnSrvA
 
     async function getNewJwtToken() {
         try {
-           /*  if (!fetchJwtPromise) {
+            /*  if (!fetchJwtPromise) {
                 fetchJwtPromise = srvAuthGet('/token')
             } */
 
-            const data = await srvAuthGet<{errors?:string;token:string,features:FeatureEnums[]}>('/token')
+            const data = await srvAuthGet<{ errors?: string; token: string; features: FeatureEnums[] }>('/token')
 
-            if (!data || data.data?.errors  || !data.data.token) {
-                
-                dispatchSrvAuthEvents('logout_event', {}, false)
-
+            if (!data || data.data?.errors || !data.data.token) {
+                dispatchLogoutEvent()
                 return
             }
 
-            setAuthData({ token: data.data.token || '', features: data.data.features || [] })
+            setAuthData({ token: data.data.token, features: data.data.features || [] })
+            return jwtToken
         } catch (error) {
-            
-            dispatchSrvAuthEvents('logout_event', {}, false)
+            dispatchLogoutEvent()
 
-            setAuthData({ token: '', features: [] })
-
-            
             console.error(error)
-        } finally {
+
             return jwtToken
         }
     }
@@ -236,10 +213,17 @@ export const { dispatch: dispatchSrvAuthEvents, register: registerCallbackOnSrvA
         isJwtValid,
         signin,
         srvAuthGet,
-        signoutAuth,
+        signoutAuth: dispatchLogoutEvent,
         setReqConfig,
-        getJwtTokenAsync,
+        /**
+         * @deprecated use getCachedJwt
+         *  */
+        getJwtTokenAsync: getCachedJwt,
+        getCachedJwt,
         getNewJwtToken,
+        /**
+         * @deprecated use registerCallbackOnSrvAuthEvents directly
+         */
         registerOnJwtChanges: registerCallbackOnSrvAuthEvents,
         getUserId,
         getParsedJwt,
