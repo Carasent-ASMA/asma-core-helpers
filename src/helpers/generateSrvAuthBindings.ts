@@ -74,16 +74,12 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         if (!promiseRegistry[url]) {
             promiseRegistry[url] = promise
         }
-        try {
-            const res = await promise
 
-            return res as AxiosResponse<R, any>
-        } catch (e) {
-            console.error(e)
-            return
-        } finally {
-            delete promiseRegistry[url]
-        }
+        const res = await promise
+
+        delete promiseRegistry[url]
+
+        return res as AxiosResponse<R, any>
     }
 
     function accessTokenHasExpired(): boolean {

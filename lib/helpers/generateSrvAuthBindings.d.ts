@@ -19,8 +19,8 @@ export declare function generateSrvAuthBindings<FeatureEnums = never>(SRV_AUTH: 
     signin: (url: string, headers?: Record<string, string>) => Promise<AxiosResponse<{
         token: string;
         features: FeatureEnums[];
-    }, any> | undefined>;
-    srvAuthGet: <R>(url: string, headers?: Record<string, string>) => Promise<AxiosResponse<R, any> | undefined>;
+    }, any>>;
+    srvAuthGet: <R>(url: string, headers?: Record<string, string>) => Promise<AxiosResponse<R, any>>;
     signoutAuth: typeof dispatchLogoutEvent;
     setReqConfig: <T = unknown>(data?: T | undefined, responseType?: ResponseType) => Promise<{
         data: T | undefined;
