@@ -75,9 +75,9 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
             promiseRegistry[url] = promise
         }
 
-        const res = await promise
-
-        delete promiseRegistry[url]
+        const res = await promise.finally(() => {
+            delete promiseRegistry[url]
+        })
 
         return res as AxiosResponse<R, any>
     }
