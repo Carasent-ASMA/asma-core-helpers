@@ -92,6 +92,16 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         return accessTokenExpDate - 10 <= nowTime
     }
 
+    /**
+     *
+     * TODO: need to investigate smarter way of registerning and unregistering on `logout_event`
+     **/
+    registerCallbackOnSrvAuthEvents('logout_event', () => {
+        setAuthData({ token: '' })
+
+        srvAuthGet('/signout')
+    })
+
     async function signin(url: string, headers?: Record<string, string>) {
         const data = await srvAuthGet<{ token: string; features: FeatureEnums[] }>(url, headers)
 
@@ -99,12 +109,6 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
 
         return data
     }
-
-    registerCallbackOnSrvAuthEvents('logout_event', () => {
-        setAuthData({ token: '' })
-
-        srvAuthGet('/signout')
-    })
 
     function getUserId(): string {
         return getParsedJwt()?.['user_id'] || '-1'
