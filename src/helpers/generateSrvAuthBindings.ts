@@ -100,12 +100,10 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         return data
     }
 
-    const { unregister } = registerCallbackOnSrvAuthEvents('logout_event', () => {
+    registerCallbackOnSrvAuthEvents('logout_event', () => {
         setAuthData({ token: '' })
 
         srvAuthGet('/signout')
-
-        unregister()
     })
 
     function getUserId(): string {
