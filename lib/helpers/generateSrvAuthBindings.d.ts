@@ -21,7 +21,11 @@ export declare function generateSrvAuthBindings<FeatureEnums = never>(SRV_AUTH: 
         features: FeatureEnums[];
     }, any>>;
     srvAuthGet: <R>(url: string, headers?: Record<string, string>) => Promise<AxiosResponse<R, any>>;
+    /**
+     * @deprecated use dispatchLogoutEvent directly
+     */
     signoutAuth: typeof dispatchLogoutEvent;
+    dispatchLogoutEvent: typeof dispatchLogoutEvent;
     setReqConfig: <T = unknown>(data?: T | undefined, responseType?: ResponseType) => Promise<{
         data: T | undefined;
         responseType: ResponseType | undefined;

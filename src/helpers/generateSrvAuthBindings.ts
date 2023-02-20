@@ -211,7 +211,11 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         isJwtValid,
         signin,
         srvAuthGet,
+        /**
+         * @deprecated use dispatchLogoutEvent directly
+         */
         signoutAuth: dispatchLogoutEvent,
+        dispatchLogoutEvent,
         setReqConfig,
         /**
          * @deprecated use getCachedJwt
