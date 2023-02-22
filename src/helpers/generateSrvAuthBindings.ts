@@ -2,7 +2,7 @@ import axios, { type AxiosResponse, type ResponseType } from 'axios'
 import { EventBus } from 'asma-event-bus/lib/event-buss'
 import { EnvironmentEnums, parseJwt } from '..'
 
-//let logoutsuccesfull = false
+//let logoutsuccessfull = false
 
 export const { dispatch: dispatchSrvAuthEvents, register: registerCallbackOnSrvAuthEvents } = EventBus<{
     jwt_changed: {}
@@ -42,13 +42,17 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     const isJwtValid = () => !isJwtInvalid()
 
     const promiseRegistry: Record<string, Promise<unknown>> = <{}>{}
-
+/**
+ * 
+ * 1.req /singing
+ * 2.req /token
+ */
     async function srvAuthGet<R>(url: string, headers?: Record<string, string>) {
         if (DEVELOPMENT() && EnvironmentToOperateFn()) {
             if (EnvironmentToOperateFn() in EnvironmentEnums) {
                 url = `${url}&env=${EnvironmentToOperateFn()}`
 
-                // file deepcode ignore GlobalReplacementRegex: <it is intended to be replaced only first occurence>
+                // file deepcode ignore GlobalReplacementRegex: <it is intended to be replaced only first occurrence>
                 url = url.includes('&') && !url.includes('?') ? url.replace('&', '?') : url
             } else {
                 console.warn(
@@ -74,7 +78,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         if (!promiseRegistry[url]) {
             promiseRegistry[url] = promise
         }
-
+        
         const res = await promise.finally(() => {
             delete promiseRegistry[url]
         })
@@ -94,7 +98,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
 
     /**
      *
-     * TODO: need to investigate smarter way of registerning and unregistering on `logout_event`
+     * TODO: need to investigate smarter way of registering and unregister on `logout_event`
      **/
     registerCallbackOnSrvAuthEvents('logout_event', () => {
         setAuthData({ token: '' })
