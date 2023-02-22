@@ -14,11 +14,13 @@ export declare const dispatchSrvAuthEvents: <Key extends "logout_event" | "jwt_c
 declare function dispatchLogoutEvent(): void;
 export declare function generateSrvAuthBindings<FeatureEnums = never>(SRV_AUTH: () => string, DEVELOPMENT: () => boolean, EnvironmentToOperateFn: () => string, logout?: () => void): {
     hasFeature: (featureName: FeatureEnums) => boolean;
+    getConnector: () => string | undefined;
     getFeatures: () => Set<FeatureEnums> | undefined;
     isJwtValid: () => boolean;
     signin: (url: string, headers?: Record<string, string>) => Promise<AxiosResponse<{
         token: string;
         features: FeatureEnums[];
+        connector?: string | undefined;
     }, any>>;
     srvAuthGet: <R>(url: string, headers?: Record<string, string>) => Promise<AxiosResponse<R, any>>;
     /**
