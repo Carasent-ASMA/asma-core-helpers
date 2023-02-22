@@ -35,6 +35,8 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
 
     let features: Set<FeatureEnums> | undefined
 
+    let connector: string | undefined
+
     let parsed_jwt: unknown | undefined
 
     const isJwtInvalid = () => (jwtToken && accessTokenHasExpired()) || !jwtToken
@@ -103,7 +105,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     })
 
     async function signin(url: string, headers?: Record<string, string>) {
-        const data = await srvAuthGet<{ token: string; features: FeatureEnums[] }>(url, headers)
+        const data = await srvAuthGet<{ token: string; features: FeatureEnums[]; connector?: string }>(url, headers)
 
         setAuthData(data?.data)
 
@@ -114,11 +116,13 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         return getParsedJwt()?.['user_id'] || '-1'
     }
 
-    function setAuthData(data?: { token: string; features?: FeatureEnums[] }) {
+    function setAuthData(data?: { token: string; features?: FeatureEnums[]; connector?: string }) {
         if (data?.token) {
             jwtToken = data?.token
 
             features = new Set(data.features)
+
+            connector = data.connector
 
             parsed_jwt = parseJwt(jwtToken)
 
@@ -131,6 +135,8 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         parsed_jwt = undefined
 
         features = undefined
+
+        connector = undefined
     }
 
     function getJwtToken() {
@@ -169,14 +175,19 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
                 fetchJwtPromise = srvAuthGet('/token')
             } */
 
-            const data = await srvAuthGet<{ errors?: string; token: string; features: FeatureEnums[] }>('/token')
+            const data = await srvAuthGet<{
+                errors?: string
+                token: string
+                features: FeatureEnums[]
+                connector: string
+            }>('/token')
 
             if (!data || data.data?.errors || !data.data.token) {
                 dispatchLogoutEvent()
                 return
             }
 
-            setAuthData({ token: data.data.token, features: data.data.features || [] })
+            setAuthData({ token: data.data.token, features: data.data.features || [], connector: data.data.connector })
             return jwtToken
         } catch (error) {
             dispatchLogoutEvent()
@@ -205,8 +216,13 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         return !!features?.has(featureName)
     }
 
+    function getConnector() {
+        return connector
+    }
+
     const auth_bindings = {
         hasFeature,
+        getConnector,
         getFeatures,
         isJwtValid,
         signin,
