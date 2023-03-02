@@ -42,10 +42,10 @@
   dependencies:
     "@types/node" "*"
 
-asma-event-bus@^0.0.41:
-  version "0.0.41"
-  resolved "https://registry.yarnpkg.com/asma-event-bus/-/asma-event-bus-0.0.41.tgz#d293a4bde11794f47d63c4dcb026280bfa75d352"
-  integrity sha512-5yKHuiJIlI4NVxM0evAnU6lEddeJr3/nb594PvPD0pOb7arb9WX8Z/TbNHerFRz5pHIB3X55ep82Zqt+cGoqBg==
+asma-event-bus@^0.0.45:
+  version "0.0.45"
+  resolved "https://registry.yarnpkg.com/asma-event-bus/-/asma-event-bus-0.0.45.tgz#c7d7b2c8847037140563aaddf66bb5f825b42eb3"
+  integrity sha512-0MvhFMnk510T/2Cq1WIkRNMi4w8DbESNndKGuAOUlGbC07MvERGy6mvMNX7EM7YcAWOOZAu3m3xenGlQU9J53Q==
   dependencies:
     asma-types "^1.1.31"
 
