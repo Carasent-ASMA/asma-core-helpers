@@ -1,6 +1,6 @@
 import axios, { type AxiosResponse, type ResponseType } from 'axios'
 import { EventBus } from 'asma-event-bus/lib/event-buss'
-import { EnvironmentEnums, parseJwt } from '..'
+import { EnvironmentEnums, parseJwt, setTheme } from '..'
 
 //let logoutsuccessfull = false
 
@@ -44,11 +44,11 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     const isJwtValid = () => !isJwtInvalid()
 
     const promiseRegistry: Record<string, Promise<unknown>> = <{}>{}
-/**
- * 
- * 1.req /singing
- * 2.req /token
- */
+    /**
+     *
+     * 1.req /singing
+     * 2.req /token
+     */
     async function srvAuthGet<R>(url: string, headers?: Record<string, string>) {
         if (DEVELOPMENT() && EnvironmentToOperateFn()) {
             if (EnvironmentToOperateFn() in EnvironmentEnums) {
@@ -80,7 +80,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         if (!promiseRegistry[url]) {
             promiseRegistry[url] = promise
         }
-        
+
         const res = await promise.finally(() => {
             delete promiseRegistry[url]
         })
@@ -109,7 +109,10 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     })
 
     async function signin(url: string, headers?: Record<string, string>) {
-        const data = await srvAuthGet<{ token: string; features: FeatureEnums[]; connector?: string }>(url, headers)
+        const data = await srvAuthGet<{ token: string; features: FeatureEnums[]; connector?: string; theme?: string }>(
+            url,
+            headers,
+        )
 
         setAuthData(data?.data)
 
@@ -120,7 +123,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         return getParsedJwt()?.['user_id'] || '-1'
     }
 
-    function setAuthData(data?: { token: string; features?: FeatureEnums[]; connector?: string }) {
+    function setAuthData(data?: { token: string; features?: FeatureEnums[]; connector?: string; theme?: string }) {
         if (data?.token) {
             jwtToken = data?.token
 
@@ -129,6 +132,8 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
             connector = data.connector
 
             parsed_jwt = parseJwt(jwtToken)
+
+            data.theme && setTheme(data.theme)
 
             dispatchJwtChangedEvent()
 

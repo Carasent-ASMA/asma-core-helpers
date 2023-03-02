@@ -16,8 +16,9 @@ function getThemeLocal() {
 function setThemeLocal(theme_local: string) {
     if (theme !== theme_local) {
         dispatchTheme('on_theme_change', { theme: theme_local }, false)
+
+        theme = theme_local
     }
-    theme = theme_local
 }
 window.__ASMA__THEME__ = window.__ASMA__THEME__ || { getTheme: getThemeLocal, setTheme: setThemeLocal }
 
@@ -42,7 +43,7 @@ export function setTheme(theme: string) {
     if (window.__ASMA__THEME__) {
         return window.__ASMA__THEME__.setTheme(theme)
     }
-    return setThemeLocal(theme)
+    setThemeLocal(theme)
 }
 
 export async function checkForRegisteredSubdomain({
