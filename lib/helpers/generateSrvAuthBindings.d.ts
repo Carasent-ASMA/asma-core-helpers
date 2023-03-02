@@ -21,6 +21,7 @@ export declare function generateSrvAuthBindings<FeatureEnums = never>(SRV_AUTH: 
         token: string;
         features: FeatureEnums[];
         connector?: string | undefined;
+        theme?: string | undefined;
     }, any>>;
     srvAuthGet: <R>(url: string, headers?: Record<string, string>) => Promise<AxiosResponse<R, any>>;
     /**
