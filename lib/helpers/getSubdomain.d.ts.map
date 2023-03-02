@@ -1,1 +1,1 @@
-{"version":3,"file":"getSubdomain.d.ts","sourceRoot":"","sources":["../../src/helpers/getSubdomain.ts"],"names":[],"mappings":"AAuBA;;GAEG;AACH,eAAO,MAAM,SAAS,QAAiB,CAAA;AACvC;;GAEG;AACH,wBAAgB,6BAA6B,SAM5C;AACD;;GAEG;AACH,wBAAgB,4BAA4B,WAS3C"}
+{"version":3,"file":"getSubdomain.d.ts","sourceRoot":"","sources":["../../src/helpers/getSubdomain.ts"],"names":[],"mappings":"AAwBA,eAAO,MAAM,SAAS,QAAiB,CAAA;AAEvC,wBAAgB,6BAA6B,SAM5C;AAED,wBAAgB,4BAA4B,WAgB3C"}
