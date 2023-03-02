@@ -14,6 +14,8 @@ export declare const ORDINARY: {
 };
 export declare const YEARS: {
     placeholder: string;
+    format: string;
+    mask: string;
     thousandSeparator: boolean;
     prefix: string;
 };
