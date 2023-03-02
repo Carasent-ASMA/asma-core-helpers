@@ -13,6 +13,7 @@ export * from './helpers/EnvironmentsUrls';
 export * from './helpers/EnvironmentToOperateTypes';
 export * from './helpers/generateSrvAuthBindings';
 export * from './helpers/getSubdomain';
+export * from './helpers/checkForRegisteredSubdomains';
 export * from './helpers/clearCacheData';
 export * from './helpers/generateGenqlClient';
 export * from './helpers/generateEnvConfigsBindings';
