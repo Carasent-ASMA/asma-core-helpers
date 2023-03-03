@@ -50,10 +50,12 @@ export async function checkForRegisteredSubdomain({
     redirect_if_not_exists = true,
     setSelectedCustomer,
     srvAuthGet,
+    logos,
 }: {
     redirect_if_not_exists?: boolean
     setSelectedCustomer?: (customer_id: string) => void
     srvAuthGet: <R>(url: string, headers?: Record<string, string> | undefined) => Promise<R>
+    logos: { fretexLogo: string; carasentLogo: string }
 }) {
     const res = await srvAuthGet<{ id?: string; theme?: string }>(
         '/check?context=subdomain',
@@ -68,10 +70,51 @@ export async function checkForRegisteredSubdomain({
         setSelectedCustomer?.(res.id)
     }
 
-    res?.theme && setTheme(res.theme)
+    if (res?.theme) {
+        setTheme(res.theme)
+    }
+
+    appendAsmaLogoLink(getTheme(), logos)
 
     if (!!!res?.id && redirect_if_not_exists) {
         redirectFromSubdomainToDomain()
     }
-    return !!res?.id
+
+    const { unregister } = onThemeChange(({ theme }) => {
+        appendAsmaLogoLink(theme, logos)
+    })
+
+    return [!!res?.id, unregister] as [registeredSubdomain: boolean, unregister: () => void]
+}
+
+function appendAsmaLogoLink(
+    theme = 'default',
+    { carasentLogo, fretexLogo }: { fretexLogo: string; carasentLogo: string },
+) {
+    const body = document.body!
+
+    body.dataset['theme'] = theme
+
+    document.getElementById('asma-theme-link')?.remove()
+
+    const link = document.createElement('link')
+
+    link.setAttribute('id', 'asma-logo-link')
+
+    if (theme === 'fretex') {
+        document.title = 'Fretex'
+        link.setAttribute('href', fretexLogo)
+    } else {
+        document.title = 'Carasent'
+
+        link.setAttribute('href', carasentLogo)
+    }
+
+    link.setAttribute('rel', 'icon')
+
+    link.setAttribute('type', 'image/png')
+
+    link.setAttribute('sizes', '32x32')
+
+    document.head.appendChild(link)
 }
