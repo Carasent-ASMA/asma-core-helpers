@@ -1,6 +1,7 @@
 //import axios, { type AxiosResponse, type ResponseType } from 'axios'
 import { EventBus } from 'asma-event-bus/lib/event-buss'
 import { EnvironmentEnums } from '../interfaces/enums'
+import { setTheme } from './checkForRegisteredSubdomains'
 import { parseJwt } from './parseJwt'
 
 //let logoutsuccesfull = false
@@ -119,7 +120,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         return getParsedJwt()?.['user_id'] || '-1'
     }
 
-    function setAuthData(data?: { token: string; features?: FeatureEnums[]; connector?: string }) {
+    function setAuthData(data?: { token: string; features?: FeatureEnums[]; connector?: string; theme?: string }) {
         if (data?.token) {
             jwtToken = data?.token
 
@@ -130,6 +131,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
             parsed_jwt = parseJwt(jwtToken)
 
             dispatchJwtChangedEvent()
+            data.theme && setTheme(data.theme)
 
             return
         }
