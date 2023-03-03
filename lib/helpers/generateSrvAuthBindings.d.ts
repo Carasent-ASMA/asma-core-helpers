@@ -1,5 +1,4 @@
-import { type AxiosResponse, type ResponseType } from 'axios';
-import { EnvironmentEnums } from '..';
+import { EnvironmentEnums } from '../interfaces/enums';
 export declare const dispatchSrvAuthEvents: <Key extends "logout_event" | "jwt_changed" | "customer_changed">(event: Key, arg: {
     jwt_changed: {};
     logout_event: {};
@@ -17,21 +16,20 @@ export declare function generateSrvAuthBindings<FeatureEnums = never>(SRV_AUTH: 
     getConnector: () => string | undefined;
     getFeatures: () => Set<FeatureEnums> | undefined;
     isJwtValid: () => boolean;
-    signin: (url: string, headers?: Record<string, string>) => Promise<AxiosResponse<{
+    signin: (url: string, headers?: Record<string, string>) => Promise<{
         token: string;
         features: FeatureEnums[];
         connector?: string | undefined;
-        theme?: string | undefined;
-    }, any>>;
-    srvAuthGet: <R>(url: string, headers?: Record<string, string>) => Promise<AxiosResponse<R, any>>;
+    }>;
+    srvAuthGet: <R>(url: string, headers?: Record<string, string>) => Promise<R>;
     /**
      * @deprecated use dispatchLogoutEvent directly
      */
     signoutAuth: typeof dispatchLogoutEvent;
     dispatchLogoutEvent: typeof dispatchLogoutEvent;
-    setReqConfig: <T = unknown>(data?: T | undefined, responseType?: ResponseType) => Promise<{
+    setReqConfig: <T = unknown>(data?: T | undefined, responseType?: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream') => Promise<{
         data: T | undefined;
-        responseType: ResponseType | undefined;
+        responseType: "arraybuffer" | "blob" | "document" | "json" | "text" | "stream" | undefined;
         headers: Record<string, string>;
     }>;
     /**

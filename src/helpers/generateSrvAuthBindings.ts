@@ -1,8 +1,9 @@
-import axios, { type AxiosResponse, type ResponseType } from 'axios'
+//import axios, { type AxiosResponse, type ResponseType } from 'axios'
 import { EventBus } from 'asma-event-bus/lib/event-buss'
-import { EnvironmentEnums, parseJwt, setTheme } from '..'
+import { EnvironmentEnums } from '../interfaces/enums'
+import { parseJwt } from './parseJwt'
 
-//let logoutsuccessfull = false
+//let logoutsuccesfull = false
 
 export const { dispatch: dispatchSrvAuthEvents, register: registerCallbackOnSrvAuthEvents } = EventBus<{
     jwt_changed: {}
@@ -43,18 +44,15 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
 
     const isJwtValid = () => !isJwtInvalid()
 
-    const promiseRegistry: Record<string, Promise<unknown>> = <{}>{}
-    /**
-     *
-     * 1.req /singing
-     * 2.req /token
-     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const promiseRegistry: Record<string, Promise<any>> = <{}>{}
+
     async function srvAuthGet<R>(url: string, headers?: Record<string, string>) {
         if (DEVELOPMENT() && EnvironmentToOperateFn()) {
             if (EnvironmentToOperateFn() in EnvironmentEnums) {
                 url = `${url}&env=${EnvironmentToOperateFn()}`
 
-                // file deepcode ignore GlobalReplacementRegex: <it is intended to be replaced only first occurrence>
+                // file deepcode ignore GlobalReplacementRegex: <it is intended to be replaced only first occurence>
                 url = url.includes('&') && !url.includes('?') ? url.replace('&', '?') : url
             } else {
                 console.warn(
@@ -67,15 +65,16 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
             }
         }
 
-        const promise =
+        const promise: Promise<R> =
             promiseRegistry[url] ||
-            axios.get<unknown, AxiosResponse<R>>(`${SRV_AUTH()}${url}`, {
+            fetch(`${SRV_AUTH()}${url}`, {
                 headers: {
                     ...headers,
                     'asma-origin': window.location.origin,
                 },
-                withCredentials: true,
-            })
+                credentials: 'include',
+                //withCredentials: true,
+            }).then((res) => res.json())
 
         if (!promiseRegistry[url]) {
             promiseRegistry[url] = promise
@@ -85,7 +84,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
             delete promiseRegistry[url]
         })
 
-        return res as AxiosResponse<R, any>
+        return res
     }
 
     function accessTokenHasExpired(): boolean {
@@ -100,7 +99,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
 
     /**
      *
-     * TODO: need to investigate smarter way of registering and unregister on `logout_event`
+     * TODO: need to investigate smarter way of registerning and unregistering on `logout_event`
      **/
     registerCallbackOnSrvAuthEvents('logout_event', () => {
         setAuthData({ token: '' })
@@ -109,12 +108,9 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     })
 
     async function signin(url: string, headers?: Record<string, string>) {
-        const data = await srvAuthGet<{ token: string; features: FeatureEnums[]; connector?: string; theme?: string }>(
-            url,
-            headers,
-        )
+        const data = await srvAuthGet<{ token: string; features: FeatureEnums[]; connector?: string }>(url, headers)
 
-        setAuthData(data?.data)
+        setAuthData(data)
 
         return data
     }
@@ -123,7 +119,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         return getParsedJwt()?.['user_id'] || '-1'
     }
 
-    function setAuthData(data?: { token: string; features?: FeatureEnums[]; connector?: string; theme?: string }) {
+    function setAuthData(data?: { token: string; features?: FeatureEnums[]; connector?: string }) {
         if (data?.token) {
             jwtToken = data?.token
 
@@ -132,8 +128,6 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
             connector = data.connector
 
             parsed_jwt = parseJwt(jwtToken)
-
-            data.theme && setTheme(data.theme)
 
             dispatchJwtChangedEvent()
 
@@ -162,7 +156,10 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         }
     }
 
-    async function setReqConfig<T = unknown>(data?: T, responseType?: ResponseType) {
+    async function setReqConfig<T = unknown>(
+        data?: T,
+        responseType?: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream',
+    ) {
         const token = await getCachedJwt()
 
         const res = {
@@ -191,12 +188,12 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
                 connector: string
             }>('/token')
 
-            if (!data || data.data?.errors || !data.data.token) {
+            if (!data || data?.errors || !data.token) {
                 dispatchLogoutEvent()
                 return
             }
 
-            setAuthData({ token: data.data.token, features: data.data.features || [], connector: data.data.connector })
+            setAuthData({ token: data.token, features: data.features || [], connector: data.connector })
             return jwtToken
         } catch (error) {
             dispatchLogoutEvent()
