@@ -51,46 +51,44 @@ export async function checkForRegisteredSubdomain({
     setSelectedCustomer,
     srvAuthGet,
     logos,
+    authenticated,
 }: {
     redirect_if_not_exists?: boolean
     setSelectedCustomer?: (customer_id: string) => void
     srvAuthGet: <R>(url: string, headers?: Record<string, string> | undefined) => Promise<R>
     logos: { fretexLogo: string; carasentLogo: string }
+    authenticated: boolean
 }) {
-    const res = await srvAuthGet<{ id?: string; theme?: string }>(
-        '/check?context=subdomain',
-        {
-            'asma-origin': window.location.origin,
-        },
-        // deepcode ignore PromiseNotCaughtGeneral: <this is intended to throw if fails>
-    )
-    //const client = await directoryGenQLClient(true, { 'x-hasura-subdomain': subdomain })
-
-    if (res?.id) {
-        setSelectedCustomer?.(res.id)
-    }
-
-    if (res?.theme) {
-        setTheme(res.theme)
-    }
-
-    appendAsmaLogoLink(getTheme(), logos)
-
-    if (!!!res?.id && redirect_if_not_exists) {
-        redirectFromSubdomainToDomain()
-    }
-
     const { unregister } = onThemeChange(({ theme }) => {
         appendAsmaLogoLink(theme, logos)
     })
 
+    //const client = await directoryGenQLClient(true, { 'x-hasura-subdomain': subdomain })
+    let res: { id?: string; theme?: string } | undefined
+
+    if (!authenticated) {
+        res = await srvAuthGet<{ id?: string; theme?: string }>('/check?context=subdomain', {
+            'asma-origin': window.location.origin,
+        })
+        if (res?.id) {
+            setSelectedCustomer?.(res.id)
+        }
+
+        if (res?.theme) {
+            setTheme(res.theme)
+        }
+
+        appendAsmaLogoLink(getTheme(), logos)
+
+        if (!!!res?.id && redirect_if_not_exists) {
+            redirectFromSubdomainToDomain()
+        }
+    }
+
     return [!!res?.id, unregister] as [registeredSubdomain: boolean, unregister: () => void]
 }
 
-function appendAsmaLogoLink(
-    theme = 'default',
-    { carasentLogo, fretexLogo }: { fretexLogo: string; carasentLogo: string },
-) {
+function appendAsmaLogoLink(theme: string, { carasentLogo, fretexLogo }: { fretexLogo: string; carasentLogo: string }) {
     const body = document.body!
 
     body.dataset['theme'] = theme
