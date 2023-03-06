@@ -43,8 +43,6 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
     //registerCallbackOnSrvAuthEvents('logout_event', resetClients)
 
     async function getGenqlClient() {
-        console.log('getGenqlClient', client, serviceUrl())
-
         if (client === null) {
             client = await genqlClient()
 
