@@ -131,6 +131,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
             parsed_jwt = parseJwt(jwtToken)
 
             dispatchJwtChangedEvent()
+
             data.theme && setTheme(data.theme)
 
             return
@@ -188,14 +189,14 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
                 token: string
                 features: FeatureEnums[]
                 connector: string
+                theme: string
             }>('/token')
 
             if (!data || data?.errors || !data.token) {
                 dispatchLogoutEvent()
                 return
             }
-
-            setAuthData({ token: data.token, features: data.features || [], connector: data.connector })
+            setAuthData(data)
             return jwtToken
         } catch (error) {
             dispatchLogoutEvent()
