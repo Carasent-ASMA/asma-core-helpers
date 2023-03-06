@@ -87,17 +87,18 @@ export async function checkForRegisteredSubdomain({
 
     return [!!res?.id, unregister] as [registeredSubdomain: boolean, unregister: () => void]
 }
+const asmaLogoLink = 'asma-logo-link'
 
 function appendAsmaLogoLink(theme: string, { carasentLogo, fretexLogo }: { fretexLogo: string; carasentLogo: string }) {
     const body = document.body!
 
     body.dataset['theme'] = theme
 
-    document.getElementById('asma-theme-link')?.remove()
+    document.getElementById(asmaLogoLink)?.remove()
 
     const link = document.createElement('link')
 
-    link.setAttribute('id', 'asma-logo-link')
+    link.setAttribute('id', asmaLogoLink)
 
     if (theme === 'fretex') {
         document.title = 'Fretex'
