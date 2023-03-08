@@ -48,7 +48,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const promiseRegistry: Record<string, Promise<any>> = <{}>{}
 
-    async function srvAuthGet<R>(url: string, headers?: Record<string, string>) {
+    async function srvAuthGet<R>(url: string, headers?: Record<string, string>): Promise<R> {
         if (DEVELOPMENT() && EnvironmentToOperateFn()) {
             if (EnvironmentToOperateFn() in EnvironmentEnums) {
                 url = `${url}&env=${EnvironmentToOperateFn()}`
@@ -66,7 +66,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
             }
         }
 
-        const promise: Promise<R> =
+        const promise: Promise<Response> =
             promiseRegistry[url] ||
             fetch(`${SRV_AUTH()}${url}`, {
                 headers: {
@@ -75,7 +75,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
                 },
                 credentials: 'include',
                 //withCredentials: true,
-            }).then((res) => res.json())
+            })
 
         if (!promiseRegistry[url]) {
             promiseRegistry[url] = promise
@@ -85,7 +85,17 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
             delete promiseRegistry[url]
         })
 
-        return res
+        const json = await res.json()
+
+        if (!res.ok) {
+            const text = await res.text()
+
+            const error = json || text
+
+            throw error
+        }
+
+        return json as R
     }
 
     function accessTokenHasExpired(): boolean {
