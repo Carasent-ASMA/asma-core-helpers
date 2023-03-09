@@ -46,7 +46,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     const isJwtValid = () => !isJwtInvalid()
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const promiseRegistry: Record<string, Promise<any>> = <{}>{}
+    const promiseRegistry: Record<string, Promise<Response>> = <{}>{}
 
     async function srvAuthGet<R>(url: string, headers?: Record<string, string>): Promise<R> {
         if (DEVELOPMENT() && EnvironmentToOperateFn()) {
@@ -66,7 +66,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
             }
         }
 
-        const promise: Promise<Response> =
+        const promise =
             promiseRegistry[url] ||
             fetch(`${SRV_AUTH()}${url}`, {
                 headers: {
@@ -85,17 +85,15 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
             delete promiseRegistry[url]
         })
 
-        const json = await res.json()
+        const json: R = await res.json()
 
         if (!res.ok) {
-            const text = await res.text()
-
-            const error = json || text
+            const error = json || (await res.text())
 
             throw error
         }
 
-        return json as R
+        return json
     }
 
     function accessTokenHasExpired(): boolean {
