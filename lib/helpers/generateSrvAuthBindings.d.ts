@@ -11,7 +11,7 @@ export declare const dispatchSrvAuthEvents: <Key extends "logout_event" | "jwt_c
     unregister: () => void;
 };
 declare function dispatchLogoutEvent(): void;
-export declare function generateSrvAuthBindings<FeatureEnums = never>(SRV_AUTH: () => string, DEVELOPMENT: () => boolean, EnvironmentToOperateFn: () => string, logout?: () => void): {
+export declare function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums extends string = never>(SRV_AUTH: () => string, DEVELOPMENT: () => boolean, EnvironmentToOperateFn: () => string, logout?: () => void): {
     hasFeature: (featureName: FeatureEnums) => boolean;
     getConnector: () => string | undefined;
     getFeatures: () => Set<FeatureEnums> | undefined;
@@ -22,6 +22,7 @@ export declare function generateSrvAuthBindings<FeatureEnums = never>(SRV_AUTH: 
         connector?: string | undefined;
     }>;
     srvAuthGet: <R>(url: string, headers?: Record<string, string>) => Promise<R>;
+    getSrvUrls: () => Record<SrvUrlsEnums, string> | undefined;
     /**
      * @deprecated use dispatchLogoutEvent directly
      */
