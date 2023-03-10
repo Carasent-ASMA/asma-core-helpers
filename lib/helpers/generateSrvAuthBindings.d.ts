@@ -11,6 +11,10 @@ export declare const dispatchSrvAuthEvents: <Key extends "logout_event" | "jwt_c
     unregister: () => void;
 };
 declare function dispatchLogoutEvent(): void;
+/**
+ * @generic FeatureEnums - feature_names_enums from asma-genql-directory
+ * @generic SrvUrlsEnums - srv_names_enums from asma-genql-directory
+ */
 export declare function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums extends string = never>(SRV_AUTH: () => string, DEVELOPMENT: () => boolean, EnvironmentToOperateFn: () => string, logout?: () => void): {
     hasFeature: (featureName: FeatureEnums) => boolean;
     getConnector: () => string | undefined;
