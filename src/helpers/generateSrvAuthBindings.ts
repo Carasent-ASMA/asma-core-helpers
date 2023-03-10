@@ -22,10 +22,14 @@ function dispatchJwtChangedEvent() {
  * @generic FeatureEnums - feature_names_enums from asma-genql-directory
  * @generic SrvUrlsEnums - srv_names_enums from asma-genql-directory
  */
+
+type EnvConfigsFn = () => { SRV_AUTH: string; DEVELOPMENT: boolean; ENVIRONMENT_TO_OPERATE: string }
+
 export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums extends string = never>(
-    SRV_AUTH: () => string,
-    DEVELOPMENT: () => boolean,
-    EnvironmentToOperateFn: () => string,
+    //SRV_AUTH: () => string,
+    //DEVELOPMENT: () => boolean,
+    //EnvironmentToOperateFn: () => string,
+    EnvConfigsFn: EnvConfigsFn,
     logout?: () => void,
 ) {
     if (logout) {
@@ -54,9 +58,9 @@ export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums exten
     const promiseRegistry: Record<string, Promise<Response>> = <{}>{}
 
     async function srvAuthGet<R>(url: string, headers?: Record<string, string>): Promise<R> {
-        if (DEVELOPMENT() && EnvironmentToOperateFn()) {
-            if (EnvironmentToOperateFn() in EnvironmentEnums) {
-                url = `${url}&env=${EnvironmentToOperateFn()}`
+        if (EnvConfigsFn().DEVELOPMENT && EnvConfigsFn().ENVIRONMENT_TO_OPERATE) {
+            if (EnvConfigsFn().ENVIRONMENT_TO_OPERATE in EnvironmentEnums) {
+                url = `${url}&env=${EnvConfigsFn().ENVIRONMENT_TO_OPERATE}`
 
                 // file deepcode ignore GlobalReplacementRegex: <it is intended to be replaced only first occurence>
                 url = url.includes('&') && !url.includes('?') ? url.replace('&', '?') : url
@@ -66,13 +70,13 @@ export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums exten
                     'shall be one of:',
                     EnvironmentEnums,
                     'actual value:',
-                    EnvironmentToOperateFn(),
+                    EnvConfigsFn().ENVIRONMENT_TO_OPERATE,
                 )
             }
         }
 
         if (!promiseRegistry[url]) {
-            promiseRegistry[url] = fetch(`${SRV_AUTH()}${url}`, {
+            promiseRegistry[url] = fetch(`${EnvConfigsFn().SRV_AUTH}${url}`, {
                 headers: {
                     ...headers,
                     'asma-origin': window.location.origin,
@@ -238,7 +242,7 @@ export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums exten
      * @returns boolean
      */
     function hasFeature(featureName: FeatureEnums) {
-        return DEVELOPMENT() || !!features?.has(featureName)
+        return EnvConfigsFn().DEVELOPMENT || !!features?.has(featureName)
     }
 
     function getConnector() {
@@ -286,13 +290,14 @@ export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums exten
  *
  */
 export function generateSrvAuthBindingsMicroApp(
-    SRV_AUTH: () => string,
-    DEVELOPMENT: () => boolean,
-    ENVIRONMENT_TO_OPERATE: () => EnvironmentEnums,
+    //SRV_AUTH: () => string,
+    //DEVELOPMENT: () => boolean,
+    //ENVIRONMENT_TO_OPERATE: () => EnvironmentEnums,
+    EnvConfigsFn: EnvConfigsFn,
     logout?: () => void,
 ) {
     return (
         window.__ASMA__SHELL__?.auth_bindings ||
-        generateSrvAuthBindings(SRV_AUTH, DEVELOPMENT, ENVIRONMENT_TO_OPERATE, logout)
+        generateSrvAuthBindings(/* SRV_AUTH, DEVELOPMENT, ENVIRONMENT_TO_OPERATE, */ EnvConfigsFn, logout)
     )
 }

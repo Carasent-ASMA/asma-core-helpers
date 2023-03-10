@@ -1,4 +1,3 @@
-import { EnvironmentEnums } from '../interfaces/enums';
 export declare const dispatchSrvAuthEvents: <Key extends "logout_event" | "jwt_changed" | "customer_changed">(event: Key, arg: {
     jwt_changed: {};
     logout_event: {};
@@ -15,7 +14,12 @@ declare function dispatchLogoutEvent(): void;
  * @generic FeatureEnums - feature_names_enums from asma-genql-directory
  * @generic SrvUrlsEnums - srv_names_enums from asma-genql-directory
  */
-export declare function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums extends string = never>(SRV_AUTH: () => string, DEVELOPMENT: () => boolean, EnvironmentToOperateFn: () => string, logout?: () => void): {
+type EnvConfigsFn = () => {
+    SRV_AUTH: string;
+    DEVELOPMENT: boolean;
+    ENVIRONMENT_TO_OPERATE: string;
+};
+export declare function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums extends string = never>(EnvConfigsFn: EnvConfigsFn, logout?: () => void): {
     hasFeature: (featureName: FeatureEnums) => boolean;
     getConnector: () => string | undefined;
     getFeatures: () => Set<FeatureEnums> | undefined;
@@ -65,6 +69,6 @@ export declare function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnu
  * @deprecated use generateSrvAuthBindings
  *
  */
-export declare function generateSrvAuthBindingsMicroApp(SRV_AUTH: () => string, DEVELOPMENT: () => boolean, ENVIRONMENT_TO_OPERATE: () => EnvironmentEnums, logout?: () => void): {};
+export declare function generateSrvAuthBindingsMicroApp(EnvConfigsFn: EnvConfigsFn, logout?: () => void): {};
 export {};
 //# sourceMappingURL=generateSrvAuthBindings.d.ts.map
