@@ -19,7 +19,7 @@ function dispatchJwtChangedEvent() {
     dispatchSrvAuthEvents('jwt_changed', {}, false)
 }
 
-export function generateSrvAuthBindings<FeatureEnums = never>(
+export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums extends string = never>(
     SRV_AUTH: () => string,
     DEVELOPMENT: () => boolean,
     EnvironmentToOperateFn: () => string,
@@ -40,6 +40,8 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     let connector: string | undefined
 
     let parsed_jwt: unknown | undefined
+
+    let srv_urls: Record<SrvUrlsEnums, string> | undefined
 
     const isJwtInvalid = () => (jwtToken && accessTokenHasExpired()) || !jwtToken
 
@@ -197,6 +199,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
                 token: string
                 features: FeatureEnums[]
                 connector: string
+                srv_urls?: typeof srv_urls
                 theme: string
             }>('/token')
 
@@ -224,6 +227,9 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     function getFeatures() {
         return features
     }
+    function getSrvUrls() {
+        return srv_urls
+    }
     /**
      *
      * @param featureName feature_name_enums add this: generateSrvAuthBindings<feature_name_enums.>(...)
@@ -244,6 +250,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         isJwtValid,
         signin,
         srvAuthGet,
+        getSrvUrls,
         /**
          * @deprecated use dispatchLogoutEvent directly
          */
