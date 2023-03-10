@@ -71,9 +71,8 @@ export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums exten
             }
         }
 
-        const promise =
-            promiseRegistry[url] ||
-            fetch(`${SRV_AUTH()}${url}`, {
+        if (!promiseRegistry[url]) {
+            promiseRegistry[url] = fetch(`${SRV_AUTH()}${url}`, {
                 headers: {
                     ...headers,
                     'asma-origin': window.location.origin,
@@ -81,19 +80,19 @@ export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums exten
                 credentials: 'include',
                 //withCredentials: true,
             })
-
-        if (!promiseRegistry[url]) {
-            promiseRegistry[url] = promise
         }
 
-        const res = await promise.finally(() => {
+        const res = await promiseRegistry[url]!.finally(() => {
             delete promiseRegistry[url]
         })
 
         const json: R = await res.clone().json()
 
-        if (!res.ok) {
-            const error = json || (await res.clone().text())
+        if (!res?.ok) {
+            let error: R | string = json
+            if (!json) {
+                error = await res.clone().text()
+            }
 
             throw error
         }
