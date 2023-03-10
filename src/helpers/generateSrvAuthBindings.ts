@@ -238,7 +238,7 @@ export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums exten
      * @returns boolean
      */
     function hasFeature(featureName: FeatureEnums) {
-        return !!features?.has(featureName)
+        return DEVELOPMENT() || !!features?.has(featureName)
     }
 
     function getConnector() {
