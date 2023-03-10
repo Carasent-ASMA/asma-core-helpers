@@ -18,7 +18,10 @@ function dispatchLogoutEvent() {
 function dispatchJwtChangedEvent() {
     dispatchSrvAuthEvents('jwt_changed', {}, false)
 }
-
+/**
+ * @generic FeatureEnums - feature_names_enums from asma-genql-directory
+ * @generic SrvUrlsEnums - srv_names_enums from asma-genql-directory
+ */
 export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums extends string = never>(
     SRV_AUTH: () => string,
     DEVELOPMENT: () => boolean,
