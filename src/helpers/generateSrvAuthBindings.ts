@@ -90,10 +90,10 @@ export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums exten
             delete promiseRegistry[url]
         })
 
-        const json: R = await res.json()
+        const json: R = await res.clone().json()
 
         if (!res.ok) {
-            const error = json || (await res.text())
+            const error = json || (await res.clone().text())
 
             throw error
         }
