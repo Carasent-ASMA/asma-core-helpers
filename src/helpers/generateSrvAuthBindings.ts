@@ -125,7 +125,12 @@ export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums exten
     })
 
     async function signin(url: string, headers?: Record<string, string>) {
-        const data = await srvAuthGet<{ token: string; features: FeatureEnums[]; connector?: string }>(url, headers)
+        const data = await srvAuthGet<{
+            token: string
+            features: FeatureEnums[]
+            connector?: string
+            srv_urls: typeof srv_urls
+        }>(url, headers)
 
         setAuthData(data)
 
@@ -136,7 +141,13 @@ export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums exten
         return getParsedJwt()?.['user_id'] || '-1'
     }
 
-    function setAuthData(data?: { token: string; features?: FeatureEnums[]; connector?: string; theme?: string }) {
+    function setAuthData(data?: {
+        token: string
+        features?: FeatureEnums[]
+        connector?: string
+        theme?: string
+        srv_urls?: typeof srv_urls
+    }) {
         if (data?.token) {
             jwtToken = data?.token
 
@@ -145,6 +156,8 @@ export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums exten
             connector = data.connector
 
             parsed_jwt = parseJwt(jwtToken)
+
+            srv_urls = srv_urls
 
             dispatchJwtChangedEvent()
 
