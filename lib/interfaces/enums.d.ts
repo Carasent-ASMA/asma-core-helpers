@@ -41,11 +41,12 @@ export declare enum ActorTypes {
     Custom = "custom",
     Complex = "complex"
 }
-export declare enum EnvironmentEnums {
-    local = "local",
-    dev = "dev",
-    test = "test",
-    stage = "stage",
-    prod = "prod"
-}
+export declare const EnvironmentEnums: {
+    local: string;
+    dev: string;
+    test: string;
+    stage: string;
+    prod: string;
+};
+export type IEnvironmentEnums = keyof typeof EnvironmentEnums;
 //# sourceMappingURL=enums.d.ts.map
