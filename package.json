@@ -21,6 +21,7 @@
     "dependencies": {
         "@genql/runtime": "^2.10.0",
         "asma-event-bus": "^0.0.45",
+        "asma-helpers": "^0.5.5",
         "axios": "1.0.0",
         "history": "~5.0.0",
         "idb-keyval": "^6.2.0",
