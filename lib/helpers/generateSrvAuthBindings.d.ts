@@ -28,6 +28,7 @@ export declare function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnu
         token: string;
         features: FeatureEnums[];
         connector?: string | undefined;
+        srv_urls: Record<SrvUrlsEnums, string> | undefined;
     }>;
     srvAuthGet: <R>(url: string, headers?: Record<string, string>) => Promise<R>;
     getSrvUrls: () => Record<SrvUrlsEnums, string> | undefined;
