@@ -47,10 +47,11 @@ export enum ActorTypes {
     Complex = 'complex',
 }
 
-export enum EnvironmentEnums {
-    local = 'local',
-    dev = 'dev',
-    test = 'test',
-    stage = 'stage',
-    prod = 'prod',
+export const EnvironmentEnums =  {
+    local: 'local',
+    dev: 'dev',
+    test: 'test',
+    stage: 'stage',
+    prod: 'prod',
 }
+export type IEnvironmentEnums = keyof typeof EnvironmentEnums
