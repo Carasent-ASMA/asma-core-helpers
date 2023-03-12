@@ -49,6 +49,19 @@ asma-event-bus@^0.0.45:
   dependencies:
     asma-types "^1.1.31"
 
+asma-helpers@^0.5.5:
+  version "0.5.5"
+  resolved "https://registry.yarnpkg.com/asma-helpers/-/asma-helpers-0.5.5.tgz#3609f8f5f8e40603781763c14d7d9b3373525d7f"
+  integrity sha512-PNN5rHiQ9J3CYE7hePUpqq6RHte8pHDzslYyCMZUP4HrXjsFnYRCMeanNbEXIu0BVFCeB4rBFd1X2ImvcxW7eA==
+  dependencies:
+    "@genql/runtime" "^2.10.0"
+    asma-event-bus "^0.0.45"
+    axios "1.0.0"
+    history "~5.0.0"
+    idb-keyval "^6.2.0"
+    mobx "^6.6.1"
+    mobx-state-tree "^5.1.5"
+
 asma-types@^1.1.31:
   version "1.1.40"
   resolved "https://registry.yarnpkg.com/asma-types/-/asma-types-1.1.40.tgz#5200ed855a18d97b8090db52f14620e53354f4a5"
