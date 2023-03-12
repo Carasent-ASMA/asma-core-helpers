@@ -157,7 +157,7 @@ export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums exten
 
             parsed_jwt = parseJwt(jwtToken)
 
-            srv_urls = srv_urls
+            srv_urls = data.srv_urls
 
             dispatchJwtChangedEvent()
 
@@ -170,6 +170,8 @@ export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums exten
         parsed_jwt = undefined
 
         features = undefined
+
+        srv_urls = undefined
 
         connector = undefined
     }
