@@ -78,12 +78,11 @@ export async function checkForRegisteredSubdomain({
             setTheme(res.theme)
         }
 
-        appendAsmaLogoLink(getTheme(), logos)
-
         if (!!!res?.id && redirect_if_not_exists) {
             redirectFromSubdomainToDomain()
         }
     }
+    appendAsmaLogoLink(getTheme(), logos)
 
     return [!!res?.id, unregister] as [registeredSubdomain: boolean, unregister: () => void]
 }
