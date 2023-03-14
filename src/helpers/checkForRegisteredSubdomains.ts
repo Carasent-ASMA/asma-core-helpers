@@ -1,8 +1,8 @@
 import { EventBus } from 'asma-event-bus/lib/event-buss'
-import { clearCacheData } from './clearCacheData'
+//import { clearCacheData } from './clearCacheData'
 import { srvAuthGetInternal } from './generateSrvAuthBindings'
 import { redirectFromSubdomainToDomain } from './getSubdomain'
-import { initiatieIDBListenersOnMstSnaphsots } from './InitializeIDBListenersOnMstSnapshots'
+//import { initiatieIDBListenersOnMstSnaphsots } from './InitializeIDBListenersOnMstSnapshots'
 
 /**
  * @private use only inside this file
@@ -47,40 +47,6 @@ export function setTheme(theme: string) {
         return window.__ASMA__THEME__.setTheme(theme)
     }
     setThemeLocal(theme)
-}
-/**
- * !!!ORDER IS VERY IMPORTANT!!!
- * EnvConfigsFn from EnvCongigs.ts
- * setLoadMicroApp from asma-qiankun-react-loader
- * mst_stores_toPersisit - array of mst stores that should be persisted in indexedDB
- * data_for_registered_subdomain_check - data needed to check if subdomain is registered to an exiting tenant in the db
- */
-export async function initAplicationVitals(fns: {
-    EnvConfigsFn: () => { CACHE_VERSION: string; DEVELOPMENT: boolean }
-    fetchConfigs(): Promise<void>
-    setLoadMicroApp(dev_mode: boolean): Promise<void>
-    mst_stores_toPersisit: Object[]
-    data_for_registered_subdomain_check: {
-        redirect_if_not_exists?: boolean
-        setSelectedCustomer?: (customer_id: string) => void
-        srvAuthGet: <R>(url: string, headers?: Record<string, string> | undefined) => Promise<R>
-        logos: { fretexLogo: string; carasentLogo: string }
-        authenticated: boolean
-        service: 'app-shell' | 'app-advoca' | 'advoca-portal'
-    }
-}) {
-    await fns.fetchConfigs()
-
-    await clearCacheData(fns.EnvConfigsFn().CACHE_VERSION)
-
-    await fns.setLoadMicroApp(fns.EnvConfigsFn().DEVELOPMENT)
-
-    const promises = fns.mst_stores_toPersisit.map((store) => initiatieIDBListenersOnMstSnaphsots(store))
-
-    await Promise.allSettled(promises)
-
-    const [registeredSubdomain] = await checkForRegisteredSubdomain(fns.data_for_registered_subdomain_check)
-    return [registeredSubdomain] as [registeredSubdomain: boolean]
 }
 
 export async function checkForRegisteredSubdomain({
