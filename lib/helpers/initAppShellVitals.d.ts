@@ -25,7 +25,7 @@ export declare function initAppShellVitals(fns: {
         /**
          * whenether user is authenticated or not
          */
-        authenticated: boolean;
+        authenticated: () => boolean;
         /**
          * temporary solution need to be removed after theming will be implemented in all app-shells (app-shell, app-advoca, advoca-portal)
          */

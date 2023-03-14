@@ -61,7 +61,7 @@ export async function checkForRegisteredSubdomain({
     setSelectedCustomer?: (customer_id: string) => void
     //srvAuthGet: <R>(url: string, headers?: Record<string, string> | undefined) => Promise<R>
     logos: { fretexLogo: string; carasentLogo: string }
-    authenticated: boolean
+    authenticated: () => boolean
     /**
      * @deprecated one need remove this. Please do not use it in more use cases
      */
@@ -94,7 +94,7 @@ export async function checkForRegisteredSubdomain({
     }
     appendAsmaLogoLink(getTheme(), logos, service)
 
-    return [authenticated || !!res?.id, unregister] as [registeredSubdomain: boolean, unregister: () => void]
+    return [authenticated() || !!res?.id, unregister] as [registeredSubdomain: boolean, unregister: () => void]
 }
 const asmaLogoLink = 'asma-logo-link'
 

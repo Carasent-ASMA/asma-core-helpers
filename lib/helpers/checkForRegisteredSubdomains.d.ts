@@ -20,7 +20,7 @@ export declare function checkForRegisteredSubdomain({ redirect_if_not_exists, se
         fretexLogo: string;
         carasentLogo: string;
     };
-    authenticated: boolean;
+    authenticated: () => boolean;
     /**
      * @deprecated one need remove this. Please do not use it in more use cases
      */
