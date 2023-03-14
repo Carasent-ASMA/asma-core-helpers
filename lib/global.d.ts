@@ -15,7 +15,10 @@ declare global {
         }[];
         __ASMA__SHELL__?: {
             history?: History;
-            auth_bindings?: unknown;
+            auth_bindings?: {
+                getCachedJwt: () => Promise<string | undefined>;
+                srvAuthGet: <R>(url: string, headers?: Record<string, string>) => Promise<R>;
+            };
             isLogged?: () => boolean;
             logoutUser?: () => void;
         };

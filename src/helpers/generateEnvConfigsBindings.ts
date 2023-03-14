@@ -1,5 +1,6 @@
 import { httpToWs } from './Config'
 import type { EnvironmentsUrls } from './EnvironmentsUrls'
+import { uuid4 } from './generateUUID4'
 
 interface IBasicEnv {
     DEVELOPMENT: boolean
@@ -14,7 +15,48 @@ type IKeyEnvironmentUrls = keyof IEnvironmentUrls
 type ISrvKeysTransformToWs<T> = T extends `SRV_${infer K}` ? `SRV_${K}_WS` : never
 
 //type IKeyEnvironmentUrlsWs = `${IKeyEnvironmentUrls}_WS`
+declare global {
+    interface Window {
+        __GENERATE_ENV_CONFIGS_BINDINGS__?: {
+            fetchConfigsReg: Record<string, () => Promise<void>>
+            EnvConfigsFnReg: Record<string, () => unknown>
+        }
+    }
+}
+const fetchConfigsInstanceId = uuid4()
+const EnvConfigsFnInstanceId = uuid4()
+console.info('fetchConfigsInstanceId', fetchConfigsInstanceId)
+console.info('EnvConfigsFnInstanceId', EnvConfigsFnInstanceId)
 
+/**
+ *
+ * for internal use only (inside asma-helpers)
+ */
+export async function fetchConfigsInternal() {
+    const fetchConfigs = window.__GENERATE_ENV_CONFIGS_BINDINGS__?.fetchConfigsReg[fetchConfigsInstanceId]
+
+    if (!fetchConfigs) {
+        console.error(
+            'fetchConfigs is not defined! please make sure that generateEnvConfigsBindings is called before fetchConfigs',
+        )
+    }
+
+    return fetchConfigs?.()
+}
+
+/**
+ *
+ *  For internal use only (inside asma-helpers)
+ */
+export function EnvConfigsFnInternal() {
+    const EnvConfigsFn = window.__GENERATE_ENV_CONFIGS_BINDINGS__?.EnvConfigsFnReg[EnvConfigsFnInstanceId]
+    if (!EnvConfigsFn) {
+        throw new Error(
+            'EnvConfigsFn is not defined! please make sure that generateEnvConfigsBindings is called before EnvConfigsFn',
+        )
+    }
+    return EnvConfigsFn() as { CACHE_VERSION: string; DEVELOPMENT: boolean }
+}
 export function generateEnvConfigsBindings<
     T extends IBasicEnv,
     K extends (keyof T | IKeyEnvironmentUrls | ISrvKeysTransformToWs<keyof T | IKeyEnvironmentUrls>) & string,
@@ -24,7 +66,7 @@ export function generateEnvConfigsBindings<
 
     let env_vars = {} as T
 
-    let envConfigs = {} as Pick<IEnvConfigs, K extends (keyof IEnvConfigs)&string ? K : never> & S
+    let envConfigs = {} as Pick<IEnvConfigs, K extends keyof IEnvConfigs & string ? K : never> & S
 
     let envUrls: IEnvironmentUrls | undefined
 
@@ -77,6 +119,13 @@ export function generateEnvConfigsBindings<
             envUrls = (await import('./EnvironmentsUrls')).default(env_vars.ENVIRONMENT_TO_OPERATE)
         }
     }
+    window.__GENERATE_ENV_CONFIGS_BINDINGS__ = window.__GENERATE_ENV_CONFIGS_BINDINGS__ || {
+        EnvConfigsFnReg: {},
+        fetchConfigsReg: {},
+    }
 
-    return { EnvConfigsFn, fetchConfigs }
+    window.__GENERATE_ENV_CONFIGS_BINDINGS__.fetchConfigsReg[fetchConfigsInstanceId] = fetchConfigs
+    window.__GENERATE_ENV_CONFIGS_BINDINGS__.EnvConfigsFnReg[EnvConfigsFnInstanceId] = EnvConfigsFn
+
+    return { EnvConfigsFn }
 }

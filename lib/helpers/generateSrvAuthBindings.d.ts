@@ -19,6 +19,8 @@ type EnvConfigsFn = () => {
     DEVELOPMENT: boolean;
     ENVIRONMENT_TO_OPERATE: string;
 };
+export declare function getCachedJwtInternal(): Promise<string | undefined>;
+export declare function srvAuthGetInternal<R>(url: string, headers?: Record<string, string>): Promise<R>;
 export declare function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums extends string = never>(EnvConfigsFn: EnvConfigsFn, logout?: () => void): {
     hasFeature: (featureName: FeatureEnums) => boolean;
     getConnector: () => string | undefined;
@@ -70,6 +72,9 @@ export declare function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnu
  * @deprecated use generateSrvAuthBindings
  *
  */
-export declare function generateSrvAuthBindingsMicroApp(EnvConfigsFn: EnvConfigsFn, logout?: () => void): {};
+export declare function generateSrvAuthBindingsMicroApp(EnvConfigsFn: EnvConfigsFn, logout?: () => void): {
+    getCachedJwt: () => Promise<string | undefined>;
+    srvAuthGet: <R>(url: string, headers?: Record<string, string> | undefined) => Promise<R>;
+};
 export {};
 //# sourceMappingURL=generateSrvAuthBindings.d.ts.map
