@@ -257,7 +257,31 @@ export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums exten
      * @returns boolean
      */
     function hasFeature(featureName: FeatureEnums) {
-        return EnvConfigsFn().DEVELOPMENT || !!features?.has(featureName)
+        let hasFeature = false
+
+        const asmaFeaturesIgnoreList: string | null = localStorage.getItem('asma-features-ignore-list')
+        const asmaDebug = localStorage.getItem('asma-debug') === 'true'
+
+        const hasFeatureCheck = !!features?.has(featureName)
+
+        if (asmaDebug && asmaFeaturesIgnoreList) {
+            let asmaEnableAllFeatures: FeatureEnums[] | undefined
+
+            try {
+                asmaEnableAllFeatures = JSON.parse(asmaFeaturesIgnoreList)
+            } catch (e) {
+                console.error(e)
+            }
+
+            if (Array.isArray(asmaEnableAllFeatures) && !asmaEnableAllFeatures.includes(featureName)) {
+                hasFeature = true
+            } else {
+                hasFeature = hasFeatureCheck
+            }
+        } else {
+            hasFeature = hasFeatureCheck
+        }
+        return hasFeature
     }
 
     function getConnector() {
