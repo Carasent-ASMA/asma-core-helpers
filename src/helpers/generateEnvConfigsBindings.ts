@@ -5,13 +5,13 @@ import { uuid4 } from './generateUUID4'
 
 interface IBasicEnv {
     DEVELOPMENT: boolean
-    ENVIRONMENT_TO_OPERATE: string
+    ENVIRONMENT_TO_OPERATE: EnvironmentEnums
     ADVOCA_ACCESS_URL?: string
 }
 
 type IEnvironmentUrls = typeof EnvironmentsUrls.local
 
-type IKeyEnvironmentUrls = keyof IEnvironmentUrls
+export type IKeyEnvironmentUrls = keyof IEnvironmentUrls
 
 type ISrvKeysTransformToWs<T> = T extends `SRV_${infer K}` ? `SRV_${K}_WS` : never
 
@@ -58,10 +58,9 @@ export function EnvConfigsFnInternal() {
     }
     return EnvConfigsFn() as {
         CACHE_VERSION: string
-        DEVELOPMENT: boolean
-        ENVIRONMENT_TO_OPERATE: EnvironmentEnums
         SRV_AUTH: string
-    }
+    } & IEnvironmentUrls &
+        IBasicEnv
 }
 export function generateEnvConfigsBindings<
     T extends IBasicEnv,

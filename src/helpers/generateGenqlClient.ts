@@ -2,6 +2,7 @@
 import type { createClient } from '@genql/runtime'
 import type { ClientOptions } from '@genql/runtime'
 import { httpToWs } from './Config'
+import { EnvConfigsFnInternal, IKeyEnvironmentUrls } from './generateEnvConfigsBindings'
 import { registerCallbackOnSrvAuthEvents, setReqConfigInternal } from './generateSrvAuthBindings'
 //import { parseJwt } from '../helpers/parseJwt'
 
@@ -12,12 +13,13 @@ interface CliOptions extends Omit<ClientOptions, 'url' | 'signal'> {
 export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
     //setReqConfig,
     createClient,
-    serviceUrl,
+    service,
     path = '/v1/graphql',
 }: {
     //setReqConfig: () => Promise<AxiosRequestConfig<any>>
     createClient: (options?: ClientOptions | undefined) => T
-    serviceUrl: () => string
+    //serviceUrl: () => string
+    service: IKeyEnvironmentUrls
     path?: string
 }) {
     let client: T | null = null
@@ -57,13 +59,20 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
 
         wsClient = null
     }
+    function serviceUrl() {
+        const service_url = EnvConfigsFnInternal()[service]
+        if (!service_url) {
+            console.error('requred param serviceUrl() is undefined, please check EnvConfig object!', service)
+        }
+        return service_url
+    }
 
     async function genqlClient(options: CliOptions & { abortController?: AbortController } = {}): Promise<T> {
         const { headers, abortController: abortControlleFromOpts, ...rest } = options
 
-        if (!serviceUrl()) {
+       /*  if (!serviceUrl()) {
             throw Error('requred param srv_url is undefined, please check EnvConfig object!')
-        }
+        } */
 
         const abortControllerlocal = createabortControllerAndAbortOnLogoutEvent(abortControlleFromOpts)
 

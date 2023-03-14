@@ -2,11 +2,11 @@ import type { EnvironmentEnums } from 'asma-helpers/lib';
 import type { EnvironmentsUrls } from './EnvironmentsUrls';
 interface IBasicEnv {
     DEVELOPMENT: boolean;
-    ENVIRONMENT_TO_OPERATE: string;
+    ENVIRONMENT_TO_OPERATE: EnvironmentEnums;
     ADVOCA_ACCESS_URL?: string;
 }
 type IEnvironmentUrls = typeof EnvironmentsUrls.local;
-type IKeyEnvironmentUrls = keyof IEnvironmentUrls;
+export type IKeyEnvironmentUrls = keyof IEnvironmentUrls;
 type ISrvKeysTransformToWs<T> = T extends `SRV_${infer K}` ? `SRV_${K}_WS` : never;
 declare global {
     interface Window {
@@ -27,10 +27,22 @@ export declare function fetchConfigsInternal(): Promise<void | undefined>;
  */
 export declare function EnvConfigsFnInternal(): {
     CACHE_VERSION: string;
-    DEVELOPMENT: boolean;
-    ENVIRONMENT_TO_OPERATE: EnvironmentEnums;
     SRV_AUTH: string;
-};
+} & {
+    SRV_DIRECTORY: string;
+    SRV_CALENDAR: string;
+    SRV_PROXY_OLD: string;
+    SRV_PROXY_OLD_HELSE: string;
+    SRV_PROXY_OLD_WEB: string;
+    SRV_STORAGE: string;
+    SRV_CHAT: string;
+    SRV_CONNECTOR: string;
+    SRV_ARTIFACT: string;
+    SRV_ADVOCA: string;
+    SRV_PROXY: string;
+    SRV_NOTIFICATION: string;
+    SRV_AO_DIRECTORY: string;
+} & IBasicEnv;
 export declare function generateEnvConfigsBindings<T extends IBasicEnv, K extends (keyof T | IKeyEnvironmentUrls | ISrvKeysTransformToWs<keyof T | IKeyEnvironmentUrls>) & string, S>(envs_import: Promise<{
     envs: T;
 }>, required_envs: K[], static_env: S): {
