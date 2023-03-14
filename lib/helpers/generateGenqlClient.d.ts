@@ -1,10 +1,8 @@
-import type { AxiosRequestConfig } from 'axios';
 import type { ClientOptions } from '@genql/runtime';
 interface CliOptions extends Omit<ClientOptions, 'url' | 'signal'> {
     anonymous?: boolean;
 }
-export declare function generateGenqlClient<T extends ReturnType<typeof createClient>>({ setReqConfig, createClient, serviceUrl, path, }: {
-    setReqConfig: () => Promise<AxiosRequestConfig<any>>;
+export declare function generateGenqlClient<T extends ReturnType<typeof createClient>>({ createClient, serviceUrl, path, }: {
     createClient: (options?: ClientOptions | undefined) => T;
     serviceUrl: () => string;
     path?: string;

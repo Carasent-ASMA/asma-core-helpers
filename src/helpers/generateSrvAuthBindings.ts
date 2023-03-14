@@ -2,6 +2,7 @@
 import { EventBus } from 'asma-event-bus/lib/event-buss'
 import { EnvironmentEnums } from '../interfaces/enums'
 import { setTheme } from './checkForRegisteredSubdomains'
+import { EnvConfigsFnInternal } from './generateEnvConfigsBindings'
 import { parseJwt } from './parseJwt'
 
 //let logoutsuccesfull = false
@@ -22,7 +23,7 @@ function dispatchJwtChangedEvent() {
  * @generic FeatureEnums - feature_names_enums from asma-genql-directory
  * @generic SrvUrlsEnums - srv_names_enums from asma-genql-directory
  */
-type EnvConfigsFn = () => { SRV_AUTH: string; DEVELOPMENT: boolean; ENVIRONMENT_TO_OPERATE: string }
+//type EnvConfigsFn = () => { SRV_AUTH: string; DEVELOPMENT: boolean; ENVIRONMENT_TO_OPERATE: string }
 
 export async function getCachedJwtInternal() {
     const getCachedJwt = window.__ASMA__SHELL__?.auth_bindings?.getCachedJwt
@@ -45,11 +46,24 @@ export async function srvAuthGetInternal<R>(url: string, headers?: Record<string
     return srvAuthGet(url, headers)
 }
 
+export async function setReqConfig<T = unknown>(
+    data?: T | undefined,
+    responseType?: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream',
+) {
+    const setReqConfig = window.__ASMA__SHELL__?.auth_bindings?.setReqConfig
+    if (!setReqConfig) {
+        throw new Error(
+            'setReqConfig is not defined! please make sure that generateSrvAuthBindings is called before setReqConfig',
+        )
+    }
+    return setReqConfig(data, responseType)
+}
+
 export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums extends string = never>(
     //SRV_AUTH: () => string,
     //DEVELOPMENT: () => boolean,
     //EnvironmentToOperateFn: () => string,
-    EnvConfigsFn: EnvConfigsFn,
+    //EnvConfigsFn: EnvConfigsFn,
     logout?: () => void,
 ) {
     if (logout) {
@@ -78,9 +92,9 @@ export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums exten
     const promiseRegistry: Record<string, Promise<Response>> = <{}>{}
 
     async function srvAuthGet<R>(url: string, headers?: Record<string, string>): Promise<R> {
-        if (EnvConfigsFn().DEVELOPMENT && EnvConfigsFn().ENVIRONMENT_TO_OPERATE) {
-            if (EnvConfigsFn().ENVIRONMENT_TO_OPERATE in EnvironmentEnums) {
-                url = `${url}&env=${EnvConfigsFn().ENVIRONMENT_TO_OPERATE}`
+        if (EnvConfigsFnInternal().DEVELOPMENT && EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE) {
+            if (EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE in EnvironmentEnums) {
+                url = `${url}&env=${EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE}`
 
                 // file deepcode ignore GlobalReplacementRegex: <it is intended to be replaced only first occurence>
                 url = url.includes('&') && !url.includes('?') ? url.replace('&', '?') : url
@@ -90,13 +104,13 @@ export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums exten
                     'shall be one of:',
                     EnvironmentEnums,
                     'actual value:',
-                    EnvConfigsFn().ENVIRONMENT_TO_OPERATE,
+                    EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE,
                 )
             }
         }
 
         if (!promiseRegistry[url]) {
-            promiseRegistry[url] = fetch(`${EnvConfigsFn().SRV_AUTH}${url}`, {
+            promiseRegistry[url] = fetch(`${EnvConfigsFnInternal().SRV_AUTH}${url}`, {
                 headers: {
                     ...headers,
                     'asma-origin': window.location.origin,
@@ -284,7 +298,7 @@ export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums exten
 
         const hasFeatureCheck = !!features?.has(featureName)
 
-        if (EnvConfigsFn().DEVELOPMENT && asmaDebug && asmaFeaturesIgnoreList) {
+        if (EnvConfigsFnInternal().DEVELOPMENT && asmaDebug && asmaFeaturesIgnoreList) {
             let asmaEnableAllFeatures: FeatureEnums[] | undefined
 
             try {
@@ -352,11 +366,11 @@ export function generateSrvAuthBindingsMicroApp(
     //SRV_AUTH: () => string,
     //DEVELOPMENT: () => boolean,
     //ENVIRONMENT_TO_OPERATE: () => EnvironmentEnums,
-    EnvConfigsFn: EnvConfigsFn,
+    //EnvConfigsFn: EnvConfigsFn,
     logout?: () => void,
 ) {
     return (
         window.__ASMA__SHELL__?.auth_bindings ||
-        generateSrvAuthBindings(/* SRV_AUTH, DEVELOPMENT, ENVIRONMENT_TO_OPERATE, */ EnvConfigsFn, logout)
+        generateSrvAuthBindings(/* SRV_AUTH, DEVELOPMENT, ENVIRONMENT_TO_OPERATE, */ /* EnvConfigsFn, */ logout)
     )
 }
