@@ -52,12 +52,14 @@ export async function checkForRegisteredSubdomain({
     srvAuthGet,
     logos,
     authenticated,
+    no_greenish_theme = false,
 }: {
     redirect_if_not_exists?: boolean
     setSelectedCustomer?: (customer_id: string) => void
     srvAuthGet: <R>(url: string, headers?: Record<string, string> | undefined) => Promise<R>
     logos: { fretexLogo: string; carasentLogo: string }
     authenticated: boolean
+    no_greenish_theme?: boolean
 }) {
     const { unregister } = onThemeChange(({ theme }) => {
         appendAsmaLogoLink(theme, logos)
@@ -75,7 +77,7 @@ export async function checkForRegisteredSubdomain({
         }
 
         if (res?.theme) {
-            setTheme(res.theme)
+            no_greenish_theme && res.theme === 'greenish' ? setTheme('default') : setTheme(res.theme)
         }
 
         if (!!!res?.id && redirect_if_not_exists) {
