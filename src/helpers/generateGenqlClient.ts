@@ -1,8 +1,8 @@
-import type { AxiosRequestConfig } from 'axios'
+//import type { AxiosRequestConfig } from 'axios'
 import type { createClient } from '@genql/runtime'
 import type { ClientOptions } from '@genql/runtime'
 import { httpToWs } from './Config'
-import { registerCallbackOnSrvAuthEvents } from './generateSrvAuthBindings'
+import { registerCallbackOnSrvAuthEvents, setReqConfig } from './generateSrvAuthBindings'
 //import { parseJwt } from '../helpers/parseJwt'
 
 interface CliOptions extends Omit<ClientOptions, 'url' | 'signal'> {
@@ -10,12 +10,12 @@ interface CliOptions extends Omit<ClientOptions, 'url' | 'signal'> {
 }
 
 export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
-    setReqConfig,
+    //setReqConfig,
     createClient,
     serviceUrl,
     path = '/v1/graphql',
 }: {
-    setReqConfig: () => Promise<AxiosRequestConfig<any>>
+    //setReqConfig: () => Promise<AxiosRequestConfig<any>>
     createClient: (options?: ClientOptions | undefined) => T
     serviceUrl: () => string
     path?: string

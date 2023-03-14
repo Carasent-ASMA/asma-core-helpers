@@ -14,14 +14,14 @@ declare function dispatchLogoutEvent(): void;
  * @generic FeatureEnums - feature_names_enums from asma-genql-directory
  * @generic SrvUrlsEnums - srv_names_enums from asma-genql-directory
  */
-type EnvConfigsFn = () => {
-    SRV_AUTH: string;
-    DEVELOPMENT: boolean;
-    ENVIRONMENT_TO_OPERATE: string;
-};
 export declare function getCachedJwtInternal(): Promise<string | undefined>;
 export declare function srvAuthGetInternal<R>(url: string, headers?: Record<string, string>): Promise<R>;
-export declare function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums extends string = never>(EnvConfigsFn: EnvConfigsFn, logout?: () => void): {
+export declare function setReqConfig<T = unknown>(data?: T | undefined, responseType?: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream'): Promise<{
+    data: T | undefined;
+    responseType: "arraybuffer" | "blob" | "document" | "json" | "text" | "stream" | undefined;
+    headers: Record<string, string>;
+}>;
+export declare function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums extends string = never>(logout?: () => void): {
     hasFeature: (featureName: FeatureEnums) => boolean;
     getConnector: () => string | undefined;
     getFeatures: () => Set<FeatureEnums> | undefined;
@@ -72,9 +72,14 @@ export declare function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnu
  * @deprecated use generateSrvAuthBindings
  *
  */
-export declare function generateSrvAuthBindingsMicroApp(EnvConfigsFn: EnvConfigsFn, logout?: () => void): {
+export declare function generateSrvAuthBindingsMicroApp(logout?: () => void): {
     getCachedJwt: () => Promise<string | undefined>;
     srvAuthGet: <R>(url: string, headers?: Record<string, string> | undefined) => Promise<R>;
+    setReqConfig: <T = unknown>(data?: T | undefined, responseType?: "arraybuffer" | "blob" | "document" | "json" | "text" | "stream" | undefined) => Promise<{
+        data: T | undefined;
+        responseType: "arraybuffer" | "blob" | "document" | "json" | "text" | "stream" | undefined;
+        headers: Record<string, string>;
+    }>;
 };
 export {};
 //# sourceMappingURL=generateSrvAuthBindings.d.ts.map

@@ -21,6 +21,14 @@ declare global {
             auth_bindings?: {
                 getCachedJwt: () => Promise<string | undefined>
                 srvAuthGet: <R>(url: string, headers?: Record<string, string>) => Promise<R>
+                setReqConfig: <T = unknown>(
+                    data?: T | undefined,
+                    responseType?: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream',
+                ) => Promise<{
+                    data: T | undefined
+                    responseType: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream' | undefined
+                    headers: Record<string, string>
+                }>
             } //IGenerateSRVAuthBindings
             isLogged?: () => boolean
             logoutUser?: () => void

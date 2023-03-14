@@ -1,3 +1,4 @@
+import type { EnvironmentEnums } from 'asma-helpers/lib'
 import { httpToWs } from './Config'
 import type { EnvironmentsUrls } from './EnvironmentsUrls'
 import { uuid4 } from './generateUUID4'
@@ -55,7 +56,12 @@ export function EnvConfigsFnInternal() {
             'EnvConfigsFn is not defined! please make sure that generateEnvConfigsBindings is called before EnvConfigsFn',
         )
     }
-    return EnvConfigsFn() as { CACHE_VERSION: string; DEVELOPMENT: boolean }
+    return EnvConfigsFn() as {
+        CACHE_VERSION: string
+        DEVELOPMENT: boolean
+        ENVIRONMENT_TO_OPERATE: EnvironmentEnums
+        SRV_AUTH: string
+    }
 }
 export function generateEnvConfigsBindings<
     T extends IBasicEnv,
@@ -127,5 +133,5 @@ export function generateEnvConfigsBindings<
     window.__GENERATE_ENV_CONFIGS_BINDINGS__.fetchConfigsReg[fetchConfigsInstanceId] = fetchConfigs
     window.__GENERATE_ENV_CONFIGS_BINDINGS__.EnvConfigsFnReg[EnvConfigsFnInstanceId] = EnvConfigsFn
 
-    return { EnvConfigsFn }
+    return { EnvConfigsFn, fetchConfigs }
 }
