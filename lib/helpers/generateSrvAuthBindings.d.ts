@@ -16,7 +16,7 @@ declare function dispatchLogoutEvent(): void;
  */
 export declare function getCachedJwtInternal(): Promise<string | undefined>;
 export declare function srvAuthGetInternal<R>(url: string, headers?: Record<string, string>): Promise<R>;
-export declare function setReqConfig<T = unknown>(data?: T | undefined, responseType?: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream'): Promise<{
+export declare function setReqConfigInternal<T = unknown>(data?: T | undefined, responseType?: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream'): Promise<{
     data: T | undefined;
     responseType: "arraybuffer" | "blob" | "document" | "json" | "text" | "stream" | undefined;
     headers: Record<string, string>;
