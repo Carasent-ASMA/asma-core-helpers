@@ -52,21 +52,15 @@ export async function checkForRegisteredSubdomain({
     srvAuthGet,
     logos,
     authenticated,
-    no_greenish_theme = false,
 }: {
     redirect_if_not_exists?: boolean
     setSelectedCustomer?: (customer_id: string) => void
     srvAuthGet: <R>(url: string, headers?: Record<string, string> | undefined) => Promise<R>
     logos: { fretexLogo: string; carasentLogo: string }
     authenticated: boolean
-    no_greenish_theme?: boolean
 }) {
     const { unregister } = onThemeChange(({ theme }) => {
-        let themeToApply = theme
-
-        no_greenish_theme && theme === 'greenish' && (themeToApply = 'default')
-
-        appendAsmaLogoLink(themeToApply, logos)
+        appendAsmaLogoLink(theme, logos)
     })
 
     //const client = await directoryGenQLClient(true, { 'x-hasura-subdomain': subdomain })
@@ -80,32 +74,30 @@ export async function checkForRegisteredSubdomain({
             setSelectedCustomer?.(res.id)
         }
 
-        console.log('res?.theme', res?.theme)
-
         if (res?.theme) {
             setTheme(res.theme)
         }
+
+        appendAsmaLogoLink(getTheme(), logos)
 
         if (!!!res?.id && redirect_if_not_exists) {
             redirectFromSubdomainToDomain()
         }
     }
-    appendAsmaLogoLink(getTheme(), logos)
 
-    return [!!res?.id, unregister] as [registeredSubdomain: boolean, unregister: () => void]
+    return [authenticated || !!res?.id, unregister] as [registeredSubdomain: boolean, unregister: () => void]
 }
-const asmaLogoLink = 'asma-logo-link'
 
 function appendAsmaLogoLink(theme: string, { carasentLogo, fretexLogo }: { fretexLogo: string; carasentLogo: string }) {
     const body = document.body!
 
     body.dataset['theme'] = theme
 
-    document.getElementById(asmaLogoLink)?.remove()
+    document.getElementById('asma-theme-link')?.remove()
 
     const link = document.createElement('link')
 
-    link.setAttribute('id', asmaLogoLink)
+    link.setAttribute('id', 'asma-logo-link')
 
     if (theme === 'fretex') {
         document.title = 'Fretex'
