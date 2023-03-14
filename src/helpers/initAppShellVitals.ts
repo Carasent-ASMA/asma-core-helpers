@@ -47,7 +47,7 @@ export async function initAppShellVitals(fns: {
 
     const [registeredSubdomain] = await checkForRegisteredSubdomain(fns.data_for_registered_subdomain_check)
 
-    fns.data_for_registered_subdomain_check.authenticated() && getCachedJwtInternal()
+    fns.data_for_registered_subdomain_check.authenticated() && (await getCachedJwtInternal())
 
     return [registeredSubdomain] as [registeredSubdomain: boolean]
 }
