@@ -1,5 +1,8 @@
 import { EventBus } from 'asma-event-bus/lib/event-buss'
+import { clearCacheData } from './clearCacheData'
+import { srvAuthGetInternal } from './generateSrvAuthBindings'
 import { redirectFromSubdomainToDomain } from './getSubdomain'
+import { initiatieIDBListenersOnMstSnaphsots } from './InitializeIDBListenersOnMstSnapshots'
 
 /**
  * @private use only inside this file
@@ -45,35 +48,68 @@ export function setTheme(theme: string) {
     }
     setThemeLocal(theme)
 }
+/**
+ * !!!ORDER IS VERY IMPORTANT!!!
+ * EnvConfigsFn from EnvCongigs.ts
+ * setLoadMicroApp from asma-qiankun-react-loader
+ * mst_stores_toPersisit - array of mst stores that should be persisted in indexedDB
+ * data_for_registered_subdomain_check - data needed to check if subdomain is registered to an exiting tenant in the db
+ */
+export async function initAplicationVitals(fns: {
+    EnvConfigsFn: () => { CACHE_VERSION: string; DEVELOPMENT: boolean }
+    fetchConfigs(): Promise<void>
+    setLoadMicroApp(dev_mode: boolean): Promise<void>
+    mst_stores_toPersisit: Object[]
+    data_for_registered_subdomain_check: {
+        redirect_if_not_exists?: boolean
+        setSelectedCustomer?: (customer_id: string) => void
+        srvAuthGet: <R>(url: string, headers?: Record<string, string> | undefined) => Promise<R>
+        logos: { fretexLogo: string; carasentLogo: string }
+        authenticated: boolean
+        service: 'app-shell' | 'app-advoca' | 'advoca-portal'
+    }
+}) {
+    await fns.fetchConfigs()
+
+    await clearCacheData(fns.EnvConfigsFn().CACHE_VERSION)
+
+    await fns.setLoadMicroApp(fns.EnvConfigsFn().DEVELOPMENT)
+
+    const promises = fns.mst_stores_toPersisit.map((store) => initiatieIDBListenersOnMstSnaphsots(store))
+
+    await Promise.allSettled(promises)
+
+    const [registeredSubdomain] = await checkForRegisteredSubdomain(fns.data_for_registered_subdomain_check)
+    return [registeredSubdomain] as [registeredSubdomain: boolean]
+}
 
 export async function checkForRegisteredSubdomain({
     redirect_if_not_exists = true,
     setSelectedCustomer,
-    srvAuthGet,
+    //srvAuthGet,
     logos,
     authenticated,
-    no_greenish_theme = false,
+    service,
 }: {
     redirect_if_not_exists?: boolean
     setSelectedCustomer?: (customer_id: string) => void
-    srvAuthGet: <R>(url: string, headers?: Record<string, string> | undefined) => Promise<R>
+    //srvAuthGet: <R>(url: string, headers?: Record<string, string> | undefined) => Promise<R>
     logos: { fretexLogo: string; carasentLogo: string }
     authenticated: boolean
-    no_greenish_theme?: boolean
+    /**
+     * @deprecated one need remove this. Please do not use it in more use cases
+     */
+    service: 'app-shell' | 'advoca-portal' | 'app-advoca'
 }) {
     const { unregister } = onThemeChange(({ theme }) => {
-        let themeToApply = theme
-
-        no_greenish_theme && theme === 'greenish' && (themeToApply = 'default')
-
-        appendAsmaLogoLink(themeToApply, logos)
+        appendAsmaLogoLink(theme, logos, service)
     })
 
     //const client = await directoryGenQLClient(true, { 'x-hasura-subdomain': subdomain })
     let res: { id?: string; theme?: string } | undefined
 
     if (!authenticated) {
-        res = await srvAuthGet<{ id?: string; theme?: string }>('/check?context=subdomain', {
+        res = await srvAuthGetInternal<{ id?: string; theme?: string }>('/check?context=subdomain', {
             'asma-origin': window.location.origin,
         })
         if (res?.id) {
@@ -90,13 +126,22 @@ export async function checkForRegisteredSubdomain({
             redirectFromSubdomainToDomain()
         }
     }
-    appendAsmaLogoLink(getTheme(), logos)
+    appendAsmaLogoLink(getTheme(), logos, service)
 
     return [authenticated || !!res?.id, unregister] as [registeredSubdomain: boolean, unregister: () => void]
 }
 const asmaLogoLink = 'asma-logo-link'
 
-function appendAsmaLogoLink(theme: string, { carasentLogo, fretexLogo }: { fretexLogo: string; carasentLogo: string }) {
+function appendAsmaLogoLink(
+    theme: string,
+    { carasentLogo, fretexLogo }: { fretexLogo: string; carasentLogo: string },
+    service: 'app-shell' | 'advoca-portal' | 'app-advoca',
+) {
+    if (service === 'advoca-portal') {
+        theme = 'default'
+    } else if (service === 'app-advoca') {
+        theme !== 'fretex' && (theme = 'default')
+    }
     const body = document.body!
 
     body.dataset['theme'] = theme

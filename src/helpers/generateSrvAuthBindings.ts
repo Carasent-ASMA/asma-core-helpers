@@ -22,8 +22,28 @@ function dispatchJwtChangedEvent() {
  * @generic FeatureEnums - feature_names_enums from asma-genql-directory
  * @generic SrvUrlsEnums - srv_names_enums from asma-genql-directory
  */
-
 type EnvConfigsFn = () => { SRV_AUTH: string; DEVELOPMENT: boolean; ENVIRONMENT_TO_OPERATE: string }
+
+export async function getCachedJwtInternal() {
+    const getCachedJwt = window.__ASMA__SHELL__?.auth_bindings?.getCachedJwt
+
+    if (!getCachedJwt) {
+        throw new Error(
+            'getCachedJwt is not defined! please make sure that generateSrvAuthBindings is called before getCachedJwt',
+        )
+    }
+    return getCachedJwt()
+}
+export async function srvAuthGetInternal<R>(url: string, headers?: Record<string, string>): Promise<R> {
+    const srvAuthGet = window.__ASMA__SHELL__?.auth_bindings?.srvAuthGet
+
+    if (!srvAuthGet) {
+        throw new Error(
+            'srvAuthGet is not defined! please make sure that generateSrvAuthBindings is called before srvAuthGet',
+        )
+    }
+    return srvAuthGet(url, headers)
+}
 
 export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums extends string = never>(
     //SRV_AUTH: () => string,
