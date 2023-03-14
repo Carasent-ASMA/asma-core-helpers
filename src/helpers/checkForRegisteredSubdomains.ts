@@ -62,7 +62,11 @@ export async function checkForRegisteredSubdomain({
     no_greenish_theme?: boolean
 }) {
     const { unregister } = onThemeChange(({ theme }) => {
-        appendAsmaLogoLink(theme, logos)
+        let themeToApply = theme
+
+        no_greenish_theme && theme === 'greenish' && (themeToApply = 'default')
+
+        appendAsmaLogoLink(themeToApply, logos)
     })
 
     //const client = await directoryGenQLClient(true, { 'x-hasura-subdomain': subdomain })
@@ -76,8 +80,10 @@ export async function checkForRegisteredSubdomain({
             setSelectedCustomer?.(res.id)
         }
 
+        console.log('res?.theme', res?.theme)
+
         if (res?.theme) {
-            no_greenish_theme && res.theme === 'greenish' ? setTheme('default') : setTheme(res.theme)
+            setTheme(res.theme)
         }
 
         if (!!!res?.id && redirect_if_not_exists) {
