@@ -28,7 +28,7 @@ export async function initAppShellVitals(fns: {
         /**
          * whenether user is authenticated or not
          */
-        authenticated: boolean
+        authenticated: () => boolean
         /**
          * temporary solution need to be removed after theming will be implemented in all app-shells (app-shell, app-advoca, advoca-portal)
          */
@@ -47,7 +47,7 @@ export async function initAppShellVitals(fns: {
 
     const [registeredSubdomain] = await checkForRegisteredSubdomain(fns.data_for_registered_subdomain_check)
 
-    fns.data_for_registered_subdomain_check.authenticated && getCachedJwtInternal()
+    fns.data_for_registered_subdomain_check.authenticated() && getCachedJwtInternal()
 
     return [registeredSubdomain] as [registeredSubdomain: boolean]
 }
