@@ -1,11 +1,10 @@
-import type { EnvironmentEnums } from 'asma-helpers/lib'
 import { httpToWs } from './Config'
 import type { EnvironmentsUrls } from './EnvironmentsUrls'
 import { uuid4 } from './generateUUID4'
 
 interface IBasicEnv {
     DEVELOPMENT: boolean
-    ENVIRONMENT_TO_OPERATE: EnvironmentEnums
+    ENVIRONMENT_TO_OPERATE: string
     ADVOCA_ACCESS_URL?: string
 }
 

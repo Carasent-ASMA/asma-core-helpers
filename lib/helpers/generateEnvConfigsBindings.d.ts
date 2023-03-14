@@ -1,8 +1,7 @@
-import type { EnvironmentEnums } from 'asma-helpers/lib';
 import type { EnvironmentsUrls } from './EnvironmentsUrls';
 interface IBasicEnv {
     DEVELOPMENT: boolean;
-    ENVIRONMENT_TO_OPERATE: EnvironmentEnums;
+    ENVIRONMENT_TO_OPERATE: string;
     ADVOCA_ACCESS_URL?: string;
 }
 type IEnvironmentUrls = typeof EnvironmentsUrls.local;
