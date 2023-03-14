@@ -264,7 +264,7 @@ export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums exten
 
         const hasFeatureCheck = !!features?.has(featureName)
 
-        if (asmaDebug && asmaFeaturesIgnoreList) {
+        if (EnvConfigsFn().DEVELOPMENT && asmaDebug && asmaFeaturesIgnoreList) {
             let asmaEnableAllFeatures: FeatureEnums[] | undefined
 
             try {
