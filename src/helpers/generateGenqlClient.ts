@@ -2,7 +2,7 @@
 import type { createClient } from '@genql/runtime'
 import type { ClientOptions } from '@genql/runtime'
 import { httpToWs } from './Config'
-import { registerCallbackOnSrvAuthEvents, setReqConfig } from './generateSrvAuthBindings'
+import { registerCallbackOnSrvAuthEvents, setReqConfigInternal } from './generateSrvAuthBindings'
 //import { parseJwt } from '../helpers/parseJwt'
 
 interface CliOptions extends Omit<ClientOptions, 'url' | 'signal'> {
@@ -70,7 +70,9 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
         return createClient({
             url: `${serviceUrl()}${path}`,
             headers: async () => ({
-                ...(options.anonymous ? {} : (((await setReqConfig()).headers ?? {}) as Record<string, string>)),
+                ...(options.anonymous
+                    ? {}
+                    : (((await setReqConfigInternal()).headers ?? {}) as Record<string, string>)),
                 ...headers,
             }),
             signal: abortControllerlocal.signal,
@@ -91,7 +93,7 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
                 subscription: {
                     reconnect: true,
                     reconnectionAttempts: 5,
-                    headers: async () => ((await setReqConfig()).headers ?? {}) as Record<string, string>,
+                    headers: async () => ((await setReqConfigInternal()).headers ?? {}) as Record<string, string>,
                 },
             })
         }

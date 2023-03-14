@@ -46,7 +46,7 @@ export async function srvAuthGetInternal<R>(url: string, headers?: Record<string
     return srvAuthGet(url, headers)
 }
 
-export async function setReqConfig<T = unknown>(
+export async function setReqConfigInternal<T = unknown>(
     data?: T | undefined,
     responseType?: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream',
 ) {
