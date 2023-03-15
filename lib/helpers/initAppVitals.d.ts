@@ -12,7 +12,7 @@ export declare function initAppVitals({
  */
 is_child_app, data_for_registered_subdomain_check, mst_stores_toPersisit, setLoadMicroApp, }: {
     setLoadMicroApp(dev_mode: boolean): Promise<void>;
-    is_child_app: boolean;
+    is_child_app?: boolean;
     mst_stores_toPersisit: Object[];
     data_for_registered_subdomain_check: {
         /**
