@@ -1,9 +1,6 @@
 /**
- * !!!ORDER IS VERY IMPORTANT!!!
- * EnvConfigsFn from EnvCongigs.ts
- * setLoadMicroApp from asma-qiankun-react-loader
- * mst_stores_toPersisit - array of mst stores that should be persisted in indexedDB
- * data_for_registered_subdomain_check - data needed to check if subdomain is registered to an exiting tenant in the db
+ *
+ * @imporant make sure this method allways is called first when startsFe() on both on child and shell apps
  */
 export declare function initASMAAppVitals({ 
 /**
@@ -11,6 +8,13 @@ export declare function initASMAAppVitals({
  * add qiankunWindow.__POWERED_BY_QIANKUN__ there where qiankunWindow is awailable
  */
 authenticated, is_child_app, subdomain_check, mst_stores_to_persisit, setLoadMicroApp, }: {
+    /**
+     * !!!ORDER IS VERY IMPORTANT!!!
+     * EnvConfigsFn from EnvCongigs.ts
+     * setLoadMicroApp from asma-qiankun-react-loader
+     * mst_stores_toPersisit - array of mst stores that should be persisted in indexedDB
+     * data_for_registered_subdomain_check - data needed to check if subdomain is registered to an exiting tenant in the db
+     */
     setLoadMicroApp(dev_mode: boolean): Promise<void>;
     is_child_app?: boolean;
     mst_stores_to_persisit: Object[];
@@ -38,4 +42,4 @@ authenticated, is_child_app, subdomain_check, mst_stores_to_persisit, setLoadMic
         service: 'app-shell' | 'app-advoca' | 'advoca-portal';
     };
 }): Promise<[registeredSubdomain: boolean]>;
-//# sourceMappingURL=initAppVitals.d.ts.map
+//# sourceMappingURL=initASMAAppVitals.d.ts.map
