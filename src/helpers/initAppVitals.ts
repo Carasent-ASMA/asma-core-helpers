@@ -5,11 +5,8 @@ import { getCachedJwtInternal } from './generateSrvAuthBindings'
 import { initiatieIDBListenersOnMstSnaphsots } from './InitializeIDBListenersOnMstSnapshots'
 
 /**
- * !!!ORDER IS VERY IMPORTANT!!!
- * EnvConfigsFn from EnvCongigs.ts
- * setLoadMicroApp from asma-qiankun-react-loader
- * mst_stores_toPersisit - array of mst stores that should be persisted in indexedDB
- * data_for_registered_subdomain_check - data needed to check if subdomain is registered to an exiting tenant in the db
+ *
+ * @imporant make sure this method allways is called first when startsFe() on both on child and shell apps
  */
 export async function initASMAAppVitals({
     /**
@@ -22,6 +19,13 @@ export async function initASMAAppVitals({
     mst_stores_to_persisit,
     setLoadMicroApp,
 }: {
+    /**
+     * !!!ORDER IS VERY IMPORTANT!!!
+     * EnvConfigsFn from EnvCongigs.ts
+     * setLoadMicroApp from asma-qiankun-react-loader
+     * mst_stores_toPersisit - array of mst stores that should be persisted in indexedDB
+     * data_for_registered_subdomain_check - data needed to check if subdomain is registered to an exiting tenant in the db
+     */
     setLoadMicroApp(dev_mode: boolean): Promise<void>
     is_child_app?: boolean
     mst_stores_to_persisit: Object[]
