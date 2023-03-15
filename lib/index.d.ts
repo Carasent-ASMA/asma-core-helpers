@@ -20,7 +20,7 @@ export * from './helpers/userTypingSignal';
 export * from './helpers/base64ToFile';
 export * from './helpers/isValidUrl';
 export * from './helpers/attachUserJournalCredentials';
-export * from './helpers/initAppVitals';
+export * from './helpers/initASMAAppVitals';
 export * from './utility/fetch';
 export * from './clients/srvAuth';
 export type { IUploadedDocument } from './interfaces/api/advoca/IUploadedDocument';
