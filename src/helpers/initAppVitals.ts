@@ -22,7 +22,7 @@ export async function initAppVitals({
     setLoadMicroApp,
 }: {
     setLoadMicroApp(dev_mode: boolean): Promise<void>
-    is_child_app: boolean
+    is_child_app?: boolean
     mst_stores_toPersisit: Object[]
     data_for_registered_subdomain_check: {
         /**
