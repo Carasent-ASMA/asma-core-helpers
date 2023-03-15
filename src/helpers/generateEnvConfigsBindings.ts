@@ -12,6 +12,11 @@ type IEnvironmentUrls = typeof EnvironmentsUrls.local
 
 export type IKeyEnvironmentUrls = keyof IEnvironmentUrls
 
+export type IEnvironmentUrlsGenQLOnly = Omit<
+    IEnvironmentUrls,
+    'SRV_PROXY_OLD' | 'SRV_PROXY_OLD_HELSE' | 'SRV_PROXY_OLD_WEB' | 'SRV_ADVOCA'
+>
+
 type ISrvKeysTransformToWs<T> = T extends `SRV_${infer K}` ? `SRV_${K}_WS` : never
 
 //type IKeyEnvironmentUrlsWs = `${IKeyEnvironmentUrls}_WS`
@@ -63,7 +68,11 @@ export function EnvConfigsFnInternal() {
 }
 export function generateEnvConfigsBindings<
     T extends IBasicEnv,
-    K extends (keyof T | IKeyEnvironmentUrls | ISrvKeysTransformToWs<keyof T | IKeyEnvironmentUrls>) & string,
+    K extends (
+        | keyof T
+        | Omit<IKeyEnvironmentUrls, 'SRV_AO_WRAPPER'>
+    ) /* | ISrvKeysTransformToWs<keyof T | IKeyEnvironmentUrls> */ &
+        string,
     S,
 >(envs_import: Promise<{ envs: T }>, required_envs: K[], static_env: S) {
     type IEnvConfigs = T & IEnvironmentUrls & Record<ISrvKeysTransformToWs<keyof T | IKeyEnvironmentUrls>, string>
