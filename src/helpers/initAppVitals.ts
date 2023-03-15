@@ -16,15 +16,20 @@ export async function initAppVitals({
      * //TODO invesigate how to internalyze this variable
      * add qiankunWindow.__POWERED_BY_QIANKUN__ there where qiankunWindow is awailable
      */
+    authenticated,
     is_child_app = false,
-    data_for_registered_subdomain_check,
-    mst_stores_toPersisit,
+    subdomain_check,
+    mst_stores_to_persisit,
     setLoadMicroApp,
 }: {
     setLoadMicroApp(dev_mode: boolean): Promise<void>
     is_child_app?: boolean
-    mst_stores_toPersisit: Object[]
-    data_for_registered_subdomain_check: {
+    mst_stores_to_persisit: Object[]
+    /**
+     * whenether user is authenticated or not
+     */
+    authenticated: () => boolean
+    subdomain_check: {
         /**
          * redirects to domain if subdomain is not registered
          * ex: https://non-existent.adopus.no -> https://www.adopus.no
@@ -35,10 +40,6 @@ export async function initAppVitals({
          * //TODO temporary solution need to be fetched logos dynamically from srv-auth (origin service is srv-storage or srv-directory)
          */
         logos: { fretexLogo: string; carasentLogo: string }
-        /**
-         * whenether user is authenticated or not
-         */
-        authenticated: () => boolean
         /**
          * temporary solution need to be removed after theming will be implemented in all app-shells (app-shell, app-advoca, advoca-portal)
          */
@@ -51,19 +52,19 @@ export async function initAppVitals({
 
     await setLoadMicroApp(EnvConfigsFnInternal().DEVELOPMENT)
 
-    const promises = mst_stores_toPersisit.map((store) => initiatieIDBListenersOnMstSnaphsots(store))
+    const promises = mst_stores_to_persisit.map((store) => initiatieIDBListenersOnMstSnaphsots(store))
 
     await Promise.allSettled(promises)
 
     let registeredSubdomain = false
 
     if (!is_child_app) {
-        const [registeredSubdomain1] = await checkForRegisteredSubdomain(data_for_registered_subdomain_check)
+        const [registeredSubdomain1] = await checkForRegisteredSubdomain({ ...subdomain_check, authenticated })
 
         registeredSubdomain = registeredSubdomain1
     }
 
-    data_for_registered_subdomain_check.authenticated() && (await getCachedJwtInternal())
+    authenticated() && (await getCachedJwtInternal())
 
     return [registeredSubdomain] as [registeredSubdomain: boolean]
 }

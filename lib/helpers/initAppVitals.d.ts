@@ -10,11 +10,15 @@ export declare function initAppVitals({
  * //TODO invesigate how to internalyze this variable
  * add qiankunWindow.__POWERED_BY_QIANKUN__ there where qiankunWindow is awailable
  */
-is_child_app, data_for_registered_subdomain_check, mst_stores_toPersisit, setLoadMicroApp, }: {
+authenticated, is_child_app, subdomain_check, mst_stores_to_persisit, setLoadMicroApp, }: {
     setLoadMicroApp(dev_mode: boolean): Promise<void>;
     is_child_app?: boolean;
-    mst_stores_toPersisit: Object[];
-    data_for_registered_subdomain_check: {
+    mst_stores_to_persisit: Object[];
+    /**
+     * whenether user is authenticated or not
+     */
+    authenticated: () => boolean;
+    subdomain_check: {
         /**
          * redirects to domain if subdomain is not registered
          * ex: https://non-existent.adopus.no -> https://www.adopus.no
@@ -28,10 +32,6 @@ is_child_app, data_for_registered_subdomain_check, mst_stores_toPersisit, setLoa
             fretexLogo: string;
             carasentLogo: string;
         };
-        /**
-         * whenether user is authenticated or not
-         */
-        authenticated: () => boolean;
         /**
          * temporary solution need to be removed after theming will be implemented in all app-shells (app-shell, app-advoca, advoca-portal)
          */
