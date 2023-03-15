@@ -22,7 +22,7 @@ export * from './helpers/userTypingSignal'
 export * from './helpers/base64ToFile'
 export * from './helpers/isValidUrl'
 export * from './helpers/attachUserJournalCredentials'
-export * from './helpers/initAppShellVitals'
+export * from './helpers/initAppVitals'
 
 export * from './utility/fetch'
 
