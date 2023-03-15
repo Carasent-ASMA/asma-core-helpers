@@ -2,24 +2,17 @@
  *
  * @imporant make sure this method allways is called first when startsFe() on both on child and shell apps
  */
-export declare function initASMAAppVitals({ 
-/**
- * //TODO invesigate how to internalyze this variable
- * add qiankunWindow.__POWERED_BY_QIANKUN__ there where qiankunWindow is awailable
- */
-authenticated, is_child_app, subdomain_check, mst_stores_to_persisit, setLoadMicroApp, }: {
+export declare function initASMAAppVitals({ authenticated, is_child_app, subdomain_check, mst_stores_to_persisit, setLoadMicroApp, }: {
     /**
-     * !!!ORDER IS VERY IMPORTANT!!!
-     * EnvConfigsFn from EnvCongigs.ts
-     * setLoadMicroApp from asma-qiankun-react-loader
-     * mst_stores_toPersisit - array of mst stores that should be persisted in indexedDB
-     * data_for_registered_subdomain_check - data needed to check if subdomain is registered to an exiting tenant in the db
-     */
+     * //TODO invesigate how to internalyze this variable
+     * use this method from asma-qiankun-react-loader
+    */
     setLoadMicroApp(dev_mode: boolean): Promise<void>;
     is_child_app?: boolean;
     mst_stores_to_persisit: Object[];
     /**
-     * whenether user is authenticated or not
+     * //TODO invesigate how to internalyze this variable
+     * add qiankunWindow.__POWERED_BY_QIANKUN__ there where qiankunWindow is awailable
      */
     authenticated: () => boolean;
     subdomain_check: {
