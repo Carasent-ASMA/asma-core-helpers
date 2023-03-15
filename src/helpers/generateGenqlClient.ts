@@ -3,7 +3,7 @@ import type { createClient } from '@genql/runtime'
 import type { ClientOptions } from '@genql/runtime'
 import { httpToWs } from './Config'
 import { EnvConfigsFnInternal, IKeyEnvironmentUrls } from './generateEnvConfigsBindings'
-import { registerCallbackOnSrvAuthEvents, setReqConfigInternal } from './generateSrvAuthBindings'
+import { getSrvUrlsInternal, registerCallbackOnSrvAuthEvents, setReqConfigInternal } from './generateSrvAuthBindings'
 //import { parseJwt } from '../helpers/parseJwt'
 
 interface CliOptions extends Omit<ClientOptions, 'url' | 'signal'> {
@@ -14,12 +14,13 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
     //setReqConfig,
     createClient,
     service,
+    //serviceUrl,
     path = '/v1/graphql',
 }: {
     //setReqConfig: () => Promise<AxiosRequestConfig<any>>
     createClient: (options?: ClientOptions | undefined) => T
-    //serviceUrl: () => string
-    service: IKeyEnvironmentUrls
+    serviceUrl?: () => string
+    service?: IKeyEnvironmentUrls
     path?: string
 }) {
     let client: T | null = null
@@ -59,10 +60,22 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
 
         wsClient = null
     }
-    function serviceUrl() {
-        const service_url = EnvConfigsFnInternal()[service]
+    function serviceUrlFn() {
+        let service_url: string | undefined
+
+        if (service) {
+            service_url = EnvConfigsFnInternal()[service]
+        }
+
+        if ('SRV_AO_WRAPPER' === service) {
+            service_url = getSrvUrlsInternal()?.ao_wrapper || ''
+        } else if (service === 'SRV_CONNECTOR') {
+            service_url = getSrvUrlsInternal()?.connector || ''
+        }
+
         if (!service_url) {
-            console.error('requred param serviceUrl() is undefined, please check EnvConfig object!', service)
+            const message = `'requred param serviceUrl() is undefined, please check EnvConfig object!', service: ${service}`
+            throw Error(message)
         }
         return service_url
     }
@@ -70,14 +83,14 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
     async function genqlClient(options: CliOptions & { abortController?: AbortController } = {}): Promise<T> {
         const { headers, abortController: abortControlleFromOpts, ...rest } = options
 
-       /*  if (!serviceUrl()) {
+        /*  if (!serviceUrl()) {
             throw Error('requred param srv_url is undefined, please check EnvConfig object!')
         } */
 
         const abortControllerlocal = createabortControllerAndAbortOnLogoutEvent(abortControlleFromOpts)
 
         return createClient({
-            url: `${serviceUrl()}${path}`,
+            url: `${serviceUrlFn()}${path}`,
             headers: async () => ({
                 ...(options.anonymous
                     ? {}
@@ -95,7 +108,7 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
             const aborControllerLocal = createabortControllerAndAbortOnLogoutEvent()
 
             wsClient = createClient({
-                url: `${httpToWs(serviceUrl())}${path}`,
+                url: `${httpToWs(serviceUrlFn())}${path}`,
                 cache: 'reload',
                 batch: { batchInterval: 50, maxBatchSize: 100 },
                 signal: aborControllerLocal.signal,

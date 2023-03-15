@@ -41,6 +41,11 @@ export declare function EnvConfigsFnInternal(): {
     SRV_PROXY: string;
     SRV_NOTIFICATION: string;
     SRV_AO_DIRECTORY: string;
+    /**
+     *
+     * for internal use only (inside asma-helpers)
+     */
+    SRV_AO_WRAPPER: string;
 } & IBasicEnv;
 export declare function generateEnvConfigsBindings<T extends IBasicEnv, K extends (keyof T | IKeyEnvironmentUrls | ISrvKeysTransformToWs<keyof T | IKeyEnvironmentUrls>) & string, S>(envs_import: Promise<{
     envs: T;
@@ -59,7 +64,12 @@ export declare function generateEnvConfigsBindings<T extends IBasicEnv, K extend
         SRV_PROXY: string;
         SRV_NOTIFICATION: string;
         SRV_AO_DIRECTORY: string;
-    } & Record<"SRV_DIRECTORY_WS" | "SRV_CALENDAR_WS" | "SRV_PROXY_OLD_WS" | "SRV_PROXY_OLD_HELSE_WS" | "SRV_PROXY_OLD_WEB_WS" | "SRV_STORAGE_WS" | "SRV_CHAT_WS" | "SRV_CONNECTOR_WS" | "SRV_ARTIFACT_WS" | "SRV_ADVOCA_WS" | "SRV_PROXY_WS" | "SRV_NOTIFICATION_WS" | "SRV_AO_DIRECTORY_WS" | ISrvKeysTransformToWs<keyof T>, string>, K extends ("SRV_DIRECTORY" | "SRV_CALENDAR" | "SRV_PROXY_OLD" | "SRV_PROXY_OLD_HELSE" | "SRV_PROXY_OLD_WEB" | "SRV_STORAGE" | "SRV_CHAT" | "SRV_CONNECTOR" | "SRV_ARTIFACT" | "SRV_ADVOCA" | "SRV_PROXY" | "SRV_NOTIFICATION" | "SRV_AO_DIRECTORY" | keyof T | "SRV_DIRECTORY_WS" | "SRV_CALENDAR_WS" | "SRV_PROXY_OLD_WS" | "SRV_PROXY_OLD_HELSE_WS" | "SRV_PROXY_OLD_WEB_WS" | "SRV_STORAGE_WS" | "SRV_CHAT_WS" | "SRV_CONNECTOR_WS" | "SRV_ARTIFACT_WS" | "SRV_ADVOCA_WS" | "SRV_PROXY_WS" | "SRV_NOTIFICATION_WS" | "SRV_AO_DIRECTORY_WS" | ISrvKeysTransformToWs<keyof T>) & string ? K : never> & S;
+        /**
+         *
+         * for internal use only (inside asma-helpers)
+         */
+        SRV_AO_WRAPPER: string;
+    } & Record<"SRV_DIRECTORY_WS" | "SRV_CALENDAR_WS" | "SRV_PROXY_OLD_WS" | "SRV_PROXY_OLD_HELSE_WS" | "SRV_PROXY_OLD_WEB_WS" | "SRV_STORAGE_WS" | "SRV_CHAT_WS" | "SRV_CONNECTOR_WS" | "SRV_ARTIFACT_WS" | "SRV_ADVOCA_WS" | "SRV_PROXY_WS" | "SRV_NOTIFICATION_WS" | "SRV_AO_DIRECTORY_WS" | "SRV_AO_WRAPPER_WS" | ISrvKeysTransformToWs<keyof T>, string>, K extends ("SRV_DIRECTORY" | "SRV_CALENDAR" | "SRV_PROXY_OLD" | "SRV_PROXY_OLD_HELSE" | "SRV_PROXY_OLD_WEB" | "SRV_STORAGE" | "SRV_CHAT" | "SRV_CONNECTOR" | "SRV_ARTIFACT" | "SRV_ADVOCA" | "SRV_PROXY" | "SRV_NOTIFICATION" | "SRV_AO_DIRECTORY" | "SRV_AO_WRAPPER" | keyof T | "SRV_DIRECTORY_WS" | "SRV_CALENDAR_WS" | "SRV_PROXY_OLD_WS" | "SRV_PROXY_OLD_HELSE_WS" | "SRV_PROXY_OLD_WEB_WS" | "SRV_STORAGE_WS" | "SRV_CHAT_WS" | "SRV_CONNECTOR_WS" | "SRV_ARTIFACT_WS" | "SRV_ADVOCA_WS" | "SRV_PROXY_WS" | "SRV_NOTIFICATION_WS" | "SRV_AO_DIRECTORY_WS" | "SRV_AO_WRAPPER_WS" | ISrvKeysTransformToWs<keyof T>) & string ? K : never> & S;
     fetchConfigs: () => Promise<void>;
 };
 export {};

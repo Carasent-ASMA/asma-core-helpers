@@ -29,6 +29,7 @@ declare global {
                     responseType: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream' | undefined
                     headers: Record<string, string>
                 }>
+                getSrvUrls: () => Record<'ao_wrapper' | 'connector', string> | undefined
             } //IGenerateSRVAuthBindings
             isLogged?: () => boolean
             logoutUser?: () => void

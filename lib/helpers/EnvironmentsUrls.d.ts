@@ -13,6 +13,7 @@ export declare const EnvironmentsUrls: {
         SRV_PROXY: string;
         SRV_NOTIFICATION: string;
         SRV_AO_DIRECTORY: string;
+        SRV_AO_WRAPPER: string;
     };
     dev: {
         SRV_DIRECTORY: string;
@@ -28,6 +29,7 @@ export declare const EnvironmentsUrls: {
         SRV_PROXY: string;
         SRV_NOTIFICATION: string;
         SRV_AO_DIRECTORY: string;
+        SRV_AO_WRAPPER: string;
     };
     test: {
         SRV_DIRECTORY: string;
@@ -43,6 +45,7 @@ export declare const EnvironmentsUrls: {
         SRV_PROXY: string;
         SRV_NOTIFICATION: string;
         SRV_AO_DIRECTORY: string;
+        SRV_AO_WRAPPER: string;
     };
     stage: {
         SRV_DIRECTORY: string;
@@ -58,6 +61,7 @@ export declare const EnvironmentsUrls: {
         SRV_PROXY: string;
         SRV_NOTIFICATION: string;
         SRV_AO_DIRECTORY: string;
+        SRV_AO_WRAPPER: string;
     };
     prod: {
         SRV_DIRECTORY: string;
@@ -73,6 +77,7 @@ export declare const EnvironmentsUrls: {
         SRV_PROXY: string;
         SRV_NOTIFICATION: string;
         SRV_AO_DIRECTORY: string;
+        SRV_AO_WRAPPER: string;
     };
 };
 export declare function environmentUrls(ENVIRONMENT_TO_OPERATE?: string): {
@@ -89,6 +94,7 @@ export declare function environmentUrls(ENVIRONMENT_TO_OPERATE?: string): {
     SRV_PROXY: string;
     SRV_NOTIFICATION: string;
     SRV_AO_DIRECTORY: string;
+    SRV_AO_WRAPPER: string;
 } | undefined;
 export default environmentUrls;
 //# sourceMappingURL=EnvironmentsUrls.d.ts.map

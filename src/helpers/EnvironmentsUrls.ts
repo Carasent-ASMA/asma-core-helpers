@@ -16,6 +16,7 @@ export const EnvironmentsUrls = {
         SRV_NOTIFICATION: `http://${window.location.hostname}:7002`,
 
         SRV_AO_DIRECTORY: `http://${window.location.hostname}:7013`,
+        SRV_AO_WRAPPER: '',
     },
     dev: {
         SRV_DIRECTORY: 'https://dev.adopus.no/api/directory',
@@ -32,6 +33,7 @@ export const EnvironmentsUrls = {
         SRV_NOTIFICATION: 'https://dev.adopus.no/api/notification',
 
         SRV_AO_DIRECTORY: 'https://dev.adopus.no/api-ao/directory',
+        SRV_AO_WRAPPER: '',
     },
     test: {
         SRV_DIRECTORY: 'https://test.adopus.no/api/directory',
@@ -48,6 +50,7 @@ export const EnvironmentsUrls = {
         SRV_NOTIFICATION: 'https://test.adopus.no/api/notification',
 
         SRV_AO_DIRECTORY: 'https://test.adopus.no/api-ao/directory',
+        SRV_AO_WRAPPER: '',
     },
     stage: {
         SRV_DIRECTORY: 'https://stage.adopus.no/api/directory',
@@ -64,6 +67,7 @@ export const EnvironmentsUrls = {
         SRV_NOTIFICATION: 'https://stage.adopus.no/api/notification',
 
         SRV_AO_DIRECTORY: 'https://stage.adopus.no/api-ao/directory',
+        SRV_AO_WRAPPER: '',
     },
     prod: {
         SRV_DIRECTORY: 'https://www.adopus.no/api/directory',
@@ -80,6 +84,7 @@ export const EnvironmentsUrls = {
         SRV_NOTIFICATION: 'https://www.adopus.no/api/notification',
 
         SRV_AO_DIRECTORY: 'https://www.adopus.no/api-ao/directory',
+        SRV_AO_WRAPPER: 'fethes dynamically from srvUrls()',
     },
 }
 
