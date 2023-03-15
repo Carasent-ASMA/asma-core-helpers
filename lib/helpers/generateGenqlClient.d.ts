@@ -5,7 +5,8 @@ interface CliOptions extends Omit<ClientOptions, 'url' | 'signal'> {
 }
 export declare function generateGenqlClient<T extends ReturnType<typeof createClient>>({ createClient, service, path, }: {
     createClient: (options?: ClientOptions | undefined) => T;
-    service: IKeyEnvironmentUrls;
+    serviceUrl?: () => string;
+    service?: IKeyEnvironmentUrls;
     path?: string;
 }): {
     getGenqlClient: () => Promise<T>;

@@ -16,12 +16,13 @@ declare function dispatchLogoutEvent(): void;
  */
 export declare function getCachedJwtInternal(): Promise<string | undefined>;
 export declare function srvAuthGetInternal<R>(url: string, headers?: Record<string, string>): Promise<R>;
+export declare function getSrvUrlsInternal(): Record<'ao_wrapper' | 'connector', string> | undefined;
 export declare function setReqConfigInternal<T = unknown>(data?: T | undefined, responseType?: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream'): Promise<{
     data: T | undefined;
     responseType: "arraybuffer" | "blob" | "document" | "json" | "text" | "stream" | undefined;
     headers: Record<string, string>;
 }>;
-export declare function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums extends string = never>(logout?: () => void): {
+export declare function generateSrvAuthBindings<FeatureEnums = never>(logout?: () => void): {
     hasFeature: (featureName: FeatureEnums) => boolean;
     getConnector: () => string | undefined;
     getFeatures: () => Set<FeatureEnums> | undefined;
@@ -30,10 +31,10 @@ export declare function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnu
         token: string;
         features: FeatureEnums[];
         connector?: string | undefined;
-        srv_urls: Record<SrvUrlsEnums, string> | undefined;
+        srv_urls: Record<"ao_wrapper" | "connector", string> | undefined;
     }>;
     srvAuthGet: <R>(url: string, headers?: Record<string, string>) => Promise<R>;
-    getSrvUrls: () => Record<SrvUrlsEnums, string> | undefined;
+    getSrvUrls: () => Record<"ao_wrapper" | "connector", string> | undefined;
     /**
      * @deprecated use dispatchLogoutEvent directly
      */
@@ -80,6 +81,7 @@ export declare function generateSrvAuthBindingsMicroApp(logout?: () => void): {
         responseType: "arraybuffer" | "blob" | "document" | "json" | "text" | "stream" | undefined;
         headers: Record<string, string>;
     }>;
+    getSrvUrls: () => Record<"ao_wrapper" | "connector", string> | undefined;
 };
 export {};
 //# sourceMappingURL=generateSrvAuthBindings.d.ts.map

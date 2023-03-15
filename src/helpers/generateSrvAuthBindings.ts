@@ -46,6 +46,16 @@ export async function srvAuthGetInternal<R>(url: string, headers?: Record<string
     return srvAuthGet(url, headers)
 }
 
+export function getSrvUrlsInternal(): Record<'ao_wrapper' | 'connector', string> | undefined {
+    const getSrvUrls = window.__ASMA__SHELL__?.auth_bindings?.getSrvUrls
+    if (!getSrvUrls) {
+        throw new Error(
+            'getSrvUrls is not defined! please make sure that generateSrvAuthBindings is called before getSrvUrls',
+        )
+    }
+    return getSrvUrls()
+}
+
 export async function setReqConfigInternal<T = unknown>(
     data?: T | undefined,
     responseType?: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream',
@@ -59,7 +69,7 @@ export async function setReqConfigInternal<T = unknown>(
     return setReqConfig(data, responseType)
 }
 
-export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums extends string = never>(
+export function generateSrvAuthBindings<FeatureEnums = never>(
     //SRV_AUTH: () => string,
     //DEVELOPMENT: () => boolean,
     //EnvironmentToOperateFn: () => string,
@@ -82,7 +92,7 @@ export function generateSrvAuthBindings<FeatureEnums = never, SrvUrlsEnums exten
 
     let parsed_jwt: unknown | undefined
 
-    let srv_urls: Record<SrvUrlsEnums, string> | undefined
+    let srv_urls: Record<'ao_wrapper' | 'connector', string> | undefined
 
     const isJwtInvalid = () => (jwtToken && accessTokenHasExpired()) || !jwtToken
 
