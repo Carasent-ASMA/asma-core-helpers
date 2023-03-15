@@ -74,7 +74,7 @@ export async function checkForRegisteredSubdomain({
     //const client = await directoryGenQLClient(true, { 'x-hasura-subdomain': subdomain })
     let res: { id?: string; theme?: string } | undefined
 
-    if (!authenticated) {
+    if (!authenticated()) {
         res = await srvAuthGetInternal<{ id?: string; theme?: string }>('/check?context=subdomain', {
             'asma-origin': window.location.origin,
         })
