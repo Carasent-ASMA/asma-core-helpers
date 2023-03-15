@@ -5,7 +5,7 @@
  * mst_stores_toPersisit - array of mst stores that should be persisted in indexedDB
  * data_for_registered_subdomain_check - data needed to check if subdomain is registered to an exiting tenant in the db
  */
-export declare function initAppVitals({ 
+export declare function initASMAAppVitals({ 
 /**
  * //TODO invesigate how to internalyze this variable
  * add qiankunWindow.__POWERED_BY_QIANKUN__ there where qiankunWindow is awailable
