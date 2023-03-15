@@ -11,8 +11,18 @@ import { initiatieIDBListenersOnMstSnaphsots } from './InitializeIDBListenersOnM
  * mst_stores_toPersisit - array of mst stores that should be persisted in indexedDB
  * data_for_registered_subdomain_check - data needed to check if subdomain is registered to an exiting tenant in the db
  */
-export async function initAppShellVitals(fns: {
+export async function initAppVitals({
+    /**
+     * //TODO invesigate how to internalyze this variable
+     * add qiankunWindow.__POWERED_BY_QIANKUN__ there where qiankunWindow is awailable
+     */
+    is_child_app = false,
+    data_for_registered_subdomain_check,
+    mst_stores_toPersisit,
+    setLoadMicroApp,
+}: {
     setLoadMicroApp(dev_mode: boolean): Promise<void>
+    is_child_app: boolean
     mst_stores_toPersisit: Object[]
     data_for_registered_subdomain_check: {
         /**
@@ -39,15 +49,21 @@ export async function initAppShellVitals(fns: {
 
     await clearCacheData(EnvConfigsFnInternal().CACHE_VERSION)
 
-    await fns.setLoadMicroApp(EnvConfigsFnInternal().DEVELOPMENT)
+    await setLoadMicroApp(EnvConfigsFnInternal().DEVELOPMENT)
 
-    const promises = fns.mst_stores_toPersisit.map((store) => initiatieIDBListenersOnMstSnaphsots(store))
+    const promises = mst_stores_toPersisit.map((store) => initiatieIDBListenersOnMstSnaphsots(store))
 
     await Promise.allSettled(promises)
 
-    const [registeredSubdomain] = await checkForRegisteredSubdomain(fns.data_for_registered_subdomain_check)
+    let registeredSubdomain = false
 
-    fns.data_for_registered_subdomain_check.authenticated() && (await getCachedJwtInternal())
+    if (!is_child_app) {
+        const [registeredSubdomain1] = await checkForRegisteredSubdomain(data_for_registered_subdomain_check)
+
+        registeredSubdomain = registeredSubdomain1
+    }
+
+    data_for_registered_subdomain_check.authenticated() && (await getCachedJwtInternal())
 
     return [registeredSubdomain] as [registeredSubdomain: boolean]
 }

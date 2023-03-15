@@ -1,12 +1,11 @@
 import type { ClientOptions } from '@genql/runtime';
-import { IKeyEnvironmentUrls } from './generateEnvConfigsBindings';
+import { IEnvironmentUrlsGenQLOnly } from './generateEnvConfigsBindings';
 interface CliOptions extends Omit<ClientOptions, 'url' | 'signal'> {
     anonymous?: boolean;
 }
 export declare function generateGenqlClient<T extends ReturnType<typeof createClient>>({ createClient, service, path, }: {
     createClient: (options?: ClientOptions | undefined) => T;
-    serviceUrl?: () => string;
-    service?: IKeyEnvironmentUrls;
+    service: keyof IEnvironmentUrlsGenQLOnly;
     path?: string;
 }): {
     getGenqlClient: () => Promise<T>;
