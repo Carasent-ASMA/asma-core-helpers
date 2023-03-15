@@ -2,7 +2,12 @@
 import type { createClient } from '@genql/runtime'
 import type { ClientOptions } from '@genql/runtime'
 import { httpToWs } from './Config'
-import { EnvConfigsFnInternal, IKeyEnvironmentUrls } from './generateEnvConfigsBindings'
+import {
+    EnvConfigsFnInternal,
+    IEnvironmentUrlsGenQLOnly,
+    //IKeyEnvironmentUrls,
+    //IKeyEnvironmentUrlsOmit,
+} from './generateEnvConfigsBindings'
 import { getSrvUrlsInternal, registerCallbackOnSrvAuthEvents, setReqConfigInternal } from './generateSrvAuthBindings'
 //import { parseJwt } from '../helpers/parseJwt'
 
@@ -19,8 +24,8 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
 }: {
     //setReqConfig: () => Promise<AxiosRequestConfig<any>>
     createClient: (options?: ClientOptions | undefined) => T
-    serviceUrl?: () => string
-    service?: IKeyEnvironmentUrls
+    //serviceUrl?: () => string
+    service: keyof IEnvironmentUrlsGenQLOnly
     path?: string
 }) {
     let client: T | null = null
@@ -61,16 +66,19 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
         wsClient = null
     }
     function serviceUrlFn() {
-        let service_url: string | undefined
-
-        if (service) {
-            service_url = EnvConfigsFnInternal()[service]
-        }
+        let service_url = EnvConfigsFnInternal()[service]
 
         if ('SRV_AO_WRAPPER' === service) {
-            service_url = getSrvUrlsInternal()?.ao_wrapper || ''
+            const url = getSrvUrlsInternal()?.ao_wrapper
+
+            if (url) {
+                service_url = url
+            }
         } else if (service === 'SRV_CONNECTOR') {
-            service_url = getSrvUrlsInternal()?.connector || ''
+            const url = getSrvUrlsInternal()?.connector
+            if (url) {
+                service_url = url
+            }
         }
 
         if (!service_url) {
