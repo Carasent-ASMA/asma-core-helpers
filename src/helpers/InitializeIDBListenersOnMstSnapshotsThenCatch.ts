@@ -23,11 +23,8 @@ async function checkForIDBData<T extends Object>(main_store: T) {
 
         return acc
     }, stores_promises)
-    try {
-        await myPromiseAllSettled(promises)
-    } catch (e) {
-        console.error(e)
-    }
+
+    await Promise.allSettled(promises)
 }
 /**
  * @description
@@ -48,17 +45,16 @@ export function initiatieIDBListenersOnMstSnaphsotsThenCatch<T extends Object, K
 async function applySnapshotOnResolvedIDBGetPromise<T extends Object>(key: keyof T, main_store: T): Promise<void> {
     const pkey = String(key)
 
-    get(pkey)
-        .then((res) => {
-            if (res) {
-                applySnapshot(main_store[key] as IStateTreeNode<IType<any, any, any>>, res)
-            }
-        })
-        .catch((e) => {
-            del(String(key))
+    try {
+        const res = get(pkey)
+        if (res) {
+            applySnapshot(main_store[key] as IStateTreeNode<IType<any, any, any>>, res)
+        }
+    } catch (e) {
+        del(String(key))
 
-            console.error(`resolveIDBGetPromise, ${String(key)}:`, e)
-        })
+        console.error(`resolveIDBGetPromise, ${String(key)}:`, e)
+    }
 
     /* try {
     
@@ -66,17 +62,4 @@ async function applySnapshotOnResolvedIDBGetPromise<T extends Object>(key: keyof
 
     } catch (e) {
     } */
-}
-
-function* map(iterable: any, callback: any) {
-    for (const value of iterable) {
-        yield callback(value)
-    }
-}
-
-const myPromiseAllSettled = (promises: Promise<unknown>[]) => {
-    const fulfilled = (value: unknown) => ({ status: 'fulfilled', value })
-    const rejected = (reason: unknown) => ({ status: 'rejected', reason })
-
-    return Promise.all(map(promises, (p: unknown) => Promise.resolve(p).then(fulfilled, rejected)))
 }

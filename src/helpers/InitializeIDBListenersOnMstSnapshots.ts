@@ -1,5 +1,5 @@
 import { del, get, set } from 'idb-keyval'
-import { applySnapshot, onSnapshot, isStateTreeNode, IStateTreeNode, IType } from 'mobx-state-tree'
+import { applySnapshot, onSnapshot, isStateTreeNode, type IStateTreeNode, type IType } from 'mobx-state-tree'
 function setIDBListenersOnSnapshots<T extends Object, K extends keyof T>(store: T, omit: K[] = []) {
     const keys = (Object.keys(store) as Array<keyof typeof store>).filter((k) => !omit.includes(k as K))
 
@@ -34,7 +34,7 @@ export function initiatieIDBListenersOnMstSnaphsots<T extends Object, K extends 
     return checkForIDBData(store)
 }
 
-async function applySnapshotOnResolvedIDBGetPromise<T extends Object >(key: keyof T, main_store: T): Promise<void> {
+async function applySnapshotOnResolvedIDBGetPromise<T extends Object>(key: keyof T, main_store: T): Promise<void> {
     try {
         const res = await get(String(key))
 
