@@ -40,13 +40,14 @@ async function checkForIDBData<T extends Object>(main_store: T) {
     await Promise.allSettled(promises)
 }
 
-export async function initiatieIDBListenersOnMstSnaphsots<T extends Object, K extends keyof T>(
-    store: T,
-    omit: K[] = [],
-) {
-    checkForIDBData(store)
+export function initiatieIDBListenersOnMstSnaphsots<T extends Object, K extends keyof T>(store: T, omit: K[] = []) {
+    const unregister_registry = setIDBListenersOnSnapshots(store, omit)
 
-    return setIDBListenersOnSnapshots(store, omit)
+    function unregisterAll() {
+        unregister_registry.forEach((unregister) => unregister())
+    }
+
+    return { idb_check_promise: checkForIDBData(store), unregisterAll }
 }
 
 async function applySnapshotOnResolvedIDBGetPromise<T extends Object>(key: keyof T, main_store: T): Promise<void> {
