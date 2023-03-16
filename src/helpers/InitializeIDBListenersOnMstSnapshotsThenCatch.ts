@@ -55,11 +55,4 @@ async function applySnapshotOnResolvedIDBGetPromise<T extends Object>(key: keyof
 
         console.error(`resolveIDBGetPromise, ${String(key)}:`, e)
     }
-
-    /* try {
-    
-        const res = await get(pkey)
-
-    } catch (e) {
-    } */
 }
