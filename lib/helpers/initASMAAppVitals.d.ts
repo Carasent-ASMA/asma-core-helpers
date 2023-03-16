@@ -2,14 +2,13 @@
  *
  * @imporant make sure this method allways is called first when startsFe() on both on child and shell apps
  */
-export declare function initASMAAppVitals({ authenticated, is_child_app, subdomain_check, mst_stores_to_persisit, setLoadMicroApp, }: {
+export declare function initASMAAppVitals({ authenticated, is_child_app, subdomain_check, setLoadMicroApp, }: {
     /**
      * //TODO invesigate how to internalyze this variable
      * use this method from asma-qiankun-react-loader
-    */
+     */
     setLoadMicroApp(dev_mode: boolean): Promise<void>;
     is_child_app?: boolean;
-    mst_stores_to_persisit: Object[];
     /**
      * //TODO invesigate how to internalyze this variable
      * add qiankunWindow.__POWERED_BY_QIANKUN__ there where qiankunWindow is awailable
