@@ -2,7 +2,6 @@ import { checkForRegisteredSubdomain } from './checkForRegisteredSubdomains'
 import { clearCacheData } from './clearCacheData'
 import { EnvConfigsFnInternal, fetchConfigsInternal } from './generateEnvConfigsBindings'
 import { getCachedJwtInternal } from './generateSrvAuthBindings'
-import { initiatieIDBListenersOnMstSnaphsots } from './InitializeIDBListenersOnMstSnapshots'
 
 /**
  *
@@ -12,16 +11,14 @@ export async function initASMAAppVitals({
     authenticated,
     is_child_app = false,
     subdomain_check,
-    mst_stores_to_persisit,
     setLoadMicroApp,
 }: {
     /**
      * //TODO invesigate how to internalyze this variable
      * use this method from asma-qiankun-react-loader
-    */
-   setLoadMicroApp(dev_mode: boolean): Promise<void>
-   is_child_app?: boolean
-   mst_stores_to_persisit: Object[]
+     */
+    setLoadMicroApp(dev_mode: boolean): Promise<void>
+    is_child_app?: boolean
     /**
      * //TODO invesigate how to internalyze this variable
      * add qiankunWindow.__POWERED_BY_QIANKUN__ there where qiankunWindow is awailable
@@ -56,10 +53,6 @@ export async function initASMAAppVitals({
     await clearCacheData(EnvConfigsFnInternal().CACHE_VERSION)
 
     await setLoadMicroApp(EnvConfigsFnInternal().DEVELOPMENT)
-
-    const promises = mst_stores_to_persisit.map((store) => initiatieIDBListenersOnMstSnaphsots(store))
-
-    await Promise.allSettled(promises)
 
     let registeredSubdomain = true
 
