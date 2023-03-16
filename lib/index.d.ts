@@ -6,7 +6,6 @@ export * from './helpers/IsAdcuris';
 export * from './helpers/IsNotEmpty';
 export * from './helpers/Config';
 export * from './helpers/InitializeIDBListenersOnMstSnapshots';
-export * from './helpers/InitializeIDBListenersOnMstSnapshotsThenCatch';
 export * from './helpers/getGqlOperationName';
 export * from './helpers/parseJwt';
 export * from './helpers/EnvironmentsUrls';
