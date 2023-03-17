@@ -1,3 +1,4 @@
+/* @__PURE__ */
 export function isValidUrl(urlString: string) {
     const urlPattern = new RegExp(
         '^(https?:\\/\\/)?' + // validate protocol

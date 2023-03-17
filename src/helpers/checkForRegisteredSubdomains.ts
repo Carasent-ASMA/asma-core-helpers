@@ -33,22 +33,25 @@ declare global {
         }
     }
 }
+/* @__PURE__ */
 export function onThemeChange(callback: (val: { theme: string }) => void) {
     return registerTheme('on_theme_change', callback)
 }
+/* @__PURE__ */
 export function getTheme() {
     if (window.__ASMA__THEME__) {
         return window.__ASMA__THEME__.getTheme()
     }
     return getThemeLocal()
 }
+/* @__PURE__ */
 export function setTheme(theme: string) {
     if (window.__ASMA__THEME__) {
         return window.__ASMA__THEME__.setTheme(theme)
     }
     setThemeLocal(theme)
 }
-
+/* @__PURE__ */
 export async function checkForRegisteredSubdomain({
     redirect_if_not_exists = true,
     setSelectedCustomer,

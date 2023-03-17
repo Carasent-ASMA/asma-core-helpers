@@ -1,5 +1,5 @@
 const hostname_arr = () => window.location.hostname.split('.') // fretex-dfsf.advoca.no
-
+/* @__PURE__ */
 function getSubdomain() {
     let subdomain = ''
     const host_arr = hostname_arr()
@@ -20,9 +20,9 @@ function getSubdomain() {
     }
     return subdomain
 }
-
+/* @__PURE__ */
 export const subdomain = getSubdomain()
-
+/* @__PURE__ */
 export function redirectFromSubdomainToDomain() {
     const domain_hostname = `${createDomainUrlFromSubdomain()}${window.location.pathname}`
 
@@ -30,7 +30,7 @@ export function redirectFromSubdomainToDomain() {
 
     return null
 }
-
+/* @__PURE__ */
 export function createDomainUrlFromSubdomain() {
     let hostname = window.location.hostname.replace(subdomain, '')
     const hostname_arr_length = hostname_arr().length

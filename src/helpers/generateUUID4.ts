@@ -1,3 +1,4 @@
+/* @__PURE__ */
 export function uuid4() {
     function hex(s: string, b: number) {
         return (

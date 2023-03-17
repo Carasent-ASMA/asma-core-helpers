@@ -7,6 +7,7 @@ declare global {
  *
  * @imortant When using in micro-apps combination shell/child make sure this app is called only once and only in shell app! otherwise it will have unexpected behaviour with no errors or warnings
  */
+/* @__PURE__ */
 export const clearCacheData = async (CACHE_VERSION: string) => {
     if (window.__ASMA_clearCacheDataCalled__) {
         return

@@ -1,4 +1,5 @@
 import { history } from '../global'
+/* @__PURE__ */
 export function attachUserJournalCredentials() {
     const URLSearch = new URLSearchParams(history.location.search)
 

@@ -1,3 +1,4 @@
+/* @__PURE__ */
 export function getGqlOperationName(query: string): string | undefined {
     const is_query = query.includes('query') ? 'query' : undefined
 
