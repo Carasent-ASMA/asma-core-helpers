@@ -1,1 +1,1 @@
-{"version":3,"file":"CapitalizeFistLetter.d.ts","sourceRoot":"","sources":["../../src/helpers/CapitalizeFistLetter.ts"],"names":[],"mappings":"AAAA,wBAAgB,qBAAqB,CAAC,GAAG,EAAE,MAAM,UAEhD;AAED,wBAAgB,mCAAmC,CAAC,GAAG,EAAE,MAAM,UAE9D"}
+{"version":3,"file":"CapitalizeFistLetter.d.ts","sourceRoot":"","sources":["../../src/helpers/CapitalizeFistLetter.ts"],"names":[],"mappings":"AACA,wBAAgB,qBAAqB,CAAC,GAAG,EAAE,MAAM,UAEhD;AAED,wBAAgB,mCAAmC,CAAC,GAAG,EAAE,MAAM,UAE9D"}

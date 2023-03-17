@@ -39,7 +39,7 @@ async function checkForIDBData<T extends Object>(main_store: T) {
 
     await Promise.allSettled(promises)
 }
-
+/* @__PURE__ */
 export function initiatieIDBListenersOnMstSnaphsots<T extends Object, K extends keyof T>(store: T, omit: K[] = []) {
     const unregister_registry = setIDBListenersOnSnapshots(store, omit)
 

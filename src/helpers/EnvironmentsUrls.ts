@@ -1,5 +1,5 @@
 import { configWeb, EnvironmentEnums, IEnvironmentEnums } from '..'
-
+/* @__PURE__ */
 export const EnvironmentsUrls = {
     local: {
         SRV_DIRECTORY: `http://${window.location.hostname}:7001`,

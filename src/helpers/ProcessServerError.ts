@@ -10,7 +10,7 @@ export function processServerError(error: string | Record<string, any>): string 
     //showErrorMessage(operationName || 'Error', errorMessage)
     return errorMessage
 }
-
+/* @__PURE__ */
 export function getServerErrorMessage(error: Record<string, any> | string): string {
     if (typeof error == 'string') {
         return error

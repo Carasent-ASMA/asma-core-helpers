@@ -1,5 +1,5 @@
 type ObjectType<T> = T extends string ? string : T extends boolean ? boolean : never
-
+/* @__PURE__ */
 export function config<T>(env_var: string, default_value: T): ObjectType<T> {
     const srv_url = getDynamicSrvUrl(env_var)
 
@@ -18,7 +18,7 @@ export function config<T>(env_var: string, default_value: T): ObjectType<T> {
 
     return window.__ENV?.[env_var] as ObjectType<T>
 }
-
+/* @__PURE__ */
 export function configWeb<T>(env_var: string, default_value: T): ObjectType<T> {
     const srv_url = getDynamicSrvUrl(env_var)
 
@@ -40,7 +40,7 @@ function getDynamicSrvUrl(env_var: string) {
     }
     return
 }
-
+/* @__PURE__ */
 export function httpToWs(url: string) {
     url = absoluteUrl(url)
 
