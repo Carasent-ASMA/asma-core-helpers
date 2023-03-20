@@ -16,13 +16,13 @@ interface CliOptions extends Omit<ClientOptions, 'url' | 'signal'> {
 }
 /* @__PURE__ */
 export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
-    //setReqConfig,
+    setReqConfig,
     createClient,
     service,
     //serviceUrl,
     path = '/v1/graphql',
 }: {
-    //setReqConfig: () => Promise<AxiosRequestConfig<any>>
+    setReqConfig?: () => Promise<{ headers: Record<string, string> }>
     createClient: (options?: ClientOptions | undefined) => T
     //serviceUrl?: () => string
     service: keyof IEnvironmentUrlsGenQLOnly
@@ -87,6 +87,7 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
         }
         return service_url
     }
+    const reqConf = setReqConfig || setReqConfigInternal
 
     async function genqlClient(options: CliOptions & { abortController?: AbortController } = {}): Promise<T> {
         const { headers, abortController: abortControlleFromOpts, ...rest } = options
@@ -100,9 +101,7 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
         return createClient({
             url: `${serviceUrlFn()}${path}`,
             headers: async () => ({
-                ...(options.anonymous
-                    ? {}
-                    : (((await setReqConfigInternal()).headers ?? {}) as Record<string, string>)),
+                ...(options.anonymous ? {} : (((await reqConf()).headers ?? {}) as Record<string, string>)),
                 ...headers,
             }),
             signal: abortControllerlocal.signal,
@@ -123,7 +122,7 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
                 subscription: {
                     reconnect: true,
                     reconnectionAttempts: 5,
-                    headers: async () => ((await setReqConfigInternal()).headers ?? {}) as Record<string, string>,
+                    headers: async () => ((await reqConf()).headers ?? {}) as Record<string, string>,
                 },
             })
         }
