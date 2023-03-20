@@ -3,7 +3,10 @@ import { IEnvironmentUrlsGenQLOnly } from './generateEnvConfigsBindings';
 interface CliOptions extends Omit<ClientOptions, 'url' | 'signal'> {
     anonymous?: boolean;
 }
-export declare function generateGenqlClient<T extends ReturnType<typeof createClient>>({ createClient, service, path, }: {
+export declare function generateGenqlClient<T extends ReturnType<typeof createClient>>({ setReqConfig, createClient, service, path, }: {
+    setReqConfig?: () => Promise<{
+        headers: Record<string, string>;
+    }>;
     createClient: (options?: ClientOptions | undefined) => T;
     service: keyof IEnvironmentUrlsGenQLOnly;
     path?: string;
