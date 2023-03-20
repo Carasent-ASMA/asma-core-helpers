@@ -7,7 +7,6 @@ interface IBasicEnv {
 type IEnvironmentUrls = typeof EnvironmentsUrls.local;
 export type IKeyEnvironmentUrls = keyof IEnvironmentUrls;
 export type IEnvironmentUrlsGenQLOnly = Omit<IEnvironmentUrls, 'SRV_PROXY_OLD' | 'SRV_PROXY_OLD_HELSE' | 'SRV_PROXY_OLD_WEB' | 'SRV_ADVOCA'>;
-type ISrvKeysTransformToWs<T> = T extends `SRV_${infer K}` ? `SRV_${K}_WS` : never;
 declare global {
     interface Window {
         __GENERATE_ENV_CONFIGS_BINDINGS__?: {
@@ -62,7 +61,7 @@ export declare function generateEnvConfigsBindings<T extends IBasicEnv, K extend
         SRV_NOTIFICATION: string;
         SRV_AO_DIRECTORY: string;
         SRV_AO_WRAPPER: string;
-    } & Record<"SRV_PROXY_OLD_WS" | "SRV_PROXY_OLD_HELSE_WS" | "SRV_PROXY_OLD_WEB_WS" | "SRV_ADVOCA_WS" | "SRV_DIRECTORY_WS" | "SRV_CALENDAR_WS" | "SRV_STORAGE_WS" | "SRV_CHAT_WS" | "SRV_CONNECTOR_WS" | "SRV_ARTIFACT_WS" | "SRV_PROXY_WS" | "SRV_NOTIFICATION_WS" | "SRV_AO_DIRECTORY_WS" | "SRV_AO_WRAPPER_WS" | ISrvKeysTransformToWs<keyof T>, string>, K extends ("SRV_PROXY_OLD" | "SRV_PROXY_OLD_HELSE" | "SRV_PROXY_OLD_WEB" | "SRV_ADVOCA" | "SRV_DIRECTORY" | "SRV_CALENDAR" | "SRV_STORAGE" | "SRV_CHAT" | "SRV_CONNECTOR" | "SRV_ARTIFACT" | "SRV_PROXY" | "SRV_NOTIFICATION" | "SRV_AO_DIRECTORY" | "SRV_AO_WRAPPER" | keyof T | "SRV_PROXY_OLD_WS" | "SRV_PROXY_OLD_HELSE_WS" | "SRV_PROXY_OLD_WEB_WS" | "SRV_ADVOCA_WS" | "SRV_DIRECTORY_WS" | "SRV_CALENDAR_WS" | "SRV_STORAGE_WS" | "SRV_CHAT_WS" | "SRV_CONNECTOR_WS" | "SRV_ARTIFACT_WS" | "SRV_PROXY_WS" | "SRV_NOTIFICATION_WS" | "SRV_AO_DIRECTORY_WS" | "SRV_AO_WRAPPER_WS" | ISrvKeysTransformToWs<keyof T>) & string ? K : never> & S;
+    }, K extends "SRV_PROXY_OLD" | "SRV_PROXY_OLD_HELSE" | "SRV_PROXY_OLD_WEB" | "SRV_ADVOCA" | "SRV_DIRECTORY" | "SRV_CALENDAR" | "SRV_STORAGE" | "SRV_CHAT" | "SRV_CONNECTOR" | "SRV_ARTIFACT" | "SRV_PROXY" | "SRV_NOTIFICATION" | "SRV_AO_DIRECTORY" | "SRV_AO_WRAPPER" | (keyof T & string) ? K : never> & S;
     fetchConfigs: () => Promise<void>;
 };
 export {};
