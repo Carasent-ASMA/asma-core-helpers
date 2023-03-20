@@ -8,6 +8,22 @@ import { getCachedJwtInternal } from './generateSrvAuthBindings'
  * @imporant make sure this method allways is called first when startsFe() on both on child and shell apps
  */
 /* @__PURE__ */
+export async function initASMAAppVitals(props: {
+    setLoadMicroApp(dev_mode: boolean): Promise<void>
+    is_child_app: true
+    authenticated: () => boolean
+}): Promise<[registeredSubdomain: true]>
+export async function initASMAAppVitals(props: {
+    setLoadMicroApp(dev_mode: boolean): Promise<void>
+    is_child_app: false
+    authenticated: () => boolean
+    subdomain_check: {
+        redirect_if_not_exists?: boolean
+        setSelectedCustomer?: (customer_id: string) => void
+        logos: { fretexLogo: string; carasentLogo: string }
+        service: 'app-shell' | 'app-advoca' | 'advoca-portal'
+    }
+}): Promise<[registeredSubdomain: boolean]>
 export async function initASMAAppVitals({
     authenticated,
     is_child_app = false,
@@ -25,7 +41,7 @@ export async function initASMAAppVitals({
      * add qiankunWindow.__POWERED_BY_QIANKUN__ there where qiankunWindow is awailable
      */
     authenticated: () => boolean
-    subdomain_check: {
+    subdomain_check?: {
         /**
          * redirects to domain if subdomain is not registered
          * ex: https://non-existent.adopus.no -> https://www.adopus.no
@@ -43,7 +59,7 @@ export async function initASMAAppVitals({
     }
 }) {
     /**
-     * !!!ORDER IS VERY IMPORTANT!!!
+     * !!!ORDER IMPORTANT!!!
      * EnvConfigsFn from EnvCongigs.ts
      * setLoadMicroApp from asma-qiankun-react-loader
      * mst_stores_toPersisit - array of mst stores that should be persisted in indexedDB
@@ -61,8 +77,12 @@ export async function initASMAAppVitals({
 
     let registeredSubdomain = true
 
-    if (!is_child_app) {
-        const [registeredSubdomain1] = await checkForRegisteredSubdomain({ ...subdomain_check, authenticated })
+    if (!is_child_app && subdomain_check) {
+        const [registeredSubdomain1] = await checkForRegisteredSubdomain({
+            ...subdomain_check,
+            service: subdomain_check.service,
+            authenticated,
+        })
 
         registeredSubdomain = registeredSubdomain1
 
