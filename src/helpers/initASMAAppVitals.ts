@@ -8,22 +8,7 @@ import { getCachedJwtInternal } from './generateSrvAuthBindings'
  * @imporant make sure this method allways is called first when startsFe() on both on child and shell apps
  */
 /* @__PURE__ */
-export async function initASMAAppVitals(props: {
-    setLoadMicroApp(dev_mode: boolean): Promise<void>
-    is_child_app: true
-    authenticated: () => boolean
-}): Promise<[registeredSubdomain: true]>
-export async function initASMAAppVitals(props: {
-    setLoadMicroApp(dev_mode: boolean): Promise<void>
-    is_child_app: false
-    authenticated: () => boolean
-    subdomain_check: {
-        redirect_if_not_exists?: boolean
-        setSelectedCustomer?: (customer_id: string) => void
-        logos: { fretexLogo: string; carasentLogo: string }
-        service: 'app-shell' | 'app-advoca' | 'advoca-portal'
-    }
-}): Promise<[registeredSubdomain: boolean]>
+
 export async function initASMAAppVitals({
     authenticated,
     is_child_app = false,
@@ -80,7 +65,6 @@ export async function initASMAAppVitals({
     if (!is_child_app && subdomain_check) {
         const [registeredSubdomain1] = await checkForRegisteredSubdomain({
             ...subdomain_check,
-            service: subdomain_check.service,
             authenticated,
         })
 
