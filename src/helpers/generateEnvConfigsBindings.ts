@@ -17,7 +17,7 @@ export type IEnvironmentUrlsGenQLOnly = Omit<
     'SRV_PROXY_OLD' | 'SRV_PROXY_OLD_HELSE' | 'SRV_PROXY_OLD_WEB' | 'SRV_ADVOCA'
 >
 
-type ISrvKeysTransformToWs<T> = T extends `SRV_${infer K}` ? `SRV_${K}_WS` : never
+//type ISrvKeysTransformToWs<T> = T extends `SRV_${infer K}` ? `SRV_${K}_WS` : never
 
 //type IKeyEnvironmentUrlsWs = `${IKeyEnvironmentUrls}_WS`
 declare global {
@@ -77,7 +77,7 @@ export function generateEnvConfigsBindings<
         string,
     S,
 >(envs_import: Promise<{ envs: T }>, required_envs: K[], static_env: S) {
-    type IEnvConfigs = T & IEnvironmentUrls & Record<ISrvKeysTransformToWs<keyof T | IKeyEnvironmentUrls>, string>
+    type IEnvConfigs = T & IEnvironmentUrls /* & Record<ISrvKeysTransformToWs<keyof T | IKeyEnvironmentUrls>, string> */
 
     let env_vars = {} as T
 
