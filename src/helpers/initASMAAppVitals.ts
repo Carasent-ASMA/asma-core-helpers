@@ -51,7 +51,11 @@ export async function initASMAAppVitals({
      */
     await fetchConfigsInternal()
 
-    await clearCacheData(EnvConfigsFnInternal().CACHE_VERSION)
+    /**
+     * //TODO One need to make an context aware cache clear
+     * Maybe to add indexes on subapps when initiating and cleaning apps?
+     */
+    !is_child_app && (await clearCacheData(EnvConfigsFnInternal().CACHE_VERSION))
 
     await setLoadMicroApp(EnvConfigsFnInternal().DEVELOPMENT)
 
