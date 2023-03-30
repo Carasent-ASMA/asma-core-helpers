@@ -62,16 +62,18 @@ export async function initASMAAppVitals({
 
     let registeredSubdomain = true
 
-    if (!is_child_app && subdomain_check) {
-        const [registeredSubdomain1] = await checkForRegisteredSubdomain({
-            ...subdomain_check,
-            authenticated,
-        })
+    if (!is_child_app) {
+        if (subdomain_check) {
+            const [registeredSubdomain1] = await checkForRegisteredSubdomain({
+                ...subdomain_check,
+                authenticated,
+            })
 
-        registeredSubdomain = registeredSubdomain1
-
+            registeredSubdomain = registeredSubdomain1
+        }
         authenticated() && (await getCachedJwtInternal())
     }
+
 
     return [registeredSubdomain] as [registeredSubdomain: boolean]
 }
