@@ -26,7 +26,7 @@ export const EnvironmentsUrls = {
         SRV_PROXY_OLD_WEB: 'https://dev.adopus.no/api/proxy/web',
         SRV_STORAGE: 'https://dev.adopus.no/api/storage',
         SRV_CHAT: 'https://dev.adopus.no/api/chat',
-        SRV_CONNECTOR: 'https://connector-test.adopus.no',
+        SRV_CONNECTOR: 'https://connector-dev.adopus.no',
         SRV_ARTIFACT: '',
         SRV_ADVOCA: 'https://dev.advoca.no/api/service',
         SRV_PROXY: 'https://dev.adopus.no/api/srvproxy',
