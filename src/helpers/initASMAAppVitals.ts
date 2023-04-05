@@ -52,6 +52,8 @@ export async function initASMAAppVitals({
      */
     await fetchConfigsInternal()
 
+    authenticated() && (await getCachedJwtInternal())
+
     /**
      * //TODO One need to make an context aware cache clear
      * Maybe to add indexes on subapps when initiating and cleaning apps?
@@ -71,9 +73,7 @@ export async function initASMAAppVitals({
 
             registeredSubdomain = registeredSubdomain1
         }
-        authenticated() && (await getCachedJwtInternal())
     }
-
 
     return [registeredSubdomain] as [registeredSubdomain: boolean]
 }
