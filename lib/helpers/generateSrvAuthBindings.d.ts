@@ -15,6 +15,7 @@ declare function dispatchLogoutEvent(): void;
  * @generic SrvUrlsEnums - srv_names_enums from asma-genql-directory
  */
 export declare function getCachedJwtInternal(): Promise<string | undefined>;
+export declare function isJwtValidInternal(): boolean;
 export declare function srvAuthGetInternal<R>(url: string, headers?: Record<string, string>): Promise<R>;
 export declare function getSrvUrlsInternal(): Record<'ao_wrapper' | 'connector', string> | undefined;
 export declare function setReqConfigInternal<T = unknown>(data?: T | undefined, responseType?: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream'): Promise<{
@@ -74,6 +75,7 @@ export declare function generateSrvAuthBindings<FeatureEnums = never>(logout?: (
  *
  */
 export declare function generateSrvAuthBindingsMicroApp(logout?: () => void): {
+    isJwtValid: () => boolean;
     getCachedJwt: () => Promise<string | undefined>;
     srvAuthGet: <R>(url: string, headers?: Record<string, string> | undefined) => Promise<R>;
     setReqConfig: <T = unknown>(data?: T | undefined, responseType?: "arraybuffer" | "blob" | "document" | "json" | "text" | "stream" | undefined) => Promise<{

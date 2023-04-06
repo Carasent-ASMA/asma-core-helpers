@@ -36,5 +36,15 @@
     "scss.validate": false, // Disable scss lint (optional if using scss)
     "explorer.decorations.badges": true,
     "explorer.decorations.colors": true,
-    "cSpell.words": ["asma", "deepcode", "logoutsuccessfull", "signin", "signout"]
+    "cSpell.words": [
+        "advoca",
+        "asma",
+        "carasent",
+        "deepcode",
+        "fretex",
+        "logoutsuccessfull",
+        "signin",
+        "signout",
+        "subapps"
+    ]
 }

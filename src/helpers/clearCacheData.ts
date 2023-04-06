@@ -27,8 +27,8 @@ export const clearCacheData = async (CACHE_VERSION: string) => {
         })
 
         localStorage.setItem('version', CACHE_VERSION)
-
+        // FIXME this will create problems any way.
         //we should reload page after clearing, otherwise, indexdb will be empty and all storage will be clear, and next reload page will still move you to the login page, because auth store no more exist, and is_authenticated return false
-        window.location.reload()
+        //window.location.reload()
     }
 }
