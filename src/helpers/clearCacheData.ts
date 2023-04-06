@@ -15,7 +15,11 @@ export const clearCacheData = async (CACHE_VERSION: string) => {
     window.__ASMA_clearCacheDataCalled__ = true
 
     const version = localStorage.getItem('version')
-    if ((!version || version !== CACHE_VERSION) && indexedDB && typeof indexedDB['databases'] === 'function') {
+
+    // do not delete cache if !version, just set it
+    if (!version) {
+        localStorage.setItem('version', CACHE_VERSION)
+    } else if (version !== CACHE_VERSION && indexedDB && typeof indexedDB['databases'] === 'function') {
         const IndexedDBS = await indexedDB.databases()
 
         IndexedDBS.forEach((IndexedDB) => {
@@ -23,5 +27,8 @@ export const clearCacheData = async (CACHE_VERSION: string) => {
         })
 
         localStorage.setItem('version', CACHE_VERSION)
+
+        //we should reload page after clearing, otherwise, indexdb will be empty and all storage will be clear, and next reload page will still move you to the login page, because auth store no more exist, and is_authenticated return false
+        window.location.reload()
     }
 }
