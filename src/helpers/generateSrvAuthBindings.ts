@@ -151,11 +151,16 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
 
         if (!res?.ok) {
             let error: R | string = json
+
             if (!json) {
                 error = await res.clone().text()
             }
 
             throw error
+        }
+
+        if (res.status === 299) {
+            console.warn(json)
         }
 
         return json
@@ -285,6 +290,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
                 dispatchLogoutEvent()
                 return
             }
+
             setAuthData(data)
             return jwtToken
         } catch (error) {
