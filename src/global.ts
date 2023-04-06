@@ -19,6 +19,7 @@ declare global {
         __ASMA__SHELL__?: {
             history?: History
             auth_bindings?: {
+                isJwtValid: () => boolean
                 getCachedJwt: () => Promise<string | undefined>
                 srvAuthGet: <R>(url: string, headers?: Record<string, string>) => Promise<R>
                 setReqConfig: <T = unknown>(

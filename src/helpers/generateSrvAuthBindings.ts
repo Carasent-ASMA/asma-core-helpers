@@ -36,6 +36,18 @@ export async function getCachedJwtInternal() {
     return getCachedJwt()
 }
 /* @__PURE__ */
+export function isJwtValidInternal(): boolean {
+    const isJwtValid = window.__ASMA__SHELL__?.auth_bindings?.isJwtValid
+
+    if (!isJwtValid) {
+        throw new Error(
+            'srvAuthGet is not defined! please make sure that generateSrvAuthBindings is called before srvAuthGet',
+        )
+    }
+    return isJwtValid()
+}
+
+/* @__PURE__ */
 export async function srvAuthGetInternal<R>(url: string, headers?: Record<string, string>): Promise<R> {
     const srvAuthGet = window.__ASMA__SHELL__?.auth_bindings?.srvAuthGet
 
@@ -278,7 +290,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         } catch (error) {
             dispatchLogoutEvent()
 
-            console.error(error)
+            console.warn(error)
 
             return jwtToken
         }
