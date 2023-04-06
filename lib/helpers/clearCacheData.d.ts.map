@@ -1,1 +1,1 @@
-{"version":3,"file":"clearCacheData.d.ts","sourceRoot":"","sources":["../../src/helpers/clearCacheData.ts"],"names":[],"mappings":"AAAA,OAAO,CAAC,MAAM,CAAC;IACX,UAAU,MAAM;QACZ,6BAA6B,EAAE,OAAO,CAAA;KACzC;CACJ;AACD;;;GAGG;AAEH,eAAO,MAAM,cAAc,kBAAyB,MAAM,kBAgBzD,CAAA"}
+{"version":3,"file":"clearCacheData.d.ts","sourceRoot":"","sources":["../../src/helpers/clearCacheData.ts"],"names":[],"mappings":"AAAA,OAAO,CAAC,MAAM,CAAC;IACX,UAAU,MAAM;QACZ,6BAA6B,EAAE,OAAO,CAAA;KACzC;CACJ;AACD;;;GAGG;AAEH,eAAO,MAAM,cAAc,kBAAyB,MAAM,kBAuBzD,CAAA"}
