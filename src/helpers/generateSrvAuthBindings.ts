@@ -5,7 +5,7 @@ import { setTheme } from './checkForRegisteredSubdomains'
 import { EnvConfigsFnInternal } from './generateEnvConfigsBindings'
 import { parseJwt } from './parseJwt'
 
-//let logoutsuccesfull = false
+//let logoutSuccessful = false
 /* @__PURE__ */
 export const { dispatch: dispatchSrvAuthEvents, register: registerCallbackOnSrvAuthEvents } = EventBus<{
     jwt_changed: {}
@@ -119,7 +119,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
             if (EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE in EnvironmentEnums) {
                 url = `${url}&env=${EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE}`
 
-                // file deepcode ignore GlobalReplacementRegex: <it is intended to be replaced only first occurence>
+                // file deepcode ignore GlobalReplacementRegex: <it is intended to be replaced only first occurrence>
                 url = url.includes('&') && !url.includes('?') ? url.replace('&', '?') : url
             } else {
                 console.warn(
@@ -159,7 +159,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
             throw error
         }
 
-        if (res.status === 299) {
+        if (res.status === 299 && EnvConfigsFnInternal().DEVELOPMENT) {
             console.warn(json)
         }
 
@@ -178,7 +178,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
 
     /**
      *
-     * TODO: need to investigate smarter way of registerning and unregistering on `logout_event`
+     * TODO: need to investigate smarter way of registering and unregister on `logout_event`
      **/
     registerCallbackOnSrvAuthEvents('logout_event', () => {
         setAuthData({ token: '' })
