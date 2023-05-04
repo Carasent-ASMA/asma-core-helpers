@@ -1,4 +1,4 @@
-export const NORVEGIAN_PHONE_NUMBER = {
+export const NORWEGIAN_PHONE_NUMBER = {
     placeholder: 'Legg inn tlf nr.',
     format: '+47-###-##-###',
     mask: '_',
@@ -32,7 +32,7 @@ export const YEARS = {
     //suffix: "År"
 }
 
-export const CURENCY_NOK = {
+export const CURRENCY_NOK = {
     placeholder: 'Legg summen i Kr',
     //format:"###",
     //mask:"_",

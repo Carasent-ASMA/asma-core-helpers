@@ -4,7 +4,7 @@ import type { ClientOptions } from '@genql/runtime'
 import { httpToWs } from './Config'
 import {
     EnvConfigsFnInternal,
-    IEnvironmentUrlsGenQLOnly,
+    type IEnvironmentUrlsGenQLOnly,
     //IKeyEnvironmentUrls,
     //IKeyEnvironmentUrlsOmit,
 } from './generateEnvConfigsBindings'
@@ -82,7 +82,7 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
         }
 
         if (!service_url) {
-            const message = `'requred param serviceUrl() is undefined, please check EnvConfig object!', service: ${service}`
+            const message = `'required param serviceUrl() is undefined, please check EnvConfig object!', service: ${service}`
             throw Error(message)
         }
         return service_url
@@ -90,13 +90,13 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
     const reqConf = setReqConfig || setReqConfigInternal
 
     async function genqlClient(options: CliOptions & { abortController?: AbortController } = {}): Promise<T> {
-        const { headers, abortController: abortControlleFromOpts, ...rest } = options
+        const { headers, abortController: abortControllerFromOpts, ...rest } = options
 
         /*  if (!serviceUrl()) {
-            throw Error('requred param srv_url is undefined, please check EnvConfig object!')
+            throw Error('required param srv_url is undefined, please check EnvConfig object!')
         } */
 
-        const abortControllerlocal = createabortControllerAndAbortOnLogoutEvent(abortControlleFromOpts)
+        const abortControllerLocal = createAbortControllerAndAbortOnLogoutEvent(abortControllerFromOpts)
 
         return createClient({
             url: `${serviceUrlFn()}${path}`,
@@ -104,7 +104,7 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
                 ...(options.anonymous ? {} : (((await reqConf()).headers ?? {}) as Record<string, string>)),
                 ...headers,
             }),
-            signal: abortControllerlocal.signal,
+            signal: abortControllerLocal.signal,
             batch: { batchInterval: 50, maxBatchSize: 100 },
             ...rest,
         })
@@ -112,7 +112,7 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
 
     async function genqlClientWs() {
         if (!wsClient) {
-            const aborControllerLocal = createabortControllerAndAbortOnLogoutEvent()
+            const aborControllerLocal = createAbortControllerAndAbortOnLogoutEvent()
 
             wsClient = createClient({
                 url: `${httpToWs(serviceUrlFn())}${path}`,
@@ -130,7 +130,7 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
         return wsClient
     }
 
-    function createabortControllerAndAbortOnLogoutEvent(abortControllerFromFnSig?: AbortController) {
+    function createAbortControllerAndAbortOnLogoutEvent(abortControllerFromFnSig?: AbortController) {
         const localAbrotController = abortControllerFromFnSig || new AbortController()
 
         local_abortController_registry.push(localAbrotController)

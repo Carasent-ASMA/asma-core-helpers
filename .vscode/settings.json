@@ -36,6 +36,7 @@
     "scss.validate": false, // Disable scss lint (optional if using scss)
     "explorer.decorations.badges": true,
     "explorer.decorations.colors": true,
+    "cSpell.language": "en,nb",
     "cSpell.words": [
         "advoca",
         "asma",
@@ -43,10 +44,15 @@
         "deepcode",
         "fretex",
         "genql",
+        "jsxdev",
         "keyval",
         "logoutsuccessfull",
+        "Mfes",
+        "MICROAPP",
         "signin",
         "signout",
-        "subapps"
+        "subapps",
+        "adopus",
+        "adcuris"
     ]
 }

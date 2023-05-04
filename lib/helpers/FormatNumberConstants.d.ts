@@ -1,4 +1,4 @@
-export declare const NORVEGIAN_PHONE_NUMBER: {
+export declare const NORWEGIAN_PHONE_NUMBER: {
     placeholder: string;
     format: string;
     mask: string;
@@ -19,7 +19,7 @@ export declare const YEARS: {
     thousandSeparator: boolean;
     prefix: string;
 };
-export declare const CURENCY_NOK: {
+export declare const CURRENCY_NOK: {
     placeholder: string;
     thousandSeparator: boolean;
     prefix: string;
