@@ -1,5 +1,5 @@
 import type { ClientOptions } from '@genql/runtime';
-import { IEnvironmentUrlsGenQLOnly } from './generateEnvConfigsBindings';
+import { type IEnvironmentUrlsGenQLOnly } from './generateEnvConfigsBindings';
 interface CliOptions extends Omit<ClientOptions, 'url' | 'signal'> {
     anonymous?: boolean;
 }

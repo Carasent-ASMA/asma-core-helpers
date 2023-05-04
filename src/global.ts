@@ -56,4 +56,4 @@ declare global {
 
 export const history = window.__ASMA__SHELL__?.history || createBrowserHistory()
 
-export { History, createBrowserHistory }
+export { type History, createBrowserHistory }

@@ -76,7 +76,7 @@
         "noPropertyAccessFromIndexSignature": true,
         "resolveJsonModule": true,
         "experimentalDecorators": false,
-        "importsNotUsedAsValues": "error",
+        "verbatimModuleSyntax": true,
         "useUnknownInCatchVariables": false
     },
     "include": ["src", "lib/interfaces"],

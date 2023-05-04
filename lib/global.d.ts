@@ -46,5 +46,5 @@ declare global {
     }
 }
 export declare const history: History;
-export { History, createBrowserHistory };
+export { type History, createBrowserHistory };
 //# sourceMappingURL=global.d.ts.map

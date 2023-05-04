@@ -1,4 +1,4 @@
-import { configWeb, EnvironmentEnums, IEnvironmentEnums } from '..'
+import { configWeb, EnvironmentEnums, type IEnvironmentEnums } from '..'
 /* @__PURE__ */
 export const EnvironmentsUrls = {
     local: {
