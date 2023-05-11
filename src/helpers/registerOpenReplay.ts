@@ -13,6 +13,9 @@ export async function registerOpenReplay() {
 
         tracker = new Tracker({
             projectKey: 'kCn3WuRKfKLJHpcqKF58',
+            onStart: (sessionId) => {
+                console.log(`OpenReplay started with session id: ${sessionId}`)
+            },
         })
 
         const { unregister } = registerCallbackOnSrvAuthEvents('jwt_changed', async () => {
