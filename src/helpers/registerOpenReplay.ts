@@ -14,7 +14,7 @@ export async function registerOpenReplay() {
         tracker = new Tracker({
             projectKey: 'kCn3WuRKfKLJHpcqKF58',
             onStart: (sessionId) => {
-                console.log(`OpenReplay started with session id: ${sessionId}`)
+                console.log(`OpenReplay started with session id: ${JSON.stringify(sessionId, undefined, 4)}`)
             },
         })
 
