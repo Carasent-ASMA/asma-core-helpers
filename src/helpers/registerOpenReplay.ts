@@ -6,9 +6,9 @@ import { getCachedJwtInternal } from './generateSrvAuthBindings'
 import { parseJwt } from './parseJwt'
 
 export let tracker: Tracker
-
+const isStage = window.location.hostname.includes('stage')
 export async function registerOpenReplay() {
-    if (EnvConfigsFnInternal().DEVELOPMENT) {
+    if (EnvConfigsFnInternal().DEVELOPMENT || isStage) {
         const Tracker = (await import('@openreplay/tracker')).default
 
         tracker = new Tracker({
@@ -17,6 +17,7 @@ export async function registerOpenReplay() {
                 console.log(`OpenReplay started with session id: ${JSON.stringify(sessionId, undefined, 4)}`)
             },
         })
+
         tracker.setMetadata('hostname', window.location.hostname)
 
         const { unregister } = registerCallbackOnSrvAuthEvents('jwt_changed', async () => {
