@@ -17,6 +17,7 @@ export async function registerOpenReplay() {
                 console.log(`OpenReplay started with session id: ${JSON.stringify(sessionId, undefined, 4)}`)
             },
         })
+        tracker.setMetadata('hostname', window.location.hostname)
 
         const { unregister } = registerCallbackOnSrvAuthEvents('jwt_changed', async () => {
             const jwt_string = await getCachedJwtInternal()
