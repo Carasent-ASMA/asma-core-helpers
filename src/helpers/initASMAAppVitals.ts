@@ -2,6 +2,7 @@ import { checkForRegisteredSubdomain } from './checkForRegisteredSubdomains'
 import { clearCacheData } from './clearCacheData'
 import { EnvConfigsFnInternal, fetchConfigsInternal } from './generateEnvConfigsBindings'
 import { getCachedJwtInternal, isJwtValidInternal, registerCallbackOnSrvAuthEvents } from './generateSrvAuthBindings'
+import { registerOpenReplay } from './registerOpenReplay'
 
 /**
  *
@@ -53,8 +54,11 @@ export async function initASMAAppVitals({
      */
     await fetchConfigsInternal()
 
-    !is_child_app && (await clearCacheData(EnvConfigsFnInternal().CACHE_VERSION))
+    if (!is_child_app) {
+        registerOpenReplay()
 
+        await clearCacheData(EnvConfigsFnInternal().CACHE_VERSION)
+    }
     registerCallbackOnSrvAuthEvents('jwt_changed', () => {
         onChangeAuthenticated(isJwtValidInternal())
     })
