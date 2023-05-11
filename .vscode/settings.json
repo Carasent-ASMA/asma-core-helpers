@@ -38,6 +38,8 @@
     "explorer.decorations.colors": true,
     "cSpell.language": "en,nb",
     "cSpell.words": [
+        "adcuris",
+        "adopus",
         "advoca",
         "asma",
         "carasent",
@@ -49,10 +51,9 @@
         "logoutsuccessfull",
         "Mfes",
         "MICROAPP",
+        "openreplay",
         "signin",
         "signout",
-        "subapps",
-        "adopus",
-        "adcuris"
+        "subapps"
     ]
 }

@@ -33,6 +33,6 @@ export async function registerOpenReplay() {
 
         const res = await tracker.start()
 
-        ;(res.success && console.info('OpenReplay started')) || console.error('OpenReplay failed to start')
+        res.success ? console.info('OpenReplay started') : console.error('OpenReplay failed to start')
     }
 }
