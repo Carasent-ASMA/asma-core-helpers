@@ -25,7 +25,7 @@ function dispatchJwtChangedEvent() {
  */
 //type EnvConfigsFn = () => { SRV_AUTH: string; DEVELOPMENT: boolean; ENVIRONMENT_TO_OPERATE: string }
 /* @__PURE__ */
-export async function getCachedJwtInternal() {
+export async function   getCachedJwtInternal() {
     const getCachedJwt = window.__ASMA__SHELL__?.auth_bindings?.getCachedJwt
 
     if (!getCachedJwt) {
