@@ -3,6 +3,7 @@ interface IBasicEnv {
     DEVELOPMENT: boolean;
     ENVIRONMENT_TO_OPERATE: string;
     ADVOCA_ACCESS_URL?: string;
+    OPENREPLAY_PROJECT_KEY?: string;
 }
 type IEnvironmentUrls = typeof EnvironmentsUrls.local;
 export type IKeyEnvironmentUrls = keyof IEnvironmentUrls;
