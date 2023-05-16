@@ -11,7 +11,7 @@ declare global {
         __ASMA_OPENREPLAY__?: Partial<IGlobalOpenReplay>;
     }
 }
-export declare function getTrackerModule<Keys extends keyof IGlobalOpenReplay>(name: Keys): Partial<Required<{
+export declare function getOpenReplayTrackerModule<Keys extends keyof IGlobalOpenReplay>(name: Keys): Partial<Required<{
     started: boolean;
     tracker: Tracker | undefined;
     trackerProfiler: ((name: string) => (fn: Function, thisArg?: any) => any) | undefined;

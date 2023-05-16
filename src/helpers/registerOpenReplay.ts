@@ -22,7 +22,7 @@ declare global {
     }
 }
 
-export function getTrackerModule<Keys extends keyof IGlobalOpenReplay>(name: Keys) {
+export function getOpenReplayTrackerModule<Keys extends keyof IGlobalOpenReplay>(name: Keys) {
     return window.__ASMA_OPENREPLAY__?.[name]
 }
 
@@ -38,7 +38,7 @@ const { unregister } = registerCallbackOnSrvAuthEvents('jwt_changed', async () =
         (parseJwt(jwt_string) as { customer_id: string; user_id: string; journal_user_id: string } | undefined)
 
     if (
-        !getTrackerModule('started') &&
+        !getOpenReplayTrackerModule('started') &&
         (jwt ? EnvConfigsFnInternal().OPENREPLAY_ENABLED_CUSTOMERS?.includes(jwt.customer_id) : false)
     ) {
         await registerOpenReplay(true)
@@ -57,7 +57,10 @@ const { unregister } = registerCallbackOnSrvAuthEvents('jwt_changed', async () =
 })
 
 export async function registerOpenReplay(startForSpecificCustomer = false) {
-    if (getTrackerModule('started') && !(EnvConfigsFnInternal().OPENREPLAY_ENABLE || startForSpecificCustomer)) {
+    if (
+        getOpenReplayTrackerModule('started') &&
+        !(EnvConfigsFnInternal().OPENREPLAY_ENABLE || startForSpecificCustomer)
+    ) {
         return
     }
     const Tracker = (await import('@openreplay/tracker')).default
