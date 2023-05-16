@@ -58,61 +58,60 @@ const { unregister } = registerCallbackOnSrvAuthEvents('jwt_changed', async () =
 
 export async function registerOpenReplay(startForSpecificCustomer = false) {
     if (
-        getOpenReplayTrackerModule('started') ||
-        !(EnvConfigsFnInternal().OPENREPLAY_ENABLE || startForSpecificCustomer)
+        !getOpenReplayTrackerModule('started') &&
+        (EnvConfigsFnInternal().OPENREPLAY_ENABLE || startForSpecificCustomer)
     ) {
-        return
-    }
-    const Tracker = (await import('@openreplay/tracker')).default
+        const Tracker = (await import('@openreplay/tracker')).default
 
-    tracker = new Tracker({
-        projectKey: EnvConfigsFnInternal().OPENREPLAY_PROJECT_KEY || '',
-        sessionToken: localStorage.getItem('openreplay_session_token') || undefined,
+        tracker = new Tracker({
+            projectKey: EnvConfigsFnInternal().OPENREPLAY_PROJECT_KEY || '',
+            sessionToken: localStorage.getItem('openreplay_session_token') || undefined,
 
-        network: {
-            capturePayload: true,
-            failuresOnly: false,
-            ignoreHeaders: false,
-            sessionTokenHeader: 'X-OpenReplay-Session',
-        },
+            network: {
+                capturePayload: true,
+                failuresOnly: false,
+                ignoreHeaders: false,
+                sessionTokenHeader: 'X-OpenReplay-Session',
+            },
 
-        onStart: (sessionId) => {
-            //localStorage.setItem('openreplay_session_id', sessionId.sessionID)
+            onStart: (sessionId) => {
+                //localStorage.setItem('openreplay_session_id', sessionId.sessionID)
 
-            localStorage.setItem('openreplay_session_token', sessionId.sessionToken)
+                localStorage.setItem('openreplay_session_token', sessionId.sessionToken)
 
-            //localStorage.setItem('openreplay_session_token', sessionId.userUUID)
+                //localStorage.setItem('openreplay_session_token', sessionId.userUUID)
 
-            console.log(`OpenReplay started with session id: ${JSON.stringify(sessionId, undefined, 4)}`)
-        },
-    })
+                console.log(`OpenReplay started with session id: ${JSON.stringify(sessionId, undefined, 4)}`)
+            },
+        })
 
-    setTrackerModuleOnWindow('tracker', tracker)
+        setTrackerModuleOnWindow('tracker', tracker)
 
-    useTrackerMobxModule(tracker)
+        useTrackerMobxModule(tracker)
 
-    useTrackerProfilerModule(tracker)
+        useTrackerProfilerModule(tracker)
 
-    useTrackerGraphQlModule(tracker)
+        useTrackerGraphQlModule(tracker)
 
-    useTrackerLiveAssistModule(tracker)
+        useTrackerLiveAssistModule(tracker)
 
-    /*  const trackerMobxModule = (await import('@openreplay/tracker-mobx')).default
+        /*  const trackerMobxModule = (await import('@openreplay/tracker-mobx')).default
 
         tracker.use(trackerMobxModule()) */
 
-    tracker.setMetadata('hostname', window.location.hostname)
+        tracker.setMetadata('hostname', window.location.hostname)
 
-    tracker.setUserAnonymousID(`user-friendly-id-visible-for-user}`)
+        tracker.setUserAnonymousID(`user-friendly-id-visible-for-user}`)
 
-    const res = await tracker.start()
+        const res = await tracker.start()
 
-    setTrackerModuleOnWindow('started', true)
+        setTrackerModuleOnWindow('started', true)
 
-    if (res.success) {
-        console.info('OpenReplay started')
-    } else {
-        console.error('OpenReplay failed to start')
+        if (res.success) {
+            console.info('OpenReplay started')
+        } else {
+            console.error('OpenReplay failed to start')
+        }
     }
 }
 
