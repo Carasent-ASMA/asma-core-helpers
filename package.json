@@ -1,6 +1,6 @@
 {
     "name": "asma-helpers",
-    "version": "0.9.7",
+    "version": "0.9.8",
     "description": "helpers methods for asma",
     "main": "lib/index.js",
     "types": "lib",
@@ -21,6 +21,9 @@
     "dependencies": {
         "@genql/runtime": "^2.10.0",
         "@openreplay/tracker": "^7.0.0",
+        "@openreplay/tracker-graphql": "^3.0.1",
+        "@openreplay/tracker-mobx": "^3.0.1",
+        "@openreplay/tracker-profiler": "^3.0.1",
         "asma-event-bus": "^0.0.45",
         "asma-helpers": "^0.5.5",
         "axios": "1.0.0",

@@ -7,7 +7,13 @@ interface IBasicEnv {
     ENVIRONMENT_TO_OPERATE: string
     ADVOCA_ACCESS_URL?: string
 
+    OPENREPLAY_ENABLE?: boolean
     OPENREPLAY_PROJECT_KEY?: string
+
+    OPENREPLAY_TRACKER_PROFILER?: boolean
+    OPENREPLAY_TRACKER_MOBX?: boolean
+    OPENREPLAY_TRACKER_GRAPHQL?: boolean
+    OPENREPLAY_ENABLED_CUSTOMERS?: string[]
 }
 
 type IEnvironmentUrls = typeof EnvironmentsUrls.local

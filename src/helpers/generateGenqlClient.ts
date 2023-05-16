@@ -104,6 +104,7 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
                 ...(options.anonymous ? {} : (((await reqConf()).headers ?? {}) as Record<string, string>)),
                 ...headers,
             }),
+            
             signal: abortControllerLocal.signal,
             batch: { batchInterval: 50, maxBatchSize: 100 },
             ...rest,
