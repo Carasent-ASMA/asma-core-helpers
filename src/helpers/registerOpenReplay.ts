@@ -58,7 +58,7 @@ const { unregister } = registerCallbackOnSrvAuthEvents('jwt_changed', async () =
 
 export async function registerOpenReplay(startForSpecificCustomer = false) {
     if (
-        getOpenReplayTrackerModule('started') &&
+        getOpenReplayTrackerModule('started') ||
         !(EnvConfigsFnInternal().OPENREPLAY_ENABLE || startForSpecificCustomer)
     ) {
         return
@@ -95,6 +95,8 @@ export async function registerOpenReplay(startForSpecificCustomer = false) {
 
     useTrackerGraphQlModule(tracker)
 
+    useTrackerLiveAssistModule(tracker)
+
     /*  const trackerMobxModule = (await import('@openreplay/tracker-mobx')).default
 
         tracker.use(trackerMobxModule()) */
@@ -127,6 +129,14 @@ async function useTrackerProfilerModule(tracker: Tracker) {
         const trackerProfilerModule = (await import('@openreplay/tracker-profiler')).default
 
         setTrackerModuleOnWindow('trackerProfiler', tracker.use(trackerProfilerModule()))
+    }
+}
+
+async function useTrackerLiveAssistModule(tracker: Tracker) {
+    if (EnvConfigsFnInternal().OPENREPLAY_LIVE_ASSIST) {
+        const trackerProfilerModule = (await import('@openreplay/tracker-assist')).default
+
+        tracker.use(trackerProfilerModule())
     }
 }
 
