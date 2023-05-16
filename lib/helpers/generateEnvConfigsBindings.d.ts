@@ -8,7 +8,7 @@ interface IBasicEnv {
     OPENREPLAY_TRACKER_PROFILER?: boolean;
     OPENREPLAY_TRACKER_MOBX?: boolean;
     OPENREPLAY_TRACKER_GRAPHQL?: boolean;
-    OPENREPLAY_TRACKER_ASSIST?: boolean;
+    OPENREPLAY_LIVE_ASSIST?: boolean;
     OPENREPLAY_ENABLED_CUSTOMERS?: string[];
 }
 type IEnvironmentUrls = typeof EnvironmentsUrls.local;
