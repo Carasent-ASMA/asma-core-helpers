@@ -62,7 +62,10 @@ export async function registerOpenReplay(startForSpecificCustomer = false) {
         (EnvConfigsFnInternal().OPENREPLAY_ENABLE || startForSpecificCustomer)
     ) {
         const Tracker = (await import('@openreplay/tracker')).default
-
+        if (!EnvConfigsFnInternal().OPENREPLAY_PROJECT_KEY) {
+            console.error('OPENREPLAY_PROJECT_KEY is not defined')
+            return
+        }
         tracker = new Tracker({
             projectKey: EnvConfigsFnInternal().OPENREPLAY_PROJECT_KEY || '',
             sessionToken: localStorage.getItem('openreplay_session_token') || undefined,
