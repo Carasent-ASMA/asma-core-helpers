@@ -1,4 +1,3 @@
-//import type { AxiosRequestConfig } from 'axios'
 import type { createClient } from '@genql/runtime'
 import type { ClientOptions } from '@genql/runtime'
 import { httpToWs } from './Config'
