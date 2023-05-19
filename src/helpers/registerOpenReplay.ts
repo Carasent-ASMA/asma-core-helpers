@@ -1,4 +1,4 @@
-import type Tracker from '@openreplay/tracker'
+/* import type Tracker from '@openreplay/tracker'
 import { registerCallbackOnSrvAuthEvents } from 'asma-helpers/lib'
 
 import { EnvConfigsFnInternal } from './generateEnvConfigsBindings'
@@ -100,7 +100,7 @@ export async function registerOpenReplay(startForSpecificCustomer = false) {
 
         /*  const trackerMobxModule = (await import('@openreplay/tracker-mobx')).default
 
-        tracker.use(trackerMobxModule()) */
+        tracker.use(trackerMobxModule()) *\/
 
         tracker.setMetadata('hostname', window.location.hostname)
 
@@ -127,27 +127,26 @@ async function useTrackerMobxModule(tracker: Tracker) {
 }
 
 async function useTrackerProfilerModule(tracker: Tracker) {
-    if (EnvConfigsFnInternal().OPENREPLAY_TRACKER_PROFILER) {
-        const trackerProfilerModule = (await import('@openreplay/tracker-profiler')).default
+    if (!EnvConfigsFnInternal().OPENREPLAY_TRACKER_PROFILER) return
 
-        setTrackerModuleOnWindow('trackerProfiler', tracker.use(trackerProfilerModule()))
-    }
+    const trackerProfilerModule = (await import('@openreplay/tracker-profiler')).default
+
+    setTrackerModuleOnWindow('trackerProfiler', tracker.use(trackerProfilerModule()))
 }
 
 async function useTrackerLiveAssistModule(tracker: Tracker) {
-    if (EnvConfigsFnInternal().OPENREPLAY_LIVE_ASSIST) {
-        const trackerProfilerModule = (await import('@openreplay/tracker-assist')).default
+    if (EnvConfigsFnInternal().OPENREPLAY_LIVE_ASSIST) return
 
-        tracker.use(trackerProfilerModule())
-    }
+    const trackerProfilerModule = (await import('@openreplay/tracker-assist')).default
+
+    tracker.use(trackerProfilerModule())
 }
 
 async function useTrackerGraphQlModule(tracker: Tracker) {
-    if (EnvConfigsFnInternal().OPENREPLAY_TRACKER_GRAPHQL) {
-        const trackerGraphQlModule = (await import('@openreplay/tracker-graphql')).default
+    if (EnvConfigsFnInternal().OPENREPLAY_TRACKER_GRAPHQL) return
+    const trackerGraphQlModule = (await import('@openreplay/tracker-graphql')).default
 
-        setTrackerModuleOnWindow('trackerGraphQL', tracker.use(trackerGraphQlModule()))
-    }
+    setTrackerModuleOnWindow('trackerGraphQL', tracker.use(trackerGraphQlModule()))
 }
 
 function setTrackerModuleOnWindow<keys extends keyof IGlobalOpenReplay>(
@@ -157,3 +156,5 @@ function setTrackerModuleOnWindow<keys extends keyof IGlobalOpenReplay>(
     window.__ASMA_OPENREPLAY__ = window.__ASMA_OPENREPLAY__ || {}
     window.__ASMA_OPENREPLAY__[name] = module
 }
+ */
+export {}

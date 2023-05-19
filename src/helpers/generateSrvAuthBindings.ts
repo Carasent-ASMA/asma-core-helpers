@@ -1,4 +1,3 @@
-//import axios, { type AxiosResponse, type ResponseType } from 'axios'
 import { EventBus } from 'asma-event-bus/lib/event-buss'
 import { EnvironmentEnums } from '../interfaces/enums'
 import { setTheme } from './checkForRegisteredSubdomains'

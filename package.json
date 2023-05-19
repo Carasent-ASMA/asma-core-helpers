@@ -1,6 +1,6 @@
 {
     "name": "asma-helpers",
-    "version": "0.10.4",
+    "version": "0.11.0",
     "description": "helpers methods for asma",
     "main": "lib/index.js",
     "types": "lib",
@@ -16,18 +16,11 @@
     "author": "",
     "license": "MIT",
     "devDependencies": {
+        "@genql/runtime": "^2.10.0",
         "typescript": "^5.0.4"
     },
     "dependencies": {
-        "@genql/runtime": "^2.10.0",
-        "@openreplay/tracker": "^7.0.0",
-        "@openreplay/tracker-assist": "^5.0.2",
-        "@openreplay/tracker-graphql": "^3.0.1",
-        "@openreplay/tracker-mobx": "^3.0.1",
-        "@openreplay/tracker-profiler": "^3.0.1",
         "asma-event-bus": "^0.0.45",
-        "asma-helpers": "^0.5.5",
-        "axios": "1.0.0",
         "history": "~5.0.0",
         "idb-keyval": "^6.2.0",
         "mobx": "^6.6.1",
