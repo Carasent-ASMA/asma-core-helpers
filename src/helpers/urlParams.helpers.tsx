@@ -1,7 +1,7 @@
-import type { ISearchParams } from 'asma-types'
+import { type ISearchParams, type SearchParamWithValues } from 'asma-types'
 import { history } from '../global'
 
-export function setParamByName(name: ISearchParams, value: string) {
+export function setParamByName<Key extends ISearchParams>(name: Key, value: (typeof SearchParamWithValues)[Key]) {
     const searchParams = new URLSearchParams(history.location.search)
 
     searchParams.set(name, value)
