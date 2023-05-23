@@ -3,7 +3,7 @@ type ISetParamByName<Key extends ISearchParams> = {
     name: Key;
     value: (typeof SearchParamWithValues)[Key];
 };
-export declare function setParamByName<Key extends ISearchParams>(data: ISetParamByName<Key> | ISetParamByName<Key>[]): void;
+export declare function setParamByName<Key extends ISearchParams>(data: ISetParamByName<Key> | ISetParamByName<Key>[], del?: ISearchParams | ISearchParams[]): void;
 export declare function deleteParamByName(name: ISearchParams | ISearchParams[]): void;
 export declare function getParamByName(name: ISearchParams): string;
 export {};

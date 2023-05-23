@@ -23,6 +23,13 @@ export declare function setReqConfigInternal<T = unknown>(data?: T | undefined, 
     responseType: "arraybuffer" | "blob" | "document" | "json" | "text" | "stream" | undefined;
     headers: Record<string, string>;
 }>;
+export type IOpenReplay = {
+    enable: boolean;
+    live_assist: boolean;
+    graphql: boolean;
+    mobx: boolean;
+    profiler: boolean;
+};
 export declare function generateSrvAuthBindings<FeatureEnums = never>(logout?: () => void): {
     hasFeature: (featureName: FeatureEnums) => boolean;
     getConnector: () => string | undefined;
@@ -31,6 +38,7 @@ export declare function generateSrvAuthBindings<FeatureEnums = never>(logout?: (
     signin: (url: string, headers?: Record<string, string>) => Promise<{
         token: string;
         features: FeatureEnums[];
+        IOpenReplay?: IOpenReplay | undefined;
         connector?: string | undefined;
         srv_urls: Record<"ao_wrapper" | "connector", string> | undefined;
     }>;
@@ -51,6 +59,7 @@ export declare function generateSrvAuthBindings<FeatureEnums = never>(logout?: (
      *  */
     getJwtTokenAsync: () => Promise<string | undefined>;
     getCachedJwt: () => Promise<string | undefined>;
+    getOpenReplay: () => IOpenReplay | undefined;
     getNewJwtToken: () => Promise<string | undefined>;
     /**
      * @deprecated use registerCallbackOnSrvAuthEvents directly
