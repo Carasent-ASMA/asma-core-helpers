@@ -9,7 +9,7 @@ export function setParamByName<Key extends ISearchParams>(name: Key, value: (typ
     history.push(`${window.location.pathname}?${searchParams.toString()}`)
 }
 
-export function getParamByName(name: string) {
+export function getParamByName(name: ISearchParams) {
     const urlParams = new URLSearchParams(history.location.search)
 
     const param = urlParams.get(name) || ''
