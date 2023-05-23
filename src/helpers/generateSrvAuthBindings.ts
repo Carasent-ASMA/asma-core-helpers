@@ -24,7 +24,7 @@ function dispatchJwtChangedEvent() {
  */
 //type EnvConfigsFn = () => { SRV_AUTH: string; DEVELOPMENT: boolean; ENVIRONMENT_TO_OPERATE: string }
 /* @__PURE__ */
-export async function   getCachedJwtInternal() {
+export async function getCachedJwtInternal() {
     const getCachedJwt = window.__ASMA__SHELL__?.auth_bindings?.getCachedJwt
 
     if (!getCachedJwt) {
@@ -80,6 +80,13 @@ export async function setReqConfigInternal<T = unknown>(
     }
     return setReqConfig(data, responseType)
 }
+export type IOpenReplay = {
+    enable: boolean
+    live_assist: boolean
+    graphql: boolean
+    mobx: boolean
+    profiler: boolean
+}
 /* @__PURE__ */
 export function generateSrvAuthBindings<FeatureEnums = never>(
     //SRV_AUTH: () => string,
@@ -105,6 +112,8 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     let parsed_jwt: unknown | undefined
 
     let srv_urls: Record<'ao_wrapper' | 'connector', string> | undefined
+
+    let openreplay: IOpenReplay | undefined
 
     const isJwtInvalid = () => (jwtToken && accessTokenHasExpired()) || !jwtToken
 
@@ -189,6 +198,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         const data = await srvAuthGet<{
             token: string
             features: FeatureEnums[]
+            IOpenReplay?: IOpenReplay
             connector?: string
             srv_urls: typeof srv_urls
         }>(url, headers)
@@ -206,6 +216,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         token: string
         features?: FeatureEnums[]
         connector?: string
+        openreplay?: IOpenReplay
         theme?: string
         srv_urls?: typeof srv_urls
     }) {
@@ -215,6 +226,8 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
             features = new Set(data.features)
 
             connector = data.connector
+
+            openreplay = data.openreplay
 
             parsed_jwt = parseJwt(jwtToken)
 
@@ -235,10 +248,16 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         srv_urls = undefined
 
         connector = undefined
+
+        openreplay = undefined
     }
 
     function getJwtToken() {
         return jwtToken
+    }
+
+    function getOpenReplay() {
+        return openreplay
     }
 
     async function getCachedJwt() {
@@ -369,6 +388,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
          *  */
         getJwtTokenAsync: getCachedJwt,
         getCachedJwt,
+        getOpenReplay,
         getNewJwtToken,
         /**
          * @deprecated use registerCallbackOnSrvAuthEvents directly
