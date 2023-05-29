@@ -34,6 +34,16 @@ export async function getCachedJwtInternal() {
     }
     return getCachedJwt()
 }
+export function getConnectorInternal() {
+    const getConnector = window.__ASMA__SHELL__?.auth_bindings?.getConnector
+
+    if (!getConnector) {
+        throw new Error(
+            'getCachedJwt is not defined! please make sure that generateSrvAuthBindings is called before getCachedJwt',
+        )
+    }
+    return getConnector()
+}
 /* @__PURE__ */
 export function isJwtValidInternal(): boolean {
     const isJwtValid = window.__ASMA__SHELL__?.auth_bindings?.isJwtValid
