@@ -84,8 +84,6 @@ export async function checkForRegisteredSubdomain({
             setSelectedCustomer?.(res.id)
         }
 
-        console.log('res?.theme', res?.theme)
-
         if (res?.theme) {
             setTheme(res.theme)
         }
