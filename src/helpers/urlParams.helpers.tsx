@@ -44,10 +44,10 @@ export function deleteParamByName(name: ISearchParams | ISearchParams[]) {
     history.push(`${globalThis.location.pathname}?${searchParams.toString()}`)
 }
 
-export function getParamByName(name: ISearchParams) {
+export function getParamByName<Key extends ISearchParams>(name: Key) {
     const urlParams = new URLSearchParams(history.location.search)
 
-    const param = urlParams.get(name) || ''
+    const param = urlParams.get(name) as (typeof SearchParamWithValues)[Key] | null
 
     return param
 }
