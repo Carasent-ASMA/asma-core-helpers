@@ -1,7 +1,7 @@
-export function processServerError(error: string | Record<string, any>): string {
+export function _processServerError(error: string | Record<string, any>): string {
     console['error'](error)
 
-    let errorMessage = getServerErrorMessage(error)
+    let errorMessage = _getServerErrorMessage(error)
 
     /* if (i18n[errorMessage]) {
         ;(errorMessage = (window as any).strings)[errorMessage]
@@ -11,17 +11,17 @@ export function processServerError(error: string | Record<string, any>): string 
     return errorMessage
 }
 /* @__PURE__ */
-export function getServerErrorMessage(error: Record<string, any> | string): string {
+export function _getServerErrorMessage(error: Record<string, any> | string): string {
     if (typeof error == 'string') {
         return error
     } else if (error['data'] && error['data']['Message']) {
         return error['data']['Message']
     }
     if (Array.isArray(error)) {
-        return getArrayErrorsMessage(error)
+        return _getArrayErrorsMessage(error)
     }
     if (Array.isArray(error?.['errors'])) {
-        return getArrayErrorsMessage(error['errors'])
+        return _getArrayErrorsMessage(error['errors'])
     }
     //graphql
     else if (error['bodyText']) {
@@ -79,8 +79,8 @@ export function getServerErrorMessage(error: Record<string, any> | string): stri
     }
 }
 
-function getArrayErrorsMessage(error: Record<string, unknown>[]): string {
-    const porcessed_error = error
+function _getArrayErrorsMessage(error: Record<string, unknown>[]): string {
+    const processed_error = error
         .map((err) => {
             if ('message' in err) {
                 return err['message'] as string
@@ -88,5 +88,5 @@ function getArrayErrorsMessage(error: Record<string, unknown>[]): string {
         })
         .join()
 
-    return porcessed_error ?? 'No message field found! plase check logs'
+    return processed_error ?? 'No message field found! please check logs'
 }
