@@ -1,4 +1,7 @@
-export { getServerErrorMessage, processServerError } from './helpers/ProcessServerError'
+export {
+    _getServerErrorMessage as getServerErrorMessage,
+    _processServerError as processServerError,
+} from './helpers/_processServerError'
 export { CURRENCY_NOK, NORWEGIAN_PHONE_NUMBER, ORDINARY, PERSONAL_NUMBER, YEARS } from './helpers/FormatNumberConstants'
 export { COUNTRIES, POSTAL_CODE } from './helpers/NorwegianPostalCodes'
 export { capitalizeFirstLetter, toLowercaseAndCapitalizeFirstLetter } from './helpers/CapitalizeFistLetter'
