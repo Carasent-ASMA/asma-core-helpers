@@ -8,7 +8,7 @@ export declare function deleteParamByName(name: ISearchParams | ISearchParams[])
 export declare function getParamByName<Key extends ISearchParams>(name: Key): {
     readonly selected_patient_id: string;
     readonly selected_query_id: string;
-    readonly user_context: import("asma-types").IUserContext;
+    readonly user_context: import("asma-types/lib").IUserContext;
 }[Key] | null;
 export {};
 //# sourceMappingURL=urlParams.helpers.d.ts.map
