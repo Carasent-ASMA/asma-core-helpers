@@ -24,6 +24,7 @@ export * from './helpers/attachUserJournalCredentials'
 export * from './helpers/initASMAAppVitals'
 export * from './helpers/registerOpenReplay'
 export * from './helpers/urlParams.helpers'
+export * from './helpers/openReplay'
 
 export * from './utility/fetch'
 
