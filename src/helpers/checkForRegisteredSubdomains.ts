@@ -1,7 +1,8 @@
 import { EventBus } from 'asma-event-bus/lib/event-buss'
 //import { clearCacheData } from './clearCacheData'
-import { srvAuthGetInternal } from './generateSrvAuthBindings'
+import { srvAuthGetInternal, type IOpenReplay } from './generateSrvAuthBindings'
 import { redirectFromSubdomainToDomain } from './getSubdomain'
+import { _setOpenReplayConfig } from './openReplay'
 
 /**
  * @private use only inside this file
@@ -73,15 +74,21 @@ export async function checkForRegisteredSubdomain({
         appendAsmaLogoLink(theme, logos, service)
     })
 
+    type IRes = { id?: string; theme?: string; openreplay?: IOpenReplay | null }
+
     //const client = await directoryGenQLClient(true, { 'x-hasura-subdomain': subdomain })
-    let res: { id?: string; theme?: string } | undefined
+    let res: IRes | undefined
 
     if (!authenticated()) {
-        res = await srvAuthGetInternal<{ id?: string; theme?: string }>('/check?context=subdomain', {
+        res = await srvAuthGetInternal<IRes>('/check?context=subdomain', {
             'asma-origin': window.location.origin,
         })
+
         if (res?.id) {
             setSelectedCustomer?.(res.id)
+        }
+        if (res?.openreplay) {
+            _setOpenReplayConfig(res.openreplay)
         }
 
         if (res?.theme) {

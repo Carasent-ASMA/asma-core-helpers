@@ -57,7 +57,7 @@ export function isJwtValidInternal(): boolean {
 }
 
 /* @__PURE__ */
-export async function srvAuthGetInternal<R>(url: string, headers?: Record<string, string>): Promise<R> {
+export async function srvAuthGetInternal<R>(url: string, headers?: Record<string, string>) {
     const srvAuthGet = window.__ASMA__SHELL__?.auth_bindings?.srvAuthGet
 
     if (!srvAuthGet) {
@@ -65,7 +65,7 @@ export async function srvAuthGetInternal<R>(url: string, headers?: Record<string
             'srvAuthGet is not defined! please make sure that generateSrvAuthBindings is called before srvAuthGet',
         )
     }
-    return srvAuthGet(url, headers)
+    return srvAuthGet<R>(url, headers)
 }
 /* @__PURE__ */
 export function getSrvUrlsInternal(): Record<'ao_wrapper' | 'connector', string> | undefined {
