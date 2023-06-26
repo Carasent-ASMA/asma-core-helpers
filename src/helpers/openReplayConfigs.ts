@@ -9,8 +9,8 @@ export type IOpenReplayConfig = {
 }
 
 export function getOpenReplayConfig() {
-    if (window.__ASMA__SHELL__?.openreplay) {
-        return window.__ASMA__SHELL__.openreplay
+    if (window.__ASMA__SHELL__?.openreplay_configs) {
+        return window.__ASMA__SHELL__.openreplay_configs
     }
     return openreplay
 }
@@ -20,5 +20,5 @@ export function _setOpenReplayConfig(config: IOpenReplayConfig) {
 
     window.__ASMA__SHELL__ = window.__ASMA__SHELL__ || {}
 
-    window.__ASMA__SHELL__.openreplay = config
+    window.__ASMA__SHELL__.openreplay_configs = config
 }

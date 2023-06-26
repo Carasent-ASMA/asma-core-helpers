@@ -2,7 +2,7 @@ import { EventBus } from 'asma-event-bus/lib/event-buss'
 //import { clearCacheData } from './clearCacheData'
 import { srvAuthGetInternal, type IOpenReplay } from './generateSrvAuthBindings'
 import { redirectFromSubdomainToDomain } from './getSubdomain'
-import { _setOpenReplayConfig } from './openReplay'
+import { _setOpenReplayConfig } from './openReplayConfigs'
 
 /**
  * @private use only inside this file
