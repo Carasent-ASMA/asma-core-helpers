@@ -351,7 +351,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         //let hasFeature = false
 
         //const asmaFeaturesIgnoreList: string | null = localStorage.getItem('asma-features-ignore-list')
-        //const asmaDebug = localStorage.getItem('asma-debug') === 'true'
+        const enableAllFeatures = localStorage.getItem('enable-all-features') === 'true'
 
         //const hasFeatureCheck = !!features?.has(featureName)
         //const DEVELOPMENT = EnvConfigsFnInternal().DEVELOPMENT
@@ -374,7 +374,8 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         //} else {
         //     hasFeature = hasFeatureCheck
         // }
-        return EnvConfigsFnInternal().DEVELOPMENT || !!features?.has(featureName)
+
+        return enableAllFeatures || !!features?.has(featureName)
     }
 
     function getConnector() {
