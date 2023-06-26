@@ -14,6 +14,12 @@ const OpenReplayObject = {
 
 export type IGlobalOpenReplay = Required<typeof OpenReplayObject>
 
+export function getOpenReplayObject() {
+    if (window.__ASMA__SHELL__?.openreplay_object) {
+        return window.__ASMA__SHELL__.openreplay_object
+    }
+    return OpenReplayObject
+}
 export function getOpenReplayTrackerObject<Keys extends keyof IGlobalOpenReplay>(name: Keys) {
     if (window.__ASMA__SHELL__?.openreplay_object) {
         return window.__ASMA__SHELL__.openreplay_object[name]
