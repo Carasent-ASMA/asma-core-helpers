@@ -374,8 +374,15 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         //} else {
         //     hasFeature = hasFeatureCheck
         // }
+        /**
+         * is used directory_hideParticipantGroups due to the fact that it is wrongly named and enable fretex specific functionality
+         * needs to be renamed to directory_enableParticipantGroups. Excluding from dev enabling for now
+         */
+        if (featureName !== 'directory_hideParticipantGroups') {
+            return enableAllFeatures || !!features?.has(featureName)
+        }
 
-        return enableAllFeatures || !!features?.has(featureName)
+        return !!features?.has(featureName)
     }
 
     function getConnector() {
