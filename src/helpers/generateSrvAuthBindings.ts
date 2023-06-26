@@ -348,31 +348,33 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
      * @returns boolean
      */
     function hasFeature(featureName: FeatureEnums) {
-        let hasFeature = false
+        //let hasFeature = false
 
-        const asmaFeaturesIgnoreList: string | null = localStorage.getItem('asma-features-ignore-list')
-        const asmaDebug = localStorage.getItem('asma-debug') === 'true'
+        //const asmaFeaturesIgnoreList: string | null = localStorage.getItem('asma-features-ignore-list')
+        //const asmaDebug = localStorage.getItem('asma-debug') === 'true'
 
-        const hasFeatureCheck = !!features?.has(featureName)
+        //const hasFeatureCheck = !!features?.has(featureName)
+        //const DEVELOPMENT = EnvConfigsFnInternal().DEVELOPMENT
 
-        if (EnvConfigsFnInternal().DEVELOPMENT && asmaDebug && asmaFeaturesIgnoreList) {
-            let asmaEnableAllFeatures: FeatureEnums[] | undefined
+        //if (EnvConfigsFnInternal().DEVELOPMENT /*  && asmaDebug && asmaFeaturesIgnoreList */) {
+        // let asmaEnableAllFeatures: FeatureEnums[] | undefined
 
-            try {
-                asmaEnableAllFeatures = JSON.parse(asmaFeaturesIgnoreList)
-            } catch (e) {
-                console.error(e)
-            }
+        // try {
+        //     asmaEnableAllFeatures = JSON.parse(asmaFeaturesIgnoreList)
+        // } catch (e) {
+        //      console.error(e)
+        //  }
 
-            if (Array.isArray(asmaEnableAllFeatures) && !asmaEnableAllFeatures.includes(featureName)) {
-                hasFeature = true
-            } else {
-                hasFeature = hasFeatureCheck
-            }
-        } else {
-            hasFeature = hasFeatureCheck
-        }
-        return hasFeature
+        // if (Array.isArray(asmaEnableAllFeatures) && !asmaEnableAllFeatures.includes(featureName)) {
+        //      hasFeature = true
+        //  } else {
+        //hasFeature = hasFeatureCheck
+        //   }
+        //   return true
+        //} else {
+        //     hasFeature = hasFeatureCheck
+        // }
+        return EnvConfigsFnInternal().DEVELOPMENT || !!features?.has(featureName)
     }
 
     function getConnector() {
