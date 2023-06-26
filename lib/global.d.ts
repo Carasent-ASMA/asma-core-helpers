@@ -1,4 +1,5 @@
 import { type History, createBrowserHistory } from 'history';
+import type { IOpenReplay } from './helpers/generateSrvAuthBindings';
 export {};
 declare global {
     interface Window {
@@ -14,6 +15,7 @@ declare global {
             activeRule: string;
         }[];
         __ASMA__SHELL__?: {
+            openreplay?: IOpenReplay;
             history?: History;
             auth_bindings?: {
                 isJwtValid: () => boolean;
