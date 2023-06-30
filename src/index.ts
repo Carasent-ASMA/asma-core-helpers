@@ -25,6 +25,7 @@ export * from './helpers/initASMAAppVitals'
 export * from './helpers/registerOpenReplay'
 export * from './helpers/urlParams.helpers'
 export * from './helpers/openReplayConfigs'
+export * from './helpers/sha256'
 
 export * from './utility/fetch'
 
