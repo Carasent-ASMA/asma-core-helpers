@@ -1,6 +1,6 @@
 export const NORWEGIAN_PHONE_NUMBER = {
-    placeholder: 'Legg inn tlf nr.',
-    format: '+47-###-##-###',
+    placeholder: 'Mobilnummer',
+    format: '### ## ###',
     mask: '_',
     //thousandSeparator: "",
     //prefix: "",
@@ -8,15 +8,15 @@ export const NORWEGIAN_PHONE_NUMBER = {
 }
 
 export const PERSONAL_NUMBER = {
-    placeholder: 'legg inn ditt person nr',
-    format: ' ##/##/##-#####',
+    placeholder: 'Fødselsnummer - 11 sifre',
+    format: '###### #####',
     mask: '_',
     //thousandSeparator: "",
     //prefix: "",
     //suffix: ""
 }
 export const ORDINARY = {
-    placeholder: 'enkelt nummer',
+    placeholder: 'Svar',
     //format:"",
     //mask:"_",
     thousandSeparator: ',',
@@ -24,7 +24,7 @@ export const ORDINARY = {
     //suffix: ""
 }
 export const YEARS = {
-    placeholder: 'Legg inn år taller',
+    placeholder: 'Svar',
     format: '####',
     mask: '_',
     thousandSeparator: false,
@@ -33,7 +33,7 @@ export const YEARS = {
 }
 
 export const CURRENCY_NOK = {
-    placeholder: 'Legg summen i Kr',
+    placeholder: 'Svar',
     //format:"###",
     //mask:"_",
     thousandSeparator: true,
