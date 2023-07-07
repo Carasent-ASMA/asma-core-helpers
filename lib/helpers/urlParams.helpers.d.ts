@@ -6,6 +6,7 @@ type ISetParamByName<Key extends ISearchParams> = {
 export declare function setParamByName<Key extends ISearchParams>(data: ISetParamByName<Key> | ISetParamByName<Key>[], del?: ISearchParams | ISearchParams[]): void;
 export declare function deleteParamByName(name: ISearchParams | ISearchParams[]): void;
 export declare function getParamByName<Key extends ISearchParams>(name: Key): {
+    readonly activity_id: string;
     readonly selected_patient_id: string;
     readonly selected_query_id: string;
     readonly user_context: import("asma-types/lib").IUserContext;
