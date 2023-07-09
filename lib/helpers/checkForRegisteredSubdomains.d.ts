@@ -25,5 +25,5 @@ export declare function checkForRegisteredSubdomain({ redirect_if_not_exists, se
      * @deprecated one need remove this. Please do not use it in more use cases
      */
     service: 'app-shell' | 'advoca-portal' | 'app-advoca';
-}): Promise<[registeredSubdomain: boolean, unregister: () => void]>;
+}): Promise<[registeredSubdomain: boolean, unregister: () => void, error: boolean]>;
 //# sourceMappingURL=checkForRegisteredSubdomains.d.ts.map

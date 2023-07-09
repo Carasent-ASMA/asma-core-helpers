@@ -36,6 +36,6 @@ type IInitASMAAppVitalsParams = {
  *
  * @important make sure this method always is called first when startsFe() on both on child and shell apps
  */
-export declare function initASMAAppVitals({ onChangeAuthenticated, is_child_app, subdomain_check, setLoadMicroApp, registerOpenReplay, }: IInitASMAAppVitalsParams): Promise<[registeredSubdomain: boolean]>;
+export declare function initASMAAppVitals({ onChangeAuthenticated, is_child_app, subdomain_check, setLoadMicroApp, registerOpenReplay, }: IInitASMAAppVitalsParams): Promise<[registeredSubdomain: boolean, error: boolean]>;
 export {};
 //# sourceMappingURL=initASMAAppVitals.d.ts.map
