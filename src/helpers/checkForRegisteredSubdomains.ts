@@ -69,39 +69,45 @@ export async function checkForRegisteredSubdomain({
      * @deprecated one need remove this. Please do not use it in more use cases
      */
     service: 'app-shell' | 'advoca-portal' | 'app-advoca'
-}) {
-    const { unregister } = onThemeChange(({ theme }) => {
-        appendAsmaLogoLink(theme, logos, service)
-    })
-
-    type IRes = { id?: string; theme?: string; openreplay?: IOpenReplay | null }
-
-    //const client = await directoryGenQLClient(true, { 'x-hasura-subdomain': subdomain })
-    let res: IRes | undefined
-
-    if (!authenticated()) {
-        res = await srvAuthGetInternal<IRes>('/check?context=subdomain', {
-            'asma-origin': window.location.origin,
+}): Promise<[registeredSubdomain: boolean, unregister: () => void, error: boolean]> {
+    try {
+        const { unregister } = onThemeChange(({ theme }) => {
+            appendAsmaLogoLink(theme, logos, service)
         })
 
-        if (res?.id) {
-            setSelectedCustomer?.(res.id)
-        }
-        if (res?.openreplay) {
-            _setOpenReplayConfig(res.openreplay)
+        type IRes = { id?: string; theme?: string; openreplay?: IOpenReplay | null }
+
+        //const client = await directoryGenQLClient(true, { 'x-hasura-subdomain': subdomain })
+        let res: IRes | undefined
+
+        if (!authenticated()) {
+            res = await srvAuthGetInternal<IRes>('/check?context=subdomain', {
+                'asma-origin': window.location.origin,
+            })
+
+            if (res?.id) {
+                setSelectedCustomer?.(res.id)
+            }
+            if (res?.openreplay) {
+                _setOpenReplayConfig(res.openreplay)
+            }
+
+            if (res?.theme) {
+                setTheme(res.theme)
+            }
+
+            if (!!!res?.id && redirect_if_not_exists) {
+                redirectFromSubdomainToDomain()
+            }
         }
 
-        if (res?.theme) {
-            setTheme(res.theme)
-        }
+        appendAsmaLogoLink(getTheme(), logos, service)
 
-        if (!!!res?.id && redirect_if_not_exists) {
-            redirectFromSubdomainToDomain()
-        }
+        return [authenticated() || !!res?.id, unregister, false]
+    } catch (e) {
+        console.error(e)
+        return [false, () => {}, true]
     }
-    appendAsmaLogoLink(getTheme(), logos, service)
-
-    return [authenticated() || !!res?.id, unregister] as [registeredSubdomain: boolean, unregister: () => void]
 }
 const asmaLogoLink = 'asma-logo-link'
 

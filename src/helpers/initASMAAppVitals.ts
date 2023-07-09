@@ -45,7 +45,7 @@ export async function initASMAAppVitals({
     subdomain_check,
     setLoadMicroApp,
     registerOpenReplay,
-}: IInitASMAAppVitalsParams) {
+}: IInitASMAAppVitalsParams): Promise<[registeredSubdomain: boolean, error: boolean]> {
     /**
      * !!!ORDER IMPORTANT!!!
      * EnvConfigsFn from EnvConfigs.ts
@@ -55,35 +55,36 @@ export async function initASMAAppVitals({
      */
     await fetchConfigsInternal()
 
-    
     if (!is_child_app) {
         await clearCacheData(EnvConfigsFnInternal().CACHE_VERSION)
     }
     registerCallbackOnSrvAuthEvents('jwt_changed', () => {
         onChangeAuthenticated(isJwtValidInternal())
     })
-    
+
     await getCachedJwtInternal()
     /**
      * //TODO One need to make an context aware cache clear
      * Maybe to add indexes on subapps when initiating and cleaning apps?
-    */
-   await setLoadMicroApp(EnvConfigsFnInternal().DEVELOPMENT)
-   
-   let registeredSubdomain = true
-   
-   if (!is_child_app) {
-       if (subdomain_check) {
-           const [registeredSubdomain1] = await checkForRegisteredSubdomain({
-               ...subdomain_check,
-               authenticated: isJwtValidInternal,
+     */
+    await setLoadMicroApp(EnvConfigsFnInternal().DEVELOPMENT)
+
+    let registeredSubdomain = true
+    let error = false
+
+    if (!is_child_app) {
+        if (subdomain_check) {
+            const [_registeredSubdomain, _, _error] = await checkForRegisteredSubdomain({
+                ...subdomain_check,
+                authenticated: isJwtValidInternal,
             })
-            
+
             await registerOpenReplay?.()
-            
-            registeredSubdomain = registeredSubdomain1
+
+            registeredSubdomain = _registeredSubdomain
+            error = _error
         }
     }
 
-    return [registeredSubdomain] as [registeredSubdomain: boolean]
+    return [registeredSubdomain, error]
 }
