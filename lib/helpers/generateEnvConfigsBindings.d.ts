@@ -47,6 +47,7 @@ export declare function EnvConfigsFnInternal(): {
     SRV_ADVOCA: string;
     SRV_PROXY: string;
     SRV_NOTIFICATION: string;
+    SRV_ACTIVITIES: string;
     SRV_AO_DIRECTORY: string;
     SRV_AO_WRAPPER: string;
 } & IBasicEnv;
@@ -66,9 +67,10 @@ export declare function generateEnvConfigsBindings<T extends IBasicEnv, K extend
         SRV_ADVOCA: string;
         SRV_PROXY: string;
         SRV_NOTIFICATION: string;
+        SRV_ACTIVITIES: string;
         SRV_AO_DIRECTORY: string;
         SRV_AO_WRAPPER: string;
-    }, K extends "SRV_PROXY_OLD" | "SRV_PROXY_OLD_HELSE" | "SRV_PROXY_OLD_WEB" | "SRV_ADVOCA" | "SRV_DIRECTORY" | "SRV_CALENDAR" | "SRV_STORAGE" | "SRV_CHAT" | "SRV_CONNECTOR" | "SRV_ARTIFACT" | "SRV_PROXY" | "SRV_NOTIFICATION" | "SRV_AO_DIRECTORY" | "SRV_AO_WRAPPER" | (keyof T & string) ? K : never> & S;
+    }, K extends "SRV_PROXY_OLD" | "SRV_PROXY_OLD_HELSE" | "SRV_PROXY_OLD_WEB" | "SRV_ADVOCA" | "SRV_DIRECTORY" | "SRV_CALENDAR" | "SRV_STORAGE" | "SRV_CHAT" | "SRV_CONNECTOR" | "SRV_ARTIFACT" | "SRV_PROXY" | "SRV_NOTIFICATION" | "SRV_ACTIVITIES" | "SRV_AO_DIRECTORY" | "SRV_AO_WRAPPER" | (keyof T & string) ? K : never> & S;
     fetchConfigs: () => Promise<void>;
 };
 export {};
