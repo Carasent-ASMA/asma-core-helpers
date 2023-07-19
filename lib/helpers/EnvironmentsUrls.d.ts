@@ -12,6 +12,7 @@ export declare const EnvironmentsUrls: {
         SRV_ADVOCA: string;
         SRV_PROXY: string;
         SRV_NOTIFICATION: string;
+        SRV_ACTIVITIES: string;
         SRV_AO_DIRECTORY: string;
         SRV_AO_WRAPPER: string;
     };
@@ -28,6 +29,7 @@ export declare const EnvironmentsUrls: {
         SRV_ADVOCA: string;
         SRV_PROXY: string;
         SRV_NOTIFICATION: string;
+        SRV_ACTIVITIES: string;
         SRV_AO_DIRECTORY: string;
         SRV_AO_WRAPPER: string;
     };
@@ -44,6 +46,7 @@ export declare const EnvironmentsUrls: {
         SRV_ADVOCA: string;
         SRV_PROXY: string;
         SRV_NOTIFICATION: string;
+        SRV_ACTIVITIES: string;
         SRV_AO_DIRECTORY: string;
         SRV_AO_WRAPPER: string;
     };
@@ -60,6 +63,7 @@ export declare const EnvironmentsUrls: {
         SRV_ADVOCA: string;
         SRV_PROXY: string;
         SRV_NOTIFICATION: string;
+        SRV_ACTIVITIES: string;
         SRV_AO_DIRECTORY: string;
         SRV_AO_WRAPPER: string;
     };
@@ -76,6 +80,7 @@ export declare const EnvironmentsUrls: {
         SRV_ADVOCA: string;
         SRV_PROXY: string;
         SRV_NOTIFICATION: string;
+        SRV_ACTIVITIES: string;
         SRV_AO_DIRECTORY: string;
         SRV_AO_WRAPPER: string;
     };
@@ -93,6 +98,7 @@ export declare function environmentUrls(ENVIRONMENT_TO_OPERATE?: string): {
     SRV_ADVOCA: string;
     SRV_PROXY: string;
     SRV_NOTIFICATION: string;
+    SRV_ACTIVITIES: string;
     SRV_AO_DIRECTORY: string;
     SRV_AO_WRAPPER: string;
 } | undefined;
