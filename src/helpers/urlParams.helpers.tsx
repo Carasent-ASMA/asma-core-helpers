@@ -17,10 +17,18 @@ export function setParamByName<Key extends ISearchParams>(
     }
     if (Array.isArray(data)) {
         data.forEach((item) => {
-            searchParams.set(item.name, item.value)
+            if (Array.isArray(item.value)) {
+                searchParams.set(item.name, item.value.join(','))
+            } else {
+                searchParams.set(item.name, item.value as string)
+            }
         })
     } else {
-        searchParams.set(data.name, data.value)
+        if (Array.isArray(data.value)) {
+            searchParams.set(data.name, data.value.join(','))
+        } else {
+            searchParams.set(data.name, data.value as string)
+        }
     }
 
     history.push(`${globalThis.location.pathname}?${searchParams.toString()}`)
@@ -48,6 +56,10 @@ export function getParamByName<Key extends ISearchParams>(name: Key) {
     const urlParams = new URLSearchParams(history.location.search)
 
     const param = urlParams.get(name) as (typeof SearchParamWithValues)[Key] | null
+
+    if (typeof param === 'string' && param.includes(',')) {
+        return param.split(',') as (typeof SearchParamWithValues)[Key]
+    }
 
     return param
 }
