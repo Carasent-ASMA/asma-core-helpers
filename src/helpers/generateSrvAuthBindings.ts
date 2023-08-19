@@ -3,6 +3,7 @@ import { EnvironmentEnums } from '../interfaces/enums'
 import { setTheme } from './checkForRegisteredSubdomains'
 import { EnvConfigsFnInternal } from './generateEnvConfigsBindings'
 import { parseJwt } from './parseJwt'
+import { asmaOverridesEventBus } from 'asma-event-bus/lib'
 
 //let logoutSuccessful = false
 /* @__PURE__ */
@@ -167,6 +168,12 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
 
         const json: R = await res.clone().json()
 
+        if (typeof json === 'object' && json !== null && 'default_app_versions' in json) {
+            dispatchCustomerUserRelatedAppVersions(json.default_app_versions as Record<string, string>)
+
+            delete json.default_app_versions
+        }
+
         if (!res?.ok) {
             let error: R | string = json
 
@@ -178,7 +185,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         }
 
         if (res.status === 299 && EnvConfigsFnInternal().DEVELOPMENT) {
-            console.warn(json)
+            console.info(json)
         }
 
         return json
@@ -249,6 +256,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
 
             return
         }
+
         jwtToken = ''
 
         parsed_jwt = undefined
@@ -442,4 +450,37 @@ export function generateSrvAuthBindingsMicroApp(
         window.__ASMA__SHELL__?.auth_bindings ||
         generateSrvAuthBindings(/* SRV_AUTH, DEVELOPMENT, ENVIRONMENT_TO_OPERATE, */ /* EnvConfigsFn, */ logout)
     )
+}
+
+let current_app_version: Record<string, string> | undefined = undefined
+
+function dispatchCustomerUserRelatedAppVersions(new_app_version?: Record<string, string>) {
+    if (!new_app_version || Object.keys(new_app_version).length === 0) {
+        return
+    }
+
+    current_app_version = new_app_version
+
+    if (!current_app_version || !deepEqual(current_app_version, new_app_version)) {
+        asmaOverridesEventBus.dispatch('default-map-changed', new_app_version)
+    }
+}
+
+function deepEqual(x: Record<string, string>, y: Record<string, string>) {
+    return sortStringify(x) === sortStringify(y)
+}
+
+function sortStringify(x: Record<string, string>) {
+    Object.keys(x)
+        .sort()
+        .reduce((acc, key) => {
+            const x_key = x?.[key]
+            if (x_key) {
+                acc[key] = x_key
+            }
+
+            return acc
+        }, {} as Record<string, string>)
+
+    return JSON.stringify(x)
 }
