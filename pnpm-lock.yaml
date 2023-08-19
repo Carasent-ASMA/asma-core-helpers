@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   asma-event-bus:
-    specifier: ^0.1.10
-    version: 0.1.10
+    specifier: ^0.6.0
+    version: 0.6.0
   idb-keyval:
     specifier: ^6.2.0
     version: 6.2.1
@@ -93,8 +93,8 @@ packages:
       '@types/node': 20.2.5
     dev: true
 
-  /asma-event-bus@0.1.10:
-    resolution: {integrity: sha512-2KEKKYl5j8TXOicwHJ5vjwvqloXfhIMVPi2wlh0HiwD5GfPjE3JglsZR35AY0TLV5v3Zz3t1YpsCc13sBnKMlg==}
+  /asma-event-bus@0.6.0:
+    resolution: {integrity: sha512-X5F5kSep6HJ3DKoMqbsOCag9arbzLQUAw+7AanCzRh7K9ARmpWCaKNcRF6tEJBzaMd2unogesu55/HOW6aUJlg==}
     dependencies:
       asma-types: 1.4.0
     dev: false
