@@ -459,11 +459,11 @@ function dispatchCustomerUserRelatedAppVersions(new_app_version?: Record<string,
         return
     }
 
-    current_app_version = new_app_version
-
     if (!current_app_version || !deepEqual(current_app_version, new_app_version)) {
         asmaOverridesEventBus.dispatch('default-map-changed', new_app_version)
     }
+
+    current_app_version = new_app_version
 }
 
 function deepEqual(x: Record<string, string>, y: Record<string, string>) {
