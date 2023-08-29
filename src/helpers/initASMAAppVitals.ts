@@ -3,7 +3,11 @@ import { clearCacheData } from './clearCacheData'
 import { EnvConfigsFnInternal, fetchConfigsInternal } from './generateEnvConfigsBindings'
 import { getCachedJwtInternal, isJwtValidInternal, registerCallbackOnSrvAuthEvents } from './generateSrvAuthBindings'
 //import { registerOpenReplay } from './registerOpenReplay'
-
+declare global {
+    interface Window {
+        __asma_development_environment_to_operate__?: string
+    }
+}
 type IInitASMAAppVitalsParams = {
     /**
      * #TODO investigate how to internalize this variable
@@ -73,6 +77,8 @@ export async function initASMAAppVitals({
     let error = false
 
     if (!is_child_app) {
+        window.__asma_development_environment_to_operate__ = EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE
+
         if (subdomain_check) {
             const [_registeredSubdomain, _, _error] = await checkForRegisteredSubdomain({
                 ...subdomain_check,
