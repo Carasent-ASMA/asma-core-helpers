@@ -1,3 +1,8 @@
+declare global {
+    interface Window {
+        __asma_development_environment_to_operate__?: string;
+    }
+}
 type IInitASMAAppVitalsParams = {
     /**
      * #TODO investigate how to internalize this variable
