@@ -5,7 +5,7 @@ import { getCachedJwtInternal, isJwtValidInternal, registerCallbackOnSrvAuthEven
 //import { registerOpenReplay } from './registerOpenReplay'
 declare global {
     interface Window {
-        __asma_development_environment_to_operate__?: string
+        __asma_development_environment_to_operate__?: 'dev'|'test'|'stage'|'prod'
     }
 }
 type IInitASMAAppVitalsParams = {
@@ -77,7 +77,7 @@ export async function initASMAAppVitals({
     let error = false
 
     if (!is_child_app) {
-        window.__asma_development_environment_to_operate__ = EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE
+        window.__asma_development_environment_to_operate__ = EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE as 'dev'|'test'|'stage'|'prod'
 
         if (subdomain_check) {
             const [_registeredSubdomain, _, _error] = await checkForRegisteredSubdomain({
