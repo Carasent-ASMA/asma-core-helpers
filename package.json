@@ -1,6 +1,10 @@
 {
     "name": "asma-helpers",
+<<<<<<< HEAD
     "version": "0.19.3",
+=======
+    "version": "0.19.6",
+>>>>>>> 44965b9e483be70091882a4c99aec6fd0608816f
     "description": "helpers methods for asma",
     "main": "lib/index.js",
     "types": "lib",
@@ -18,7 +22,7 @@
     "devDependencies": {
         "@genql/runtime": "^2.10.0",
         "@openreplay/tracker": "^8.0.0",
-        "asma-types": "^1.6.2",
+        "asma-types": "^1.6.3",
         "history": "^5.3.0",
         "typescript": "^5.0.4"
     },
