@@ -36,4 +36,4 @@ export type { IFeedBack, ISaveToDataBase } from './interfaces/api/advoca/ISaveTo
 
 export * from './interfaces/enums'
 
-export * from './global'
+export * from './g-definitions'

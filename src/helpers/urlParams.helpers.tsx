@@ -1,5 +1,5 @@
 import { type ISearchParams, type SearchParamWithValues } from 'asma-types'
-import { history } from '../global'
+import { history } from '../g-definitions'
 
 type ISetParamByName<Key extends ISearchParams> = {
     name: Key
