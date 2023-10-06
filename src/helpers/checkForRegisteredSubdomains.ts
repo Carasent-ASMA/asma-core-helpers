@@ -118,9 +118,8 @@ function appendAsmaLogoLink(
 ) {
     if (service === 'advoca-portal') {
         theme = 'default'
-    } else if (service === 'app-advoca') {
-        theme !== 'fretex' && (theme = 'default')
     }
+
     const body = document.body!
 
     body.dataset['theme'] = theme
