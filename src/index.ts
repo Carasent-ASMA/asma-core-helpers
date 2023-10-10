@@ -27,6 +27,7 @@ export * from './helpers/urlParams.helpers'
 export * from './helpers/openReplayConfigs'
 export * from './helpers/sha256'
 export * from './helpers/injectAsmaCoreUiStyles'
+export * from './helpers/injectShell__asmaCoreUiStylesheet'
 
 export * from './utility/fetch'
 
