@@ -8,7 +8,7 @@ export function _processServerError(error: string | Record<string, any>): string
     } */
 
     //showErrorMessage(operationName || 'Error', errorMessage)
-    return errorMessage
+    return errorMessage.slice(0, 250)
 }
 /* @__PURE__ */
 export function _getServerErrorMessage(error: Record<string, any> | string): string {
