@@ -26,8 +26,8 @@ devDependencies:
     specifier: ^8.0.0
     version: 8.0.0
   asma-types:
-    specifier: ^1.6.8
-    version: 1.6.8
+    specifier: ^1.6.9
+    version: 1.6.9
   history:
     specifier: ^5.3.0
     version: 5.3.0
@@ -96,11 +96,11 @@ packages:
   /asma-event-bus@0.6.0:
     resolution: {integrity: sha512-X5F5kSep6HJ3DKoMqbsOCag9arbzLQUAw+7AanCzRh7K9ARmpWCaKNcRF6tEJBzaMd2unogesu55/HOW6aUJlg==}
     dependencies:
-      asma-types: 1.6.8
+      asma-types: 1.6.9
     dev: false
 
-  /asma-types@1.6.8:
-    resolution: {integrity: sha512-jnipQP/UYPRlneZbOX+H7Kl7lWEh16lJ25EV0IlvunKkxnNteSRnoxYvgbCsD8nBD0bdb+y0ozLCJaCsSxgsRg==}
+  /asma-types@1.6.9:
+    resolution: {integrity: sha512-WkSU5wC6TGW64R0L/Ot+/P4SvYWaTTIatgArmnU2PNgtx/54ZwkvlHSzKDhfN1WXsBn/5X005NJFRic9uYBfUw==}
 
   /async-limiter@1.0.1:
     resolution: {integrity: sha512-csOlWGAcRFJaI6m+F2WKdnMKr4HhdhFVBk0H/QbJFMCr+uO2kwohwXQPxw/9OCxp05r5ghVBFSyioixx3gfkNQ==}
