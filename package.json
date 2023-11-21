@@ -18,7 +18,7 @@
     "devDependencies": {
         "@genql/runtime": "^2.10.0",
         "@openreplay/tracker": "^8.0.0",
-        "asma-types": "^1.6.7",
+        "asma-types": "^1.6.8",
         "history": "^5.3.0",
         "typescript": "^5.0.4"
     },
