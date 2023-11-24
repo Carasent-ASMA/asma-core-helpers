@@ -52,6 +52,24 @@ export function setTheme(theme: string) {
     setThemeLocal(theme)
 }
 /* @__PURE__ */
+
+export type IRes = {
+    id: string
+    theme: string
+    openreplay: IOpenReplay | null
+    device_authorized: boolean
+    default_app_versions: Record<string, string>
+}
+
+export type IResWithSubdomain = {
+    props: Omit<IRes, 'openreplay'>
+    registeredSubdomain: boolean
+    unregister: () => void
+}
+
+export type IResWithSubdomainOnError = { error: true; registeredSubdomain: boolean }
+
+//const client = await directoryGenQLClient(true, { 'x-hasura-subdomain': subdomain })
 export async function checkForRegisteredSubdomain({
     redirect_if_not_exists = true,
     setSelectedCustomer,
@@ -69,20 +87,35 @@ export async function checkForRegisteredSubdomain({
      * @deprecated one need remove this. Please do not use it in more use cases
      */
     service: 'app-shell' | 'advoca-portal' | 'app-advoca'
-}): Promise<[registeredSubdomain: boolean, unregister: () => void, error: boolean]> {
+}): Promise<IResWithSubdomain | IResWithSubdomainOnError> {
     try {
+        let res: IRes | undefined = undefined
+
         const { unregister } = onThemeChange(({ theme }) => {
             appendAsmaLogoLink(theme, logos, service)
         })
-
-        type IRes = { id?: string; theme?: string; openreplay?: IOpenReplay | null }
-
-        //const client = await directoryGenQLClient(true, { 'x-hasura-subdomain': subdomain })
-        let res: IRes | undefined
+        /* {
+            "id": "4d43855c-afa9-45ca-9e31-382dbde9681b",
+            "theme": "greenish",
+            "openreplay": {
+                "enable": true,
+                "graphql": false,
+                "live_assist": false,
+                "mobx": false,
+                "profiler": false
+            },
+            "device_authorized": true,
+            "default_app_versions": {
+                "asma-app-artifact": "0.1.5",
+                "asma-app-calendar": "0.0.0",
+                "asma-app-devextreme": "0.0.2",
+                "asma-app-directory": "0.0.1"
+            }
+        } */
 
         if (!authenticated()) {
             res = await srvAuthGetInternal<IRes>('/check?context=subdomain', {
-                'asma-origin': window.location.origin,
+                //'asma-origin': window.location.origin,
             })
 
             if (res?.id) {
@@ -103,10 +136,11 @@ export async function checkForRegisteredSubdomain({
 
         appendAsmaLogoLink(getTheme(), logos, service)
 
-        return [authenticated() || !!res?.id, unregister, false]
+        return { props: res!, registeredSubdomain: authenticated() || !!res?.id, unregister }
     } catch (e) {
         console.error(e)
-        return [false, () => {}, true]
+
+        return { registeredSubdomain: false, error: true }
     }
 }
 const asmaLogoLink = 'asma-logo-link'

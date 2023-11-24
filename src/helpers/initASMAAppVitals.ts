@@ -1,11 +1,15 @@
-import { checkForRegisteredSubdomain } from './checkForRegisteredSubdomains'
+import {
+    checkForRegisteredSubdomain,
+    type IResWithSubdomain,
+    type IResWithSubdomainOnError,
+} from './checkForRegisteredSubdomains'
 import { clearCacheData } from './clearCacheData'
 import { EnvConfigsFnInternal, fetchConfigsInternal } from './generateEnvConfigsBindings'
 import { getCachedJwtInternal, isJwtValidInternal, registerCallbackOnSrvAuthEvents } from './generateSrvAuthBindings'
 //import { registerOpenReplay } from './registerOpenReplay'
 declare global {
     interface Window {
-        __asma_development_environment_to_operate__?: 'dev'|'test'|'stage'|'prod'
+        __asma_development_environment_to_operate__?: 'dev' | 'test' | 'stage' | 'prod'
     }
 }
 type IInitASMAAppVitalsParams = {
@@ -49,7 +53,7 @@ export async function initASMAAppVitals({
     subdomain_check,
     setLoadMicroApp,
     registerOpenReplay,
-}: IInitASMAAppVitalsParams): Promise<[registeredSubdomain: boolean, error: boolean]> {
+}: IInitASMAAppVitalsParams): Promise<IResWithSubdomain | IResWithSubdomainOnError | undefined> {
     /**
      * !!!ORDER IMPORTANT!!!
      * EnvConfigsFn from EnvConfigs.ts
@@ -73,24 +77,24 @@ export async function initASMAAppVitals({
      */
     await setLoadMicroApp(EnvConfigsFnInternal().DEVELOPMENT)
 
-    let registeredSubdomain = true
-    let error = false
-
+    //let registeredSubdomain = true
+    let resRegisteredSubdomain: IResWithSubdomain | IResWithSubdomainOnError | undefined = undefined
     if (!is_child_app) {
-        window.__asma_development_environment_to_operate__ = EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE as 'dev'|'test'|'stage'|'prod'
+        window.__asma_development_environment_to_operate__ = EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE as
+            | 'dev'
+            | 'test'
+            | 'stage'
+            | 'prod'
 
         if (subdomain_check) {
-            const [_registeredSubdomain, _, _error] = await checkForRegisteredSubdomain({
+            resRegisteredSubdomain = await checkForRegisteredSubdomain({
                 ...subdomain_check,
                 authenticated: isJwtValidInternal,
             })
 
             await registerOpenReplay?.()
-
-            registeredSubdomain = _registeredSubdomain
-            error = _error
         }
     }
 
-    return [registeredSubdomain, error]
+    return resRegisteredSubdomain
 }
