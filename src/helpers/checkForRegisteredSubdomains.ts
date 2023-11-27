@@ -67,7 +67,7 @@ export type IResWithSubdomain = {
     unregister: () => void
 }
 
-export type IResWithSubdomainOnError = { error: true; registeredSubdomain: boolean }
+export type IResWithSubdomainOnError = { error: true; registeredSubdomain: boolean; message: string; code: number }
 
 //const client = await directoryGenQLClient(true, { 'x-hasura-subdomain': subdomain })
 export async function checkForRegisteredSubdomain({
@@ -140,7 +140,7 @@ export async function checkForRegisteredSubdomain({
     } catch (e) {
         console.error(e)
 
-        return { registeredSubdomain: false, error: true }
+        return { code: e.code, message: e.message, registeredSubdomain: false, error: true }
     }
 }
 const asmaLogoLink = 'asma-logo-link'
