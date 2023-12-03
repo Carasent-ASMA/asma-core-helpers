@@ -98,6 +98,20 @@ export type IOpenReplay = {
     mobx: boolean
     profiler: boolean
 }
+
+export type ISigninResponse<FeatureEnums = never> = {
+    message: 'Success'
+    token: string
+    features: FeatureEnums[]
+    openreplay?: IOpenReplay
+    theme: string
+    connector?: string
+    srv_urls?: ISrvUrls //typeof srv_urls
+    default_app_versions: Record<string, string>
+}
+
+export type ISrvUrls = Record<'ao_wrapper' | 'connector', string>
+
 /* @__PURE__ */
 export function generateSrvAuthBindings<FeatureEnums = never>(
     //SRV_AUTH: () => string,
@@ -122,7 +136,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
 
     let parsed_jwt: unknown | undefined
 
-    let srv_urls: Record<'ao_wrapper' | 'connector', string> | undefined
+    let srv_urls: ISrvUrls | undefined //Record<'ao_wrapper' | 'connector', string> | undefined
 
     let openreplay: IOpenReplay | undefined
 
@@ -155,8 +169,10 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
             promiseRegistry[url] = fetch(`${EnvConfigsFnInternal().SRV_AUTH}${url}`, {
                 headers: {
                     ...headers,
+
                     'asma-origin': window.location.origin,
                 },
+
                 credentials: 'include',
                 //withCredentials: true,
             })
@@ -212,13 +228,13 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     })
 
     async function signin(url: string, headers?: Record<string, string>) {
-        const data = await srvAuthGet<{
+        const data = await srvAuthGet<ISigninResponse /* {
             token: string
             features: FeatureEnums[]
             IOpenReplay?: IOpenReplay
             connector?: string
             srv_urls: typeof srv_urls
-        }>(url, headers)
+        } */>(url, headers)
 
         setAuthData(data)
 
@@ -229,14 +245,16 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         return getParsedJwt()?.['user_id'] || '-1'
     }
 
-    function setAuthData(data?: {
+    function setAuthData(
+        data?: Partial<ISigninResponse> /* {
         token: string
         features?: FeatureEnums[]
         connector?: string
         openreplay?: IOpenReplay
         theme?: string
         srv_urls?: typeof srv_urls
-    }) {
+    } */,
+    ) {
         if (data?.token) {
             jwtToken = data?.token
 
@@ -313,16 +331,16 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
                 fetchJwtPromise = srvAuthGet('/token')
             } */
 
-            const data = await srvAuthGet<{
+            const data = await srvAuthGet<ISigninResponse /* {
                 errors?: string
                 token: string
                 features: FeatureEnums[]
                 connector: string
                 srv_urls?: typeof srv_urls
                 theme: string
-            }>('/token')
+            } */>('/token')
 
-            if (!data || data?.errors || !data.token) {
+            if (!data || 'errors' in data /* ?.errors */ || !data.token) {
                 dispatchLogoutEvent()
                 return
             }
