@@ -53,7 +53,7 @@ export function setTheme(theme: string) {
 }
 /* @__PURE__ */
 
-export type IRes = {
+export type ICheckForRegisteredSubdomainResponse = {
     id: string
     theme: string
     openreplay: IOpenReplay | null
@@ -62,7 +62,7 @@ export type IRes = {
 }
 
 export type IResWithSubdomain = {
-    props: Omit<IRes, 'openreplay'>
+    props: Omit<ICheckForRegisteredSubdomainResponse, 'openreplay'>
     registeredSubdomain: boolean
     unregister: () => void
 }
@@ -89,7 +89,7 @@ export async function checkForRegisteredSubdomain({
     service: 'app-shell' | 'advoca-portal' | 'app-advoca'
 }): Promise<IResWithSubdomain | IResWithSubdomainOnError> {
     try {
-        let res: IRes | undefined = undefined
+        let res: ICheckForRegisteredSubdomainResponse | undefined = undefined
 
         const { unregister } = onThemeChange(({ theme }) => {
             appendAsmaLogoLink(theme, logos, service)
@@ -114,7 +114,7 @@ export async function checkForRegisteredSubdomain({
         } */
 
         if (!authenticated()) {
-            res = await srvAuthGetInternal<IRes>('/check?context=subdomain', {
+            res = await srvAuthGetInternal<ICheckForRegisteredSubdomainResponse>('/check?context=subdomain', {
                 //'asma-origin': window.location.origin,
             })
 

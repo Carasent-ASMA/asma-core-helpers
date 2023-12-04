@@ -77,11 +77,12 @@ export function EnvConfigsFnInternal() {
     } & IEnvironmentUrls &
         IBasicEnv
 }
+
 export function generateEnvConfigsBindings<
     T extends IBasicEnv,
     K extends (
         | keyof T
-        | Omit<IKeyEnvironmentUrls, 'SRV_AO_WRAPPER'>
+        | Exclude<IKeyEnvironmentUrls, 'SRV_AO_WRAPPER'>
     ) /* | ISrvKeysTransformToWs<keyof T | IKeyEnvironmentUrls> */ &
         string,
     S,
