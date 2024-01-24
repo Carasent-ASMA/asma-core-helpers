@@ -59,6 +59,7 @@ export type ICheckForRegisteredSubdomainResponse = {
     openreplay: IOpenReplay | null
     device_authorized: boolean
     default_app_versions: Record<string, string>
+    customer_name: string
 }
 
 export type IResWithSubdomain = {
