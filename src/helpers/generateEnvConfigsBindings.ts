@@ -74,6 +74,7 @@ export function EnvConfigsFnInternal() {
     return EnvConfigsFn() as {
         CACHE_VERSION: string
         SRV_AUTH: string
+        CDN_ASMA_BASE_URL?: string
     } & IEnvironmentUrls &
         IBasicEnv
 }
