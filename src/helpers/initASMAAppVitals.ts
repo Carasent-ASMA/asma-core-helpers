@@ -1,3 +1,4 @@
+import type { registry_envs as _registry_envs } from 'asma-qiankun-react-loader/lib/registry/environment-entries'
 import {
     checkForRegisteredSubdomain,
     type IResWithSubdomain,
@@ -17,7 +18,7 @@ type IInitASMAAppVitalsParams = {
      * #TODO investigate how to internalize this variable
      * use this method from asma-qiankun-react-loader
      */
-    setLoadMicroApp(dev_mode: boolean): Promise<void>
+    setLoadMicroApp(dev_mode: boolean, registry_urls?: (typeof _registry_envs)['local']): Promise<void>
     is_child_app?: boolean
     /**
      * #TODO investigate how to internalize this variable
@@ -71,11 +72,6 @@ export async function initASMAAppVitals({
     })
 
     await getCachedJwtInternal()
-    /**
-     * //TODO One need to make an context aware cache clear
-     * Maybe to add indexes on subapps when initiating and cleaning apps?
-     */
-    await setLoadMicroApp(EnvConfigsFnInternal().DEVELOPMENT)
 
     //let registeredSubdomain = true
     let resRegisteredSubdomain: IResWithSubdomain | IResWithSubdomainOnError | undefined = undefined
@@ -95,6 +91,31 @@ export async function initASMAAppVitals({
             await registerOpenReplay?.()
         }
     }
+
+    /**
+     *   #TODO: One need to make an context aware cache clear
+     * Maybe to add indexes on subapps when initiating and cleaning apps?
+     */
+
+    let registry_urls: (typeof _registry_envs)['local'] | undefined = undefined
+
+    if (resRegisteredSubdomain && 'props' in resRegisteredSubdomain) {
+        const { default_app_versions } = resRegisteredSubdomain.props
+
+        registry_urls = Object.keys(default_app_versions).reduce((acc, key) => {
+            const app_version = default_app_versions[key]
+
+            const base_url = EnvConfigsFnInternal().CDN_ASMA_BASE_URL || 'https://cdn.advoca.no'
+
+            const app_version_url = `${base_url}/${key}/${app_version}/`
+
+            acc[key] = app_version_url
+
+            return acc
+        }, {} as Record<string, string>)
+    }
+
+    await setLoadMicroApp(EnvConfigsFnInternal().DEVELOPMENT, registry_urls as (typeof _registry_envs)['local'])
 
     return resRegisteredSubdomain
 }
