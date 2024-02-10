@@ -187,7 +187,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         if (typeof json === 'object' && json !== null && 'default_app_versions' in json) {
             dispatchCustomerUserRelatedAppVersions(json.default_app_versions as Record<string, string>)
 
-            delete json.default_app_versions
+            //delete json.default_app_versions
         }
 
         if (!res?.ok) {
