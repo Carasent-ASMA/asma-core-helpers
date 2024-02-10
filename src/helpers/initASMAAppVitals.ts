@@ -7,6 +7,7 @@ import {
 import { clearCacheData } from './clearCacheData'
 import { EnvConfigsFnInternal, fetchConfigsInternal } from './generateEnvConfigsBindings'
 import { getCachedJwtInternal, isJwtValidInternal, registerCallbackOnSrvAuthEvents } from './generateSrvAuthBindings'
+import { isNotEmpty } from './IsNotEmpty'
 //import { registerOpenReplay } from './registerOpenReplay'
 declare global {
     interface Window {
@@ -99,7 +100,11 @@ export async function initASMAAppVitals({
 
     let registry_urls: (typeof _registry_envs)['local'] | undefined = undefined
 
-    if (resRegisteredSubdomain && 'props' in resRegisteredSubdomain) {
+    if (
+        resRegisteredSubdomain &&
+        'props' in resRegisteredSubdomain &&
+        isNotEmpty(resRegisteredSubdomain.props.default_app_versions)
+    ) {
         const { default_app_versions } = resRegisteredSubdomain.props
 
         registry_urls = Object.keys(default_app_versions).reduce((acc, key) => {
@@ -113,6 +118,8 @@ export async function initASMAAppVitals({
 
             return acc
         }, {} as Record<string, string>)
+    } else {
+        console.warn('No default_app_versions found in resRegisteredSubdomain.props')
     }
 
     await setLoadMicroApp(EnvConfigsFnInternal().DEVELOPMENT, registry_urls as (typeof _registry_envs)['local'])
