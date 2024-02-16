@@ -7,7 +7,7 @@ import {
 import { clearCacheData } from './clearCacheData'
 import { EnvConfigsFnInternal, fetchConfigsInternal } from './generateEnvConfigsBindings'
 import { getCachedJwtInternal, isJwtValidInternal, registerCallbackOnSrvAuthEvents } from './generateSrvAuthBindings'
-import { isNotEmpty } from './IsNotEmpty'
+import { isNotEmptyObjArr } from './IsNotEmpty'
 //import { registerOpenReplay } from './registerOpenReplay'
 declare global {
     interface Window {
@@ -103,7 +103,7 @@ export async function initASMAAppVitals({
     if (
         resRegisteredSubdomain &&
         'props' in resRegisteredSubdomain &&
-        isNotEmpty(resRegisteredSubdomain.props.default_app_versions)
+        isNotEmptyObjArr(resRegisteredSubdomain.props.default_app_versions)
     ) {
         const { default_app_versions } = resRegisteredSubdomain.props
 
