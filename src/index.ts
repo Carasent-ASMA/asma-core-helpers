@@ -7,6 +7,7 @@ export * from './helpers/IsAdopus'
 export * from './helpers/IsNotEmpty'
 export * from './helpers/Config'
 export * from './helpers/InitializeIDBListenersOnMstSnapshots'
+export * from './helpers/initEnvConfigsVars'
 
 export * from './helpers/getGqlOperationName'
 export * from './helpers/parseJwt'
