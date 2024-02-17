@@ -6,7 +6,7 @@ export const env =
     (window.location.hostname.includes('stage.') && 'stage') ||
     (window.location.hostname.includes('localhost') && 'localhost') ||
     'prod'
-type IEnv = typeof env
+export type IEnv = typeof env
 export const env_to_operate = window.__asma_development_environment_to_operate__
 
 export const domain = window.location.hostname.split('.').at(-2) as 'adopus' | 'adcuris' | 'advoca' | undefined
