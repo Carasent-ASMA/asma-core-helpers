@@ -46,7 +46,7 @@ console.info('EnvConfigsFnInstanceId', EnvConfigsFnInstanceId)
  *
  * for internal use only (inside asma-helpers)
  */
-/* @__PURE__ */
+
 export async function fetchConfigsInternal() {
     const fetchConfigs = window.__GENERATE_ENV_CONFIGS_BINDINGS__?.fetchConfigsReg[fetchConfigsInstanceId]
 
@@ -63,7 +63,7 @@ export async function fetchConfigsInternal() {
  *
  *  For internal use only (inside asma-helpers)
  */
-/* @__PURE__ */
+
 export function EnvConfigsFnInternal() {
     const EnvConfigsFn = window.__GENERATE_ENV_CONFIGS_BINDINGS__?.EnvConfigsFnReg[EnvConfigsFnInstanceId]
     if (!EnvConfigsFn) {

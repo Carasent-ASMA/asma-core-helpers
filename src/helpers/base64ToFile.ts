@@ -1,4 +1,3 @@
-/* @__PURE__ */
 export function base64toFile(b64Data: string, name: string, type = 'application/pdf') {
     const bytes = window.atob(b64Data)
     const writer = new Uint8Array(new ArrayBuffer(bytes.length))

@@ -1,4 +1,3 @@
-/* @__PURE__ */
 export function parseJwt<R>(jwtToken: string) {
     const base64Url = jwtToken?.split('.')[1]
 

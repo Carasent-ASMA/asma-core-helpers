@@ -1,4 +1,3 @@
-/* @__PURE__ */
 export const POSTAL_CODE = [
     { value: '0001 OSLO', label: '0001 OSLO' },
     { value: '0010 OSLO', label: '0010 OSLO' },

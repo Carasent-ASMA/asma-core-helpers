@@ -1,4 +1,3 @@
-/* @__PURE__ */
 export function userTypingSignal(insertUserLastTyped: () => Promise<unknown>) {
     let timmer: number | undefined = undefined
 
