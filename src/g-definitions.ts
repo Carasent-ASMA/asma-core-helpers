@@ -1,5 +1,5 @@
 import { type History, createBrowserHistory } from 'history'
-import type { IOpenReplay } from './helpers/generateSrvAuthBindings'
+import type { ICheckForRegisteredSubdomainResponse, IOpenReplay } from './helpers/generateSrvAuthBindings'
 import type { IGlobalOpenReplay } from './helpers/openReplayObject'
 //import type { IGenerateSRVAuthBindings } from './helpers/generateSrvAuthBindings'
 //import type { IGenerateSRVAuthBindings } from './helpers/generateSrvAuthBindings'
@@ -36,6 +36,9 @@ declare global {
                     headers: Record<string, string>
                 }>
                 getSrvUrls: () => Record<'ao_wrapper' | 'connector', string> | undefined
+                checkForRegisteredSubdomain: <FE = unknown>() => Promise<
+                    Omit<ICheckForRegisteredSubdomainResponse<FE>, 'features'>
+                >
             } //IGenerateSRVAuthBindings
             isLogged?: () => boolean
             logoutUser?: () => void

@@ -35,6 +35,16 @@ export async function getCachedJwtInternal() {
     }
     return getCachedJwt()
 }
+export async function checkForRegisteredSubdomainInternal() {
+    const checkForRegisteredSubdomain = window.__ASMA__SHELL__?.auth_bindings?.checkForRegisteredSubdomain
+
+    if (!checkForRegisteredSubdomain) {
+        throw new Error(
+            'checkForRegisteredSubdomain is not defined! please make sure that generateSrvAuthBindings is called before checkForRegisteredSubdomain',
+        )
+    }
+    return checkForRegisteredSubdomain()
+}
 export function getConnectorInternal() {
     const getConnector = window.__ASMA__SHELL__?.auth_bindings?.getConnector
 
@@ -99,6 +109,10 @@ export type IOpenReplay = {
 }
 
 export type ISigninResponse<FE> = {
+    id?: string
+    customer_name?: string
+    user_name?: string
+    device_authorized?: boolean
     message: 'Success'
     token: string
     features: FE[]
@@ -109,9 +123,13 @@ export type ISigninResponse<FE> = {
     default_app_versions: Record<string, string>
 }
 
+type RequiredKeys = 'id' | 'theme' | 'openreplay' | 'device_authorized' | 'default_app_versions' | 'customer_name'
+export type ICheckForRegisteredSubdomainResponse<FE> = Required<Pick<ISigninResponse<FE>, RequiredKeys>> &
+    Partial<Omit<ISigninResponse<FE>, RequiredKeys>>
+
 export type ISrvUrls = Record<'ao_wrapper' | 'connector', string>
 
-export function generateSrvAuthBindings<FeatureEnums = never>(
+export function generateSrvAuthBindings<FeatureEnums extends string>(
     //SRV_AUTH: () => string,
     //DEVELOPMENT: () => boolean,
     //EnvironmentToOperateFn: () => string,
@@ -228,15 +246,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     })
 
     async function signin(url: string, headers?: Record<string, string>) {
-        const data = await srvAuthGet<
-            ISigninResponse<FeatureEnums> /* {
-            token: string
-            features: FeatureEnums[]
-            IOpenReplay?: IOpenReplay
-            connector?: string
-            srv_urls: typeof srv_urls
-        } */
-        >(url, headers)
+        const data = await srvAuthGet<ISigninResponse<FeatureEnums>>(url, headers)
 
         setAuthData(data)
 
@@ -325,6 +335,13 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         }
 
         return res
+    }
+    async function checkForRegisteredSubdomain() {
+        const data = await srvAuthGet<ICheckForRegisteredSubdomainResponse<FeatureEnums>>('/check?context=subdomain')
+
+        setAuthData(data)
+
+        return data
     }
 
     async function getNewJwtToken() {
@@ -449,6 +466,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
         getJwtToken,
         // cancelRequest,
         accessTokenHasExpired,
+        checkForRegisteredSubdomain,
     }
     window.__ASMA__SHELL__ = window.__ASMA__SHELL__ || {}
 

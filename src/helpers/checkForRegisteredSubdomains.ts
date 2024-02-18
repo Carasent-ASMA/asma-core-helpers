@@ -1,8 +1,12 @@
 import { EventBus } from 'asma-event-bus/lib/event-buss'
-//import { clearCacheData } from './clearCacheData'
-import { srvAuthGetInternal, type IOpenReplay } from './generateSrvAuthBindings'
-import { redirectFromSubdomainToDomain } from './getSubdomain'
+import {
+    //srvAuthGetInternal,
+    //type IOpenReplay,
+    type ICheckForRegisteredSubdomainResponse,
+    checkForRegisteredSubdomainInternal,
+} from './generateSrvAuthBindings'
 import { _setOpenReplayConfig } from './openReplayConfigs'
+import { redirectFromSubdomainToDomain } from './getSubdomain'
 
 /**
  * @private use only inside this file
@@ -52,17 +56,17 @@ export function setTheme(theme: string) {
     setThemeLocal(theme)
 }
 
-export type ICheckForRegisteredSubdomainResponse = {
+/* export type ICheckForRegisteredSubdomainResponse = {
     id: string
     theme: string
     openreplay: IOpenReplay | null
     device_authorized: boolean
     default_app_versions: Record<string, string>
     customer_name: string
-}
+} */
 
 export type IResWithSubdomain = {
-    props: Omit<ICheckForRegisteredSubdomainResponse, 'openreplay'>
+    props: Omit<ICheckForRegisteredSubdomainResponse<unknown>, 'openreplay' | 'features'>
     registeredSubdomain: boolean
     unregister: () => void
 }
@@ -89,7 +93,7 @@ export async function checkForRegisteredSubdomain({
     service: 'app-shell' | 'advoca-portal' | 'app-advoca'
 }): Promise<IResWithSubdomain | IResWithSubdomainOnError> {
     try {
-        let res: ICheckForRegisteredSubdomainResponse | undefined = undefined
+        // let res: ICheckForRegisteredSubdomainResponse<unknown> | undefined = undefined
 
         const { unregister } = onThemeChange(({ theme }) => {
             appendAsmaLogoLink(theme, logos, service)
@@ -113,25 +117,21 @@ export async function checkForRegisteredSubdomain({
             }
         } */
 
-        if (!authenticated()) {
-            res = await srvAuthGetInternal<ICheckForRegisteredSubdomainResponse>('/check?context=subdomain', {
-                //'asma-origin': window.location.origin,
-            })
+        const res = await checkForRegisteredSubdomainInternal()
 
-            if (res?.id) {
-                setSelectedCustomer?.(res.id)
-            }
-            if (res?.openreplay) {
-                _setOpenReplayConfig(res.openreplay)
-            }
+        if (res?.id) {
+            setSelectedCustomer?.(res.id)
+        }
+        if (res?.openreplay) {
+            _setOpenReplayConfig(res.openreplay)
+        }
 
-            if (res?.theme) {
-                setTheme(res.theme)
-            }
+        if (res?.theme) {
+            setTheme(res.theme)
+        }
 
-            if (!!!res?.id && redirect_if_not_exists) {
-                redirectFromSubdomainToDomain()
-            }
+        if (!!!res?.id && redirect_if_not_exists) {
+            redirectFromSubdomainToDomain()
         }
 
         appendAsmaLogoLink(getTheme(), logos, service)
