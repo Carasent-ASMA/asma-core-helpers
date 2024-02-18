@@ -146,8 +146,10 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
     const promiseRegistry: Record<string, Promise<Response>> = <{}>{}
 
     async function srvAuthGet<R>(url: string, headers?: Record<string, string>): Promise<R> {
-        if (EnvConfigsFnInternal().DEVELOPMENT && EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE) {
-            if (EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE in EnvironmentEnums) {
+        const { ENVIRONMENT_TO_OPERATE, DEVELOPMENT } = EnvConfigsFnInternal()
+
+        if (DEVELOPMENT && ENVIRONMENT_TO_OPERATE) {
+            if (ENVIRONMENT_TO_OPERATE in EnvironmentEnums) {
                 url = `${url}&env=${EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE}`
 
                 // file deepcode ignore GlobalReplacementRegex: <it is intended to be replaced only first occurrence>
