@@ -48,6 +48,7 @@ export const EnvironmentsUrls1 = {
     CDN_ASMA_BASE_URL: 'https://cdn.advoca.no',
     SIGNICAT_REDIRECT_URL: `${window.location.origin}/auth/callback`,
     SIGNICAT_AUTH_URL: createSignicatAuthUrl(),
+    ADOPUS_ACCESS_URL: window.location.origin,
     SIGNICAT_CLIENT_ID: getClientId(),
     NBID_ENV: nbid_env,
 }
