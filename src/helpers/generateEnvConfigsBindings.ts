@@ -3,8 +3,8 @@ import { EnvironmentsUrls1 } from './EnvironmentsUrls'
 import { uuid4 } from './generateUUID4'
 
 interface IBasicEnv {
-    DEVELOPMENT: boolean
-    ENVIRONMENT_TO_OPERATE: string
+    DEVELOPMENT?: boolean
+    ENVIRONMENT_TO_OPERATE?: string
     ADVOCA_ACCESS_URL?: string
 
     OPENREPLAY_ENABLE?: boolean
@@ -82,7 +82,7 @@ export function EnvConfigsFnInternal() {
     }
     return EnvConfigsFn() as {
         CACHE_VERSION: string
-        SRV_AUTH: string
+        SRV_AUTH?: string
         CDN_ASMA_BASE_URL?: string
     } & IEnvironmentUrls &
         IBasicEnv
