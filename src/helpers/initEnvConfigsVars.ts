@@ -122,3 +122,36 @@ function computeBaseUrl() {
 }
 
 export const base_url = computeBaseUrl()
+export const OPENREPLAY_PROJECT_KEY = {
+    /* taken from stage to test if it works */
+    dev: 'EXWoA5AcTv4TJbJr6PnO',
+    localhost: '',
+    test: '',
+    stage: 'EXWoA5AcTv4TJbJr6PnO',
+    blue: '',
+    prod: 'XkhIcDMotYuAMoADYmpf',
+}
+
+const { hostname } = window.location
+export const nbid_env = localStorage.getItem('nbid-env')
+
+const nbidNonprod =
+    nbid_env === 'nonprod' || ['dev.', 'localhost', 'test.'].some((substring) => hostname.includes(substring))
+
+const hostnameNonprod = ['dev.', 'localhost', 'test.'].some((substring) => hostname.includes(substring))
+
+export function createSignicatAuthUrl() {
+    const nonprod = nbidNonprod || hostnameNonprod
+
+    const url = nonprod ? 'https://preprod.signicat.com/oidc/authorize' : 'https://secure.avans.no/oidc/authorize'
+
+    return url
+}
+
+export function getClientId() {
+    const nonprod = nbidNonprod || hostnameNonprod
+
+    const url = nonprod ? 'preprod.advoca.no' : 'prod.advoca.no'
+
+    return url
+}
