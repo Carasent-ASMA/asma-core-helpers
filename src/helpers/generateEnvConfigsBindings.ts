@@ -1,5 +1,5 @@
 import { httpToWs } from './Config'
-import type { EnvironmentsUrls } from './EnvironmentsUrls'
+import { EnvironmentsUrls1 } from './EnvironmentsUrls'
 import { uuid4 } from './generateUUID4'
 
 interface IBasicEnv {
@@ -17,14 +17,20 @@ interface IBasicEnv {
     OPENREPLAY_ENABLED_CUSTOMERS?: string[]
 }
 
-type IEnvironmentUrls = typeof EnvironmentsUrls.local
+type IEnvironmentUrls = typeof EnvironmentsUrls1
 
 export type IKeyEnvironmentUrls = keyof IEnvironmentUrls
 
-export type IEnvironmentUrlsGenQLOnly = Omit<
+type StartsWith<T, U extends string> = T extends `${U}${infer _}` ? T : never
+
+type SRVKeys<T> = {
+    [K in keyof T as StartsWith<K & string, 'SRV_'>]: T[K]
+}
+
+export type IEnvironmentUrlsGenQLOnly = SRVKeys<IEnvironmentUrls> /* Omit<
     IEnvironmentUrls,
     'SRV_PROXY_OLD' | 'SRV_PROXY_OLD_HELSE' | 'SRV_PROXY_OLD_WEB' | 'SRV_ADVOCA'
->
+> */
 
 //type ISrvKeysTransformToWs<T> = T extends `SRV_${infer K}` ? `SRV_${K}_WS` : never
 
@@ -32,7 +38,7 @@ export type IEnvironmentUrlsGenQLOnly = Omit<
 declare global {
     interface Window {
         __GENERATE_ENV_CONFIGS_BINDINGS__?: {
-            fetchConfigsReg: Record<string, () => Promise<void>>
+            fetchConfigsReg: Record<string, () => void>
             EnvConfigsFnReg: Record<string, () => unknown>
         }
     }
@@ -87,14 +93,14 @@ export function generateEnvConfigsBindings<
     ) /* | ISrvKeysTransformToWs<keyof T | IKeyEnvironmentUrls> */ &
         string,
     S,
->(envs_import: Promise<{ envs: T }>, required_envs: K[], static_env: S) {
+>(envs_import: { envs: T }, required_envs: K[], static_env: S) {
     type IEnvConfigs = T & IEnvironmentUrls /* & Record<ISrvKeysTransformToWs<keyof T | IKeyEnvironmentUrls>, string> */
 
     let env_vars = {} as T
 
     let envConfigs = {} as Pick<IEnvConfigs, K extends keyof IEnvConfigs & string ? K : never> & S
 
-    let envUrls: IEnvironmentUrls | undefined
+    let envUrls = EnvironmentsUrls1
 
     function EnvConfigsFn() {
         if (Object.keys(envConfigs).length > 0) {
@@ -110,7 +116,7 @@ export function generateEnvConfigsBindings<
 
         envConfigs = required_envs.reduce((acc, curr) => {
             if (!curr.endsWith('_WS')) {
-                const field = env_vars[curr as keyof T] ?? envUrls?.[curr as IKeyEnvironmentUrls]
+                const field = env_vars[curr as keyof T] ?? envUrls[curr as IKeyEnvironmentUrls]
 
                 // @ts-ignore
                 acc[curr] = field
@@ -136,14 +142,19 @@ export function generateEnvConfigsBindings<
         return envConfigs
     }
 
-    async function fetchConfigs() {
-        const envs = (await envs_import).envs
+    const envs = envs_import.envs
 
-        env_vars = envs
-
-        if (env_vars.DEVELOPMENT) {
-            envUrls = (await import('./EnvironmentsUrls')).default(env_vars.ENVIRONMENT_TO_OPERATE)
-        }
+    env_vars = { ...envUrls, ...envs }
+    /**
+     * @deprecated remove in next major version this does nothing anymore
+     */
+    function fetchConfigs() {
+        '_'
+        //console.info('fetchConfigs does nothing remove in next major version!')
+        // if (env_vars.DEVELOPMENT) {
+        // const envUrls_import = (await import('./EnvironmentsUrls')).default(env_vars.ENVIRONMENT_TO_OPERATE)
+        // envUrls = { ...envUrls, ...envUrls_import }
+        // }
     }
     window.__GENERATE_ENV_CONFIGS_BINDINGS__ = window.__GENERATE_ENV_CONFIGS_BINDINGS__ || {
         EnvConfigsFnReg: {},
