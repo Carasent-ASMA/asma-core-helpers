@@ -1,4 +1,12 @@
-import { srvConnector, env, env_to_operate, base_url, signicatSignUrl, devExpress, createAdvocaAccessUrl } from '..'
+import {
+    srvConnector,
+    env,
+    env_to_operate,
+    base_url,
+    signicatSignUrl,
+    devExpress,
+    createAdvocaAccessUrl,
+} from '../helpers/initEnvConfigsVars'
 
 export const EnvironmentsUrls1 = {
     SRV_DIRECTORY: `${base_url}/api/directory`,
