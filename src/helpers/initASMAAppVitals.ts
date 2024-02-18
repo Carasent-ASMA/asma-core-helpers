@@ -114,7 +114,7 @@ export async function initASMAAppVitals({
 
             const app_version_url = `${base_url}/${key}/${app_version}/`
 
-            acc[key] = app_version_url
+            acc[key] = app_version_url.replace(/\s/g, '')
 
             return acc
         }, {} as Record<string, string>)
