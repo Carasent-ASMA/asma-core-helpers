@@ -6,7 +6,7 @@ import { parseJwt } from './parseJwt'
 import { asmaOverridesEventBus } from 'asma-event-bus/lib'
 
 //let logoutSuccessful = false
-/* @__PURE__ */
+
 export const { dispatch: dispatchSrvAuthEvents, register: registerCallbackOnSrvAuthEvents } = EventBus<{
     jwt_changed: {}
     logout_event: {}
@@ -24,7 +24,7 @@ function dispatchJwtChangedEvent() {
  * @generic SrvUrlsEnums - srv_names_enums from asma-genql-directory
  */
 //type EnvConfigsFn = () => { SRV_AUTH: string; DEVELOPMENT: boolean; ENVIRONMENT_TO_OPERATE: string }
-/* @__PURE__ */
+
 export async function getCachedJwtInternal() {
     const getCachedJwt = window.__ASMA__SHELL__?.auth_bindings?.getCachedJwt
 
@@ -45,7 +45,7 @@ export function getConnectorInternal() {
     }
     return getConnector()
 }
-/* @__PURE__ */
+
 export function isJwtValidInternal(): boolean {
     const isJwtValid = window.__ASMA__SHELL__?.auth_bindings?.isJwtValid
 
@@ -57,7 +57,6 @@ export function isJwtValidInternal(): boolean {
     return isJwtValid()
 }
 
-/* @__PURE__ */
 export async function srvAuthGetInternal<R>(url: string, headers?: Record<string, string>) {
     const srvAuthGet = window.__ASMA__SHELL__?.auth_bindings?.srvAuthGet
 
@@ -68,7 +67,7 @@ export async function srvAuthGetInternal<R>(url: string, headers?: Record<string
     }
     return srvAuthGet<R>(url, headers)
 }
-/* @__PURE__ */
+
 export function getSrvUrlsInternal(): Record<'ao_wrapper' | 'connector', string> | undefined {
     const getSrvUrls = window.__ASMA__SHELL__?.auth_bindings?.getSrvUrls
     if (!getSrvUrls) {
@@ -78,7 +77,7 @@ export function getSrvUrlsInternal(): Record<'ao_wrapper' | 'connector', string>
     }
     return getSrvUrls()
 }
-/* @__PURE__ */
+
 export async function setReqConfigInternal<T = unknown>(
     data?: T | undefined,
     responseType?: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream',
@@ -112,7 +111,6 @@ export type ISigninResponse<FE> = {
 
 export type ISrvUrls = Record<'ao_wrapper' | 'connector', string>
 
-/* @__PURE__ */
 export function generateSrvAuthBindings<FeatureEnums = never>(
     //SRV_AUTH: () => string,
     //DEVELOPMENT: () => boolean,
@@ -460,7 +458,7 @@ export function generateSrvAuthBindings<FeatureEnums = never>(
  * @deprecated use generateSrvAuthBindings
  *
  */
-/* @__PURE__ */
+
 export function generateSrvAuthBindingsMicroApp(
     //SRV_AUTH: () => string,
     //DEVELOPMENT: () => boolean,

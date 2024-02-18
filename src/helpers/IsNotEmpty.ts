@@ -1,4 +1,3 @@
-/* @__PURE__ */
 export function isNotEmptyObjArr<T>(value: T | null | undefined) {
     if (value instanceof Array) {
         return value.length > 0

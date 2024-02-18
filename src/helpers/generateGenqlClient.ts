@@ -13,7 +13,7 @@ import { getSrvUrlsInternal, registerCallbackOnSrvAuthEvents, setReqConfigIntern
 interface CliOptions extends Omit<ClientOptions, 'url' | 'signal'> {
     anonymous?: boolean
 }
-/* @__PURE__ */
+
 export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
     setReqConfig,
     createClient,
@@ -103,7 +103,7 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
                 ...(options.anonymous ? {} : (((await reqConf()).headers ?? {}) as Record<string, string>)),
                 ...headers,
             }),
-            
+
             signal: abortControllerLocal.signal,
             batch: { batchInterval: 50, maxBatchSize: 100 },
             ...rest,
