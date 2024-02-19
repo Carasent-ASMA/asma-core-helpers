@@ -43,6 +43,7 @@ declare global {
              */
             fetchConfigsReg: Record<string, () => void>
             EnvConfigsFnReg: Record<string, () => unknown>
+            EnvConfigsFn?: () => unknown
         }
     }
 }
@@ -74,7 +75,9 @@ export async function fetchConfigsInternal() {
  */
 
 export function EnvConfigsFnInternal() {
-    const EnvConfigsFn = window.__GENERATE_ENV_CONFIGS_BINDINGS__?.EnvConfigsFnReg[EnvConfigsFnInstanceId]
+    const EnvConfigsFn =
+        window.__GENERATE_ENV_CONFIGS_BINDINGS__?.EnvConfigsFnReg[EnvConfigsFnInstanceId] ||
+        window.__GENERATE_ENV_CONFIGS_BINDINGS__?.EnvConfigsFn
     if (!EnvConfigsFn) {
         throw new Error(
             'EnvConfigsFn is not defined! please make sure that generateEnvConfigsBindings is called before EnvConfigsFn',
