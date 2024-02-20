@@ -11,8 +11,8 @@ export const env_to_operate = window.__asma_development_environment_to_operate__
 
 export const domain = window.location.hostname.split('.').at(-2) as 'adopus' | 'adcuris' | 'advoca' | undefined
 
-if (!domain || !['adopus', 'adcuris', 'advoca'].includes(domain)) {
-    throw new Error('Domain not found! please use dns advoca.no,adopus.no or adcuris.health')
+if (!domain || !['adopus', 'adcuris', 'advoca', 'avans'].includes(domain)) {
+    throw new Error('Domain not found! please use dns ..[advoca,adopus,avans].[no,health,localhost]')
 }
 
 const SIGNICAT_SIGN_URL = {
