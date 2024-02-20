@@ -9,7 +9,7 @@ export const env =
 export type IEnv = typeof env
 export const env_to_operate = window.__asma_development_environment_to_operate__
 
-export const domain = window.location.hostname.split('.').at(-2) as 'adopus' | 'adcuris' | 'advoca' | undefined
+export let domain = window.location.hostname.split('.').at(-2) as 'adopus' | 'adcuris' | 'advoca' | 'avans' | undefined
 
 if (!domain || !['adopus', 'adcuris', 'advoca', 'avans'].includes(domain)) {
     throw new Error('Domain not found! please use dns ..[advoca,adopus,avans].[no,health,localhost]')
@@ -105,6 +105,11 @@ let env_computed = ''
 
 function computeBaseUrl() {
     let base_url = ''
+
+    if (domain === 'avans') {
+        domain = 'adopus'
+    }
+
     if (env == 'localhost') {
         if (!env_to_operate || env_to_operate.includes('localhost')) {
             env_computed = 'dev'
