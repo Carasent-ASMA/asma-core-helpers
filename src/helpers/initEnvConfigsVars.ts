@@ -109,20 +109,26 @@ function computeBaseUrl() {
     if (domain === 'avans') {
         domain = 'adopus'
     }
+    let tld = 'no'
 
-    if (env == 'localhost') {
-        if (!env_to_operate || env_to_operate.includes('localhost')) {
-            env_computed = 'dev'
-        } else {
-            env_computed = env_to_operate === 'prod' ? 'www' : env_to_operate
-        }
-
-        base_url = `https://${env_computed}.${domain}.no`
-    } else if (subdomain === 'cdn') {
-        env_computed = 'dev'
-
-        base_url = `https://${env_computed}.${domain}.no`
+    if (domain === 'adcuris') {
+        tld = 'health'
     }
+
+    if (domain === 'adcuris')
+        if (env == 'localhost') {
+            if (!env_to_operate || env_to_operate.includes('localhost')) {
+                env_computed = 'dev'
+            } else {
+                env_computed = env_to_operate === 'prod' ? 'www' : env_to_operate
+            }
+
+            base_url = `https://${env_computed}.${domain}.${tld}`
+        } else if (subdomain === 'cdn') {
+            env_computed = 'dev'
+
+            base_url = `https://${env_computed}.${domain}.${tld}`
+        }
     return base_url
 }
 
