@@ -158,6 +158,11 @@ export function createSignicatAuthUrl() {
 
     return url
 }
+export function createOpenReplyIngestPoint() {
+    const env_ns = env as typeof env
+
+    return `https://openreplay.${env_ns ? env_ns + '.' : ''}.${domain}.${domain === 'adcuris' ? 'health' : 'no'}/ingest`
+}
 
 export function getClientId() {
     const nonprod = nbidNonprod || hostnameNonprod
