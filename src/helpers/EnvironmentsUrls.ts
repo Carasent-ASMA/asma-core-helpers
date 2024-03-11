@@ -10,6 +10,7 @@ import {
     getClientId,
     createSignicatAuthUrl,
     nbid_env,
+    createOpenReplyIngestPoint,
 } from '../helpers/initEnvConfigsVars'
 
 export const EnvironmentsUrls1 = {
@@ -51,6 +52,7 @@ export const EnvironmentsUrls1 = {
     ADOPUS_ACCESS_URL: window.location.origin,
     SIGNICAT_CLIENT_ID: getClientId(),
     NBID_ENV: nbid_env,
+    OPENREPLAY_INGEST_POINT: createOpenReplyIngestPoint(),
 }
 /* export const EnvironmentsUrls = {
     local: {
