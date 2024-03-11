@@ -126,7 +126,7 @@ export async function initASMAAppVitals({
             return acc
         }, {} as Record<string, string>)
     } else {
-        console.warn('No default_app_versions found in resRegisteredSubdomain.props')
+        !is_child_app && console.warn('No default_app_versions found in resRegisteredSubdomain.props')
     }
 
     await setLoadMicroApp(EnvConfigsFnInternal().DEVELOPMENT, registry_urls as (typeof _registry_envs)['local'])
