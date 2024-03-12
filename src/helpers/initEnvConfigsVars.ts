@@ -159,9 +159,9 @@ export function createSignicatAuthUrl() {
     return url
 }
 export function createOpenReplyIngestPoint() {
-    const env_ns = env as typeof env
+    const nonprod = env === 'localhost' || env === 'dev' || env === 'test' || env === 'stage'
 
-    return `https://openreplay.${env_ns ? env_ns + '.' : ''}.${domain}.${domain === 'adcuris' ? 'health' : 'no'}/ingest`
+    return nonprod ? `https://openreplay.dev.advoca.no/ingest` : `https://openreplay.advoca.no/ingest`
 }
 
 export function getClientId() {
