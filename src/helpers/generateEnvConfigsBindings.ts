@@ -49,8 +49,8 @@ declare global {
 }
 const fetchConfigsInstanceId = uuid4()
 const EnvConfigsFnInstanceId = uuid4()
-console.info('fetchConfigsInstanceId', fetchConfigsInstanceId)
-console.info('EnvConfigsFnInstanceId', EnvConfigsFnInstanceId)
+//console.info('fetchConfigsInstanceId', fetchConfigsInstanceId)
+//console.info('EnvConfigsFnInstanceId', EnvConfigsFnInstanceId)
 
 /**
  *
