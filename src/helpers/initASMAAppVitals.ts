@@ -54,7 +54,7 @@ export async function initASMAAppVitals({
     is_child_app = false,
     subdomain_check,
     setLoadMicroApp,
-    registerOpenReplay: _,
+    registerOpenReplay,
 }: IInitASMAAppVitalsParams): Promise<IResWithSubdomain | IResWithSubdomainOnError | undefined> {
     /**
      * !!!ORDER IMPORTANT!!!
@@ -95,8 +95,10 @@ export async function initASMAAppVitals({
                 ...subdomain_check,
                 authenticated: isJwtValidInternal,
             })
-            //const domain = window.location.hostname.at(-2)
-            //await registerOpenReplay?.(undefined, domain)
+
+            if ('props' in resRegisteredSubdomain && resRegisteredSubdomain.props.connector) {
+                await registerOpenReplay?.(undefined, resRegisteredSubdomain.props.connector)
+            }
         }
     }
 
