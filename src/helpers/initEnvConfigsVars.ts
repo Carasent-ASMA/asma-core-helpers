@@ -156,7 +156,7 @@ export function getOpenReplayKey(journal: string) {
     if (_env === 'prod' && typeof key !== 'string') {
         key = key[_journal]
     }
-    return key
+    return key as string
 }
 
 const { hostname } = window.location
