@@ -26,7 +26,7 @@ type IInitASMAAppVitalsParams = {
      * add qiankunWindow.__POWERED_BY_QIANKUN__ there where qiankunWindow is available
      */
     onChangeAuthenticated: (authenticated: boolean) => void
-    registerOpenReplay?: () => Promise<void>
+    registerOpenReplay?: (startForSpecificCustomer: boolean | undefined, journal: string) => Promise<void>
     mst_stores?: object[]
     subdomain_check?: {
         /**
@@ -54,7 +54,7 @@ export async function initASMAAppVitals({
     is_child_app = false,
     subdomain_check,
     setLoadMicroApp,
-    registerOpenReplay,
+    registerOpenReplay: _,
 }: IInitASMAAppVitalsParams): Promise<IResWithSubdomain | IResWithSubdomainOnError | undefined> {
     /**
      * !!!ORDER IMPORTANT!!!
@@ -95,8 +95,8 @@ export async function initASMAAppVitals({
                 ...subdomain_check,
                 authenticated: isJwtValidInternal,
             })
-
-            await registerOpenReplay?.()
+            //const domain = window.location.hostname.at(-2)
+            //await registerOpenReplay?.(undefined, domain)
         }
     }
 
