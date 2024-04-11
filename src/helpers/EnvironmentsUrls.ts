@@ -6,11 +6,11 @@ import {
     signicatSignUrl,
     devExpress,
     createAdvocaAccessUrl,
-    OPENREPLAY_PROJECT_KEY,
     getClientId,
     createSignicatAuthUrl,
     nbid_env,
     createOpenReplyIngestPoint,
+    getOpenReplayKey,
 } from '../helpers/initEnvConfigsVars'
 
 export const EnvironmentsUrls1 = {
@@ -45,7 +45,7 @@ export const EnvironmentsUrls1 = {
     API_KEY_GEOCODE: 'AIzaSyAqlT9AT7xDvehIS0XmEXAafzYify5_npg',
     AZURE_APP_ID: 'cba50bcf-ef6a-4623-8b42-fb592cb064d7',
     AZURE_APP_REDIRECT_URI: window.location.origin,
-    OPENREPLAY_PROJECT_KEY: OPENREPLAY_PROJECT_KEY[env_to_operate || env],
+    OPENREPLAY_PROJECT_KEY: getOpenReplayKey,
     CDN_ASMA_BASE_URL: 'https://cdn.advoca.no',
     SIGNICAT_REDIRECT_URL: `${window.location.origin}/auth/callback`,
     SIGNICAT_AUTH_URL: createSignicatAuthUrl(),

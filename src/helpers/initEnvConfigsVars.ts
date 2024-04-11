@@ -135,12 +135,28 @@ function computeBaseUrl() {
 export const base_url = computeBaseUrl()
 export const OPENREPLAY_PROJECT_KEY = {
     /* taken from stage to test if it works */
-    dev: 'EXWoA5AcTv4TJbJr6PnO',
+    dev: 'XpLyoDeHEHwkJbD7TIZA',
     localhost: '',
     test: '',
-    stage: 'EXWoA5AcTv4TJbJr6PnO',
+    stage: 'XpLyoDeHEHwkJbD7TIZA',
     blue: '',
-    prod: 'XkhIcDMotYuAMoADYmpf',
+    prod: {
+        adopus: '7bnUpS7Glly1Y1j8SAxm',
+        adcuris: 'CyUaMTrUJByBHbHHv1Ql',
+    },
+}
+
+export function getOpenReplayKey(journal: string) {
+    const _env = env_to_operate || env
+
+    const _journal = journal.toLowerCase() === 'adcuris' ? 'adcuris' : 'adopus'
+
+    let key = OPENREPLAY_PROJECT_KEY[_env]
+
+    if (_env === 'prod' && typeof key !== 'string') {
+        key = key[_journal]
+    }
+    return key
 }
 
 const { hostname } = window.location
@@ -161,7 +177,7 @@ export function createSignicatAuthUrl() {
 export function createOpenReplyIngestPoint() {
     const nonprod = env === 'localhost' || env === 'dev' || env === 'test' || env === 'stage'
 
-    return nonprod ? `https://openreplay.dev.advoca.no/ingest` : `https://openreplay.advoca.no/ingest`
+    return nonprod ? `https://openreplaynonprod.advoca.no/ingest` : `https://openreplay.advoca.no/ingest`
 }
 
 export function getClientId() {
