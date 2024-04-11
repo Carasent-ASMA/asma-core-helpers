@@ -27,6 +27,19 @@ export function getOpenReplayTrackerObject<Keys extends keyof IGlobalOpenReplay>
     return OpenReplayObject[name]
 }
 
+export function resetOpenReplayTrackerObject() {
+    OpenReplayObject.started = false
+    OpenReplayObject.tracker?.stop()
+    OpenReplayObject.tracker = undefined
+    OpenReplayObject.trackerProfiler = undefined
+    OpenReplayObject.trackerGraphQL = undefined
+    OpenReplayObject.mobxObserver = undefined
+
+    window.__ASMA__SHELL__ = window.__ASMA__SHELL__ || {}
+
+    window.__ASMA__SHELL__.openreplay_object = OpenReplayObject
+}
+
 export function setOpenReplayTrackerObject<Key extends keyof IGlobalOpenReplay>(
     name: Key,
     module: IGlobalOpenReplay[Key],
