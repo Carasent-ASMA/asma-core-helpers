@@ -2,6 +2,7 @@ import type Tracker from '@openreplay/tracker'
 
 const OpenReplayObject = {
     started: false,
+    userIdSet: false,
     tracker: undefined as Tracker | undefined,
 
     // eslint-disable-next-line @typescript-eslint/ban-types
