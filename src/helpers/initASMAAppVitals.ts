@@ -106,11 +106,11 @@ export async function initASMAAppVitals({
                 authenticated: isJwtValidInternal,
             })
 
-            if ('props' in resRegisteredSubdomain && resRegisteredSubdomain.props.connector) {
+            if ('props' in resRegisteredSubdomain) {
                 const { connector: journal, id: customer_id, user_id, brukerBrukerNavn } = resRegisteredSubdomain.props
                 console.debug('registerOpenReplay props:', JSON.stringify(resRegisteredSubdomain.props, undefined, 4))
                 await registerOpenReplay?.(undefined, {
-                    journal,
+                    journal: journal || 'UNKNOWN',
                     customer_id,
                     user_id,
                     brukerBrukerNavn,
