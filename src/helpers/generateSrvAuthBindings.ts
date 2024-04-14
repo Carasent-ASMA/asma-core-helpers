@@ -17,8 +17,8 @@ export const { dispatch: dispatchSrvAuthEvents, register: registerCallbackOnSrvA
 function dispatchLogoutEvent() {
     dispatchSrvAuthEvents('logout_event', {}, false)
 }
-function dispatchJwtChangedEvent(journal?: IBaseJwtClaims<any>) {
-    dispatchSrvAuthEvents('jwt_changed', journal, false)
+function dispatchJwtChangedEvent(jwt?: IBaseJwtClaims<any>) {
+    dispatchSrvAuthEvents('jwt_changed', jwt, false)
 }
 /**
  * @generic FeatureEnums - feature_names_enums from asma-genql-directory
