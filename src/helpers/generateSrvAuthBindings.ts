@@ -111,6 +111,9 @@ export type IOpenReplay = {
 
 export type ISigninResponse<FE> = {
     id?: string
+    user_id?: string
+    brukerBrukerNavn?: string
+    journal_user_id?: string
     customer_name?: string
     user_name?: string
     device_authorized?: boolean
