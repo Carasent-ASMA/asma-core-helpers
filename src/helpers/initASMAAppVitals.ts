@@ -8,6 +8,7 @@ import { clearCacheData } from './clearCacheData'
 import { EnvConfigsFnInternal, fetchConfigsInternal } from './generateEnvConfigsBindings'
 import { getCachedJwtInternal, isJwtValidInternal, registerCallbackOnSrvAuthEvents } from './generateSrvAuthBindings'
 import { isNotEmptyObjArr } from './IsNotEmpty'
+import { subdomain } from './getSubdomain'
 //import { registerOpenReplay } from './registerOpenReplay'
 declare global {
     interface Window {
@@ -28,7 +29,13 @@ type IInitASMAAppVitalsParams = {
     onChangeAuthenticated: (authenticated: boolean) => void
     registerOpenReplay?: (
         startForSpecificCustomer: boolean | undefined,
-        props: { journal: string; customer_id?: string; brukerBrukerNavn?: string; user_id?: string },
+        props: {
+            journal: string
+            customer_id?: string
+            brukerBrukerNavn?: string
+            user_id?: string
+            subdomain?: string
+        },
     ) => Promise<void>
     mst_stores?: object[]
     subdomain_check?: {
@@ -101,7 +108,14 @@ export async function initASMAAppVitals({
 
             if ('props' in resRegisteredSubdomain && resRegisteredSubdomain.props.connector) {
                 const { connector: journal, id: customer_id, user_id, brukerBrukerNavn } = resRegisteredSubdomain.props
-                await registerOpenReplay?.(undefined, { journal, customer_id, user_id, brukerBrukerNavn })
+
+                await registerOpenReplay?.(undefined, {
+                    journal,
+                    customer_id,
+                    user_id,
+                    brukerBrukerNavn,
+                    subdomain,
+                })
             }
         }
     }
