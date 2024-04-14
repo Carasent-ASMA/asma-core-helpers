@@ -136,8 +136,8 @@ export const base_url = computeBaseUrl()
 export const OPENREPLAY_PROJECT_KEY = {
     /* taken from stage to test if it works */
     dev: 'XpLyoDeHEHwkJbD7TIZA',
-    localhost: '',
-    test: '',
+    localhost: 'XpLyoDeHEHwkJbD7TIZA',
+    test: 'XpLyoDeHEHwkJbD7TIZA',
     stage: 'XpLyoDeHEHwkJbD7TIZA',
     blue: '',
     prod: {
