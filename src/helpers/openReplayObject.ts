@@ -30,7 +30,9 @@ export function getOpenReplayTrackerObject<Keys extends keyof IGlobalOpenReplay>
 
 export function resetOpenReplayTrackerObject() {
     OpenReplayObject.started = false
-    OpenReplayObject.tracker?.stop()
+    const res = OpenReplayObject.tracker?.stop()
+    console.info('OpenReplay stop:', res)
+    OpenReplayObject.userIdSet = false
     OpenReplayObject.tracker = undefined
     OpenReplayObject.trackerProfiler = undefined
     OpenReplayObject.trackerGraphQL = undefined
