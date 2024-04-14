@@ -4,11 +4,12 @@ import { setTheme } from './checkForRegisteredSubdomains'
 import { EnvConfigsFnInternal } from './generateEnvConfigsBindings'
 import { parseJwt } from './parseJwt'
 import { asmaOverridesEventBus } from 'asma-event-bus/lib'
+import type { IBaseJwtClaims } from 'asma-types/lib'
 
 //let logoutSuccessful = false
 
 export const { dispatch: dispatchSrvAuthEvents, register: registerCallbackOnSrvAuthEvents } = EventBus<{
-    jwt_changed: { journal: 'ADOPUS' | 'ADCURIS' | 'UNKNOWN' }
+    jwt_changed?: IBaseJwtClaims<'super_user' | 'therapist' | 'recipient'>
     logout_event: {}
     customer_changed: {}
 }>('auth-bindings')
@@ -16,8 +17,8 @@ export const { dispatch: dispatchSrvAuthEvents, register: registerCallbackOnSrvA
 function dispatchLogoutEvent() {
     dispatchSrvAuthEvents('logout_event', {}, false)
 }
-function dispatchJwtChangedEvent(journal: 'ADOPUS' | 'ADCURIS' | 'UNKNOWN') {
-    dispatchSrvAuthEvents('jwt_changed', { journal }, false)
+function dispatchJwtChangedEvent(journal?: IBaseJwtClaims<any>) {
+    dispatchSrvAuthEvents('jwt_changed', journal, false)
 }
 /**
  * @generic FeatureEnums - feature_names_enums from asma-genql-directory
@@ -150,7 +151,7 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
 
     let connector: string | undefined
 
-    let parsed_jwt: { journal: 'ADOPUS' | 'ADCURIS' | 'UNKNOWN'; user_id: string; exp: number } | undefined
+    let parsed_jwt: (IBaseJwtClaims<any> & { exp: number }) | undefined
 
     let srv_urls: ISrvUrls | undefined //Record<'ao_wrapper' | 'connector', string> | undefined
 
@@ -280,7 +281,7 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
 
             srv_urls = data.srv_urls
 
-            dispatchJwtChangedEvent(parsed_jwt?.journal || 'UNKNOWN')
+            dispatchJwtChangedEvent(parsed_jwt)
 
             data.theme && setTheme(data.theme)
 
