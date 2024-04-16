@@ -3,6 +3,10 @@ import type Tracker from '@openreplay/tracker'
 const OpenReplayObject = {
     started: false,
     userIdSet: false,
+    metadataSet: {} as { customer_id?: Boolean; user_name?: boolean; journal_user_id?: boolean } & Record<
+        string,
+        boolean
+    >,
     tracker: undefined as Tracker | undefined,
 
     // eslint-disable-next-line @typescript-eslint/ban-types
