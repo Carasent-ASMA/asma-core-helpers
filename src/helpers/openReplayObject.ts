@@ -3,10 +3,7 @@ import type Tracker from '@openreplay/tracker'
 const OpenReplayObject = {
     started: false,
     userIdSet: false,
-    metadataSet: {} as { customer_id?: Boolean; user_name?: boolean; journal_user_id?: boolean } & Record<
-        string,
-        boolean
-    >,
+    metadataSet: {} as { customer_id?: Boolean; user_name?: boolean; journal_user_id?: boolean },
     tracker: undefined as Tracker | undefined,
 
     // eslint-disable-next-line @typescript-eslint/ban-types
@@ -31,12 +28,19 @@ export function getOpenReplayTrackerObject<Keys extends keyof IGlobalOpenReplay>
     }
     return OpenReplayObject[name]
 }
+export function getOpenReplayMetadataSet<Keys extends keyof IGlobalOpenReplay['metadataSet']>(key: Keys) {
+    if (window.__ASMA__SHELL__?.openreplay_object) {
+        return window.__ASMA__SHELL__.openreplay_object.metadataSet[key]
+    }
+    return OpenReplayObject.metadataSet[key]
+}
 
 export function resetOpenReplayTrackerObject() {
     OpenReplayObject.started = false
     const res = OpenReplayObject.tracker?.stop()
     console.info('OpenReplay stop:', res)
     OpenReplayObject.userIdSet = false
+    OpenReplayObject.metadataSet = {}
     OpenReplayObject.tracker = undefined
     OpenReplayObject.trackerProfiler = undefined
     OpenReplayObject.trackerGraphQL = undefined
@@ -52,6 +56,16 @@ export function setOpenReplayTrackerObject<Key extends keyof IGlobalOpenReplay>(
     module: IGlobalOpenReplay[Key],
 ) {
     OpenReplayObject[name] = module
+
+    window.__ASMA__SHELL__ = window.__ASMA__SHELL__ || {}
+
+    window.__ASMA__SHELL__.openreplay_object = OpenReplayObject
+}
+export function setOpenReplayTrackerObjectMetadataSet<Key extends keyof IGlobalOpenReplay['metadataSet']>(
+    name: Key,
+    module: IGlobalOpenReplay['metadataSet'][Key],
+) {
+    OpenReplayObject.metadataSet[name] = module
 
     window.__ASMA__SHELL__ = window.__ASMA__SHELL__ || {}
 
