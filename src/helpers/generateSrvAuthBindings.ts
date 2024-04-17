@@ -353,7 +353,7 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
             /*  if (!fetchJwtPromise) {
                 fetchJwtPromise = srvAuthGet('/token')
             } */
-
+            const searchParams = new URLSearchParams(window.location.search)
             const data = await srvAuthGet<
                 ISigninResponse<FeatureEnums> /* {
                 errors?: string
@@ -363,7 +363,7 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
                 srv_urls?: typeof srv_urls
                 theme: string
             } */
-            >('/token')
+            >(`/token?${searchParams.toString()}`)
 
             if (!data || 'errors' in data /* ?.errors */ || !data.token) {
                 dispatchLogoutEvent()
