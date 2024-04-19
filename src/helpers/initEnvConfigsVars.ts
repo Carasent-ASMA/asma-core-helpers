@@ -116,10 +116,19 @@ function computeBaseUrl() {
     }
 
     if (env == 'localhost') {
+        // default
         if (!env_to_operate || env_to_operate.includes('localhost')) {
-            env_computed = 'dev'
+            env_computed = subdomain ? subdomain + '.dev' : 'dev'
+            // custom
         } else {
-            env_computed = env_to_operate === 'prod' ? 'www' : env_to_operate
+            env_computed =
+                env_to_operate === 'prod' && !subdomain
+                    ? 'www'
+                    : env_to_operate === 'prod'
+                    ? subdomain
+                    : subdomain
+                    ? subdomain + env_to_operate
+                    : env_to_operate
         }
 
         base_url = `https://${env_computed}.${domain}.${tld}`
