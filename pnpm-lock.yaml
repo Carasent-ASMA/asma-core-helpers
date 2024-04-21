@@ -26,8 +26,8 @@ devDependencies:
     specifier: ^8.0.0
     version: 8.0.0
   asma-qiankun-react-loader:
-    specifier: ^0.5.0
-    version: 0.5.0
+    specifier: ^0.6.44
+    version: 0.6.44
   asma-types:
     specifier: ^1.7.7
     version: 1.7.7
@@ -102,8 +102,8 @@ packages:
       asma-types: 1.7.7
     dev: false
 
-  /asma-qiankun-react-loader@0.5.0:
-    resolution: {integrity: sha512-I8KE76eFDESM+gmrPWo1SjuYHy8VqcWcLiM224tM/v+1fUZcJBjx9IlxImjFgD0m1dKZE1X4vFq0ww/xkEmxRA==}
+  /asma-qiankun-react-loader@0.6.44:
+    resolution: {integrity: sha512-RlL5beHetOQNXeeF5wP9cftQYSENQLxpg4oRK5fTcYVdte07qajwasN8WhURFP4cIwADZ7ViOhtTSrY/DF/+FQ==}
     dependencies:
       asma-qiankun: 1.8.0
       qiankun-overrides: 1.0.1
