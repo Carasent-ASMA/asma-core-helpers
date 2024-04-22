@@ -168,13 +168,16 @@ export function getOpenReplayKey(journal: string) {
     return key as string
 }
 
-const { hostname } = window.location
+const { origin } = window.location
 export const nbid_env = localStorage.getItem('nbid-env')
 
 const nbidNonprod =
-    nbid_env === 'nonprod' || ['dev.', 'localhost', 'test.'].some((substring) => hostname.includes(substring))
+    nbid_env === 'nonprod' ||
+    ['.dev.', '//dev.', 'localhost', '.test.', '//test.'].some((substring) => origin.includes(substring))
 
-const hostnameNonprod = ['dev.', 'localhost', 'test.'].some((substring) => hostname.includes(substring))
+const hostnameNonprod = ['.dev.', '//dev.', 'localhost', '.test.', '//test.'].some((substring) =>
+    origin.includes(substring),
+)
 
 export function createSignicatAuthUrl() {
     const nonprod = nbidNonprod || hostnameNonprod
