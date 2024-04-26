@@ -1,10 +1,10 @@
 import { subdomain } from './getSubdomain'
 
 export const env =
-    (window.location.hostname.includes('dev.') && 'dev') ||
-    (window.location.hostname.includes('test.') && 'test') ||
-    (window.location.hostname.includes('stage.') && 'stage') ||
-    (window.location.hostname.includes('localhost') && 'localhost') ||
+    (['.dev.', '//dev.'].includes(window.location.origin) && 'dev') ||
+    (['.test.', '//test.'].includes(window.location.origin) && 'test') ||
+    (['.stage.', '//stage.'].includes(window.location.origin) && 'stage') ||
+    (window.location.origin.includes('localhost') && 'localhost') ||
     'prod'
 export type IEnv = typeof env
 export const env_to_operate = window.__asma_development_environment_to_operate__
