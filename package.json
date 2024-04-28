@@ -24,7 +24,7 @@
         "typescript": "^5.4.5"
     },
     "dependencies": {
-        "asma-event-bus": "^0.6.19",
+        "asma-event-bus": "^0.7.0",
         "idb-keyval": "^6.2.1",
         "mobx": "^6.12.3",
         "mobx-state-tree": "^5.4.2"
