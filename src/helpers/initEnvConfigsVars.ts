@@ -133,7 +133,7 @@ function computeBaseUrl() {
                     : env_to_operate === 'prod'
                     ? subdomain
                     : subdomain
-                    ? subdomain + env_to_operate
+                    ? `${subdomain}.${env_to_operate}`
                     : env_to_operate
         }
 
