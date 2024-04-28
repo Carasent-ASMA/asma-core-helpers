@@ -7,6 +7,7 @@ import {
 } from './generateSrvAuthBindings'
 import { _setOpenReplayConfig } from './openReplayConfigs'
 import { redirectFromSubdomainToDomain } from './getSubdomain'
+import { realWindow } from '../g-definitions'
 
 /**
  * @private use only inside this file
@@ -27,7 +28,7 @@ function setThemeLocal(theme_local: string) {
         theme = theme_local
     }
 }
-window.__ASMA__THEME__ = window.__ASMA__THEME__ || { getTheme: getThemeLocal, setTheme: setThemeLocal }
+realWindow.__ASMA__THEME__ = realWindow.__ASMA__THEME__ || { getTheme: getThemeLocal, setTheme: setThemeLocal }
 
 declare global {
     interface Window {
@@ -43,15 +44,15 @@ export function onThemeChange(callback: (val: { theme: string }) => void) {
 }
 
 export function getTheme() {
-    if (window.__ASMA__THEME__) {
-        return window.__ASMA__THEME__.getTheme()
+    if (realWindow.__ASMA__THEME__) {
+        return realWindow.__ASMA__THEME__.getTheme()
     }
     return getThemeLocal()
 }
 
 export function setTheme(theme: string) {
-    if (window.__ASMA__THEME__) {
-        return window.__ASMA__THEME__.setTheme(theme)
+    if (realWindow.__ASMA__THEME__) {
+        return realWindow.__ASMA__THEME__.setTheme(theme)
     }
     setThemeLocal(theme)
 }

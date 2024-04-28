@@ -1,15 +1,21 @@
+import { realWindow } from '../g-definitions'
 import { subdomain } from './getSubdomain'
 
 export const env =
-    (['.dev.', '//dev.'].includes(window.location.origin) && 'dev') ||
-    (['.test.', '//test.'].includes(window.location.origin) && 'test') ||
-    (['.stage.', '//stage.'].includes(window.location.origin) && 'stage') ||
-    (window.location.origin.includes('localhost') && 'localhost') ||
+    (['.dev.', '//dev.'].includes(realWindow.location.origin) && 'dev') ||
+    (['.test.', '//test.'].includes(realWindow.location.origin) && 'test') ||
+    (['.stage.', '//stage.'].includes(realWindow.location.origin) && 'stage') ||
+    (realWindow.location.origin.includes('localhost') && 'localhost') ||
     'prod'
 export type IEnv = typeof env
-export const env_to_operate = window.__asma_development_environment_to_operate__
+export const env_to_operate = realWindow.__asma_development_environment_to_operate__
 
-export let domain = window.location.hostname.split('.').at(-2) as 'adopus' | 'adcuris' | 'advoca' | 'avans' | undefined
+export let domain = realWindow.location.hostname.split('.').at(-2) as
+    | 'adopus'
+    | 'adcuris'
+    | 'advoca'
+    | 'avans'
+    | undefined
 
 if (!domain || !['adopus', 'adcuris', 'advoca', 'avans'].includes(domain)) {
     throw new Error('Domain not found! please use dns ..[advoca,adopus,avans].[no,health,localhost]')
@@ -47,7 +53,7 @@ const SRV_CONNECTOR = {
 }
 
 export function srvConnector(env: IEnv, env_to_operate?: IEnv) {
-    const host = (window.location.hostname.includes('adcuris') && 'ADCURIS') || 'ADOPUS'
+    const host = (realWindow.location.hostname.includes('adcuris') && 'ADCURIS') || 'ADOPUS'
 
     if (env === 'localhost' && env_to_operate) {
         return SRV_CONNECTOR[host][env_to_operate]
@@ -59,7 +65,7 @@ export function srvConnector(env: IEnv, env_to_operate?: IEnv) {
 export function createAdvocaAccessUrl() {
     let advoca_url = 'https://subdomain.advoca.no'
 
-    const host_name_arr = window.location.hostname.split('.')
+    const host_name_arr = realWindow.location.hostname.split('.')
 
     let subdomain = 'www'
 
@@ -78,7 +84,7 @@ export function createAdvocaAccessUrl() {
     }
 
     // for adcuris
-    if (window.location.hostname.includes('adcuris')) {
+    if (realWindow.location.hostname.includes('adcuris')) {
         advoca_url = advoca_url.replace('adcuris', 'advoca')
         subdomain = subdomain.replace('advoca-', '').replace('advoca', 'www')
     }
@@ -168,7 +174,7 @@ export function getOpenReplayKey(journal: string) {
     return key as string
 }
 
-const { origin } = window.location
+const { origin } = realWindow.location
 export const nbid_env = localStorage.getItem('nbid-env')
 
 const nbidNonprod =

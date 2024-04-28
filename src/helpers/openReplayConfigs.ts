@@ -1,3 +1,5 @@
+import { realWindow } from '../g-definitions'
+
 let openreplay: IOpenReplayConfig | null = null
 
 export type IOpenReplayConfig = {
@@ -9,8 +11,8 @@ export type IOpenReplayConfig = {
 }
 
 export function getOpenReplayConfig() {
-    if (window.__ASMA__SHELL__?.openreplay_configs) {
-        return window.__ASMA__SHELL__.openreplay_configs
+    if (realWindow.__ASMA__SHELL__?.openreplay_configs) {
+        return realWindow.__ASMA__SHELL__.openreplay_configs
     }
     return openreplay
 }
@@ -18,7 +20,7 @@ export function getOpenReplayConfig() {
 export function _setOpenReplayConfig(config: IOpenReplayConfig) {
     openreplay = config
 
-    window.__ASMA__SHELL__ = window.__ASMA__SHELL__ || {}
+    realWindow.__ASMA__SHELL__ = realWindow.__ASMA__SHELL__ || {}
 
-    window.__ASMA__SHELL__.openreplay_configs = config
+    realWindow.__ASMA__SHELL__.openreplay_configs = config
 }

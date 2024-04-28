@@ -1,3 +1,4 @@
+import { realWindow } from '../g-definitions'
 import { httpToWs } from './Config'
 import { EnvironmentsUrls1 } from './EnvironmentsUrls'
 import { uuid4 } from './generateUUID4'
@@ -58,7 +59,7 @@ const EnvConfigsFnInstanceId = uuid4()
  */
 
 export async function fetchConfigsInternal() {
-    const fetchConfigs = window.__GENERATE_ENV_CONFIGS_BINDINGS__?.fetchConfigsReg[fetchConfigsInstanceId]
+    const fetchConfigs = realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__?.fetchConfigsReg[fetchConfigsInstanceId]
 
     if (!fetchConfigs) {
         console.error(
@@ -76,8 +77,8 @@ export async function fetchConfigsInternal() {
 
 export function EnvConfigsFnInternal() {
     const EnvConfigsFn =
-        window.__GENERATE_ENV_CONFIGS_BINDINGS__?.EnvConfigsFnReg[EnvConfigsFnInstanceId] ||
-        window.__GENERATE_ENV_CONFIGS_BINDINGS__?.EnvConfigsFn
+        realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__?.EnvConfigsFnReg[EnvConfigsFnInstanceId] ||
+        realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__?.EnvConfigsFn
     if (!EnvConfigsFn) {
         throw new Error(
             'EnvConfigsFn is not defined! please make sure that generateEnvConfigsBindings is called before EnvConfigsFn',
@@ -162,13 +163,13 @@ export function generateEnvConfigsBindings<
         // envUrls = { ...envUrls, ...envUrls_import }
         // }
     }
-    window.__GENERATE_ENV_CONFIGS_BINDINGS__ = window.__GENERATE_ENV_CONFIGS_BINDINGS__ || {
+    realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__ = realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__ || {
         EnvConfigsFnReg: {},
         fetchConfigsReg: {},
     }
 
-    window.__GENERATE_ENV_CONFIGS_BINDINGS__.fetchConfigsReg[fetchConfigsInstanceId] = fetchConfigs
-    window.__GENERATE_ENV_CONFIGS_BINDINGS__.EnvConfigsFnReg[EnvConfigsFnInstanceId] = EnvConfigsFn
+    realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__.fetchConfigsReg[fetchConfigsInstanceId] = fetchConfigs
+    realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__.EnvConfigsFnReg[EnvConfigsFnInstanceId] = EnvConfigsFn
 
     return { EnvConfigsFn, fetchConfigs }
 }

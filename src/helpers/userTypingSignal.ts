@@ -1,3 +1,5 @@
+import { realWindow } from '../g-definitions'
+
 export function userTypingSignal(insertUserLastTyped: () => Promise<unknown>) {
     let timmer: number | undefined = undefined
 
@@ -13,9 +15,9 @@ export function userTypingSignal(insertUserLastTyped: () => Promise<unknown>) {
         }
 
         if (userIsTyping()) {
-            timmer = window.setInterval(() => {
+            timmer = realWindow.setInterval(() => {
                 if (!userIsTyping()) {
-                    window.clearInterval(timmer)
+                    realWindow.clearInterval(timmer)
 
                     timmer = undefined
                     return

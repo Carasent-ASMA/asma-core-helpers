@@ -1,4 +1,5 @@
 import type Tracker from '@openreplay/tracker'
+import { realWindow } from '../g-definitions'
 
 const OpenReplayObject = {
     started: false,
@@ -17,20 +18,20 @@ const OpenReplayObject = {
 export type IGlobalOpenReplay = Required<typeof OpenReplayObject>
 
 export function getOpenReplayObject() {
-    if (window.__ASMA__SHELL__?.openreplay_object) {
-        return window.__ASMA__SHELL__.openreplay_object
+    if (realWindow.__ASMA__SHELL__?.openreplay_object) {
+        return realWindow.__ASMA__SHELL__.openreplay_object
     }
     return OpenReplayObject
 }
 export function getOpenReplayTrackerObject<Keys extends keyof IGlobalOpenReplay>(name: Keys) {
-    if (window.__ASMA__SHELL__?.openreplay_object) {
-        return window.__ASMA__SHELL__.openreplay_object[name]
+    if (realWindow.__ASMA__SHELL__?.openreplay_object) {
+        return realWindow.__ASMA__SHELL__.openreplay_object[name]
     }
     return OpenReplayObject[name]
 }
 export function getOpenReplayMetadataSet<Keys extends keyof IGlobalOpenReplay['metadataSet']>(key: Keys) {
-    if (window.__ASMA__SHELL__?.openreplay_object) {
-        return window.__ASMA__SHELL__.openreplay_object.metadataSet[key]
+    if (realWindow.__ASMA__SHELL__?.openreplay_object) {
+        return realWindow.__ASMA__SHELL__.openreplay_object.metadataSet[key]
     }
     return OpenReplayObject.metadataSet[key]
 }
@@ -46,9 +47,9 @@ export function resetOpenReplayTrackerObject() {
     OpenReplayObject.trackerGraphQL = undefined
     OpenReplayObject.mobxObserver = undefined
 
-    window.__ASMA__SHELL__ = window.__ASMA__SHELL__ || {}
+    realWindow.__ASMA__SHELL__ = realWindow.__ASMA__SHELL__ || {}
 
-    window.__ASMA__SHELL__.openreplay_object = OpenReplayObject
+    realWindow.__ASMA__SHELL__.openreplay_object = OpenReplayObject
 }
 
 export function setOpenReplayTrackerObject<Key extends keyof IGlobalOpenReplay>(
@@ -57,9 +58,9 @@ export function setOpenReplayTrackerObject<Key extends keyof IGlobalOpenReplay>(
 ) {
     OpenReplayObject[name] = module
 
-    window.__ASMA__SHELL__ = window.__ASMA__SHELL__ || {}
+    realWindow.__ASMA__SHELL__ = realWindow.__ASMA__SHELL__ || {}
 
-    window.__ASMA__SHELL__.openreplay_object = OpenReplayObject
+    realWindow.__ASMA__SHELL__.openreplay_object = OpenReplayObject
 }
 export function setOpenReplayTrackerObjectMetadataSet<Key extends keyof IGlobalOpenReplay['metadataSet']>(
     name: Key,
@@ -67,7 +68,7 @@ export function setOpenReplayTrackerObjectMetadataSet<Key extends keyof IGlobalO
 ) {
     OpenReplayObject.metadataSet[name] = module
 
-    window.__ASMA__SHELL__ = window.__ASMA__SHELL__ || {}
+    realWindow.__ASMA__SHELL__ = realWindow.__ASMA__SHELL__ || {}
 
-    window.__ASMA__SHELL__.openreplay_object = OpenReplayObject
+    realWindow.__ASMA__SHELL__.openreplay_object = OpenReplayObject
 }
