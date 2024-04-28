@@ -30,15 +30,6 @@ function setThemeLocal(theme_local: string) {
 }
 realWindow.__ASMA__THEME__ = realWindow.__ASMA__THEME__ || { getTheme: getThemeLocal, setTheme: setThemeLocal }
 
-declare global {
-    interface Window {
-        __ASMA__THEME__?: {
-            getTheme: () => string
-            setTheme: (theme: string) => void
-        }
-    }
-}
-
 export function onThemeChange(callback: (val: { theme: string }) => void) {
     return registerTheme('on_theme_change', callback)
 }

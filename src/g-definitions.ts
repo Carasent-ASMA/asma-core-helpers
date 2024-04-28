@@ -9,15 +9,25 @@ export {}
  *  declare optional rawWindow  which is added by micro-app framework in child apps
  * when is used @micro-zoe/micro-app package
  */
-declare global {
-    interface Window {
-        rawWindow?: Window
-    }
-}
 
 export const realWindow = window.rawWindow || window
 declare global {
     interface Window {
+        __GENERATE_ENV_CONFIGS_BINDINGS__?: {
+            /**
+             * @deprecated remove in next major version this does nothing anymore
+             */
+            fetchConfigsReg: Record<string, () => void>
+            EnvConfigsFnReg: Record<string, () => unknown>
+            EnvConfigsFn?: () => unknown
+        }
+        __ASMA_clearCacheDataCalled__: boolean
+
+        __ASMA__THEME__?: {
+            getTheme: () => string
+            setTheme: (theme: string) => void
+        }
+        rawWindow?: Window
         __ENV?: Record<string, string>
         __ENV_MICRO: {
             [key: string]: Record<string, string>
@@ -70,6 +80,7 @@ declare global {
          */
         logoutUser: () => void
         wsConnection: any
+        __asma_development_environment_to_operate__?: 'dev' | 'test' | 'stage' | 'prod'
     }
 }
 
