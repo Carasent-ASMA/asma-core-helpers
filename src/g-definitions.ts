@@ -5,6 +5,17 @@ import type { IGlobalOpenReplay } from './helpers/openReplayObject'
 //import type { IGenerateSRVAuthBindings } from './helpers/generateSrvAuthBindings'
 export {}
 
+/**
+ *  declare optional rawWindow  which is added by micro-app framework in child apps
+ * when is used @micro-zoe/micro-app package
+ */
+declare global {
+    interface Window {
+        rawWindow?: Window
+    }
+}
+
+export const realWindow = window.rawWindow || window
 declare global {
     interface Window {
         __ENV?: Record<string, string>
@@ -62,6 +73,6 @@ declare global {
     }
 }
 
-export const history = window.__ASMA__SHELL__?.history || createBrowserHistory()
+export const history = realWindow.__ASMA__SHELL__?.history || createBrowserHistory()
 
 export { type History, createBrowserHistory }

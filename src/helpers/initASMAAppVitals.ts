@@ -9,6 +9,7 @@ import { EnvConfigsFnInternal, fetchConfigsInternal } from './generateEnvConfigs
 import { getCachedJwtInternal, isJwtValidInternal, registerCallbackOnSrvAuthEvents } from './generateSrvAuthBindings'
 import { isNotEmptyObjArr } from './IsNotEmpty'
 import { subdomain } from './getSubdomain'
+import { realWindow } from '../g-definitions'
 //import { registerOpenReplay } from './registerOpenReplay'
 declare global {
     interface Window {
@@ -87,18 +88,18 @@ export async function initASMAAppVitals({
     //let registeredSubdomain = true
     let resRegisteredSubdomain: IResWithSubdomain | IResWithSubdomainOnError | undefined = undefined
     if (!is_child_app) {
-        window.__asma_development_environment_to_operate__ = EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE as
+        realWindow.__asma_development_environment_to_operate__ = EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE as
             | 'dev'
             | 'test'
             | 'stage'
             | 'prod'
 
-        window.__GENERATE_ENV_CONFIGS_BINDINGS__ = window.__GENERATE_ENV_CONFIGS_BINDINGS__ || {
+        realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__ = realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__ || {
             EnvConfigsFnReg: {},
             fetchConfigsReg: {},
         }
 
-        window.__GENERATE_ENV_CONFIGS_BINDINGS__.EnvConfigsFn = EnvConfigsFnInternal
+        realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__.EnvConfigsFn = EnvConfigsFnInternal
 
         if (subdomain_check) {
             resRegisteredSubdomain = await checkForRegisteredSubdomain({

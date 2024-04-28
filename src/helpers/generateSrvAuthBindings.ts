@@ -5,6 +5,7 @@ import { EnvConfigsFnInternal } from './generateEnvConfigsBindings'
 import { parseJwt } from './parseJwt'
 import { asmaOverridesEventBus } from 'asma-event-bus/lib'
 import type { IBaseJwtClaims } from 'asma-types/lib'
+import { realWindow } from '../g-definitions'
 
 //let logoutSuccessful = false
 
@@ -27,7 +28,7 @@ function dispatchJwtChangedEvent(jwt?: IBaseJwtClaims<any>) {
 //type EnvConfigsFn = () => { SRV_AUTH: string; DEVELOPMENT: boolean; ENVIRONMENT_TO_OPERATE: string }
 
 export async function getCachedJwtInternal() {
-    const getCachedJwt = window.__ASMA__SHELL__?.auth_bindings?.getCachedJwt
+    const getCachedJwt = realWindow.__ASMA__SHELL__?.auth_bindings?.getCachedJwt
 
     if (!getCachedJwt) {
         throw new Error(
@@ -37,7 +38,7 @@ export async function getCachedJwtInternal() {
     return getCachedJwt()
 }
 export async function checkForRegisteredSubdomainInternal() {
-    const checkForRegisteredSubdomain = window.__ASMA__SHELL__?.auth_bindings?.checkForRegisteredSubdomain
+    const checkForRegisteredSubdomain = realWindow.__ASMA__SHELL__?.auth_bindings?.checkForRegisteredSubdomain
 
     if (!checkForRegisteredSubdomain) {
         throw new Error(
@@ -47,7 +48,7 @@ export async function checkForRegisteredSubdomainInternal() {
     return checkForRegisteredSubdomain()
 }
 export function getConnectorInternal() {
-    const getConnector = window.__ASMA__SHELL__?.auth_bindings?.getConnector
+    const getConnector = realWindow.__ASMA__SHELL__?.auth_bindings?.getConnector
 
     if (!getConnector) {
         throw new Error(
@@ -58,7 +59,7 @@ export function getConnectorInternal() {
 }
 
 export function isJwtValidInternal(): boolean {
-    const isJwtValid = window.__ASMA__SHELL__?.auth_bindings?.isJwtValid
+    const isJwtValid = realWindow.__ASMA__SHELL__?.auth_bindings?.isJwtValid
 
     if (!isJwtValid) {
         throw new Error(
@@ -69,7 +70,7 @@ export function isJwtValidInternal(): boolean {
 }
 
 export async function srvAuthGetInternal<R>(url: string, headers?: Record<string, string>) {
-    const srvAuthGet = window.__ASMA__SHELL__?.auth_bindings?.srvAuthGet
+    const srvAuthGet = realWindow.__ASMA__SHELL__?.auth_bindings?.srvAuthGet
 
     if (!srvAuthGet) {
         throw new Error(
@@ -80,7 +81,7 @@ export async function srvAuthGetInternal<R>(url: string, headers?: Record<string
 }
 
 export function getSrvUrlsInternal(): Record<'ao_wrapper' | 'connector', string> | undefined {
-    const getSrvUrls = window.__ASMA__SHELL__?.auth_bindings?.getSrvUrls
+    const getSrvUrls = realWindow.__ASMA__SHELL__?.auth_bindings?.getSrvUrls
     if (!getSrvUrls) {
         throw new Error(
             'getSrvUrls is not defined! please make sure that generateSrvAuthBindings is called before getSrvUrls',
@@ -93,7 +94,7 @@ export async function setReqConfigInternal<T = unknown>(
     data?: T | undefined,
     responseType?: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream',
 ) {
-    const setReqConfig = window.__ASMA__SHELL__?.auth_bindings?.setReqConfig
+    const setReqConfig = realWindow.__ASMA__SHELL__?.auth_bindings?.setReqConfig
     if (!setReqConfig) {
         throw new Error(
             'setReqConfig is not defined! please make sure that generateSrvAuthBindings is called before setReqConfig',
@@ -144,8 +145,8 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
         registerCallbackOnSrvAuthEvents('logout_event', logout)
     }
 
-    if (window.__ASMA__SHELL__?.auth_bindings) {
-        return window.__ASMA__SHELL__.auth_bindings as typeof auth_bindings
+    if (realWindow.__ASMA__SHELL__?.auth_bindings) {
+        return realWindow.__ASMA__SHELL__.auth_bindings as typeof auth_bindings
     }
 
     let jwtToken = ''
@@ -191,8 +192,6 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
             promiseRegistry[url] = fetch(`${EnvConfigsFnInternal().SRV_AUTH}${url}`, {
                 headers: {
                     ...headers,
-
-                    'asma-origin': window.location.origin,
                 },
 
                 credentials: 'include',
@@ -353,7 +352,7 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
             /*  if (!fetchJwtPromise) {
                 fetchJwtPromise = srvAuthGet('/token')
             } */
-            const searchParams = new URLSearchParams(window.location.search)
+            const searchParams = new URLSearchParams(realWindow.location.search)
             const data = await srvAuthGet<
                 ISigninResponse<FeatureEnums> /* {
                 errors?: string
@@ -472,9 +471,9 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
         accessTokenHasExpired,
         checkForRegisteredSubdomain,
     }
-    window.__ASMA__SHELL__ = window.__ASMA__SHELL__ || {}
+    realWindow.__ASMA__SHELL__ = realWindow.__ASMA__SHELL__ || {}
 
-    window.__ASMA__SHELL__.auth_bindings = auth_bindings
+    realWindow.__ASMA__SHELL__.auth_bindings = auth_bindings
 
     return auth_bindings
 }
@@ -491,7 +490,7 @@ export function generateSrvAuthBindingsMicroApp(
     logout?: () => void,
 ) {
     return (
-        window.__ASMA__SHELL__?.auth_bindings ||
+        realWindow.__ASMA__SHELL__?.auth_bindings ||
         generateSrvAuthBindings(/* SRV_AUTH, DEVELOPMENT, ENVIRONMENT_TO_OPERATE, */ /* EnvConfigsFn, */ logout)
     )
 }

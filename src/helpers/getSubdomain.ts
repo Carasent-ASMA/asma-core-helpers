@@ -1,4 +1,6 @@
-const hostname_arr = () => window.location.hostname.split('.') // fretex-dfsf.advoca.no
+import { realWindow } from '../g-definitions'
+
+const hostname_arr = () => realWindow.location.hostname.split('.') // fretex-dfsf.advoca.no
 
 function getSubdomain() {
     let subdomain = ''
@@ -24,15 +26,15 @@ function getSubdomain() {
 export const subdomain = getSubdomain()
 
 export function redirectFromSubdomainToDomain() {
-    const domain_hostname = `${createDomainUrlFromSubdomain()}${window.location.pathname}`
+    const domain_hostname = `${createDomainUrlFromSubdomain()}${realWindow.location.pathname}`
 
-    window.location.href = domain_hostname
+    realWindow.location.href = domain_hostname
 
     return null
 }
 
 export function createDomainUrlFromSubdomain() {
-    let hostname = window.location.hostname.replace(subdomain, '')
+    let hostname = realWindow.location.hostname.replace(subdomain, '')
     const hostname_arr_length = hostname_arr().length
     //TODO first if statment will be removed in the future when we all asma will move to nested subdomains
     if (hostname_arr_length === 3) {
@@ -43,7 +45,7 @@ export function createDomainUrlFromSubdomain() {
         hostname = hostname.replace('.', '')
     }
 
-    const { port, protocol } = window.location
+    const { port, protocol } = realWindow.location
 
     return protocol + '//' + hostname + (port ? `:${port}` : '')
 }
