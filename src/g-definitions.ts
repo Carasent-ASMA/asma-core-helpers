@@ -84,6 +84,21 @@ declare global {
     }
 }
 
-export const history = realWindow.__ASMA__SHELL__?.history || createBrowserHistory()
+export const history = getHistory()
 
 export { type History, createBrowserHistory }
+
+function getHistory() {
+    if (realWindow.__ASMA__SHELL__?.history) {
+        return realWindow.__ASMA__SHELL__.history
+    }
+
+    const history = createBrowserHistory()
+
+    realWindow.__ASMA__SHELL__ = {
+        ...realWindow.__ASMA__SHELL__,
+        history,
+    }
+
+    return history
+}
