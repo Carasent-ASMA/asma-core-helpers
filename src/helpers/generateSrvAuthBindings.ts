@@ -175,6 +175,10 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
             if (ENVIRONMENT_TO_OPERATE in EnvironmentEnums) {
                 url = `${url}&env=${EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE}`
 
+                if (realWindow.location.port) {
+                    url = `${url}&port=${realWindow.location.port}`
+                }
+
                 // file deepcode ignore GlobalReplacementRegex: <it is intended to be replaced only first occurrence>
                 url = url.includes('&') && !url.includes('?') ? url.replace('&', '?') : url
             } else {
