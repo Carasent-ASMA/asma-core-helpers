@@ -1,10 +1,5 @@
 import { realWindow } from '../g-definitions'
 
-declare global {
-    interface Window {
-        __ASMA_clearCacheDataCalled__: boolean
-    }
-}
 /**
  *
  * @imortant When using in micro-apps combination shell/child make sure this app is called only once and only in shell app! otherwise it will have unexpected behaviour with no errors or warnings

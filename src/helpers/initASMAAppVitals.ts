@@ -11,11 +11,7 @@ import { isNotEmptyObjArr } from './IsNotEmpty'
 import { subdomain } from './getSubdomain'
 import { realWindow } from '../g-definitions'
 //import { registerOpenReplay } from './registerOpenReplay'
-declare global {
-    interface Window {
-        __asma_development_environment_to_operate__?: 'dev' | 'test' | 'stage' | 'prod'
-    }
-}
+
 type IInitASMAAppVitalsParams = {
     /**
      * #TODO investigate how to internalize this variable

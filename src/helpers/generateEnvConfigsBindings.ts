@@ -36,18 +36,7 @@ export type IEnvironmentUrlsGenQLOnly = SRVKeys<IEnvironmentUrls> /* Omit<
 //type ISrvKeysTransformToWs<T> = T extends `SRV_${infer K}` ? `SRV_${K}_WS` : never
 
 //type IKeyEnvironmentUrlsWs = `${IKeyEnvironmentUrls}_WS`
-declare global {
-    interface Window {
-        __GENERATE_ENV_CONFIGS_BINDINGS__?: {
-            /**
-             * @deprecated remove in next major version this does nothing anymore
-             */
-            fetchConfigsReg: Record<string, () => void>
-            EnvConfigsFnReg: Record<string, () => unknown>
-            EnvConfigsFn?: () => unknown
-        }
-    }
-}
+
 const fetchConfigsInstanceId = uuid4()
 const EnvConfigsFnInstanceId = uuid4()
 //console.info('fetchConfigsInstanceId', fetchConfigsInstanceId)
