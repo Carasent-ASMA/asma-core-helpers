@@ -1,4 +1,4 @@
-import { realWindow } from '../g-definitions'
+import { realWindow } from '..'
 import { subdomain } from './getSubdomain'
 
 export const env =

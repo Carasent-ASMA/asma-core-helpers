@@ -1,4 +1,4 @@
-import { realWindow } from "../g-definitions"
+import { realWindow } from '..'
 
 export function parseJwt<R>(jwtToken: string) {
     const base64Url = jwtToken?.split('.')[1]

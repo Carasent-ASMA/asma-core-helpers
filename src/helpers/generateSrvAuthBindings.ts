@@ -5,7 +5,7 @@ import { EnvConfigsFnInternal } from './generateEnvConfigsBindings'
 import { parseJwt } from './parseJwt'
 import { asmaOverridesEventBus } from 'asma-event-bus/lib'
 import type { IBaseJwtClaims } from 'asma-types/lib'
-import { realWindow } from '../g-definitions'
+import { realWindow } from '..'
 
 //let logoutSuccessful = false
 

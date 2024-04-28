@@ -1,3 +1,5 @@
+export const realWindow = window.rawWindow || window
+
 export * from './helpers/_processServerError'
 export * from './helpers/FormatNumberConstants'
 export * from './helpers/NorwegianPostalCodes'

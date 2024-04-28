@@ -1,9 +1,9 @@
-import { realWindow } from '../g-definitions'
-
 /**
  *
  * @imortant When using in micro-apps combination shell/child make sure this app is called only once and only in shell app! otherwise it will have unexpected behaviour with no errors or warnings
  */
+
+import { realWindow } from '..'
 
 export const clearCacheData = async (CACHE_VERSION: string) => {
     if (realWindow.__ASMA_clearCacheDataCalled__) {

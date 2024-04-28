@@ -1,4 +1,4 @@
-import { realWindow } from '../g-definitions'
+import { realWindow } from '..'
 import { getConnectorInternal } from './generateSrvAuthBindings'
 
 let includesAdcurisInHost: boolean | undefined

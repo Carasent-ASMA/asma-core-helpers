@@ -1,4 +1,4 @@
-import { realWindow } from '../g-definitions'
+import { realWindow } from '..'
 
 let openreplay: IOpenReplayConfig | null = null
 

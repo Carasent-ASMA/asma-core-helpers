@@ -1,4 +1,4 @@
-import { realWindow } from "../g-definitions"
+import { realWindow } from '..'
 
 type ObjectType<T> = T extends string ? string : T extends boolean ? boolean : never
 

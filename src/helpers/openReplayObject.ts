@@ -1,5 +1,5 @@
 import type Tracker from '@openreplay/tracker'
-import { realWindow } from '../g-definitions'
+import { realWindow } from '..'
 
 const OpenReplayObject = {
     started: false,
