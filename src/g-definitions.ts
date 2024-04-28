@@ -27,7 +27,7 @@ declare global {
             getTheme: () => string
             setTheme: (theme: string) => void
         }
-        rawWindow?: Window
+        rawWindow?: typeof window
         __ENV?: Record<string, string>
         __ENV_MICRO: {
             [key: string]: Record<string, string>
