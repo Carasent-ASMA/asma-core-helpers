@@ -1,4 +1,4 @@
-import { realWindow } from '../g-definitions'
+import { realWindow } from '..'
 import { httpToWs } from './Config'
 import { EnvironmentsUrls1 } from './EnvironmentsUrls'
 import { uuid4 } from './generateUUID4'

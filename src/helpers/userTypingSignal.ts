@@ -1,4 +1,4 @@
-import { realWindow } from '../g-definitions'
+import { realWindow } from '..'
 
 export function userTypingSignal(insertUserLastTyped: () => Promise<unknown>) {
     let timmer: number | undefined = undefined

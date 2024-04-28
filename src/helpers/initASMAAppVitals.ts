@@ -9,7 +9,7 @@ import { EnvConfigsFnInternal, fetchConfigsInternal } from './generateEnvConfigs
 import { getCachedJwtInternal, isJwtValidInternal, registerCallbackOnSrvAuthEvents } from './generateSrvAuthBindings'
 import { isNotEmptyObjArr } from './IsNotEmpty'
 import { subdomain } from './getSubdomain'
-import { realWindow } from '../g-definitions'
+import { realWindow } from '..'
 //import { registerOpenReplay } from './registerOpenReplay'
 
 type IInitASMAAppVitalsParams = {

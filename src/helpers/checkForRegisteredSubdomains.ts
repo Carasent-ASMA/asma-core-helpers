@@ -7,7 +7,7 @@ import {
 } from './generateSrvAuthBindings'
 import { _setOpenReplayConfig } from './openReplayConfigs'
 import { redirectFromSubdomainToDomain } from './getSubdomain'
-import { realWindow } from '../g-definitions'
+import { realWindow } from '..'
 
 /**
  * @private use only inside this file

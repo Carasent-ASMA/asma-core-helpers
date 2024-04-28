@@ -1,4 +1,4 @@
-import { realWindow } from '../g-definitions'
+import { realWindow } from '..'
 
 export function base64toFile(b64Data: string, name: string, type = 'application/pdf') {
     const bytes = realWindow.atob(b64Data)

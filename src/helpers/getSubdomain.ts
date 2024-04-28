@@ -1,4 +1,4 @@
-import { realWindow } from '../g-definitions'
+import { realWindow } from '..'
 
 const hostname_arr = () => realWindow.location.hostname.split('.') // fretex-dfsf.advoca.no
 

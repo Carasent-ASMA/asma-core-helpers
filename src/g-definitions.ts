@@ -1,6 +1,7 @@
 import { type History, createBrowserHistory } from 'history'
 import type { ICheckForRegisteredSubdomainResponse, IOpenReplay } from './helpers/generateSrvAuthBindings'
 import type { IGlobalOpenReplay } from './helpers/openReplayObject'
+import { realWindow } from '.'
 //import type { IGenerateSRVAuthBindings } from './helpers/generateSrvAuthBindings'
 //import type { IGenerateSRVAuthBindings } from './helpers/generateSrvAuthBindings'
 export {}
@@ -10,7 +11,6 @@ export {}
  * when is used @micro-zoe/micro-app package
  */
 
-export const realWindow = window.rawWindow || window
 declare global {
     interface Window {
         __GENERATE_ENV_CONFIGS_BINDINGS__?: {
