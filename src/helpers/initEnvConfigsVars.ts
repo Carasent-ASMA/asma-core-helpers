@@ -1,11 +1,11 @@
 import { realWindow } from '..'
 import { subdomain } from './getSubdomain'
-
+const _origin = realWindow.location.origin
 export const env =
-    (['.dev.', '//dev.'].includes(realWindow.location.origin) && 'dev') ||
-    (['.test.', '//test.'].includes(realWindow.location.origin) && 'test') ||
-    (['.stage.', '//stage.'].includes(realWindow.location.origin) && 'stage') ||
-    (realWindow.location.origin.includes('localhost') && 'localhost') ||
+    ((_origin.includes('.dev.') || _origin.includes('//dev.')) && 'dev') ||
+    ((_origin.includes('.test.') || _origin.includes('//test.')) && 'test') ||
+    ((_origin.includes('.stage.') || _origin.includes('//stage.')) && 'stage') ||
+    (_origin.includes('localhost') && 'localhost') ||
     'prod'
 export type IEnv = typeof env
 export const env_to_operate = realWindow.__asma_development_environment_to_operate__
