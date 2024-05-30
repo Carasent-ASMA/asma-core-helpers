@@ -194,8 +194,13 @@ export function createSignicatAuthUrl() {
 }
 export function createOpenReplyIngestPoint() {
     const nonprod = env === 'localhost' || env === 'dev' || env === 'test' || env === 'stage'
+    const adcuris = domain === 'adcuris'
 
-    return nonprod ? `https://openreplaynonprod.advoca.no/ingest` : `https://openreplay.advoca.no/ingest`
+    return nonprod
+        ? `https://stage.advoca.no/ingest`
+        : adcuris
+        ? `https://www.adcuris.health/ingest`
+        : `https://www.adopus.no/ingest`
 }
 
 export function getClientId() {
