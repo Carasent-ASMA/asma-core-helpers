@@ -192,12 +192,11 @@ export function createSignicatAuthUrl() {
 
     return url
 }
+const nonprod = env === 'localhost' || env === 'dev' || env === 'test' || env === 'stage'
+const adcuris = domain === 'adcuris'
 export function createOpenReplyIngestPoint() {
-    const nonprod = env === 'localhost' || env === 'dev' || env === 'test' || env === 'stage'
-    const adcuris = domain === 'adcuris'
-
     return nonprod
-        ? `https://stage.advoca.no/ingest`
+        ? `http://openreplay.stage.advoca.no/ingest`
         : adcuris
         ? `https://www.adcuris.health/ingest`
         : `https://www.adopus.no/ingest`
