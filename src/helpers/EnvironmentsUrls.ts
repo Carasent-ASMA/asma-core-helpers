@@ -47,7 +47,7 @@ export const EnvironmentsUrls1 = {
     AZURE_APP_ID: 'cba50bcf-ef6a-4623-8b42-fb592cb064d7',
     AZURE_APP_REDIRECT_URI: realWindow.location.origin,
     OPENREPLAY_PROJECT_KEY: getOpenReplayKey,
-    CDN_ASMA_BASE_URL: 'https://cdn.advoca.no',
+    CDN_ASMA_BASE_URL: '/cdn',
     SIGNICAT_REDIRECT_URL: `${realWindow.location.origin}/auth/callback`,
     SIGNICAT_AUTH_URL: createSignicatAuthUrl(),
     ADOPUS_ACCESS_URL: realWindow.location.origin,

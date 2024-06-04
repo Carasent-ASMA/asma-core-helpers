@@ -134,7 +134,7 @@ export async function initASMAAppVitals({
         registry_urls = Object.keys(default_app_versions).reduce((acc, key) => {
             const app_version = default_app_versions[key]
 
-            const base_url = EnvConfigsFnInternal().CDN_ASMA_BASE_URL || 'https://cdn.advoca.no'
+            const base_url = EnvConfigsFnInternal().CDN_ASMA_BASE_URL || '/cdn'
 
             const app_version_url = `${base_url}/${key}/${app_version}/`
 
