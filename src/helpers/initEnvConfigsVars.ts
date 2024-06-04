@@ -196,7 +196,7 @@ const nonprod = env === 'localhost' || env === 'dev' || env === 'test' || env ==
 const adcuris = domain === 'adcuris'
 export function createOpenReplyIngestPoint() {
     return nonprod
-        ? `http://openreplay.stage.advoca.no/ingest`
+        ? `https://openreplay.stage.advoca.no/ingest`
         : adcuris
         ? `https://www.adcuris.health/ingest`
         : `https://www.adopus.no/ingest`
