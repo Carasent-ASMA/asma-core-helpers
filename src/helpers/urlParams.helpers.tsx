@@ -10,6 +10,7 @@ export function setParamByName<Key extends ISearchParams>(
     data: ISetParamByName<Key> | ISetParamByName<Key>[],
     del?: ISearchParams | ISearchParams[],
     state?: any,
+    pushTo?: string,
 ) {
     const searchParams = new URLSearchParams(globalThis.location.search)
 
@@ -32,7 +33,7 @@ export function setParamByName<Key extends ISearchParams>(
         }
     }
 
-    history.push(`${globalThis.location.pathname}?${searchParams.toString()}`, state)
+    history.push(`${pushTo ?? globalThis.location.pathname}?${searchParams.toString()}`, state)
 }
 
 function deleteParams(search_params: URLSearchParams, name: ISearchParams | ISearchParams[]) {
