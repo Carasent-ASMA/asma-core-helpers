@@ -126,6 +126,7 @@ export type ISigninResponse<FE> = {
     connector?: string
     srv_urls?: ISrvUrls //typeof srv_urls
     default_app_versions: Record<string, string>
+    isTeamLeader: boolean
 }
 
 type RequiredKeys = 'id' | 'theme' | 'openreplay' | 'device_authorized' | 'default_app_versions' | 'customer_name'
@@ -160,6 +161,8 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
     let srv_urls: ISrvUrls | undefined //Record<'ao_wrapper' | 'connector', string> | undefined
 
     let openreplay: IOpenReplay | undefined
+
+    let _isTeamLeader: boolean | undefined
 
     const isJwtInvalid = () => (jwtToken && accessTokenHasExpired()) || !jwtToken
 
@@ -291,6 +294,8 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
 
             data.theme && setTheme(data.theme)
 
+            _isTeamLeader = data.isTeamLeader
+
             return
         }
 
@@ -305,6 +310,8 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
         connector = undefined
 
         openreplay = undefined
+
+        _isTeamLeader = undefined
     }
 
     function getJwtToken() {
@@ -323,6 +330,10 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
         } else {
             return jwtToken
         }
+    }
+
+    function isTeamLeader() {
+        return _isTeamLeader
     }
 
     async function setReqConfig<T = unknown>(
@@ -474,6 +485,7 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
         // cancelRequest,
         accessTokenHasExpired,
         checkForRegisteredSubdomain,
+        isTeamLeader,
     }
     realWindow.__ASMA__SHELL__ = realWindow.__ASMA__SHELL__ || {}
 
