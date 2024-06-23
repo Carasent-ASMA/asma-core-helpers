@@ -198,8 +198,8 @@ export function createOpenReplyIngestPoint() {
     return nonprod
         ? `https://openreplay.stage.advoca.no/ingest`
         : adcuris
-        ? `https://www.adcuris.health/ingest`
-        : `https://www.adopus.no/ingest`
+        ? `https://openreplay.adcuris.health/ingest`
+        : `https://openreplay.adopus.no/ingest`
 }
 
 export function getClientId() {
