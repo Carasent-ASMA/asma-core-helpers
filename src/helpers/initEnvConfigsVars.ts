@@ -111,7 +111,7 @@ export function devExpress(_env: IEnv, env_to_operate?: IEnv) {
 
 //let env_computed = ''
 
-export function computeBaseUrl(adcuris_subdomains?: string[]) {
+export function computeBaseUrl() {
     let base_url = ''
     /**
      * tld - top level domain. This is last part of domain name. For example, in google.com, com is tld.
@@ -151,17 +151,17 @@ export function computeBaseUrl(adcuris_subdomains?: string[]) {
     } */
     let computed_subdomain = computedSubdomain()
 
-    if (domain === 'advoca') {
+    /*  if (domain === 'advoca') {
         computed_subdomain = computed_subdomain || window.location.host.split('.').slice(0, -2).join('.')
 
-        if (adcuris_subdomains?.includes(subdomain)) {
+        if () {
             domain = 'adcuris'
 
             tld = 'health'
         } else {
             domain = 'adopus'
         }
-    }
+    } */
 
     if (computed_subdomain) {
         base_url = `https://${computed_subdomain}.${domain}.${tld}`

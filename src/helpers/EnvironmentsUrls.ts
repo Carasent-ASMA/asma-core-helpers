@@ -1,4 +1,4 @@
-import { realWindow } from '..'
+import { realWindow, subdomain /* , domain */ } from '..'
 import {
     srvConnector,
     env,
@@ -16,7 +16,12 @@ import {
 } from '../helpers/initEnvConfigsVars'
 
 export const EnvironmentsUrls1 = (adcuris_subdomains?: string[]) => {
-    const base_url = computeBaseUrl(adcuris_subdomains)
+    let base_url = computeBaseUrl()
+
+    if (/* domain === 'advoca' && */ adcuris_subdomains?.includes(subdomain)) {
+        base_url = base_url + '/ac'
+    }
+
     return {
         SRV_DIRECTORY: `${base_url}/api/directory`,
         SRV_CALENDAR: `${base_url}/api/calendar`,
