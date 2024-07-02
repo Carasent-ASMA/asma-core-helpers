@@ -65,9 +65,11 @@ export function srvConnector(env: IEnv, env_to_operate?: IEnv) {
 export function createAdvocaAccessUrl() {
     let advoca_url = 'https://subdomain.advoca.no'
 
-    const host_name_arr = realWindow.location.hostname.split('.')
+    const subdomain = window.location.host.split('.').slice(0, -2).join('.')
 
-    let subdomain = 'www'
+    /*  const host_name_arr = realWindow.location.hostname.split('.')
+
+    let subdomain = 'web'
 
     if (host_name_arr.length === 3 && host_name_arr[0]) {
         subdomain = host_name_arr[0]
@@ -87,7 +89,7 @@ export function createAdvocaAccessUrl() {
     if (realWindow.location.hostname.includes('adcuris')) {
         advoca_url = advoca_url.replace('adcuris', 'advoca')
         subdomain = subdomain.replace('advoca-', '').replace('advoca', 'www')
-    }
+    } */
 
     return advoca_url.replace('subdomain', subdomain)
 }
@@ -107,21 +109,25 @@ export function devExpress(_env: IEnv, env_to_operate?: IEnv) {
     return DEVEXPRESS[env]
 }
 
-let env_computed = ''
+//let env_computed = ''
 
-function computeBaseUrl() {
+export function computeBaseUrl(adcuris_subdomains?: string[]) {
     let base_url = ''
+    /**
+     * tld - top level domain. This is last part of domain name. For example, in google.com, com is tld.
+     */
+    let tld = domain === 'adcuris' ? 'health' : 'no'
 
     if (domain === 'avans') {
         domain = 'adopus'
     }
-    let tld = 'no'
+    /*   let tld = 'no'
 
     if (domain === 'adcuris') {
         tld = 'health'
     }
-
-    if (env == 'localhost') {
+ */
+    /* if (env == 'localhost') {
         // default
         if (!env_to_operate || env_to_operate.includes('localhost')) {
             env_computed = subdomain ? subdomain + '.dev' : 'dev'
@@ -129,7 +135,7 @@ function computeBaseUrl() {
         } else {
             env_computed =
                 env_to_operate === 'prod' && !subdomain
-                    ? 'www'
+                    ? 'web'
                     : env_to_operate === 'prod'
                     ? subdomain
                     : subdomain
@@ -142,12 +148,60 @@ function computeBaseUrl() {
         env_computed = 'dev'
 
         base_url = `https://${env_computed}.${domain}.${tld}`
+    } */
+    let computed_subdomain = computedSubdomain()
+
+    if (domain === 'advoca') {
+        computed_subdomain = computed_subdomain || window.location.host.split('.').slice(0, -2).join('.')
+
+        if (adcuris_subdomains?.includes(subdomain)) {
+            domain = 'adcuris'
+
+            tld = 'health'
+        } else {
+            domain = 'adopus'
+        }
     }
 
+    if (computed_subdomain) {
+        base_url = `https://${computed_subdomain}.${domain}.${tld}`
+    }
     return base_url
 }
+function computedSubdomain() {
+    if (env_to_operate?.includes('localhost')) {
+        return subdomain ? subdomain + '.dev' : 'dev'
+    }
 
-export const base_url = computeBaseUrl()
+    // custom
+    if (env_to_operate) {
+        console.error(
+            'subdomain is not provided, Consider avoiding using adopus, adcuris, advoca without specifying customer related subdomain.',
+        )
+        return env_to_operate === 'prod' ? 'web' : `${subdomain ? subdomain + '.' : ''}${env_to_operate}`
+    }
+
+    if (subdomain === 'cdn') {
+        return 'dev'
+    }
+
+    /*  if (subdomain) {
+        return env_to_operate !== 'prod' ? `${subdomain}.${env_to_operate}` : subdomain
+    } */
+
+    return
+    /*  env_to_operate === 'prod' && !subdomain
+            ? 'web'
+            : env_to_operate === 'prod'
+            ? subdomain
+            : subdomain
+            ? `${subdomain}.${env_to_operate}`
+            : env_to_operate */
+
+    //return env_computed
+}
+
+//export const base_url = computeBaseUrl()
 export const OPENREPLAY_PROJECT_KEY = {
     /* taken from stage to test if it works */
     dev: 'XpLyoDeHEHwkJbD7TIZA',

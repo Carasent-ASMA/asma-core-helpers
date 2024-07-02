@@ -18,7 +18,7 @@ interface IBasicEnv {
     OPENREPLAY_ENABLED_CUSTOMERS?: string[]
 }
 
-type IEnvironmentUrls = typeof EnvironmentsUrls1
+type IEnvironmentUrls = ReturnType<typeof EnvironmentsUrls1>
 
 export type IKeyEnvironmentUrls = keyof IEnvironmentUrls
 
@@ -39,8 +39,6 @@ export type IEnvironmentUrlsGenQLOnly = SRVKeys<IEnvironmentUrls> /* Omit<
 
 const fetchConfigsInstanceId = uuid4()
 const EnvConfigsFnInstanceId = uuid4()
-//console.info('fetchConfigsInstanceId', fetchConfigsInstanceId)
-//console.info('EnvConfigsFnInstanceId', EnvConfigsFnInstanceId)
 
 /**
  *
@@ -89,14 +87,14 @@ export function generateEnvConfigsBindings<
     ) /* | ISrvKeysTransformToWs<keyof T | IKeyEnvironmentUrls> */ &
         string,
     S,
->(envs_import: { envs: T }, required_envs: K[], static_env: S) {
+>(envs_import: { envs: T }, required_envs: K[], static_env: S, adcuris_subdomains?: string[]) {
     type IEnvConfigs = T & IEnvironmentUrls /* & Record<ISrvKeysTransformToWs<keyof T | IKeyEnvironmentUrls>, string> */
 
     let env_vars = {} as T
 
     let envConfigs = {} as Pick<IEnvConfigs, K extends keyof IEnvConfigs & string ? K : never> & S
 
-    let envUrls = EnvironmentsUrls1
+    let envUrls = EnvironmentsUrls1(adcuris_subdomains)
 
     function EnvConfigsFn() {
         if (Object.keys(envConfigs).length > 0) {

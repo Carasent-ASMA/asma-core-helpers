@@ -1,9 +1,8 @@
 export const realWindow = window.rawWindow || window
 
 const hostname_arr = () => {
-    console.log('realWindow: ', realWindow)
     return realWindow.location.hostname.split('.')
-} // fretex-dfsf.advoca.no
+}
 
 function getSubdomain() {
     let subdomain = ''
