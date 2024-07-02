@@ -18,7 +18,7 @@ import {
 export const EnvironmentsUrls1 = (adcuris_subdomains?: string[]) => {
     let base_url = computeBaseUrl()
 
-    if (/* domain === 'advoca' && */ adcuris_subdomains?.includes(subdomain)) {
+    if (/* domain === 'advoca' && */ env === 'prod' && adcuris_subdomains?.includes(subdomain)) {
         base_url = base_url + '/ac'
     }
 
