@@ -13,12 +13,13 @@ import {
     createOpenReplyIngestPoint,
     getOpenReplayKey,
     computeBaseUrl,
+    domain,
 } from '../helpers/initEnvConfigsVars'
 
 export const EnvironmentsUrls1 = (adcuris_subdomains?: string[]) => {
     let base_url = computeBaseUrl()
 
-    if (/* domain === 'advoca' && */ env === 'prod' && adcuris_subdomains?.includes(subdomain)) {
+    if (domain === 'advoca' && env === 'prod' && adcuris_subdomains?.includes(subdomain)) {
         base_url = base_url + '/ac'
     }
 
