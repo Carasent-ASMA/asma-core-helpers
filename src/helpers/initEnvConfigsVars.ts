@@ -169,7 +169,7 @@ export function computeBaseUrl() {
     return base_url
 }
 function computedSubdomain() {
-    if (env_to_operate?.includes('localhost')) {
+    if (env_to_operate?.includes('localhost') || window.location.host.includes('localhost')) {
         return subdomain ? subdomain + '.dev' : 'dev'
     }
 
