@@ -84,11 +84,11 @@ export async function initASMAAppVitals({
     //let registeredSubdomain = true
     let resRegisteredSubdomain: IResWithSubdomain | IResWithSubdomainOnError | undefined = undefined
     if (!is_child_app) {
-        realWindow.__asma_development_environment_to_operate__ = EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE as
+        realWindow.__asma_development_environment_to_operate__ = EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE /* as
             | 'dev'
             | 'test'
             | 'stage'
-            | 'prod'
+            | 'prod' */
 
         realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__ = realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__ || {
             EnvConfigsFnReg: {},
