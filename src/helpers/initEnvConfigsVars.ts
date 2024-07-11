@@ -175,9 +175,10 @@ function computedSubdomain() {
 
     // custom
     if (env_to_operate) {
-        console.error(
-            'subdomain is not provided, Consider avoiding using adopus, adcuris, advoca without specifying customer related subdomain.',
-        )
+        !subdomain &&
+            console.error(
+                'subdomain is not provided, Consider avoiding using adopus, adcuris, advoca without specifying customer related subdomain.',
+            )
         return env_to_operate === 'prod' ? 'web' : `${subdomain ? subdomain + '.' : ''}${env_to_operate}`
     }
 
