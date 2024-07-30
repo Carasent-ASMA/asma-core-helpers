@@ -6,6 +6,7 @@ import { parseJwt } from './parseJwt'
 import { asmaOverridesEventBus } from 'asma-event-bus/lib'
 import type { IBaseJwtClaims } from 'asma-types/lib'
 import { realWindow } from '..'
+import { get, set } from 'idb-keyval'
 
 //let logoutSuccessful = false
 
@@ -354,8 +355,35 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
 
         return res
     }
-    async function checkForRegisteredSubdomain() {
-        const data = await srvAuthGet<ICheckForRegisteredSubdomainResponse<FeatureEnums>>('/check?context=subdomain')
+    /**
+     *
+     * @param cache_ttl time for cache to live in hours default 24 hours
+     * @returns
+     */
+    async function checkForRegisteredSubdomain(cache_ttl = 24, do_not_cache = false) {
+        const url = `/check?context=subdomain`
+
+        if (do_not_cache) {
+            const cachedData = await get<{
+                timestamp: string
+                data: ICheckForRegisteredSubdomainResponse<FeatureEnums>
+            }>(url)
+
+            if (
+                cachedData?.timestamp &&
+                new Date().getTime() - new Date(cachedData.timestamp).getTime() < cache_ttl * 60 * 60 * 1000 &&
+                cachedData.data
+            ) {
+                return cachedData.data
+            }
+        }
+
+        const data = await srvAuthGet<ICheckForRegisteredSubdomainResponse<FeatureEnums>>(url)
+
+        await set(url, {
+            timestamp: Date.now(),
+            data,
+        })
 
         setAuthData(data)
 
