@@ -358,7 +358,8 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
     /**
      *
      * @param cache_ttl time for cache to live in hours default 24 hours
-     * @returns
+     * @returns ICheckForRegisteredSubdomainResponse primarily from cache if do_not_cache is false
+     * cache is saved in indexedDB
      */
     async function checkForRegisteredSubdomain(cache_ttl = 24, do_not_cache = false) {
         const url = `/check?context=subdomain`
