@@ -170,7 +170,7 @@ export function computeBaseUrl() {
 }
 function computedSubdomain() {
     if (env_to_operate?.includes('localhost') || window.location.host.includes('localhost')) {
-        return subdomain ? subdomain + '.dev' : 'dev'
+        return subdomain ? subdomain + '.dev' : 'web.dev'
     }
 
     // custom
@@ -183,7 +183,7 @@ function computedSubdomain() {
     }
 
     if (subdomain === 'cdn') {
-        return 'dev'
+        return 'web.dev'
     }
 
     /*  if (subdomain) {
