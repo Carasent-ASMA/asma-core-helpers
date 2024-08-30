@@ -211,7 +211,7 @@ export const OPENREPLAY_PROJECT_KEY = {
     stage: 'XpLyoDeHEHwkJbD7TIZA',
     blue: '',
     prod: {
-        adopus: 'KNLGWH1lQcc2dP8Hby4U',
+        adopus: 'AGpq7EYp2kOvdBJPi2Nx',
         adcuris: '5xkUqBHxTkLoHW1hXm1p',
     },
 }
