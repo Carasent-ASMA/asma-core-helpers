@@ -1,6 +1,6 @@
 import { EventBus } from 'asma-event-bus/lib/event-buss'
 import { EnvironmentEnums } from '../interfaces/enums'
-import { setTheme } from './checkForRegisteredSubdomains'
+import { getTheme, setTheme } from './checkForRegisteredSubdomains'
 import { EnvConfigsFnInternal } from './generateEnvConfigsBindings'
 import { parseJwt } from './parseJwt'
 import { asmaOverridesEventBus } from 'asma-event-bus/lib'
@@ -165,6 +165,8 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
 
     let _isTeamLeader: boolean | undefined
 
+    let default_app_versions: Record<string, string> | undefined
+
     const isJwtInvalid = () => (jwtToken && accessTokenHasExpired()) || !jwtToken
 
     const isJwtValid = () => !isJwtInvalid()
@@ -256,7 +258,20 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
         srvAuthGet('/signout')
     })
 
-    async function signin(url: string, headers?: Record<string, string>) {
+    async function signin(url: string, headers?: Record<string, string>): Promise<ISigninResponse<FeatureEnums>> {
+        if (isJwtValid()) {
+            return {
+                features: features ? Array.from(features) : [],
+                token: jwtToken,
+                connector: connector,
+                openreplay: openreplay,
+                srv_urls: srv_urls,
+                theme: getTheme(),
+                isTeamLeader: _isTeamLeader || false,
+                default_app_versions: default_app_versions || {},
+                message: 'Success',
+            }
+        }
         const data = await srvAuthGet<ISigninResponse<FeatureEnums>>(url, headers)
 
         setAuthData(data)
@@ -290,6 +305,8 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
             parsed_jwt = parseJwt(jwtToken)
 
             srv_urls = data.srv_urls
+
+            default_app_versions = data.default_app_versions
 
             dispatchJwtChangedEvent(parsed_jwt)
 
