@@ -378,9 +378,9 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
      * @returns ICheckForRegisteredSubdomainResponse primarily from cache if do_not_cache is false
      * cache is saved in indexedDB
      */
-    async function checkForRegisteredSubdomain(cache_ttl = 24, do_not_cache = false) {
+    async function checkForRegisteredSubdomain(_cache_ttl = 24, _do_not_cache = false) {
         const url = `/check?context=subdomain`
-
+        /* 
         if (do_not_cache) {
             const cachedData = await get<{
                 timestamp: string
@@ -394,7 +394,7 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
             ) {
                 return cachedData.data
             }
-        }
+        } */
 
         const data = await srvAuthGet<ICheckForRegisteredSubdomainResponse<FeatureEnums>>(url)
 
