@@ -10,19 +10,19 @@ export function parseJwt<R>(jwtToken: string) {
         return JSON.parse(decodeURIComponent(escape(realWindow.atob(base64Url)))) as R
     } catch (e) {
         console.error(
-            'Error parsing jwt, JSON.parse(decodeURIComponent(escape(realWindow.atob(base64Url)))): ',
-            e,
             'tried to decode base64Url: ',
             base64Url,
+            'Error parsing jwt, JSON.parse(decodeURIComponent(escape(realWindow.atob(base64Url)))): ',
+            e,
         )
         try {
             return JSON.parse(realWindow.atob(base64Url)) as R
         } catch (e) {
             console.error(
-                'Error parsing jwt second step JSON.parse(realWindow.atob(base64Url)): ',
-                e,
                 'tried to decode base64Url: ',
                 base64Url,
+                'Error parsing jwt second step JSON.parse(realWindow.atob(base64Url)): ',
+                e,
             )
             return
         }
