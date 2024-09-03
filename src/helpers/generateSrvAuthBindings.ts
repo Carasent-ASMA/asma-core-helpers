@@ -6,7 +6,7 @@ import { parseJwt } from './parseJwt'
 import { asmaOverridesEventBus } from 'asma-event-bus/lib'
 import type { IBaseJwtClaims } from 'asma-types/lib'
 import { realWindow } from '..'
-import { get, set } from 'idb-keyval'
+import { get as _, set } from 'idb-keyval'
 
 //let logoutSuccessful = false
 
