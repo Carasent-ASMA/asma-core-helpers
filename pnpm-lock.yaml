@@ -11,6 +11,9 @@ importers:
       asma-event-bus:
         specifier: ^0.7.0
         version: 0.7.0
+      asma-helpers:
+        specifier: ^0.33.5
+        version: 0.33.5
       idb-keyval:
         specifier: ^6.2.1
         version: 6.2.1
@@ -69,6 +72,9 @@ packages:
 
   asma-event-bus@0.7.0:
     resolution: {integrity: sha512-sDYyPSXQ6EYeG+mWWbXiAQWQuH93jOdP3SfiG0iT63q+Y83RUwCPog7ECPj+ggz8nhciNQTKEfwJJgJVnIwoFQ==}
+
+  asma-helpers@0.33.5:
+    resolution: {integrity: sha512-r5XCR6CQJPIwOa4PldzzoXByaQnSEB4C3QAThznIhsADloNGHlO8sOBIJ0wz6HSdKKnuEWA13yGdfYwP+Rxb4w==}
 
   asma-qiankun-react-loader@0.6.51:
     resolution: {integrity: sha512-o1ONvw8ZQLRFj6Kdz7UyGVJSbYyoUabi3wkqbVhSdn8/UDG6X1+C8OOZrCgDdkgxRUSdVJbopZLcbTSqTFWGaQ==}
@@ -250,6 +256,13 @@ snapshots:
   asma-event-bus@0.7.0:
     dependencies:
       asma-types: 2.0.5
+
+  asma-helpers@0.33.5:
+    dependencies:
+      asma-event-bus: 0.7.0
+      idb-keyval: 6.2.1
+      mobx: 6.12.3
+      mobx-state-tree: 5.4.2(mobx@6.12.3)
 
   asma-qiankun-react-loader@0.6.51:
     dependencies:
