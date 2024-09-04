@@ -1,11 +1,18 @@
 import { realWindow } from '..'
 
+/**
+ *
+ * @param jwtToken
+ * @deprecated do not use this anymore, in stead jwt claims will be sent from the server in form of plain object
+ *  #TODO: this function can be removed after 01.11.2024
+ */
 export function parseJwt<R>(jwtToken: string) {
     let base64Url = jwtToken?.split('.')[1]
 
     if (!base64Url) {
         return
     }
+
     try {
         return JSON.parse(decodeURIComponent(escape(realWindow.atob(base64Url)))) as R
     } catch (e) {
