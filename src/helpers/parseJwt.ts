@@ -6,7 +6,6 @@ export function parseJwt<R>(jwtToken: string) {
     if (!base64Url) {
         return
     }
-    base64Url = splitAndValidateBase64(base64Url)
     try {
         return JSON.parse(decodeURIComponent(escape(realWindow.atob(base64Url)))) as R
     } catch (e) {
