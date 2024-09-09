@@ -9,7 +9,7 @@ import { EnvConfigsFnInternal, fetchConfigsInternal } from './generateEnvConfigs
 import { getCachedJwtInternal, isJwtValidInternal, registerCallbackOnSrvAuthEvents } from './generateSrvAuthBindings'
 import { isNotEmptyObjArr } from './IsNotEmpty'
 import { subdomain } from './getSubdomain'
-import { getThemeInternal, realWindow } from '..'
+import { realWindow } from '..'
 //import { registerOpenReplay } from './registerOpenReplay'
 
 type IInitASMAAppVitalsParams = {
@@ -113,9 +113,8 @@ export async function initASMAAppVitals({
                     brukerBrukerNavn,
                     subdomain,
                 })
+                appendAsmaLogoLink(resRegisteredSubdomain.props.theme, subdomain_check.logos, subdomain_check.service)
             }
-
-            appendAsmaLogoLink(subdomain_check.logos, subdomain_check.service)
         }
     }
 
@@ -156,14 +155,20 @@ export async function initASMAAppVitals({
 const asmaLogoLink = 'asma-logo-link'
 
 function appendAsmaLogoLink(
-    /**
-     * @deprecated one need remove this. Please do not use it anymore
-     */
+    theme: string | undefined,
     { carasentLogo, fretexLogo }: { fretexLogo: string; carasentLogo: string },
     service: 'app-shell' | 'advoca-portal' | 'app-advoca',
 ) {
-    let theme = getThemeInternal()
-    console.info('appendAsmaLogoLink theme:', theme)
+    if (!theme) {
+        console.error('theme is not defined fallback to default')
+
+        if (subdomain === 'fretex') {
+            theme = 'fretex'
+        } else {
+            theme = 'greenish'
+        }
+    }
+
     if (service === 'advoca-portal') {
         theme = 'default'
     }
@@ -178,7 +183,7 @@ function appendAsmaLogoLink(
 
     link.setAttribute('id', asmaLogoLink)
 
-    if (theme === 'fretex') {
+    if (subdomain === 'fretex') {
         document.title = 'Fretex'
         link.setAttribute('href', fretexLogo)
     } else {

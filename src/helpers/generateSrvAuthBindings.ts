@@ -502,6 +502,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     function getConnector() {
         return metadata?.journal
     }
+
     function getTheme() {
         if (!metadata?.theme) {
             console.warn('no theme present in the metadata', 'metadata: ', metadata)
