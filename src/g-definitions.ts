@@ -3,6 +3,7 @@ import type { ICheckResponse, IOpenReplay, ISigninResponse } from './helpers/gen
 import type { IGlobalOpenReplay } from './helpers/openReplayObject'
 import { realWindow } from '.'
 import type { ICheckSigninOptions, ICheckSigninTransformedOptions } from './helpers/generateSrvAuthBindings.types'
+import type { IBaseJwtClaims } from 'asma-types/lib'
 //import type { IGenerateSRVAuthBindings } from './helpers/generateSrvAuthBindings'
 //import type { IGenerateSRVAuthBindings } from './helpers/generateSrvAuthBindings'
 export {}
@@ -35,7 +36,7 @@ export type IAuthBindings<FE extends string> = {
      *
      * @deprecated use getMetadata instead
      */
-    getParsedJwt: () => ICheckSigninTransformedOptions<FE> | undefined
+    getParsedJwt: () => IBaseJwtClaims<never> | undefined
     getMetadata: () => ICheckSigninTransformedOptions<FE> | undefined
     hasFeature: (feature: FE) => boolean
     signin: (url: string, headers?: Record<string, string> | undefined) => Promise<ISigninResponse<FE>>
