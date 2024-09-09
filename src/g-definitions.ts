@@ -36,7 +36,7 @@ export type IAuthBindings<FE extends string> = {
      *
      * @deprecated use getMetadata instead
      */
-    getParsedJwt: () => IBaseJwtClaims<never> | undefined
+    getParsedJwt: () => Omit<IBaseJwtClaims<never>, 'subdomain' | 'genesis_set'> | undefined
     getMetadata: () => ICheckSigninTransformedOptions<FE> | undefined
     hasFeature: (feature: FE) => boolean
     signin: (url: string, headers?: Record<string, string> | undefined) => Promise<ISigninResponse<FE>>

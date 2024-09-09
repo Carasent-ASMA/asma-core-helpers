@@ -432,13 +432,11 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
                 vt: metadata.vt,
                 role: metadata.user_role as never,
                 name: metadata.user_name || '',
-                region: '',
-                subdomain: '',
-                genesis_set: '',
+                region: metadata.region || '',
                 journal_role: metadata.journal_role || '',
                 user_id: metadata.user_id as IUUID,
                 brukerBrukerNavn: metadata.brukerBrukerNavn || '',
-            } satisfies IBaseJwtClaims<never>
+            } satisfies Omit<IBaseJwtClaims<never>, 'subdomain' | 'genesis_set'>
         }
         return undefined
     }
