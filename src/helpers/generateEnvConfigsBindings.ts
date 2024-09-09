@@ -139,24 +139,13 @@ export function generateEnvConfigsBindings<
     const envs = envs_import.envs
 
     env_vars = { ...envUrls, ...envs }
-    /**
-     * @deprecated remove in next major version this does nothing anymore
-     */
-    function fetchConfigs() {
-        '_'
-        //console.info('fetchConfigs does nothing remove in next major version!')
-        // if (env_vars.DEVELOPMENT) {
-        // const envUrls_import = (await import('./EnvironmentsUrls')).default(env_vars.ENVIRONMENT_TO_OPERATE)
-        // envUrls = { ...envUrls, ...envUrls_import }
-        // }
-    }
+
     realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__ = realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__ || {
         EnvConfigsFnReg: {},
         fetchConfigsReg: {},
     }
 
-    realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__.fetchConfigsReg[fetchConfigsInstanceId] = fetchConfigs
     realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__.EnvConfigsFnReg[EnvConfigsFnInstanceId] = EnvConfigsFn
 
-    return { EnvConfigsFn, fetchConfigs }
+    return { EnvConfigsFn }
 }

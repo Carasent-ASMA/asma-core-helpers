@@ -3,8 +3,8 @@ import { realWindow } from '..'
 
 const OpenReplayObject = {
     started: false,
-    userIdSet: false,
-    metadataSet: {} as { customer_id?: Boolean; user_name?: boolean; journal_user_id?: boolean },
+    // userIdSet: false,
+    //metadataSet: {} as { customer_id?: Boolean; user_name?: boolean; journal_user_id?: boolean },
     tracker: undefined as Tracker | undefined,
 
     // eslint-disable-next-line @typescript-eslint/ban-types
@@ -29,19 +29,19 @@ export function getOpenReplayTrackerObject<Keys extends keyof IGlobalOpenReplay>
     }
     return OpenReplayObject[name]
 }
-export function getOpenReplayMetadataSet<Keys extends keyof IGlobalOpenReplay['metadataSet']>(key: Keys) {
+/* export function getOpenReplayMetadataSet<Keys extends keyof IGlobalOpenReplay['metadataSet']>(key: Keys) {
     if (realWindow.__ASMA__SHELL__?.openreplay_object) {
         return realWindow.__ASMA__SHELL__.openreplay_object.metadataSet[key]
     }
     return OpenReplayObject.metadataSet[key]
-}
+} */
 
 export function resetOpenReplayTrackerObject() {
     OpenReplayObject.started = false
     const res = OpenReplayObject.tracker?.stop()
     console.info('OpenReplay stop:', res)
-    OpenReplayObject.userIdSet = false
-    OpenReplayObject.metadataSet = {}
+    //OpenReplayObject.userIdSet = false
+    //OpenReplayObject.metadataSet = {}
     OpenReplayObject.tracker = undefined
     OpenReplayObject.trackerProfiler = undefined
     OpenReplayObject.trackerGraphQL = undefined
@@ -62,7 +62,7 @@ export function setOpenReplayTrackerObject<Key extends keyof IGlobalOpenReplay>(
 
     realWindow.__ASMA__SHELL__.openreplay_object = OpenReplayObject
 }
-export function setOpenReplayTrackerObjectMetadataSet<Key extends keyof IGlobalOpenReplay['metadataSet']>(
+/* export function setOpenReplayTrackerObjectMetadataSet<Key extends keyof IGlobalOpenReplay['metadataSet']>(
     name: Key,
     module: IGlobalOpenReplay['metadataSet'][Key],
 ) {
@@ -71,4 +71,4 @@ export function setOpenReplayTrackerObjectMetadataSet<Key extends keyof IGlobalO
     realWindow.__ASMA__SHELL__ = realWindow.__ASMA__SHELL__ || {}
 
     realWindow.__ASMA__SHELL__.openreplay_object = OpenReplayObject
-}
+} */

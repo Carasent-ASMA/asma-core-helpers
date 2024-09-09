@@ -2,8 +2,9 @@ import {
     //srvAuthGetInternal,
     //type IOpenReplay,
     checkForRegisteredSubdomainInternal,
+    isJwtValidInternal,
 } from './generateSrvAuthBindings'
-import { _setOpenReplayConfig } from './openReplayConfigs'
+//import { _setOpenReplayConfig } from './openReplayConfigs'
 //import { redirectFromSubdomainToDomain } from './getSubdomain'
 import type { ICheckSigninOptions } from './generateSrvAuthBindings.types'
 
@@ -61,24 +62,23 @@ export type IResWithSubdomain = {
 
 export type IResWithSubdomainOnError = { error: true; registeredSubdomain: boolean; message: string; code: number }
 
-export async function checkForRegisteredSubdomain({
-    setSelectedCustomer,
-    // logos,
-    authenticated,
-}: //service,
-{
-    /**
-     * @deprecated one need remove this. Please do not use it anymore.
-     */
-    redirect_if_not_exists?: boolean
-    setSelectedCustomer?: (customer_id: string) => void
-    //logos: { fretexLogo: string; carasentLogo: string }
-    authenticated: () => boolean
-    /**
-     * @deprecated one need remove this. Please do not use it anymore
-     */
-    //service: 'app-shell' | 'advoca-portal' | 'app-advoca'
-}): Promise<IResWithSubdomain | IResWithSubdomainOnError> {
+export async function checkForRegisteredSubdomain /* {}:  */(): Promise<IResWithSubdomain | IResWithSubdomainOnError> { // setSelectedCustomer,
+// logos,
+//authenticated,
+//service,
+//{
+/**
+ * @deprecated one need remove this. Please do not use it anymore.
+ */
+//redirect_if_not_exists?: boolean
+//setSelectedCustomer?: (customer_id: string) => void
+//logos: { fretexLogo: string; carasentLogo: string }
+//authenticated: () => boolean
+/**
+ * @deprecated one need remove this. Please do not use it anymore
+ */
+//service: 'app-shell' | 'advoca-portal' | 'app-advoca'
+/* } */
     try {
         /*  const { unregister } = onThemeChange(({ theme }) => {
             appendAsmaLogoLink(theme, logos, service)
@@ -86,12 +86,12 @@ export async function checkForRegisteredSubdomain({
 
         const res = await checkForRegisteredSubdomainInternal()
 
-        if (res?.metadata.customer_id) {
+        /* if (res?.metadata.customer_id) {
             setSelectedCustomer?.(res.metadata.customer_id)
-        }
-        if (res?.metadata.openreplay) {
+        } */
+        /*  if (res?.metadata.openreplay) {
             _setOpenReplayConfig(res.metadata.openreplay)
-        }
+        } */
 
         /*  if (res?.metadata.theme) {
             setTheme(res.metadata.theme)
@@ -101,7 +101,7 @@ export async function checkForRegisteredSubdomain({
             redirectFromSubdomainToDomain()
         } */
 
-        return { props: res!.metadata, registeredSubdomain: authenticated() || !!res?.metadata.customer_id }
+        return { props: res!.metadata, registeredSubdomain: isJwtValidInternal() || !!res?.metadata.customer_id }
     } catch (e) {
         console.error(e)
 

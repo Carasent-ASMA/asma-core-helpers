@@ -5,7 +5,7 @@ import {
     type IResWithSubdomainOnError,
 } from './checkForRegisteredSubdomains'
 import { clearCacheData } from './clearCacheData'
-import { EnvConfigsFnInternal, fetchConfigsInternal } from './generateEnvConfigsBindings'
+import { EnvConfigsFnInternal } from './generateEnvConfigsBindings'
 import { getCachedJwtInternal, isJwtValidInternal, registerCallbackOnSrvAuthEvents } from './generateSrvAuthBindings'
 import { isNotEmptyObjArr } from './IsNotEmpty'
 import { subdomain } from './getSubdomain'
@@ -24,16 +24,6 @@ type IInitASMAAppVitalsParams = {
      * add qiankunWindow.__POWERED_BY_QIANKUN__ there where qiankunWindow is available
      */
     onChangeAuthenticated: (authenticated: boolean) => void
-    registerOpenReplay?: (
-        startForSpecificCustomer: boolean | undefined,
-        props: {
-            journal: string
-            customer_id?: string
-            brukerBrukerNavn?: string
-            user_id?: string
-            subdomain?: string
-        },
-    ) => Promise<void>
     mst_stores?: object[]
     subdomain_check?: {
         /**
@@ -61,7 +51,6 @@ export async function initASMAAppVitals({
     is_child_app = false,
     subdomain_check,
     setLoadMicroApp,
-    registerOpenReplay,
 }: IInitASMAAppVitalsParams): Promise<IResWithSubdomain | IResWithSubdomainOnError | undefined> {
     /**
      * !!!ORDER IMPORTANT!!!
@@ -70,7 +59,6 @@ export async function initASMAAppVitals({
      * mst_stores_toPersist - array of mst stores that should be persisted in indexedDB
      * data_for_registered_subdomain_check - data needed to check if subdomain is registered to an exiting tenant in the db
      */
-    await fetchConfigsInternal()
 
     if (!is_child_app) {
         await clearCacheData(EnvConfigsFnInternal().CACHE_VERSION)
@@ -98,21 +86,9 @@ export async function initASMAAppVitals({
         realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__.EnvConfigsFn = EnvConfigsFnInternal
 
         if (subdomain_check) {
-            resRegisteredSubdomain = await checkForRegisteredSubdomain({
-                //...subdomain_check,
-                authenticated: isJwtValidInternal,
-            })
+            resRegisteredSubdomain = await checkForRegisteredSubdomain()
 
             if ('props' in resRegisteredSubdomain) {
-                const { journal, customer_id, user_id, brukerBrukerNavn } = resRegisteredSubdomain.props
-                console.info('registerOpenReplay props:', resRegisteredSubdomain.props)
-                registerOpenReplay?.(undefined, {
-                    journal: journal || 'UNKNOWN',
-                    customer_id,
-                    user_id,
-                    brukerBrukerNavn,
-                    subdomain,
-                })
                 appendAsmaLogoLink(resRegisteredSubdomain.props.theme, subdomain_check.logos, subdomain_check.service)
             }
         }
