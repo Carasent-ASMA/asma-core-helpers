@@ -22,6 +22,13 @@ type IOverviews = {
     }[]
 }[]
 
+export type ICheckSigninTransformedOptions<IFeaturesArr extends string> = Omit<
+    ICheckSigninOptions<IFeaturesArr>,
+    'features'
+> & {
+    features: Set<IFeaturesArr>
+}
+
 export type ICheckSigninOptions<IFeaturesArr extends string> = Pick<
     ITherapistOrSuperUserJwtClaims<any>,
     //| 'user_id' // Made optional
@@ -43,7 +50,7 @@ export type ICheckSigninOptions<IFeaturesArr extends string> = Pick<
     overviews?: IOverviews
     device_authorized?: boolean
     theme?: string
-    features?: Set<IFeaturesArr>
+    features?: IFeaturesArr[]
     user_id?: string // Made optional
     brukerBrukerNavn?: string // Made optional
     user_role?: 'super_user' | 'therapist' | 'recipient'

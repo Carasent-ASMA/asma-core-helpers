@@ -5,7 +5,7 @@ import { EnvConfigsFnInternal } from './generateEnvConfigsBindings'
 import { asmaOverridesEventBus } from 'asma-event-bus/lib'
 import { realWindow, type IAuthBindings } from '..'
 import { get as _ } from 'idb-keyval'
-import type { ICheckSigninOptions } from './generateSrvAuthBindings.types'
+import type { ICheckSigninOptions, ICheckSigninTransformedOptions } from './generateSrvAuthBindings.types'
 
 //let logoutSuccessful = false
 
@@ -131,7 +131,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     }
     let jwtToken = ''
 
-    let metadata: ICheckSigninOptions<FE> | undefined
+    let metadata: ICheckSigninTransformedOptions<FE> | undefined
 
     const isJwtInvalid = () => (jwtToken && accessTokenHasExpired()) || !jwtToken
 
@@ -224,7 +224,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     })
 
     async function signin(url: string, headers?: Record<string, string>): Promise<ISigninResponse<FE>> {
-        if (isJwtValid()) {
+        if (isJwtValid() && metadata) {
             return {
                 //features: metadata?.features ? Array.from(metadata.features) : [],
                 token: jwtToken,
@@ -234,7 +234,10 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
                 //   theme: getTheme(),
                 //   isTeamLeader: metadata?.isTeamLeader || false,
                 //   default_app_versions: metadata?.default_app_versions || {},
-                metadata: metadata,
+                metadata: {
+                    ...metadata,
+                    features: metadata?.features ? Array.from(metadata.features) : undefined,
+                },
                 message: 'Success',
             }
         }
@@ -252,8 +255,11 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     function setAuthData(data?: Partial<ISigninResponse<FE>>) {
         if (data?.token) {
             jwtToken = data?.token
-
-            metadata = data.metadata
+            if (data.metadata) {
+                metadata = { ...data.metadata, features: new Set(data.metadata?.features) }
+            } else {
+                console.error('metadata is not defined in data', 'data: ', data)
+            }
 
             dispatchJwtChangedEvent(data.metadata)
 
@@ -341,7 +347,10 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         } */
         if (isJwtInvalid() && metadata) {
             return {
-                metadata,
+                metadata: {
+                    ...metadata,
+                    features: metadata?.features ? Array.from(metadata.features) : undefined,
+                },
                 message: 'Success',
             }
         }
@@ -397,9 +406,9 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     function getFeatures() {
         if (!metadata?.features) {
             console.warn('no features present in the metadata', 'metadata: ', metadata)
-            return []
+            return
         }
-        return metadata.features
+        return Array.from(metadata.features)
     }
     function getSrvUrls() {
         if (!metadata?.srv_urls) {
