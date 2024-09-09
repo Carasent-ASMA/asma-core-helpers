@@ -245,8 +245,8 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         return data
     }
 
-    function getUserId(): string {
-        return getMetadata()?.['user_id'] || '-1'
+    function getUserId() {
+        return getMetadata()?.user_id
     }
 
     function setAuthData(data?: Partial<ISigninResponse<FE>>) {
@@ -488,6 +488,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
          * @deprecated use registerCallbackOnSrvAuthEvents directly
          */
         registerOnJwtChanges: registerCallbackOnSrvAuthEvents,
+        registerCallbackOnSrvAuthEvents,
         getUserId,
         /**
          * @deprecated use getMetadata
@@ -499,7 +500,8 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         accessTokenHasExpired,
         checkForRegisteredSubdomain,
         isTeamLeader,
-    } as IAuthBindings
+    } satisfies IAuthBindings<FE>
+
     realWindow.__ASMA__SHELL__ = realWindow.__ASMA__SHELL__ || {}
 
     realWindow.__ASMA__SHELL__.auth_bindings = auth_bindings

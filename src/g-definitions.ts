@@ -1,7 +1,8 @@
 import { type History, createBrowserHistory } from 'history'
-import type { ICheckResponse, IOpenReplay } from './helpers/generateSrvAuthBindings'
+import type { ICheckResponse, IOpenReplay, ISigninResponse } from './helpers/generateSrvAuthBindings'
 import type { IGlobalOpenReplay } from './helpers/openReplayObject'
 import { realWindow } from '.'
+import type { ICheckSigninOptions } from './helpers/generateSrvAuthBindings.types'
 //import type { IGenerateSRVAuthBindings } from './helpers/generateSrvAuthBindings'
 //import type { IGenerateSRVAuthBindings } from './helpers/generateSrvAuthBindings'
 export {}
@@ -10,7 +11,7 @@ export {}
  *  declare optional rawWindow  which is added by micro-app framework in child apps
  * when is used @micro-zoe/micro-app package
  */
-export type IAuthBindings = {
+export type IAuthBindings<FE extends string> = {
     getTheme: () => string | undefined
     isJwtValid: () => boolean
     getConnector: () => string | undefined
@@ -25,7 +26,63 @@ export type IAuthBindings = {
         headers: Record<string, string>
     }>
     getSrvUrls: () => Record<'ao_wrapper' | 'connector', string> | undefined
-    checkForRegisteredSubdomain: <FE extends string>() => Promise<Omit<ICheckResponse<FE>, 'features'> | undefined>
+    checkForRegisteredSubdomain: (
+        _cache_ttl?: number,
+        _do_not_cache?: boolean,
+    ) => Promise<ICheckResponse<FE> | undefined>
+    getNewJwtToken: () => Promise<string | undefined>
+    /**
+     *
+     * @deprecated use getMetadata instead
+     */
+    getParsedJwt: () => ICheckSigninOptions<FE> | undefined
+    getMetadata: () => ICheckSigninOptions<FE> | undefined
+    hasFeature: (feature: FE) => boolean
+    signin: (url: string, headers?: Record<string, string> | undefined) => Promise<ISigninResponse<FE>>
+    isTeamLeader: () => boolean
+    getFeatures: () => Set<FE> | never[]
+    /**
+     *
+     * @deprecated use dispatchLogoutEvent instead
+     */
+    signoutAuth: () => void
+    dispatchLogoutEvent: () => void
+    /**
+     *
+     * @deprecated use getCachedJwt instead
+     */
+    getJwtTokenAsync: () => Promise<string | undefined>
+    getOpenReplay: () => IOpenReplay | undefined
+    /**
+     * @deprecated use registerCallbackOnSrvAuthEvents directly
+     */
+    registerOnJwtChanges: <Key_1 extends 'logout_event' | 'jwt_changed' | 'customer_changed'>(
+        event: Key_1,
+        callback: (
+            val: {
+                jwt_changed?: ICheckSigninOptions<any>
+                logout_event: {}
+                customer_changed: {}
+            }[Key_1],
+        ) => void,
+    ) => {
+        unregister: () => void
+    }
+    registerCallbackOnSrvAuthEvents: <Key_1 extends 'logout_event' | 'jwt_changed' | 'customer_changed'>(
+        event: Key_1,
+        callback: (
+            val: {
+                jwt_changed?: ICheckSigninOptions<any>
+                logout_event: {}
+                customer_changed: {}
+            }[Key_1],
+        ) => void,
+    ) => {
+        unregister: () => void
+    }
+    getUserId: () => string | undefined
+    getJwtToken: () => string
+    accessTokenHasExpired: () => boolean
 }
 declare global {
     interface Window {
@@ -59,7 +116,7 @@ declare global {
             openreplay_configs?: IOpenReplay
             openreplay_object?: IGlobalOpenReplay
             history?: History
-            auth_bindings?: IAuthBindings //IGenerateSRVAuthBindings
+            auth_bindings?: IAuthBindings<any> //IGenerateSRVAuthBindings
             isLogged?: () => boolean
             logoutUser?: () => void
             //logoutMfes?: (() => void)[]
