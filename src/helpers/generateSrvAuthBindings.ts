@@ -1,17 +1,16 @@
 import { EventBus } from 'asma-event-bus/lib/event-buss'
 import { EnvironmentEnums } from '../interfaces/enums'
-import { getTheme, setTheme } from './checkForRegisteredSubdomains'
+import { setTheme } from './checkForRegisteredSubdomains'
 import { EnvConfigsFnInternal } from './generateEnvConfigsBindings'
-import { parseJwt } from './parseJwt'
 import { asmaOverridesEventBus } from 'asma-event-bus/lib'
-import type { IBaseJwtClaims } from 'asma-types/lib'
-import { realWindow } from '..'
-import { get as _, set } from 'idb-keyval'
+import { realWindow, type IAuthBindings } from '..'
+import { get as _ } from 'idb-keyval'
+import type { ICheckSigninOptions } from './generateSrvAuthBindings.types'
 
 //let logoutSuccessful = false
 
 export const { dispatch: dispatchSrvAuthEvents, register: registerCallbackOnSrvAuthEvents } = EventBus<{
-    jwt_changed?: IBaseJwtClaims<'super_user' | 'therapist' | 'recipient'>
+    jwt_changed?: ICheckSigninOptions<any> //IBaseJwtClaims<'super_user' | 'therapist' | 'recipient'>
     logout_event: {}
     customer_changed: {}
 }>('auth-bindings')
@@ -19,7 +18,7 @@ export const { dispatch: dispatchSrvAuthEvents, register: registerCallbackOnSrvA
 function dispatchLogoutEvent() {
     dispatchSrvAuthEvents('logout_event', {}, false)
 }
-function dispatchJwtChangedEvent(jwt?: IBaseJwtClaims<any>) {
+function dispatchJwtChangedEvent(jwt?: ICheckSigninOptions<any>) {
     dispatchSrvAuthEvents('jwt_changed', jwt, false)
 }
 /**
@@ -111,38 +110,18 @@ export type IOpenReplay = {
     profiler: boolean
 }
 
-export type ISigninResponse<FE> = {
-    id?: string
-    user_id?: string
-    brukerBrukerNavn?: string
-    journal_user_id?: string
-    customer_name?: string
-    user_name?: string
-    device_authorized?: boolean
+export type ISigninResponse<FE extends string> = {
     message: 'Success'
     token: string
-    features: FE[]
-    openreplay?: IOpenReplay
-    theme: string
-    connector?: string
-    srv_urls?: ISrvUrls //typeof srv_urls
-    default_app_versions: Record<string, string>
-    isTeamLeader: boolean
+    metadata?: ICheckSigninOptions<FE>
+}
+export type ICheckResponse<FE extends string> = {
+    metadata: ICheckSigninOptions<FE>
+    message: 'Success'
+    token?: string
 }
 
-type RequiredKeys = 'id' | 'theme' | 'openreplay' | 'device_authorized' | 'default_app_versions' | 'customer_name'
-export type ICheckForRegisteredSubdomainResponse<FE> = Required<Pick<ISigninResponse<FE>, RequiredKeys>> &
-    Partial<Omit<ISigninResponse<FE>, RequiredKeys>>
-
-export type ISrvUrls = Record<'ao_wrapper' | 'connector', string>
-
-export function generateSrvAuthBindings<FeatureEnums extends string>(
-    //SRV_AUTH: () => string,
-    //DEVELOPMENT: () => boolean,
-    //EnvironmentToOperateFn: () => string,
-    //EnvConfigsFn: EnvConfigsFn,
-    logout?: () => void,
-) {
+export function generateSrvAuthBindings<FE extends string>(logout?: () => void) {
     if (logout) {
         registerCallbackOnSrvAuthEvents('logout_event', logout)
     }
@@ -150,28 +129,14 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
     if (realWindow.__ASMA__SHELL__?.auth_bindings) {
         return realWindow.__ASMA__SHELL__.auth_bindings as typeof auth_bindings
     }
-
     let jwtToken = ''
 
-    let features: Set<FeatureEnums> | undefined
-
-    let connector: string | undefined
-
-    let parsed_jwt: (IBaseJwtClaims<any> & { exp: number }) | undefined
-
-    let srv_urls: ISrvUrls | undefined //Record<'ao_wrapper' | 'connector', string> | undefined
-
-    let openreplay: IOpenReplay | undefined
-
-    let _isTeamLeader: boolean | undefined
-
-    let default_app_versions: Record<string, string> | undefined
+    let metadata: ICheckSigninOptions<FE> | undefined
 
     const isJwtInvalid = () => (jwtToken && accessTokenHasExpired()) || !jwtToken
 
     const isJwtValid = () => !isJwtInvalid()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const promiseRegistry: Record<string, Promise<Response>> = <{}>{}
 
     async function srvAuthGet<R>(url: string, headers?: Record<string, string>): Promise<R> {
@@ -239,7 +204,7 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
     }
 
     function accessTokenHasExpired(): boolean {
-        const tokenObj = getParsedJwt()
+        const tokenObj = getMetadata()
 
         const accessTokenExpDate = tokenObj?.exp || 0
 
@@ -258,21 +223,22 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
         srvAuthGet('/signout')
     })
 
-    async function signin(url: string, headers?: Record<string, string>): Promise<ISigninResponse<FeatureEnums>> {
+    async function signin(url: string, headers?: Record<string, string>): Promise<ISigninResponse<FE>> {
         if (isJwtValid()) {
             return {
-                features: features ? Array.from(features) : [],
+                //features: metadata?.features ? Array.from(metadata.features) : [],
                 token: jwtToken,
-                connector: connector,
-                openreplay: openreplay,
-                srv_urls: srv_urls,
-                theme: getTheme(),
-                isTeamLeader: _isTeamLeader || false,
-                default_app_versions: default_app_versions || {},
+                // connector: metadata?.journal,
+                //  openreplay: metadata?.openreplay,
+                //   srv_urls: metadata?.srv_urls,
+                //   theme: getTheme(),
+                //   isTeamLeader: metadata?.isTeamLeader || false,
+                //   default_app_versions: metadata?.default_app_versions || {},
+                metadata: metadata,
                 message: 'Success',
             }
         }
-        const data = await srvAuthGet<ISigninResponse<FeatureEnums>>(url, headers)
+        const data = await srvAuthGet<ISigninResponse<FE>>(url, headers)
 
         setAuthData(data)
 
@@ -280,56 +246,25 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
     }
 
     function getUserId(): string {
-        return getParsedJwt()?.['user_id'] || '-1'
+        return getMetadata()?.['user_id'] || '-1'
     }
 
-    function setAuthData(
-        data?: Partial<ISigninResponse<FeatureEnums>> /* {
-        token: string
-        features?: FeatureEnums[]
-        connector?: string
-        openreplay?: IOpenReplay
-        theme?: string
-        srv_urls?: typeof srv_urls
-    } */,
-    ) {
+    function setAuthData(data?: Partial<ISigninResponse<FE>>) {
         if (data?.token) {
             jwtToken = data?.token
 
-            features = new Set(data.features)
+            metadata = data.metadata
 
-            connector = data.connector
+            dispatchJwtChangedEvent(data.metadata)
 
-            openreplay = data.openreplay
-
-            parsed_jwt = parseJwt(jwtToken)
-
-            srv_urls = data.srv_urls
-
-            default_app_versions = data.default_app_versions
-
-            dispatchJwtChangedEvent(parsed_jwt)
-
-            data.theme && setTheme(data.theme)
-
-            _isTeamLeader = data.isTeamLeader
+            data.metadata?.theme && setTheme(data.metadata.theme)
 
             return
         }
 
         jwtToken = ''
 
-        parsed_jwt = undefined
-
-        features = undefined
-
-        srv_urls = undefined
-
-        connector = undefined
-
-        openreplay = undefined
-
-        _isTeamLeader = undefined
+        metadata = undefined
     }
 
     function getJwtToken() {
@@ -337,7 +272,10 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
     }
 
     function getOpenReplay() {
-        return openreplay
+        if (!metadata?.openreplay) {
+            console.warn('openreplay is not defined in metadata', 'metadata: ', metadata)
+        }
+        return metadata?.openreplay
     }
 
     async function getCachedJwt() {
@@ -351,7 +289,10 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
     }
 
     function isTeamLeader() {
-        return _isTeamLeader
+        if (!metadata?.isTeamLeader) {
+            console.warn('isTeamLeader is not defined in metadata', 'metadata: ', metadata)
+        }
+        return metadata?.isTeamLeader || false
     }
 
     async function setReqConfig<T = unknown>(
@@ -378,7 +319,10 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
      * @returns ICheckForRegisteredSubdomainResponse primarily from cache if do_not_cache is false
      * cache is saved in indexedDB
      */
-    async function checkForRegisteredSubdomain(_cache_ttl = 24, _do_not_cache = false) {
+    async function checkForRegisteredSubdomain(
+        _cache_ttl = 24,
+        _do_not_cache = false,
+    ): Promise<ICheckResponse<FE> | undefined> {
         const url = `/check?context=subdomain`
         /* 
         if (do_not_cache) {
@@ -396,12 +340,12 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
             }
         } */
 
-        const data = await srvAuthGet<ICheckForRegisteredSubdomainResponse<FeatureEnums>>(url)
+        const data = await srvAuthGet<ICheckResponse<FE>>(url)
 
-        await set(url, {
+        /*  await set(url, {
             timestamp: Date.now(),
             data,
-        })
+        }) */
 
         setAuthData(data)
 
@@ -415,7 +359,7 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
             } */
             const searchParams = new URLSearchParams(realWindow.location.search)
             const data = await srvAuthGet<
-                ISigninResponse<FeatureEnums> /* {
+                ISigninResponse<FE> /* {
                 errors?: string
                 token: string
                 features: FeatureEnums[]
@@ -441,24 +385,29 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
         }
     }
 
-    function getParsedJwt<R = typeof parsed_jwt>(): R | undefined {
-        if (!parsed_jwt) {
-            parsed_jwt = parseJwt(jwtToken)
-        }
-        return parsed_jwt as R
+    function getMetadata() {
+        return metadata
     }
     function getFeatures() {
-        return features
+        if (!metadata?.features) {
+            console.warn('no features present in the metadata', 'metadata: ', metadata)
+            return []
+        }
+        return metadata.features
     }
     function getSrvUrls() {
-        return srv_urls
+        if (!metadata?.srv_urls) {
+            console.warn('no srv_urls present in the metadata', 'metadata: ', metadata)
+            return
+        }
+        return metadata?.srv_urls
     }
     /**
      *
      * @param featureName feature_name_enums add this: generateSrvAuthBindings<feature_name_enums.>(...)
      * @returns boolean
      */
-    function hasFeature(featureName: FeatureEnums) {
+    function hasFeature(featureName: FE) {
         //let hasFeature = false
 
         //const asmaFeaturesIgnoreList: string | null = localStorage.getItem('asma-features-ignore-list')
@@ -490,19 +439,27 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
          * needs to be renamed to directory_enableParticipantGroups. Excluding from dev enabling for now
          */
         if (featureName !== 'directory_hideParticipantGroups') {
-            return enableAllFeatures || !!features?.has(featureName)
+            return enableAllFeatures || !!metadata?.features?.has(featureName)
         }
 
-        return !!features?.has(featureName)
+        return !!metadata?.features?.has(featureName)
     }
 
     function getConnector() {
-        return connector
+        return metadata?.journal
+    }
+    function getTheme() {
+        if (!metadata?.theme) {
+            console.warn('no theme present in the metadata', 'metadata: ', metadata)
+            return
+        }
+        return metadata?.theme
     }
 
     const auth_bindings = {
-        hasFeature,
+        hasFeature: (featureName: FE) => hasFeature(featureName),
         getConnector,
+        getTheme,
         getFeatures,
         isJwtValid,
         signin,
@@ -526,13 +483,17 @@ export function generateSrvAuthBindings<FeatureEnums extends string>(
          */
         registerOnJwtChanges: registerCallbackOnSrvAuthEvents,
         getUserId,
-        getParsedJwt,
+        /**
+         * @deprecated use getMetadata
+         */
+        getParsedJwt: getMetadata,
+        getMetadata,
         getJwtToken,
         // cancelRequest,
         accessTokenHasExpired,
         checkForRegisteredSubdomain,
         isTeamLeader,
-    }
+    } as IAuthBindings
     realWindow.__ASMA__SHELL__ = realWindow.__ASMA__SHELL__ || {}
 
     realWindow.__ASMA__SHELL__.auth_bindings = auth_bindings

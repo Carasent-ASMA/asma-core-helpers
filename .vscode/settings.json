@@ -14,7 +14,7 @@
     "[javascriptreact]": {
         "editor.formatOnSave": false
     },
-    "files.autoSave": "afterDelay",
+    "files.autoSave": "off",
     "files.autoSaveDelay": 1500,
     "eslint.alwaysShowStatus": true,
     //"typescript.tsdk": "./node_modules/typescript/lib",

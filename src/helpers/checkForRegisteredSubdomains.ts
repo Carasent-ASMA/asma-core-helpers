@@ -2,12 +2,11 @@ import { EventBus } from 'asma-event-bus/lib/event-buss'
 import {
     //srvAuthGetInternal,
     //type IOpenReplay,
-    type ICheckForRegisteredSubdomainResponse,
     checkForRegisteredSubdomainInternal,
 } from './generateSrvAuthBindings'
 import { _setOpenReplayConfig } from './openReplayConfigs'
 import { redirectFromSubdomainToDomain } from './getSubdomain'
-import { realWindow } from '..'
+import { realWindow, type ICheckResponse } from '..'
 
 /**
  * @private use only inside this file
@@ -48,87 +47,55 @@ export function setTheme(theme: string) {
     setThemeLocal(theme)
 }
 
-/* export type ICheckForRegisteredSubdomainResponse = {
-    id: string
-    theme: string
-    openreplay: IOpenReplay | null
-    device_authorized: boolean
-    default_app_versions: Record<string, string>
-    customer_name: string
-} */
-
 export type IResWithSubdomain = {
-    props: Omit<ICheckForRegisteredSubdomainResponse<unknown>, 'openreplay' | 'features'>
+    props: Omit<ICheckResponse<any>, 'openreplay' | 'features'>
     registeredSubdomain: boolean
     unregister: () => void
 }
 
 export type IResWithSubdomainOnError = { error: true; registeredSubdomain: boolean; message: string; code: number }
 
-//const client = await directoryGenQLClient(true, { 'x-hasura-subdomain': subdomain })
 export async function checkForRegisteredSubdomain({
     redirect_if_not_exists = true,
     setSelectedCustomer,
-    //srvAuthGet,
     logos,
     authenticated,
     service,
 }: {
     redirect_if_not_exists?: boolean
     setSelectedCustomer?: (customer_id: string) => void
-    //srvAuthGet: <R>(url: string, headers?: Record<string, string> | undefined) => Promise<R>
     logos: { fretexLogo: string; carasentLogo: string }
     authenticated: () => boolean
     /**
-     * @deprecated one need remove this. Please do not use it in more use cases
+     * @deprecated one need remove this. Please do not use it anymore
      */
     service: 'app-shell' | 'advoca-portal' | 'app-advoca'
 }): Promise<IResWithSubdomain | IResWithSubdomainOnError> {
     try {
-        // let res: ICheckForRegisteredSubdomainResponse<unknown> | undefined = undefined
-
         const { unregister } = onThemeChange(({ theme }) => {
             appendAsmaLogoLink(theme, logos, service)
         })
-        /* {
-            "id": "4d43855c-afa9-45ca-9e31-382dbde9681b",
-            "theme": "greenish",
-            "openreplay": {
-                "enable": true,
-                "graphql": false,
-                "live_assist": false,
-                "mobx": false,
-                "profiler": false
-            },
-            "device_authorized": true,
-            "default_app_versions": {
-                "asma-app-artifact": "0.1.5",
-                "asma-app-calendar": "0.0.0",
-                "asma-app-devextreme": "0.0.2",
-                "asma-app-directory": "0.0.1"
-            }
-        } */
 
         const res = await checkForRegisteredSubdomainInternal()
 
-        if (res?.id) {
-            setSelectedCustomer?.(res.id)
+        if (res?.metadata.customer_id) {
+            setSelectedCustomer?.(res.metadata.customer_id)
         }
-        if (res?.openreplay) {
-            _setOpenReplayConfig(res.openreplay)
-        }
-
-        if (res?.theme) {
-            setTheme(res.theme)
+        if (res?.metadata.openreplay) {
+            _setOpenReplayConfig(res.metadata.openreplay)
         }
 
-        if (!!!res?.id && redirect_if_not_exists) {
+        if (res?.metadata.theme) {
+            setTheme(res.metadata.theme)
+        }
+
+        if (!!!res?.metadata.customer_id && redirect_if_not_exists) {
             redirectFromSubdomainToDomain()
         }
 
         appendAsmaLogoLink(getTheme(), logos, service)
 
-        return { props: res!, registeredSubdomain: authenticated() || !!res?.id, unregister }
+        return { props: res!, registeredSubdomain: authenticated() || !!res?.metadata.customer_id, unregister }
     } catch (e) {
         console.error(e)
 
