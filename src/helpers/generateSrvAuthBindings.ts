@@ -116,7 +116,7 @@ export type ISigninResponse<FE extends string> = {
     token: string
     metadata?: ICheckSigninOptions<FE>
 }
-export type ICheckResponse<FE extends string> = {
+export type ICheckRegisteredSubdomainResponse<FE extends string> = {
     metadata: ICheckSigninOptions<FE>
     message: 'Success'
     token?: string
@@ -329,7 +329,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     async function checkForRegisteredSubdomain(
         _cache_ttl = 24,
         _do_not_cache = false,
-    ): Promise<ICheckResponse<FE> | undefined> {
+    ): Promise<ICheckRegisteredSubdomainResponse<FE> | undefined> {
         const url = `/check?context=subdomain`
         /* 
         if (do_not_cache) {
@@ -346,7 +346,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
                 return cachedData.data
             }
         } */
-        if (isJwtInvalid() && metadata) {
+        if (isJwtValid() && metadata) {
             return {
                 metadata: {
                     ...metadata,
@@ -356,7 +356,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
             }
         }
 
-        const data = await srvAuthGet<ICheckResponse<FE>>(url)
+        const data = await srvAuthGet<ICheckRegisteredSubdomainResponse<FE>>(url)
 
         /*  await set(url, {
             timestamp: Date.now(),

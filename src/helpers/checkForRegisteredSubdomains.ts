@@ -5,7 +5,7 @@ import {
     checkForRegisteredSubdomainInternal,
 } from './generateSrvAuthBindings'
 import { _setOpenReplayConfig } from './openReplayConfigs'
-import { redirectFromSubdomainToDomain } from './getSubdomain'
+//import { redirectFromSubdomainToDomain } from './getSubdomain'
 import { realWindow } from '..'
 import type { ICheckSigninOptions } from './generateSrvAuthBindings.types'
 
@@ -57,12 +57,14 @@ export type IResWithSubdomain = {
 export type IResWithSubdomainOnError = { error: true; registeredSubdomain: boolean; message: string; code: number }
 
 export async function checkForRegisteredSubdomain({
-    redirect_if_not_exists = true,
     setSelectedCustomer,
     logos,
     authenticated,
     service,
 }: {
+    /**
+     * @deprecated one need remove this. Please do not use it anymore.
+     */
     redirect_if_not_exists?: boolean
     setSelectedCustomer?: (customer_id: string) => void
     logos: { fretexLogo: string; carasentLogo: string }
@@ -90,9 +92,9 @@ export async function checkForRegisteredSubdomain({
             setTheme(res.metadata.theme)
         }
 
-        if (!!!res?.metadata.customer_id && redirect_if_not_exists) {
+        /* if (!!!res?.metadata.customer_id && redirect_if_not_exists) {
             redirectFromSubdomainToDomain()
-        }
+        } */
 
         appendAsmaLogoLink(getTheme(), logos, service)
 
