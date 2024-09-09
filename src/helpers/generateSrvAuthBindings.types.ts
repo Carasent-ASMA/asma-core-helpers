@@ -48,4 +48,5 @@ export type ICheckSigninOptions<IFeaturesArr extends string> = Pick<
     brukerBrukerNavn?: string // Made optional
     user_role?: 'super_user' | 'therapist' | 'recipient'
     journal_role?: string
+    iat?: number
 }
