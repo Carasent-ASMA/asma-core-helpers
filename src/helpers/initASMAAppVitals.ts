@@ -104,8 +104,8 @@ export async function initASMAAppVitals({
             })
 
             if ('props' in resRegisteredSubdomain) {
-                const { connector: journal, id: customer_id, user_id, brukerBrukerNavn } = resRegisteredSubdomain.props
-                console.debug('registerOpenReplay props:', JSON.stringify(resRegisteredSubdomain.props, undefined, 4))
+                const { journal, customer_id, user_id, brukerBrukerNavn } = resRegisteredSubdomain.props
+                console.info('registerOpenReplay props:', JSON.stringify(resRegisteredSubdomain.props, undefined, 4))
                 registerOpenReplay?.(undefined, {
                     journal: journal || 'UNKNOWN',
                     customer_id,
@@ -129,7 +129,7 @@ export async function initASMAAppVitals({
         'props' in resRegisteredSubdomain &&
         isNotEmptyObjArr(resRegisteredSubdomain.props.default_app_versions)
     ) {
-        const { default_app_versions } = resRegisteredSubdomain.props
+        const default_app_versions = resRegisteredSubdomain.props!.default_app_versions!
 
         registry_urls = Object.keys(default_app_versions).reduce((acc, key) => {
             const app_version = default_app_versions[key]

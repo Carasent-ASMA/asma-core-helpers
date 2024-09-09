@@ -6,7 +6,8 @@ import {
 } from './generateSrvAuthBindings'
 import { _setOpenReplayConfig } from './openReplayConfigs'
 import { redirectFromSubdomainToDomain } from './getSubdomain'
-import { realWindow, type ICheckResponse } from '..'
+import { realWindow } from '..'
+import type { ICheckSigninOptions } from './generateSrvAuthBindings.types'
 
 /**
  * @private use only inside this file
@@ -48,7 +49,7 @@ export function setTheme(theme: string) {
 }
 
 export type IResWithSubdomain = {
-    props: Omit<ICheckResponse<any>, 'openreplay' | 'features'>
+    props: Omit<ICheckSigninOptions<any>, 'openreplay' | 'features' | 'srv_urls'>
     registeredSubdomain: boolean
     unregister: () => void
 }
@@ -95,7 +96,7 @@ export async function checkForRegisteredSubdomain({
 
         appendAsmaLogoLink(getTheme(), logos, service)
 
-        return { props: res!, registeredSubdomain: authenticated() || !!res?.metadata.customer_id, unregister }
+        return { props: res!.metadata, registeredSubdomain: authenticated() || !!res?.metadata.customer_id, unregister }
     } catch (e) {
         console.error(e)
 
