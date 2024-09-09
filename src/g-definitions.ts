@@ -1,5 +1,5 @@
 import { type History, createBrowserHistory } from 'history'
-import type { ICheckForRegisteredSubdomainResponse, IOpenReplay } from './helpers/generateSrvAuthBindings'
+import type { ICheckResponse, IOpenReplay } from './helpers/generateSrvAuthBindings'
 import type { IGlobalOpenReplay } from './helpers/openReplayObject'
 import { realWindow } from '.'
 //import type { IGenerateSRVAuthBindings } from './helpers/generateSrvAuthBindings'
@@ -10,7 +10,23 @@ export {}
  *  declare optional rawWindow  which is added by micro-app framework in child apps
  * when is used @micro-zoe/micro-app package
  */
-
+export type IAuthBindings = {
+    getTheme: () => string | undefined
+    isJwtValid: () => boolean
+    getConnector: () => string | undefined
+    getCachedJwt: () => Promise<string | undefined>
+    srvAuthGet: <R>(url: string, headers?: Record<string, string>) => Promise<R>
+    setReqConfig: <T = unknown>(
+        data?: T | undefined,
+        responseType?: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream',
+    ) => Promise<{
+        data: T | undefined
+        responseType: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream' | undefined
+        headers: Record<string, string>
+    }>
+    getSrvUrls: () => Record<'ao_wrapper' | 'connector', string> | undefined
+    checkForRegisteredSubdomain: <FE extends string>() => Promise<Omit<ICheckResponse<FE>, 'features'> | undefined>
+}
 declare global {
     interface Window {
         __GENERATE_ENV_CONFIGS_BINDINGS__?: {
@@ -43,24 +59,7 @@ declare global {
             openreplay_configs?: IOpenReplay
             openreplay_object?: IGlobalOpenReplay
             history?: History
-            auth_bindings?: {
-                isJwtValid: () => boolean
-                getConnector: () => string | undefined
-                getCachedJwt: () => Promise<string | undefined>
-                srvAuthGet: <R>(url: string, headers?: Record<string, string>) => Promise<R>
-                setReqConfig: <T = unknown>(
-                    data?: T | undefined,
-                    responseType?: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream',
-                ) => Promise<{
-                    data: T | undefined
-                    responseType: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream' | undefined
-                    headers: Record<string, string>
-                }>
-                getSrvUrls: () => Record<'ao_wrapper' | 'connector', string> | undefined
-                checkForRegisteredSubdomain: <FE = unknown>() => Promise<
-                    Omit<ICheckForRegisteredSubdomainResponse<FE>, 'features'>
-                >
-            } //IGenerateSRVAuthBindings
+            auth_bindings?: IAuthBindings //IGenerateSRVAuthBindings
             isLogged?: () => boolean
             logoutUser?: () => void
             //logoutMfes?: (() => void)[]
