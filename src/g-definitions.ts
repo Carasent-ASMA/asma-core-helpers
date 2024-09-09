@@ -1,5 +1,5 @@
 import { type History, createBrowserHistory } from 'history'
-import type { ICheckResponse, IOpenReplay, ISigninResponse } from './helpers/generateSrvAuthBindings'
+import type { ICheckRegisteredSubdomainResponse, IOpenReplay, ISigninResponse } from './helpers/generateSrvAuthBindings'
 import type { IGlobalOpenReplay } from './helpers/openReplayObject'
 import { realWindow } from '.'
 import type { ICheckSigninOptions, ICheckSigninTransformedOptions } from './helpers/generateSrvAuthBindings.types'
@@ -30,7 +30,7 @@ export type IAuthBindings<FE extends string> = {
     checkForRegisteredSubdomain: (
         _cache_ttl?: number,
         _do_not_cache?: boolean,
-    ) => Promise<ICheckResponse<FE> | undefined>
+    ) => Promise<ICheckRegisteredSubdomainResponse<FE> | undefined>
     getNewJwtToken: () => Promise<string | undefined>
     /**
      *
