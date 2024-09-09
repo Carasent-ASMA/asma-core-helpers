@@ -339,6 +339,12 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
                 return cachedData.data
             }
         } */
+        if (isJwtInvalid() && metadata) {
+            return {
+                metadata,
+                message: 'Success',
+            }
+        }
 
         const data = await srvAuthGet<ICheckResponse<FE>>(url)
 
