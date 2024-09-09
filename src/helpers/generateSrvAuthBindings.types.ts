@@ -55,6 +55,10 @@ export type ICheckSigninOptions<IFeaturesArr extends string> = Pick<
     brukerBrukerNavn?: string // Made optional
     user_role?: 'super_user' | 'therapist' | 'recipient'
     journal_role?: string
+    /** @info when expires epoch in secs ex: 1725898034*/
     iat?: number
+    /** @info when expires epoch in secs ex: 1725898034*/
+    exp?: number
+    /** @info validity in minute eg: 30 (valid 30 minutes)*/
     vt?: number
 }
