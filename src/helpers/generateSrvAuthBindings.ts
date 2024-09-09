@@ -263,13 +263,14 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     }
 
     function setAuthData(data?: Partial<ISigninResponse<FE>>) {
+        if (data?.metadata) {
+            metadata = { ...data.metadata, features: new Set(data.metadata?.features) }
+        } else {
+            console.error('metadata is not defined in data', 'data: ', data)
+        }
+
         if (data?.token) {
             jwtToken = data?.token
-            if (data.metadata) {
-                metadata = { ...data.metadata, features: new Set(data.metadata?.features) }
-            } else {
-                console.error('metadata is not defined in data', 'data: ', data)
-            }
 
             dispatchJwtChangedEvent(data.metadata)
 
