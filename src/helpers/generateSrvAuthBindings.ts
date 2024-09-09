@@ -6,6 +6,7 @@ import { asmaOverridesEventBus } from 'asma-event-bus/lib'
 import { realWindow, type IAuthBindings } from '..'
 import { get as _ } from 'idb-keyval'
 import type { ICheckSigninOptions, ICheckSigninTransformedOptions } from './generateSrvAuthBindings.types'
+import type { IBaseJwtClaims, IUUID } from 'asma-types/lib'
 
 //let logoutSuccessful = false
 
@@ -403,6 +404,35 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     function getMetadata() {
         return metadata
     }
+    /**
+     *
+     * @deprecated use getMetadata
+     * @var role = user_role
+     * @var connector=journal
+     * @var id = customer_id
+     */
+    function getParsedJwt() {
+        if (metadata && metadata.user_role) {
+            return {
+                //...metadata,
+                customer_id: metadata.customer_id as IUUID,
+                journal: metadata.journal,
+                journal_user_id: metadata.journal_user_id,
+                srv_urls: metadata.srv_urls,
+                exp: metadata.exp,
+                vt: metadata.vt,
+                role: metadata.user_role as never,
+                name: metadata.user_name || '',
+                region: '',
+                subdomain: '',
+                genesis_set: '',
+                journal_role: metadata.journal_role || '',
+                user_id: metadata.user_id as IUUID,
+                brukerBrukerNavn: metadata.brukerBrukerNavn || '',
+            } satisfies IBaseJwtClaims<never>
+        }
+        return undefined
+    }
     function getFeatures() {
         if (!metadata?.features) {
             console.warn('no features present in the metadata', 'metadata: ', metadata)
@@ -502,7 +532,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         /**
          * @deprecated use getMetadata
          */
-        getParsedJwt: getMetadata,
+        getParsedJwt,
         getMetadata,
         getJwtToken,
         // cancelRequest,
