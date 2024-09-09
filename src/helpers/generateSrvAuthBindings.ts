@@ -1,6 +1,5 @@
 import { EventBus } from 'asma-event-bus/lib/event-buss'
 import { EnvironmentEnums } from '../interfaces/enums'
-import { setTheme } from './checkForRegisteredSubdomains'
 import { EnvConfigsFnInternal } from './generateEnvConfigsBindings'
 import { asmaOverridesEventBus } from 'asma-event-bus/lib'
 import { realWindow, type IAuthBindings } from '..'
@@ -102,6 +101,16 @@ export async function setReqConfigInternal<T = unknown>(
         )
     }
     return setReqConfig(data, responseType)
+}
+
+export function getThemeInternal() {
+    const getTheme = realWindow.__ASMA__SHELL__?.auth_bindings?.getTheme
+    if (!getTheme) {
+        throw new Error(
+            'getTheme is not defined! please make sure that generateSrvAuthBindings is called before getTheme',
+        )
+    }
+    return getTheme()
 }
 export type IOpenReplay = {
     enable: boolean
@@ -264,7 +273,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
 
             dispatchJwtChangedEvent(data.metadata)
 
-            data.metadata?.theme && setTheme(data.metadata.theme)
+            //data.metadata?.theme!== metadata?.theme setTheme(data.metadata.theme)
 
             return
         }
@@ -498,7 +507,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
             console.warn('no theme present in the metadata', 'metadata: ', metadata)
             return
         }
-        return metadata?.theme
+        return metadata.theme
     }
 
     const auth_bindings = {

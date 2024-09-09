@@ -1,4 +1,3 @@
-import { EventBus } from 'asma-event-bus/lib/event-buss'
 import {
     //srvAuthGetInternal,
     //type IOpenReplay,
@@ -6,52 +5,59 @@ import {
 } from './generateSrvAuthBindings'
 import { _setOpenReplayConfig } from './openReplayConfigs'
 //import { redirectFromSubdomainToDomain } from './getSubdomain'
-import { realWindow } from '..'
+import { getThemeInternal } from '..'
 import type { ICheckSigninOptions } from './generateSrvAuthBindings.types'
 
 /**
  * @private use only inside this file
  */
-let theme = 'default'
-
+/* let theme = 'default'
+let realWindow = getRealWindow()
 const { dispatch: dispatchTheme, register: registerTheme } = EventBus<{ on_theme_change: { theme: string } }>(
     'asma-theme',
-)
-
+) */
+/* 
 function getThemeLocal() {
     return theme
-}
-function setThemeLocal(theme_local: string) {
+} */
+/* function setThemeLocal(theme_local: string) {
     if (theme !== theme_local) {
         dispatchTheme('on_theme_change', { theme: theme_local }, false)
 
         theme = theme_local
     }
-}
-realWindow.__ASMA__THEME__ = realWindow.__ASMA__THEME__ || { getTheme: getThemeLocal, setTheme: setThemeLocal }
+} */
+/* realWindow.__ASMA__THEME__ = realWindow.__ASMA__THEME__ || {
+    getTheme: getThemeLocal,
+    setTheme: setThemeLocal,
+} */
 
-export function onThemeChange(callback: (val: { theme: string }) => void) {
+/* export function onThemeChange(callback: (val: { theme: string }) => void) {
     return registerTheme('on_theme_change', callback)
-}
-
-export function getTheme() {
+} */
+/**
+ * deprecated use SrvAuthBindings.getTheme instead
+ */
+/* export function getTheme() {
     if (realWindow.__ASMA__THEME__) {
         return realWindow.__ASMA__THEME__.getTheme()
     }
     return getThemeLocal()
-}
-
-export function setTheme(theme: string) {
+} */
+/**
+ * deprecated use SrvAuthBindings.getTheme instead
+ */
+/* export function setTheme(theme: string) {
     if (realWindow.__ASMA__THEME__) {
         return realWindow.__ASMA__THEME__.setTheme(theme)
     }
     setThemeLocal(theme)
-}
+} */
 
 export type IResWithSubdomain = {
     props: Omit<ICheckSigninOptions<any>, 'openreplay' | 'features' | 'srv_urls'>
     registeredSubdomain: boolean
-    unregister: () => void
+    //unregister: () => void
 }
 
 export type IResWithSubdomainOnError = { error: true; registeredSubdomain: boolean; message: string; code: number }
@@ -75,9 +81,9 @@ export async function checkForRegisteredSubdomain({
     service: 'app-shell' | 'advoca-portal' | 'app-advoca'
 }): Promise<IResWithSubdomain | IResWithSubdomainOnError> {
     try {
-        const { unregister } = onThemeChange(({ theme }) => {
+        /*  const { unregister } = onThemeChange(({ theme }) => {
             appendAsmaLogoLink(theme, logos, service)
-        })
+        }) */
 
         const res = await checkForRegisteredSubdomainInternal()
 
@@ -88,17 +94,17 @@ export async function checkForRegisteredSubdomain({
             _setOpenReplayConfig(res.metadata.openreplay)
         }
 
-        if (res?.metadata.theme) {
+        /*  if (res?.metadata.theme) {
             setTheme(res.metadata.theme)
-        }
+        } */
 
         /* if (!!!res?.metadata.customer_id && redirect_if_not_exists) {
             redirectFromSubdomainToDomain()
         } */
 
-        appendAsmaLogoLink(getTheme(), logos, service)
+        appendAsmaLogoLink('', logos, service)
 
-        return { props: res!.metadata, registeredSubdomain: authenticated() || !!res?.metadata.customer_id, unregister }
+        return { props: res!.metadata, registeredSubdomain: authenticated() || !!res?.metadata.customer_id }
     } catch (e) {
         console.error(e)
 
@@ -108,10 +114,15 @@ export async function checkForRegisteredSubdomain({
 const asmaLogoLink = 'asma-logo-link'
 
 function appendAsmaLogoLink(
-    theme: string,
+    /**
+     * @deprecated one need remove this. Please do not use it anymore
+     */
+    _theme: string,
     { carasentLogo, fretexLogo }: { fretexLogo: string; carasentLogo: string },
     service: 'app-shell' | 'advoca-portal' | 'app-advoca',
 ) {
+    let theme = getThemeInternal()
+
     if (service === 'advoca-portal') {
         theme = 'default'
     }
