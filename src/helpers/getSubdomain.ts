@@ -1,9 +1,9 @@
-export let realWindow = window.rawWindow || window
+export const realWindow = window.rawWindow || window
 export function getRealWindow() {
     if (!realWindow) {
-        realWindow = window.rawWindow || window
+        realWindow
     }
-    return realWindow
+    return
 }
 
 const hostname_arr = () => {

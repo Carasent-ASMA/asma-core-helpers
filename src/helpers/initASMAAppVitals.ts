@@ -9,7 +9,7 @@ import { EnvConfigsFnInternal, fetchConfigsInternal } from './generateEnvConfigs
 import { getCachedJwtInternal, isJwtValidInternal, registerCallbackOnSrvAuthEvents } from './generateSrvAuthBindings'
 import { isNotEmptyObjArr } from './IsNotEmpty'
 import { subdomain } from './getSubdomain'
-import { realWindow } from '..'
+import { getThemeInternal, realWindow } from '..'
 //import { registerOpenReplay } from './registerOpenReplay'
 
 type IInitASMAAppVitalsParams = {
@@ -99,7 +99,7 @@ export async function initASMAAppVitals({
 
         if (subdomain_check) {
             resRegisteredSubdomain = await checkForRegisteredSubdomain({
-                ...subdomain_check,
+                //...subdomain_check,
                 authenticated: isJwtValidInternal,
             })
 
@@ -114,6 +114,8 @@ export async function initASMAAppVitals({
                     subdomain,
                 })
             }
+
+            appendAsmaLogoLink(subdomain_check.logos, subdomain_check.service)
         }
     }
 
@@ -149,4 +151,47 @@ export async function initASMAAppVitals({
     await setLoadMicroApp(EnvConfigsFnInternal().DEVELOPMENT, registry_urls as (typeof _registry_envs)['local'])
 
     return resRegisteredSubdomain
+}
+
+const asmaLogoLink = 'asma-logo-link'
+
+function appendAsmaLogoLink(
+    /**
+     * @deprecated one need remove this. Please do not use it anymore
+     */
+    { carasentLogo, fretexLogo }: { fretexLogo: string; carasentLogo: string },
+    service: 'app-shell' | 'advoca-portal' | 'app-advoca',
+) {
+    let theme = getThemeInternal()
+    console.info('appendAsmaLogoLink theme:', theme)
+    if (service === 'advoca-portal') {
+        theme = 'default'
+    }
+
+    const body = document.body!
+
+    body.dataset['theme'] = theme
+
+    document.getElementById(asmaLogoLink)?.remove()
+
+    const link = document.createElement('link')
+
+    link.setAttribute('id', asmaLogoLink)
+
+    if (theme === 'fretex') {
+        document.title = 'Fretex'
+        link.setAttribute('href', fretexLogo)
+    } else {
+        document.title = 'Carasent'
+
+        link.setAttribute('href', carasentLogo)
+    }
+
+    link.setAttribute('rel', 'icon')
+
+    link.setAttribute('type', 'image/png')
+
+    link.setAttribute('sizes', '32x32')
+
+    document.head.appendChild(link)
 }

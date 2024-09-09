@@ -5,7 +5,6 @@ import {
 } from './generateSrvAuthBindings'
 import { _setOpenReplayConfig } from './openReplayConfigs'
 //import { redirectFromSubdomainToDomain } from './getSubdomain'
-import { getThemeInternal } from '..'
 import type { ICheckSigninOptions } from './generateSrvAuthBindings.types'
 
 /**
@@ -64,21 +63,21 @@ export type IResWithSubdomainOnError = { error: true; registeredSubdomain: boole
 
 export async function checkForRegisteredSubdomain({
     setSelectedCustomer,
-    logos,
+    // logos,
     authenticated,
-    service,
-}: {
+}: //service,
+{
     /**
      * @deprecated one need remove this. Please do not use it anymore.
      */
     redirect_if_not_exists?: boolean
     setSelectedCustomer?: (customer_id: string) => void
-    logos: { fretexLogo: string; carasentLogo: string }
+    //logos: { fretexLogo: string; carasentLogo: string }
     authenticated: () => boolean
     /**
      * @deprecated one need remove this. Please do not use it anymore
      */
-    service: 'app-shell' | 'advoca-portal' | 'app-advoca'
+    //service: 'app-shell' | 'advoca-portal' | 'app-advoca'
 }): Promise<IResWithSubdomain | IResWithSubdomainOnError> {
     try {
         /*  const { unregister } = onThemeChange(({ theme }) => {
@@ -102,55 +101,10 @@ export async function checkForRegisteredSubdomain({
             redirectFromSubdomainToDomain()
         } */
 
-        appendAsmaLogoLink('', logos, service)
-
         return { props: res!.metadata, registeredSubdomain: authenticated() || !!res?.metadata.customer_id }
     } catch (e) {
         console.error(e)
 
         return { code: e.code, message: e.message, registeredSubdomain: false, error: true }
     }
-}
-const asmaLogoLink = 'asma-logo-link'
-
-function appendAsmaLogoLink(
-    /**
-     * @deprecated one need remove this. Please do not use it anymore
-     */
-    _theme: string,
-    { carasentLogo, fretexLogo }: { fretexLogo: string; carasentLogo: string },
-    service: 'app-shell' | 'advoca-portal' | 'app-advoca',
-) {
-    let theme = getThemeInternal()
-
-    if (service === 'advoca-portal') {
-        theme = 'default'
-    }
-
-    const body = document.body!
-
-    body.dataset['theme'] = theme
-
-    document.getElementById(asmaLogoLink)?.remove()
-
-    const link = document.createElement('link')
-
-    link.setAttribute('id', asmaLogoLink)
-
-    if (theme === 'fretex') {
-        document.title = 'Fretex'
-        link.setAttribute('href', fretexLogo)
-    } else {
-        document.title = 'Carasent'
-
-        link.setAttribute('href', carasentLogo)
-    }
-
-    link.setAttribute('rel', 'icon')
-
-    link.setAttribute('type', 'image/png')
-
-    link.setAttribute('sizes', '32x32')
-
-    document.head.appendChild(link)
 }
