@@ -2,7 +2,7 @@ import { type History, createBrowserHistory } from 'history'
 import type { ICheckResponse, IOpenReplay, ISigninResponse } from './helpers/generateSrvAuthBindings'
 import type { IGlobalOpenReplay } from './helpers/openReplayObject'
 import { realWindow } from '.'
-import type { ICheckSigninOptions } from './helpers/generateSrvAuthBindings.types'
+import type { ICheckSigninOptions, ICheckSigninTransformedOptions } from './helpers/generateSrvAuthBindings.types'
 //import type { IGenerateSRVAuthBindings } from './helpers/generateSrvAuthBindings'
 //import type { IGenerateSRVAuthBindings } from './helpers/generateSrvAuthBindings'
 export {}
@@ -35,12 +35,12 @@ export type IAuthBindings<FE extends string> = {
      *
      * @deprecated use getMetadata instead
      */
-    getParsedJwt: () => ICheckSigninOptions<FE> | undefined
-    getMetadata: () => ICheckSigninOptions<FE> | undefined
+    getParsedJwt: () => ICheckSigninTransformedOptions<FE> | undefined
+    getMetadata: () => ICheckSigninTransformedOptions<FE> | undefined
     hasFeature: (feature: FE) => boolean
     signin: (url: string, headers?: Record<string, string> | undefined) => Promise<ISigninResponse<FE>>
     isTeamLeader: () => boolean
-    getFeatures: () => Set<FE> | never[]
+    getFeatures: () => FE[] | undefined
     /**
      *
      * @deprecated use dispatchLogoutEvent instead
@@ -60,7 +60,7 @@ export type IAuthBindings<FE extends string> = {
         event: Key_1,
         callback: (
             val: {
-                jwt_changed?: ICheckSigninOptions<any>
+                jwt_changed?: Omit<ICheckSigninOptions<any>, 'features'>
                 logout_event: {}
                 customer_changed: {}
             }[Key_1],
