@@ -339,21 +339,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         _do_not_cache = false,
     ): Promise<ICheckRegisteredSubdomainResponse<FE> | undefined> {
         const url = `/check?context=subdomain`
-        /* 
-        if (do_not_cache) {
-            const cachedData = await get<{
-                timestamp: string
-                data: ICheckForRegisteredSubdomainResponse<FeatureEnums>
-            }>(url)
 
-            if (
-                cachedData?.timestamp &&
-                new Date().getTime() - new Date(cachedData.timestamp).getTime() < cache_ttl * 60 * 60 * 1000 &&
-                cachedData.data
-            ) {
-                return cachedData.data
-            }
-        } */
         if (metadata || (isJwtValid() && metadata)) {
             return {
                 metadata: {
