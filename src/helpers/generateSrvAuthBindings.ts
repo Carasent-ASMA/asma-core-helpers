@@ -354,7 +354,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
                 return cachedData.data
             }
         } */
-        if (isJwtValid() && metadata) {
+        if (metadata || (isJwtValid() && metadata)) {
             return {
                 metadata: {
                     ...metadata,
@@ -378,27 +378,24 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
 
     async function getNewJwtToken() {
         try {
-            /*  if (!fetchJwtPromise) {
-                fetchJwtPromise = srvAuthGet('/token')
-            } */
             const searchParams = new URLSearchParams(realWindow.location.search)
-            const data = await srvAuthGet<
-                ISigninResponse<FE> /* {
-                errors?: string
-                token: string
-                features: FeatureEnums[]
-                connector: string
-                srv_urls?: typeof srv_urls
-                theme: string
-            } */
-            >(`/token?${searchParams.toString()}`)
 
-            if (!data || 'errors' in data /* ?.errors */ || !data.token) {
+            const data = await srvAuthGet<ISigninResponse<FE> & { signout?: boolean }>(
+                `/token?${searchParams.toString()}`,
+            )
+
+            data.signout && logout?.()
+
+            !data.metadata?.device_authorized && (metadata = undefined)
+
+            if (!data || 'errors' in data || data.signout) {
                 dispatchLogoutEvent()
+
                 return
             }
 
             setAuthData(data)
+
             return jwtToken
         } catch (error) {
             dispatchLogoutEvent()
