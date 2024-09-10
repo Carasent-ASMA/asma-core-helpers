@@ -227,10 +227,10 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
      *
      * TODO: need to investigate smarter way of registering and unregister on `logout_event`
      **/
-    registerCallbackOnSrvAuthEvents('logout_event', () => {
-        setAuthData({ token: '' })
+    registerCallbackOnSrvAuthEvents('logout_event', async () => {
+        resetData()
 
-        srvAuthGet('/signout')
+        await srvAuthGet('/signout')
     })
 
     async function signin(url: string, headers?: Record<string, string>): Promise<ISigninResponse<FE>> {
@@ -261,12 +261,16 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     function getUserId() {
         return getMetadata()?.user_id
     }
+    function resetData() {
+        jwtToken = ''
+        // metadata = undefined
+    }
 
     function setAuthData(data?: Partial<ISigninResponse<FE>>) {
         if (data?.metadata) {
             metadata = { ...data.metadata, features: new Set(data.metadata?.features) }
         } else {
-            console.error('metadata is not defined in data', 'data: ', data)
+            console.error('metadata is not defined in data:', data)
         }
 
         if (data?.token) {
@@ -275,13 +279,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
             dispatchJwtChangedEvent(data.metadata)
 
             //data.metadata?.theme!== metadata?.theme setTheme(data.metadata.theme)
-
-            return
         }
-
-        jwtToken = ''
-
-        metadata = undefined
     }
 
     function getJwtToken() {
@@ -290,7 +288,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
 
     function getOpenReplay() {
         if (!metadata?.openreplay) {
-            console.warn('openreplay is not defined in metadata', 'metadata: ', metadata)
+            console.warn('openreplay is not defined in metadata: ', metadata)
         }
         return metadata?.openreplay
     }
@@ -307,7 +305,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
 
     function isTeamLeader() {
         if (!metadata?.isTeamLeader) {
-            console.warn('isTeamLeader is not defined in metadata', 'metadata: ', metadata)
+            console.warn('isTeamLeader is not defined in metadata: ', metadata)
         }
         return metadata?.isTeamLeader || false
     }
