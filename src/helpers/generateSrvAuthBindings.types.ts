@@ -62,4 +62,5 @@ export type ICheckSigninOptions<IFeaturesArr extends string> = Pick<
     /** @info validity in minute eg: 30 (valid 30 minutes)*/
     vt?: number
     region?: string
+    identity?: string
 }
