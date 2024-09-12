@@ -340,7 +340,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     ): Promise<ICheckRegisteredSubdomainResponse<FE> | undefined> {
         const url = `/check?context=subdomain`
 
-        if (metadata || (isJwtValid() && metadata)) {
+        if (metadata) {
             return {
                 metadata: {
                     ...metadata,
@@ -371,8 +371,6 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
             )
 
             data.signout && logout?.()
-
-            !data.metadata?.device_authorized && (metadata = undefined)
 
             if (!data || 'errors' in data || data.signout) {
                 dispatchLogoutEvent()
