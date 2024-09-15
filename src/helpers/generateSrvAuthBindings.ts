@@ -268,7 +268,11 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
 
     function setAuthData(data?: Partial<ISigninResponse<FE>>) {
         if (data?.metadata) {
-            metadata = { ...data.metadata, features: new Set(data.metadata?.features) }
+            metadata = {
+                ...data.metadata,
+                features: new Set(data.metadata?.features),
+                overviews: data.metadata?.overviews ? data.metadata.overviews : metadata?.overviews,
+            }
         } else {
             console.error('metadata is not defined in data:', data)
         }
