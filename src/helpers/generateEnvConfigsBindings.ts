@@ -37,25 +37,7 @@ export type IEnvironmentUrlsGenQLOnly = SRVKeys<IEnvironmentUrls> /* Omit<
 
 //type IKeyEnvironmentUrlsWs = `${IKeyEnvironmentUrls}_WS`
 
-const fetchConfigsInstanceId = uuid4()
 const EnvConfigsFnInstanceId = uuid4()
-
-/**
- *
- * for internal use only (inside asma-helpers)
- */
-
-export async function fetchConfigsInternal() {
-    const fetchConfigs = realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__?.fetchConfigsReg[fetchConfigsInstanceId]
-
-    if (!fetchConfigs) {
-        console.error(
-            'fetchConfigs is not defined! please make sure that generateEnvConfigsBindings is called before fetchConfigs',
-        )
-    }
-
-    return fetchConfigs?.()
-}
 
 /**
  *
@@ -63,9 +45,8 @@ export async function fetchConfigsInternal() {
  */
 
 export function EnvConfigsFnInternal() {
-    const EnvConfigsFn =
-        realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__?.EnvConfigsFnReg[EnvConfigsFnInstanceId] ||
-        realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__?.EnvConfigsFn
+    const EnvConfigsFn = realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__?.EnvConfigsFnReg[EnvConfigsFnInstanceId]
+
     if (!EnvConfigsFn) {
         throw new Error(
             'EnvConfigsFn is not defined! please make sure that generateEnvConfigsBindings is called before EnvConfigsFn',
@@ -142,7 +123,6 @@ export function generateEnvConfigsBindings<
 
     realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__ = realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__ || {
         EnvConfigsFnReg: {},
-        fetchConfigsReg: {},
     }
 
     realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__.EnvConfigsFnReg[EnvConfigsFnInstanceId] = EnvConfigsFn

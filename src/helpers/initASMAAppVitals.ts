@@ -78,13 +78,6 @@ export async function initASMAAppVitals({
             | 'stage'
             | 'prod' */
 
-        realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__ = realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__ || {
-            EnvConfigsFnReg: {},
-            fetchConfigsReg: {},
-        }
-
-        realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__.EnvConfigsFn = EnvConfigsFnInternal
-
         if (subdomain_check) {
             resRegisteredSubdomain = await checkForRegisteredSubdomain()
 
