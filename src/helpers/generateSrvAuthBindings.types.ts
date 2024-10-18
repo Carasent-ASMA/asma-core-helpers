@@ -14,9 +14,13 @@ type IOverviews = {
     name: string
     app_context: 'ADVOCA' | 'JOURNAL_ME' | 'JOURNAL_RECIPIENT'
     overview_widgets: {
+        widget: string
         variation: string
         order: number
-        settings: unknown
+        settings: {
+            amount_of_rows: number
+            status: string
+        }
         name: string | null
         description: string | null
     }[]
