@@ -156,7 +156,7 @@ function appendAsmaLogoLink(
         document.title = 'Fretex'
         link.setAttribute('href', fretexLogo)
     } else {
-        document.title = 'Carasent'
+        document.title = 'Ad Voca'
 
         link.setAttribute('href', carasentLogo)
     }
