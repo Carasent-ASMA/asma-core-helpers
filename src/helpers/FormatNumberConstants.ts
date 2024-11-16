@@ -40,3 +40,10 @@ export const CURRENCY_NOK = {
     prefix: 'Kr: ',
     //suffix: "År"
 }
+
+export const DATE_OF_BIRTH = {
+    placeholder: 'Svar',
+    format: '##.##.####',
+    mask: ['D', 'D', 'M', 'M', 'Y', 'Y', 'Y', 'Y'],
+    thousandSeparator: false,
+}

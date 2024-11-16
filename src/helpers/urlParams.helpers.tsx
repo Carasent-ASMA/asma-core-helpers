@@ -1,12 +1,14 @@
 import { type ISearchParams, type SearchParamWithValues } from 'asma-types'
 import { history } from '../g-definitions'
 
-type ISetParamByName<Key extends ISearchParams> = {
+type ISearchParamWithValues = keyof typeof SearchParamWithValues
+
+type ISetParamByName<Key extends ISearchParamWithValues> = {
     name: Key
     value: (typeof SearchParamWithValues)[Key]
 }
 
-export function setParamByName<Key extends ISearchParams>(
+export function setParamByName<Key extends ISearchParamWithValues>(
     data: ISetParamByName<Key> | ISetParamByName<Key>[],
     del?: ISearchParams | ISearchParams[],
     state?: any,
@@ -54,7 +56,7 @@ export function deleteParamByName(name: ISearchParams | ISearchParams[]) {
     history.push(`${globalThis.location.pathname}?${searchParams.toString()}`)
 }
 
-export function getParamByName<Key extends ISearchParams>(name: Key) {
+export function getParamByName<Key extends ISearchParamWithValues>(name: Key) {
     const urlParams = new URLSearchParams(history.location.search)
 
     const param = urlParams.get(name) as (typeof SearchParamWithValues)[Key] | null
