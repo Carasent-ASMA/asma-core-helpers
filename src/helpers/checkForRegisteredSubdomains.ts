@@ -57,28 +57,28 @@ function getThemeLocal() {
 export type IResWithSubdomain = {
     props: Omit<ICheckSigninOptions<any>, 'openreplay' | 'features' | 'srv_urls'>
     registeredSubdomain: boolean
-    //unregister: () => void
 }
 
 export type IResWithSubdomainOnError = { error: true; registeredSubdomain: boolean; message: string; code: number }
 
-export async function checkForRegisteredSubdomain /* {}:  */(): Promise<IResWithSubdomain | IResWithSubdomainOnError> { // setSelectedCustomer,
-// logos,
-//authenticated,
-//service,
-//{
-/**
- * @deprecated one need remove this. Please do not use it anymore.
- */
-//redirect_if_not_exists?: boolean
-//setSelectedCustomer?: (customer_id: string) => void
-//logos: { fretexLogo: string; carasentLogo: string }
-//authenticated: () => boolean
-/**
- * @deprecated one need remove this. Please do not use it anymore
- */
-//service: 'app-shell' | 'advoca-portal' | 'app-advoca'
-/* } */
+export async function checkForRegisteredSubdomain /* {}:  */(): Promise<IResWithSubdomain | IResWithSubdomainOnError> {
+    // setSelectedCustomer,
+    // logos,
+    //authenticated,
+    //service,
+    //{
+    /**
+     * @deprecated one need remove this. Please do not use it anymore.
+     */
+    //redirect_if_not_exists?: boolean
+    //setSelectedCustomer?: (customer_id: string) => void
+    //logos: { fretexLogo: string; carasentLogo: string }
+    //authenticated: () => boolean
+    /**
+     * @deprecated one need remove this. Please do not use it anymore
+     */
+    //service: 'app-shell' | 'advoca-portal' | 'app-advoca'
+    /* } */
     try {
         /*  const { unregister } = onThemeChange(({ theme }) => {
             appendAsmaLogoLink(theme, logos, service)
