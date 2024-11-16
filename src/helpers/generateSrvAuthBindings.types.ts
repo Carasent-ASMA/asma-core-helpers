@@ -34,7 +34,7 @@ export type ICheckSigninTransformedOptions<IFeaturesArr extends string> = Omit<
 }
 
 export type ICheckSigninOptions<IFeaturesArr extends string> = Pick<
-    ITherapistOrSuperUserJwtClaims<any>,
+    ITherapistOrSuperUserJwtClaims<'admin' | 'super_user' | 'therapist' | 'recipient'>,
     //| 'user_id' // Made optional
     //| 'brukerBrukerNavn' // Made optional
     | 'journal_user_id'
@@ -68,4 +68,5 @@ export type ICheckSigninOptions<IFeaturesArr extends string> = Pick<
     region?: string
     identity?: string
     access_level?: number
+    advoca_info_link?: string
 }
