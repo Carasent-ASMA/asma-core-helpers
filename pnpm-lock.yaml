@@ -31,14 +31,14 @@ importers:
         specifier: ^0.6.51
         version: 0.6.51
       asma-types:
-        specifier: ^2.0.5
-        version: 2.0.5
+        specifier: ^2.0.30
+        version: 2.0.30
       history:
         specifier: ^5.3.0
         version: 5.3.0
       typescript:
-        specifier: ^5.5.4
-        version: 5.5.4
+        specifier: ^5.6.3
+        version: 5.6.3
 
 packages:
 
@@ -76,8 +76,8 @@ packages:
   asma-qiankun@1.8.0:
     resolution: {integrity: sha512-nxn7FnyH0p1oUnSsTxnPEhe1DN0oXHaQdpRRDYm+Hr3K7wnLrm6zQZ5NckbyU8v9C29ZksqbnofoG0efDB1a6w==}
 
-  asma-types@2.0.5:
-    resolution: {integrity: sha512-OzgzWwaZhZSOhPqgdWkFomh62w+zdPv3R1Yn3KwcExZpoH61BVQTffbG9EiyRYhJQlukGbpunxVLBAMEqxxy/g==}
+  asma-types@2.0.30:
+    resolution: {integrity: sha512-IQshNJd/jtyZD74VgIZL/fcjljLM7NjzA9nmS6j2m5qJ1BqMd6qtwNrkk6MC8CqPZTvUKiZ8lKLYLGm/1ZP1sw==}
 
   async-limiter@1.0.1:
     resolution: {integrity: sha512-csOlWGAcRFJaI6m+F2WKdnMKr4HhdhFVBk0H/QbJFMCr+uO2kwohwXQPxw/9OCxp05r5ghVBFSyioixx3gfkNQ==}
@@ -167,8 +167,8 @@ packages:
   tslib@2.6.2:
     resolution: {integrity: sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==}
 
-  typescript@5.5.4:
-    resolution: {integrity: sha512-Mtq29sKDAEYP7aljRgtPOpTvOfbwRWlS6dPRzwjdE+C0R4brX/GUyhHSecbHMFLNBLcJIPt9nl9yG5TZ1weH+Q==}
+  typescript@5.6.3:
+    resolution: {integrity: sha512-hjcS1mhfuyi4WW8IWtjP7brDrG2cuDZukyrYrSauoXGNgx0S7zceP07adYkJycEr56BOUTNPzbInooiN3fn1qw==}
     engines: {node: '>=14.17'}
     hasBin: true
 
@@ -249,7 +249,7 @@ snapshots:
 
   asma-event-bus@0.7.0:
     dependencies:
-      asma-types: 2.0.5
+      asma-types: 2.0.30
 
   asma-qiankun-react-loader@0.6.51:
     dependencies:
@@ -261,7 +261,7 @@ snapshots:
     dependencies:
       import-html-entry: 1.15.2
 
-  asma-types@2.0.5: {}
+  asma-types@2.0.30: {}
 
   async-limiter@1.0.1: {}
 
@@ -338,7 +338,7 @@ snapshots:
 
   tslib@2.6.2: {}
 
-  typescript@5.5.4: {}
+  typescript@5.6.3: {}
 
   undici-types@5.26.5: {}
 
