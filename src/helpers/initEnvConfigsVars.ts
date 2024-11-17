@@ -233,7 +233,7 @@ export function getOpenReplayKey(journal: string) {
 
     const _journal = journal.toLowerCase() === 'adcuris' ? 'adcuris' : 'adopus'
 
-    let key = (domain = 'advoca' ? OPENREPLAY_ADVOCA_PROJECT_KEY[_env] : OPENREPLAY_PROJECT_KEY[_env])
+    let key = domain === 'advoca' ? OPENREPLAY_ADVOCA_PROJECT_KEY[_env] : OPENREPLAY_PROJECT_KEY[_env]
 
     if (_env === 'prod' && typeof key !== 'string') {
         key = key[_journal]
