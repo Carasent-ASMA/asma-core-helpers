@@ -88,6 +88,10 @@ export type IAuthBindings<FE extends string> = {
 declare global {
     interface Window {
         __GENERATE_ENV_CONFIGS_BINDINGS__?: {
+            /**
+             * @deprecated shall be removed at next major release do not use this anymore not need
+             */
+            fetchConfigsReg: Record<string, () => unknown>
             EnvConfigsFnReg: Record<string, () => unknown>
             EnvConfigsFn?: () => unknown
         }
