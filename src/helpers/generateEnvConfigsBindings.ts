@@ -123,6 +123,10 @@ export function generateEnvConfigsBindings<
 
     realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__ = realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__ || {
         EnvConfigsFnReg: {},
+        /**
+         * @deprecated shall be removed in next major version
+         */
+        fetchConfigsReg: {},
     }
 
     realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__.EnvConfigsFnReg[EnvConfigsFnInstanceId] = EnvConfigsFn
