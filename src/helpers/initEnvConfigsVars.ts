@@ -203,7 +203,7 @@ function computedSubdomain() {
 }
 
 //export const base_url = computeBaseUrl()
-export const OPENREPLAY_PROJECT_KEY = {
+const OPENREPLAY_PROJECT_KEY = {
     /* taken from stage to test if it works */
     dev: 'XpLyoDeHEHwkJbD7TIZA',
     localhost: 'XpLyoDeHEHwkJbD7TIZA',
@@ -216,12 +216,24 @@ export const OPENREPLAY_PROJECT_KEY = {
     },
 }
 
+const OPENREPLAY_ADVOCA_PROJECT_KEY = {
+    dev: '2zFQuTc2VxdLJuoxVZDg',
+    localhost: '2zFQuTc2VxdLJuoxVZDg',
+    test: '2zFQuTc2VxdLJuoxVZDg',
+    stage: '2zFQuTc2VxdLJuoxVZDg',
+    blue: '',
+    prod: {
+        adopus: 'LvvBp2mAPmjvFVJ9z1Ik',
+        adcuris: '6KV7U380fV95Rku9X3cd',
+    },
+}
+
 export function getOpenReplayKey(journal: string) {
     const _env = env_to_operate || env
 
     const _journal = journal.toLowerCase() === 'adcuris' ? 'adcuris' : 'adopus'
 
-    let key = OPENREPLAY_PROJECT_KEY[_env]
+    let key = (domain = 'advoca' ? OPENREPLAY_ADVOCA_PROJECT_KEY[_env] : OPENREPLAY_PROJECT_KEY[_env])
 
     if (_env === 'prod' && typeof key !== 'string') {
         key = key[_journal]
