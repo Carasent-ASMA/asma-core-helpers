@@ -26,6 +26,11 @@ type IOverviews = {
     }[]
 }[]
 
+type IPrivacyPolicy = {
+    content_en: string | null
+    content_no: string | null
+}
+
 export type ICheckSigninTransformedOptions<IFeaturesArr extends string> = Omit<
     ICheckSigninOptions<IFeaturesArr>,
     'features'
@@ -69,4 +74,6 @@ export type ICheckSigninOptions<IFeaturesArr extends string> = Pick<
     identity?: string
     access_level?: number
     advoca_info_link?: string
+    /** @info only for anonymous */
+    privacy_policy?: IPrivacyPolicy
 }
