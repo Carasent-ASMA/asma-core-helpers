@@ -43,3 +43,4 @@ export * from './interfaces/enums'
 export * from './g-definitions'
 
 export * from './helpers/validateNorwegianPersonalNumber'
+export * from './helpers/generateRandomString'
