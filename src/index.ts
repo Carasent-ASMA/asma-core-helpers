@@ -41,3 +41,5 @@ export type { IFeedBack, ISaveToDataBase } from './interfaces/api/advoca/ISaveTo
 export * from './interfaces/enums'
 
 export * from './g-definitions'
+
+export * from './helpers/validateNorwegianPersonalNumber'

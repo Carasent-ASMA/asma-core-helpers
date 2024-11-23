@@ -67,6 +67,6 @@ export type ICheckSigninOptions<IFeaturesArr extends string> = Pick<
     vt?: number
     region?: string
     identity?: string
-    access_level?: number
+    access_level?: 1 | 2 | 3 | 4
     advoca_info_link?: string
 }
