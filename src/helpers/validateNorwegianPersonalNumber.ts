@@ -89,6 +89,8 @@ function isLeapYear(year: number): boolean {
 }
 
 function getAddedNumberForSyntheticMonth(syntheticMonth: number): number | 'INVALID' {
+    if (syntheticMonth === 65) return 60 // Special case for 65
+
     const possibleAdds = [40, 52, 65, 80]
 
     for (let add of possibleAdds) {
