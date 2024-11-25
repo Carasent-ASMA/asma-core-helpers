@@ -34,9 +34,20 @@ export function validateNorwegianPersonalNumber(number: string): NORWEGIAN_PERSO
 
     // Validate birth date or D-number date or temporary number
     const day = isDNumber ? digits[0] - 4 + digits[1] * 10 : digits[0] * 10 + digits[1]
-    const month = isSynthetic ? digits[2] - 4 + digits[3] * 10 : digits[2] * 10 + digits[3]
+
     const year = parseInt(digits[4] <= 4 ? `19${digits[4]}${digits[5]}` : `20${digits[4]}${digits[5]}`, 10)
 
+    let month
+
+    if (isSynthetic) {
+        const syntheticMonth = digits[2] * 10 + digits[3]
+        const addedNumber = getAddedNumberForSyntheticMonth(syntheticMonth)
+
+        if (addedNumber === 'INVALID') return 'INVALID' // Invalid synthetic number if no valid month
+        month = syntheticMonth - addedNumber // Subtract the added number to get the original month
+    } else {
+        month = digits[2] * 10 + digits[3]
+    }
     if (!isValidDate(year, month, day)) return 'INVALID'
 
     const lastFiveDigits = number.slice(6)
@@ -75,4 +86,17 @@ function isValidDate(year: number, month: number, day: number): boolean {
 // Function to check if a year is a leap year
 function isLeapYear(year: number): boolean {
     return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0
+}
+
+function getAddedNumberForSyntheticMonth(syntheticMonth: number): number | 'INVALID' {
+    const possibleAdds = [40, 52, 65, 80]
+
+    for (let add of possibleAdds) {
+        const calculatedMonth = syntheticMonth - add
+        if (calculatedMonth >= 1 && calculatedMonth <= 12) {
+            return add // Return the valid added number
+        }
+    }
+
+    return 'INVALID' // Return INVALID if no valid result found
 }
