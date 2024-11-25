@@ -1,8 +1,8 @@
-export const NORWEGIAN_PERSONAL_NUMBER_TYPES = ['REAL', 'DNUMBER', 'SYNTHETIC', 'TEMPORARY'] as const
+export const NORWEGIAN_PERSONAL_NUMBER = ['REAL', 'DNUMBER', 'SYNTHETIC', 'TEMPORARY'] as const
 
-export function validateNorwegianPersonalNumber(
-    number: string,
-): (typeof NORWEGIAN_PERSONAL_NUMBER_TYPES)[number] | 'INVALID' {
+export type NORWEGIAN_PERSONAL_NUMBER_TYPES = (typeof NORWEGIAN_PERSONAL_NUMBER)[number] | 'INVALID'
+
+export function validateNorwegianPersonalNumber(number: string): NORWEGIAN_PERSONAL_NUMBER_TYPES {
     // Check if the number has the correct format (11 digits)
     if (!/^\d{11}$/.test(number)) return 'INVALID'
 
