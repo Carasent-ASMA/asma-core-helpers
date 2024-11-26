@@ -1,7 +1,21 @@
+import { subdomain } from './getSubdomain'
+import { sha256 } from './sha256'
+
 export const NORWEGIAN_PERSONAL_NUMBER = ['REAL', 'DNUMBER', 'SYNTHETIC', 'TEMPORARY'] as const
 
 export type NORWEGIAN_PERSONAL_NUMBER_TYPES = (typeof NORWEGIAN_PERSONAL_NUMBER)[number] | 'INVALID'
-
+export function isNorwegianTemporaryNumber(number: string): boolean {
+    return validateNorwegianPersonalNumber(number) === 'TEMPORARY'
+}
+export function isNorwegianDnumber(number: string): boolean {
+    return validateNorwegianPersonalNumber(number) === 'DNUMBER'
+}
+export function isNorwegianSyntheticNumber(number: string): boolean {
+    return validateNorwegianPersonalNumber(number) === 'SYNTHETIC'
+}
+export function isNorwegianRealNumber(number: string): boolean {
+    return validateNorwegianPersonalNumber(number) === 'REAL'
+}
 export function validateNorwegianPersonalNumber(number: string): NORWEGIAN_PERSONAL_NUMBER_TYPES {
     // Check if the number has the correct format (11 digits)
     if (!/^\d{11}$/.test(number)) return 'INVALID'
@@ -106,4 +120,13 @@ function getAddedNumberForSyntheticMonth(syntheticMonth: number): number | 'INVA
     }
 
     return 'INVALID' // Return INVALID if no valid result found
+}
+
+export function generateUniqueToken(user: { actno: string; fnr: string; salt: string }) {
+    if (validateNorwegianPersonalNumber(user.fnr) === 'TEMPORARY') {
+        return sha256(`${subdomain}-${user.fnr}-${user.actno}`)
+    }
+    // ha256(`${recipient.fnr}AvansTheBest`)
+
+    return sha256(`${user.fnr}${user.salt}`)
 }
