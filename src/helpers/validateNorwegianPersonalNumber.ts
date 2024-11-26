@@ -87,10 +87,15 @@ function isValidDate(year: number, month: number, day: number): boolean {
 function isLeapYear(year: number): boolean {
     return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0
 }
-
+/**
+ *
+ * Is considered valid synthetic month if syntheticMonth is one of these: 41-52, 53-64, 65, 66-77, 81-92
+ */
 function getAddedNumberForSyntheticMonth(syntheticMonth: number): number | 'INVALID' {
     if (syntheticMonth === 65) return 60 // Special case for 65
-
+    /**
+     * dead numbers 78,79,80
+     */
     const possibleAdds = [40, 52, 65, 80]
 
     for (let add of possibleAdds) {
