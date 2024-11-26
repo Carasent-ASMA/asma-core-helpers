@@ -121,11 +121,12 @@ function getAddedNumberForSyntheticMonth(syntheticMonth: number): number | 'INVA
     return 'INVALID' // Return INVALID if no valid result found
 }
 
-export function generateUniqueToken(user: { actno: string; fnr: string; salt: string; customer_id: string }): string {
-    if (validateNorwegianPersonalNumber(user.fnr) === 'TEMPORARY') {
-        return sha256(`${user.customer_id}-${user.fnr}-${user.actno}`)
-    }
-    // ha256(`${recipient.fnr}AvansTheBest`)
+export function generateUniqueToken(user: { fnr: string; salt: string; customer_id?: string; actno?: string }): string {
+    const { fnr, salt, actno, customer_id } = user
 
-    return sha256(`${user.fnr}${user.salt}`)
+    if (customer_id && actno && validateNorwegianPersonalNumber(fnr) === 'TEMPORARY') {
+        return sha256(`${customer_id}-${fnr}-${actno}`)
+    }
+
+    return sha256(`${fnr}${salt}`)
 }
