@@ -1,4 +1,3 @@
-import { subdomain } from './getSubdomain'
 import { sha256 } from './sha256'
 
 export const NORWEGIAN_PERSONAL_NUMBER = ['REAL', 'DNUMBER', 'SYNTHETIC', 'TEMPORARY'] as const
