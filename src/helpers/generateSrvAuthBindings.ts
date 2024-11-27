@@ -420,7 +420,8 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
                 journal_role: metadata.journal_role || '',
                 user_id: metadata.user_id as IUUID,
                 brukerBrukerNavn: metadata.brukerBrukerNavn || '',
-            } satisfies Omit<IBaseJwtClaims<never>, 'subdomain' | 'genesis_set'>
+                access_level: metadata.access_level || 1,
+            } satisfies Omit<IBaseJwtClaims<never>, 'subdomain' | 'genesis_set'> & { access_level: 1 | 2 | 3 | 4 }
         }
         return undefined
     }
