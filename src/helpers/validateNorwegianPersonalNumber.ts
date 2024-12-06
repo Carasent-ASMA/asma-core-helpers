@@ -15,24 +15,15 @@ export function isNorwegianSyntheticNumber(number: string): boolean {
 export function isNorwegianRealNumber(number: string): boolean {
     return validateNorwegianPersonalNumber(number) === 'REAL'
 }
-export function validateNorwegianPersonalNumber(number: string): NORWEGIAN_PERSONAL_NUMBER_TYPES {
+export function validateNorwegianPersonalNumberAndGetBirthDate(number: string): {
+    class: NORWEGIAN_PERSONAL_NUMBER_TYPES
+    birthDate?: string
+} {
     // Check if the number has the correct format (11 digits)
-    if (!/^\d{11}$/.test(number)) return 'INVALID'
+    if (!/^\d{11}$/.test(number)) return { class: 'INVALID' }
 
     // Convert the string to an array of digits
-    const digits = number.split('').map(Number) as [
-        number,
-        number,
-        number,
-        number,
-        number,
-        number,
-        number,
-        number,
-        number,
-        number,
-        number,
-    ]
+    const digits = convertStringToNumberArray(number)
 
     // Since the input is guaranteed to be 11 digits, digits[0] will always be a number
     // No need to check the type of digits[0] again
@@ -56,16 +47,17 @@ export function validateNorwegianPersonalNumber(number: string): NORWEGIAN_PERSO
         const syntheticMonth = digits[2] * 10 + digits[3]
         const addedNumber = getAddedNumberForSyntheticMonth(syntheticMonth)
 
-        if (addedNumber === 'INVALID') return 'INVALID' // Invalid synthetic number if no valid month
+        if (addedNumber === 'INVALID') return { class: 'INVALID' } // Invalid synthetic number if no valid month
         month = syntheticMonth - addedNumber // Subtract the added number to get the original month
     } else {
         month = digits[2] * 10 + digits[3]
     }
-    if (!isValidDate(year, month, day)) return 'INVALID'
+    if (!isValidDate(year, month, day)) return { class: 'INVALID' }
 
     const lastFiveDigits = number.slice(6)
 
-    if (lastFiveDigits === '11111' || lastFiveDigits === '22222') return 'TEMPORARY'
+    if (lastFiveDigits === '11111' || lastFiveDigits === '22222')
+        return { class: 'TEMPORARY', birthDate: `${day}.${month}.${year}` }
 
     // Validate control digits (modulus 11)
     const k1Weights = [3, 7, 6, 1, 8, 9, 4, 5, 2]
@@ -80,13 +72,23 @@ export function validateNorwegianPersonalNumber(number: string): NORWEGIAN_PERSO
     const k1 = calculateControlDigit(k1Weights, 9)
     const k2 = calculateControlDigit(k2Weights, 10)
 
-    if (k1 !== digits[9] || k2 !== digits[10]) return 'INVALID'
+    if (k1 !== digits[9] || k2 !== digits[10]) return { class: 'INVALID' }
 
     // Identify type based on pattern
-    if (isDNumber) return 'DNUMBER'
-    if (isSynthetic) return 'SYNTHETIC'
-    return 'REAL'
+    if (isDNumber) return { class: 'DNUMBER', birthDate: `${day}.${month}.${year}` }
+    if (isSynthetic) return { class: 'SYNTHETIC', birthDate: `${day}.${month}.${year}` }
+    return { class: 'REAL', birthDate: `${day}.${month}.${year}` }
 }
+export const validateNorwegianPersonalNumber = (number: string) =>
+    validateNorwegianPersonalNumberAndGetBirthDate(number).class
+
+/**
+ * Extracts the birth date from a Norwegian national ID.
+ * @param personalNumber - The Norwegian national ID [Expecting type: `string`].
+ * @returns Formatted date string (DD.MM.YYYY) if the ID is valid, or null if the ID is invalid.
+ */
+export const getBirthDateFromNorwegianPersonalNumber = (number: string) =>
+    validateNorwegianPersonalNumberAndGetBirthDate(number).birthDate ?? null
 
 // Function to check for valid date
 function isValidDate(year: number, month: number, day: number): boolean {
@@ -104,7 +106,7 @@ function isLeapYear(year: number): boolean {
  *
  * Is considered valid synthetic month if syntheticMonth is one of these: 41-52, 53-64, 65, 66-77, 81-92
  */
-function getAddedNumberForSyntheticMonth(syntheticMonth: number): number | 'INVALID' {
+export function getAddedNumberForSyntheticMonth(syntheticMonth: number): number | 'INVALID' {
     if (syntheticMonth === 65) return 60 // Special case for 65
     /**
      * dead numbers 78,79,80
@@ -119,6 +121,22 @@ function getAddedNumberForSyntheticMonth(syntheticMonth: number): number | 'INVA
     }
 
     return 'INVALID' // Return INVALID if no valid result found
+}
+
+export function convertStringToNumberArray(str: string) {
+    return str.split('').map(Number) as [
+        number,
+        number,
+        number,
+        number,
+        number,
+        number,
+        number,
+        number,
+        number,
+        number,
+        number,
+    ]
 }
 
 export function generateUniqueToken(user: { fnr: string; salt: string; customer_id?: string; actno?: string }): string {
