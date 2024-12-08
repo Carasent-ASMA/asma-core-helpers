@@ -137,13 +137,14 @@ function isLeapYear(year: number): boolean {
 }
 
 /**
- * Is considered valid synthetic month if syntheticMonth is one of these:
- *  41-52 - addedValue = 40
- *  53-64 - addedValue = 52
- *  65    - addedValue = 60 (Special case)
- *  66-77 - addedValue = 65
- *  78-80 - addedValue = 75 (Special case)
- *  81-92 - addedValue = 80
+ * Is considered valid synthetic month if `syntheticMonth` is one of these:
+ *
+ * - **41-52**: `addedValue = 40`
+ * - **53-64**: `addedValue = 52`
+ * - **65**: `addedValue = 60` (Special case)
+ * - **66-77**: `addedValue = 65`
+ * - **78-80**: `addedValue = 75` (Special case)
+ * - **81-92**: `addedValue = 80`
  */
 function getAddedNumberForSyntheticMonth(syntheticMonth: number): number | 'INVALID' {
     if (syntheticMonth === 65) return 60 // Special case for 65
