@@ -22,11 +22,23 @@ export function validateNorwegianPersonalNumberAndGetBirthDate(number: string): 
     // Check if the number has the correct format (11 digits)
     if (!/^\d{11}$/.test(number)) return { class: 'INVALID' }
 
-    // Convert the string to an array of digits
-    const digits = convertStringToNumberArray(number)
-
-    // Since the input is guaranteed to be 11 digits, digits[0] will always be a number
-    // No need to check the type of digits[0] again
+    /**
+     * Convert the string to an array of digits
+     * Since the input is guaranteed to be 11 digits, digits will always be a number
+     */
+    const digits = number.split('').map(Number) as [
+        number,
+        number,
+        number,
+        number,
+        number,
+        number,
+        number,
+        number,
+        number,
+        number,
+        number,
+    ]
 
     // D-number: First digit between 4 and 7
     const isDNumber = digits[0] >= 4 && digits[0] <= 7
@@ -34,30 +46,42 @@ export function validateNorwegianPersonalNumberAndGetBirthDate(number: string): 
     // Synthetic number: First digit of the birth date +40
     const isSynthetic = digits[2] >= 4
 
-    // Check for temporary number: Last 5 digits are 11111 or 22222
+    // Temporary number: Last five digits are `11111` or `22222`
+    const isTemporary = ['11111', '22222'].includes(number.slice(6))
 
-    // Validate birth date or D-number date or temporary number
-    const day = isDNumber ? digits[0] - 4 + digits[1] * 10 : digits[0] * 10 + digits[1]
+    let day = digits[0] * 10 + digits[1]
+    let month = digits[2] * 10 + digits[3]
+    const year = digits[4] * 10 + digits[5]
 
-    const year = parseInt(digits[4] <= 4 ? `19${digits[4]}${digits[5]}` : `20${digits[4]}${digits[5]}`, 10)
+    const currentYear = new Date().getFullYear()
+    const fullYear = year + (year <= currentYear % 100 ? 2000 : 1900) // Adjust year based on the current century
 
-    let month
+    // Format day and month with leading zero
+    const formatWithLeadingZero = (value: number) => value.toString().padStart(2, '0')
+    const formattedDay = formatWithLeadingZero(day)
+    const formattedMonth = formatWithLeadingZero(month)
+
+    const birthDate = `${formattedDay}.${formattedMonth}.${fullYear}`
 
     if (isSynthetic) {
         const syntheticMonth = digits[2] * 10 + digits[3]
         const addedNumber = getAddedNumberForSyntheticMonth(syntheticMonth)
 
-        if (addedNumber === 'INVALID') return { class: 'INVALID' } // Invalid synthetic number if no valid month
-        month = syntheticMonth - addedNumber // Subtract the added number to get the original month
+        // Invalid synthetic number if no valid month
+        if (addedNumber === 'INVALID') {
+            return { class: 'INVALID' }
+        }
+
+        // Subtract the added number to get the original month and update the birth date to reflect adjusted moth
+        month -= addedNumber
+        return { class: 'SYNTHETIC', birthDate: `${formattedDay}.${formatWithLeadingZero(month)}.${fullYear}` }
     } else {
         month = digits[2] * 10 + digits[3]
     }
-    if (!isValidDate(year, month, day)) return { class: 'INVALID' }
 
-    const lastFiveDigits = number.slice(6)
-
-    if (lastFiveDigits === '11111' || lastFiveDigits === '22222')
-        return { class: 'TEMPORARY', birthDate: `${day}.${month}.${year}` }
+    if (isTemporary) {
+        return { class: 'TEMPORARY', birthDate }
+    }
 
     // Validate control digits (modulus 11)
     const k1Weights = [3, 7, 6, 1, 8, 9, 4, 5, 2]
@@ -75,10 +99,19 @@ export function validateNorwegianPersonalNumberAndGetBirthDate(number: string): 
     if (k1 !== digits[9] || k2 !== digits[10]) return { class: 'INVALID' }
 
     // Identify type based on pattern
-    if (isDNumber) return { class: 'DNUMBER', birthDate: `${day}.${month}.${year}` }
-    if (isSynthetic) return { class: 'SYNTHETIC', birthDate: `${day}.${month}.${year}` }
-    return { class: 'REAL', birthDate: `${day}.${month}.${year}` }
+    if (isDNumber) {
+        day = digits[0] - 4 + digits[1] * 10
+        // Update birth date to reflect adjusted day
+        return { class: 'DNUMBER', birthDate: `${formatWithLeadingZero(day)}.${formattedMonth}.${fullYear}` }
+    }
+
+    if (!isValidDate(year, month, day)) {
+        return { class: 'INVALID' }
+    }
+
+    return { class: 'REAL', birthDate }
 }
+
 export const validateNorwegianPersonalNumber = (number: string) =>
     validateNorwegianPersonalNumberAndGetBirthDate(number).class
 
@@ -102,11 +135,11 @@ function isValidDate(year: number, month: number, day: number): boolean {
 function isLeapYear(year: number): boolean {
     return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0
 }
+
 /**
- *
  * Is considered valid synthetic month if syntheticMonth is one of these: 41-52, 53-64, 65, 66-77, 81-92
  */
-export function getAddedNumberForSyntheticMonth(syntheticMonth: number): number | 'INVALID' {
+function getAddedNumberForSyntheticMonth(syntheticMonth: number): number | 'INVALID' {
     if (syntheticMonth === 65) return 60 // Special case for 65
     /**
      * dead numbers 78,79,80
@@ -121,22 +154,6 @@ export function getAddedNumberForSyntheticMonth(syntheticMonth: number): number 
     }
 
     return 'INVALID' // Return INVALID if no valid result found
-}
-
-export function convertStringToNumberArray(str: string) {
-    return str.split('').map(Number) as [
-        number,
-        number,
-        number,
-        number,
-        number,
-        number,
-        number,
-        number,
-        number,
-        number,
-        number,
-    ]
 }
 
 export function generateUniqueToken(user: { fnr: string; salt: string; customer_id?: string; actno?: string }): string {
