@@ -58,7 +58,11 @@ export const EnvironmentsUrls1 = (adcuris_subdomains?: string[]) => {
         AZURE_APP_REDIRECT_URI: realWindow.location.origin,
         OPENREPLAY_PROJECT_KEY: getOpenReplayKey,
         CDN_ASMA_BASE_URL: '/cdn',
+        /**
+         * @deprecated - use NBID_REDIRECT_URL instead
+         */
         SIGNICAT_REDIRECT_URL: `${realWindow.location.origin}/auth/callback`,
+        NBID_REDIRECT_URL: `${realWindow.location.origin}/auth/callback`,
         SIGNICAT_AUTH_URL: createSignicatAuthUrl(),
         ADOPUS_ACCESS_URL: realWindow.location.origin,
         SIGNICAT_CLIENT_ID: getClientId(),
