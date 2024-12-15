@@ -79,10 +79,6 @@ export function validateNorwegianPersonalNumberAndGetBirthDate(number: string): 
         month = digits[2] * 10 + digits[3]
     }
 
-    if (isTemporary) {
-        return { class: 'TEMPORARY', birthDate }
-    }
-
     // Validate control digits (modulus 11)
     const k1Weights = [3, 7, 6, 1, 8, 9, 4, 5, 2]
     const k2Weights = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2]
@@ -105,8 +101,13 @@ export function validateNorwegianPersonalNumberAndGetBirthDate(number: string): 
         return { class: 'DNUMBER', birthDate: `${formatWithLeadingZero(day)}.${formattedMonth}.${fullYear}` }
     }
 
+    /* Important to validate date for Real and Temporary numbers */
     if (!isValidDate(year, month, day)) {
         return { class: 'INVALID' }
+    }
+
+    if (isTemporary) {
+        return { class: 'TEMPORARY', birthDate }
     }
 
     return { class: 'REAL', birthDate }
@@ -122,6 +123,37 @@ export const validateNorwegianPersonalNumber = (number: string) =>
  */
 export const getBirthDateFromNorwegianPersonalNumber = (number: string) =>
     validateNorwegianPersonalNumberAndGetBirthDate(number).birthDate ?? null
+
+export const getAgeFromNorwegianPersonalNumber = (pnr: string) => {
+    const birthday = getBirthDateFromNorwegianPersonalNumber(pnr)
+
+    if (!birthday) {
+        return null
+    }
+
+    const [day, month, year] = birthday.split('.').map(Number)
+
+    if (!(day && month && year)) {
+        return null
+    }
+
+    /** Subtract 1 from the month because JavaScript months are zero-based (0-11) */
+    const birthDate = new Date(year, month - 1, day)
+    const currentDate = new Date()
+
+    let age = currentDate.getFullYear() - birthDate.getFullYear()
+
+    /** Checks if the birthday has already passed this year */
+    const isBirthdayThisYearPassed =
+        currentDate.getMonth() > birthDate.getMonth() ||
+        (currentDate.getMonth() === birthDate.getMonth() && currentDate.getDate() >= birthDate.getDate())
+
+    if (!isBirthdayThisYearPassed) {
+        age -= 1
+    }
+
+    return age
+}
 
 // Function to check for valid date
 function isValidDate(year: number, month: number, day: number): boolean {
