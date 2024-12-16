@@ -154,6 +154,42 @@ export const getAgeFromNorwegianPersonalNumber = (pnr: string) => {
     return age
 }
 
+/**
+ *
+ * @param pnr string
+ * @returns pnr if validation passed, or null if validation failed
+ */
+export function getValidNorwegianPersonalNumber(pnr: string): string | null {
+    const validationResult = validateNorwegianPersonalNumber(pnr)
+
+    if (validationResult === 'INVALID') {
+        return null
+    }
+
+    return pnr
+}
+
+export type GENDER = 'MALE' | 'FEMALE'
+/**
+ *
+ * @param pnr string - Norwegian personal number
+ * @returns `GENDER` if successfully determined, otherwise `null`
+ */
+export const getGenderFromNorwegianPersonalNumber = (pnr: string): GENDER | null => {
+    const norwegianId = getValidNorwegianPersonalNumber(pnr)
+
+    if (!norwegianId) return null
+
+    const individualNumber = parseInt(norwegianId.slice(6, 9), 10)
+
+    /* Digits 7-9 determine gender: even = `FEMALE`, odd = `MALE` */
+    return individualNumber % 2 === 0 ? 'FEMALE' : 'MALE'
+}
+
+export const isMale = (pnr: string): boolean => getGenderFromNorwegianPersonalNumber(pnr) === 'MALE'
+
+export const isFemale = (pnr: string): boolean => getGenderFromNorwegianPersonalNumber(pnr) === 'FEMALE'
+
 // Function to check for valid date
 function isValidDate(year: number, month: number, day: number): boolean {
     if (month < 1 || month > 12 || day < 1) return false
