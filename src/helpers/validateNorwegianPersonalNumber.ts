@@ -79,6 +79,10 @@ export function validateNorwegianPersonalNumberAndGetBirthDate(number: string): 
         month = digits[2] * 10 + digits[3]
     }
 
+    if (isTemporary && isValidDate(year, month, day)) {
+        return { class: 'TEMPORARY', birthDate }
+    }
+
     // Validate control digits (modulus 11)
     const k1Weights = [3, 7, 6, 1, 8, 9, 4, 5, 2]
     const k2Weights = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2]
@@ -101,13 +105,8 @@ export function validateNorwegianPersonalNumberAndGetBirthDate(number: string): 
         return { class: 'DNUMBER', birthDate: `${formatWithLeadingZero(day)}.${formattedMonth}.${fullYear}` }
     }
 
-    /* Important to validate date for Real and Temporary numbers */
     if (!isValidDate(year, month, day)) {
         return { class: 'INVALID' }
-    }
-
-    if (isTemporary) {
-        return { class: 'TEMPORARY', birthDate }
     }
 
     return { class: 'REAL', birthDate }
