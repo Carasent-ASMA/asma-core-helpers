@@ -55,6 +55,9 @@ export type ICheckSigninOptions<IFeaturesArr extends string> = Pick<
     user_name?: string
     openreplay?: IOpenreplay
     default_app_versions?: Record<string, string>
+    /**
+     * @deprecated shall be replaced by features
+     */
     isTeamLeader?: boolean
     overviews?: IOverviews
     device_authorized?: boolean
