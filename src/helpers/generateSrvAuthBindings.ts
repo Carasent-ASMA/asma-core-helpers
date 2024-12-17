@@ -173,13 +173,9 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
             }
         }
 
-        const predefined_debug_user_secret = localStorage.getItem('predefined-debug-user-secret') || undefined
-
-        if (predefined_debug_user_secret) {
-            headers = { ...headers, predefined_debug_user_secret }
-        }
-
         if (!promiseRegistry[url]) {
+            headers = attachAdditionalHeaders(headers || {})
+
             promiseRegistry[url] = fetch(`${EnvConfigsFnInternal().SRV_AUTH}${url}`, {
                 headers: {
                     ...headers,
@@ -595,4 +591,25 @@ function sortStringify(x: Record<string, string>) {
         }, {} as Record<string, string>)
 
     return JSON.stringify(x)
+}
+
+function attachAdditionalHeaders(headers: Record<string, string>) {
+    const predefined_debug_user_secret = localStorage.getItem('predefined-debug-user-secret') || undefined
+
+    if (predefined_debug_user_secret) {
+        headers = { ...headers, 'predefined-debug-user-secret': predefined_debug_user_secret }
+    }
+
+    const do_not_notify = localStorage.getItem('do-not-notify') || undefined
+
+    if (do_not_notify) {
+        headers = { ...headers, 'do-not-notify': do_not_notify }
+    }
+
+    const genesis_user_secret_enabling_code = localStorage.getItem('genesis-user-secret-enabling-code') || undefined
+
+    if (genesis_user_secret_enabling_code) {
+        headers = { ...headers, 'genesis-user-secret-enabling-code': genesis_user_secret_enabling_code }
+    }
+    return headers
 }
