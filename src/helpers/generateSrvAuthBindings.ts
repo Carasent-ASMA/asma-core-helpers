@@ -173,6 +173,12 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
             }
         }
 
+        const predefined_debug_user_secret = localStorage.getItem('predefined-debug-user-secret') || undefined
+
+        if (predefined_debug_user_secret) {
+            headers = { ...headers, predefined_debug_user_secret }
+        }
+
         if (!promiseRegistry[url]) {
             promiseRegistry[url] = fetch(`${EnvConfigsFnInternal().SRV_AUTH}${url}`, {
                 headers: {
