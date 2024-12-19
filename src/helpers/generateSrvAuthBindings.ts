@@ -606,10 +606,10 @@ function attachAdditionalHeaders(headers: Record<string, string>) {
         headers = { ...headers, 'do-not-notify': do_not_notify }
     }
 
-    const genesis_user_secret_enabling_code = localStorage.getItem('genesis-user-secret-enabling-code') || undefined
+    const genesis_user_secret_enabling_code = localStorage.getItem('genesis-secret-activation-code') || undefined
 
     if (genesis_user_secret_enabling_code) {
-        headers = { ...headers, 'genesis-user-secret-enabling-code': genesis_user_secret_enabling_code }
+        headers = { ...headers, 'genesis-secret-activation-code': genesis_user_secret_enabling_code }
     }
     return headers
 }
