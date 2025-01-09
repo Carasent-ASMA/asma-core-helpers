@@ -44,3 +44,4 @@ export * from './g-definitions'
 
 export * from './helpers/validateNorwegianPersonalNumber'
 export * from './helpers/generateRandomString'
+export * from './helpers/isUUID'
