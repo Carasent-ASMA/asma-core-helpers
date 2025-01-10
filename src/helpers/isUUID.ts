@@ -13,9 +13,9 @@ const ASMA_UUID_REGEX: RegExp = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4
  * isUUID('00000000-0000-0000-0000-000000000000') // true
  * isUUID('use_strict')('00000000-0000-0000-0000-000000000000') // false (strict)
  */
-export function isUUID(string: string): string is IUUID
-export function isUUID(mode: 'use_strict'): (string: string) => string is IUUID
-export function isUUID(param: 'use_strict' | string) {
+export function isUUID(string?: string): string is IUUID
+export function isUUID(mode: 'use_strict'): (string?: string) => string is IUUID
+export function isUUID(param?: 'use_strict' | string) {
     if (param === 'use_strict') {
         return (string: string): string is IUUID => assertUUID(string, STRICT_UUID_REGEX)
     }
@@ -23,7 +23,7 @@ export function isUUID(param: 'use_strict' | string) {
     return assertUUID(param)
 }
 
-function assertUUID(string: string, UUID_REGEX: RegExp = ASMA_UUID_REGEX): string is IUUID {
+function assertUUID(string?: string, UUID_REGEX: RegExp = ASMA_UUID_REGEX): string is IUUID {
     if (!string) return false
     return UUID_REGEX.test(string)
 }
