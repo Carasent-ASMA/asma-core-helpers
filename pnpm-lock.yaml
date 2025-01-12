@@ -11,6 +11,9 @@ importers:
       asma-event-bus:
         specifier: ^0.7.0
         version: 0.7.0
+      buffer:
+        specifier: ^6.0.3
+        version: 6.0.3
       idb-keyval:
         specifier: ^6.2.1
         version: 6.2.1
@@ -85,6 +88,12 @@ packages:
   backo2@1.0.2:
     resolution: {integrity: sha512-zj6Z6M7Eq+PBZ7PQxl5NT665MvJdAkzp0f60nAJ+sLaSCBPMwVak5ZegFbgVCzFcCJTKFoMizvM5Ld7+JrRJHA==}
 
+  base64-js@1.5.1:
+    resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
+
+  buffer@6.0.3:
+    resolution: {integrity: sha512-FTiCpNxtwiZZHEZbcbTIcZjERVICn9yq/pDFkTl95/AxzD1naBctN7YO68riM/gLSDY7sdrMby8hofADYuuqOA==}
+
   error-stack-parser@2.1.4:
     resolution: {integrity: sha512-Sk5V6wVazPhq5MhpO+AUxJn5x7XSXGl1R93Vn7i+zS15KDVxQijejNCrz8340/2bgLBjR9GtEG8ZVKONDjcqGQ==}
 
@@ -106,6 +115,9 @@ packages:
 
   idb-keyval@6.2.1:
     resolution: {integrity: sha512-8Sb3veuYCyrZL+VBt9LJfZjLUPWVvqn8tG28VqYNFCo43KHcKuq+b4EiXGeuaLAQWL2YmyDgMp2aSpH9JHsEQg==}
+
+  ieee754@1.2.1:
+    resolution: {integrity: sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA==}
 
   import-html-entry@1.15.2:
     resolution: {integrity: sha512-XXtXpGAq811qBgFVdOU6LoOC67rirwv7qwz/zuz1KxbpAM7QYX6kMvELOdSfhjZ9ntQnsdEOXT2zV7xMYaky6w==}
@@ -267,6 +279,13 @@ snapshots:
 
   backo2@1.0.2: {}
 
+  base64-js@1.5.1: {}
+
+  buffer@6.0.3:
+    dependencies:
+      base64-js: 1.5.1
+      ieee754: 1.2.1
+
   error-stack-parser@2.1.4:
     dependencies:
       stackframe: 1.3.4
@@ -284,6 +303,8 @@ snapshots:
       '@babel/runtime': 7.24.4
 
   idb-keyval@6.2.1: {}
+
+  ieee754@1.2.1: {}
 
   import-html-entry@1.15.2:
     dependencies:

@@ -25,6 +25,7 @@
     },
     "dependencies": {
         "asma-event-bus": "^0.7.0",
+        "buffer": "^6.0.3",
         "idb-keyval": "^6.2.1",
         "mobx": "^6.12.3",
         "mobx-state-tree": "^5.4.2"
