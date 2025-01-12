@@ -24,6 +24,6 @@ export function isUUID(param?: 'use_strict' | string) {
 }
 
 function assertUUID(string?: string, UUID_REGEX: RegExp = ASMA_UUID_REGEX): string is IUUID {
-    if (!string) return false
+    if (typeof string !== 'string') return false
     return UUID_REGEX.test(string)
 }
