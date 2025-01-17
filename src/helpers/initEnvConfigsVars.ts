@@ -10,12 +10,7 @@ export const env =
 export type IEnv = typeof env
 export const env_to_operate = realWindow.__asma_development_environment_to_operate__
 
-export let domain = realWindow.location.hostname.split('.').at(-2) as
-    | 'adopus'
-    | 'adcuris'
-    | 'advoca'
-    | 'avans'
-    | undefined
+export let domain = realWindow.location.hostname.split('.').at(-2) as 'adopus' | 'adcuris' | 'advoca' | undefined
 
 if (!domain || !['adopus', 'adcuris', 'advoca', 'avans'].includes(domain)) {
     throw new Error('Domain not found! please use dns ..[advoca,adopus,avans].[no,health,localhost]')
@@ -67,30 +62,6 @@ export function createAdvocaAccessUrl() {
 
     const subdomain = window.location.host.split('.').slice(0, -2).join('.')
 
-    /*  const host_name_arr = realWindow.location.hostname.split('.')
-
-    let subdomain = 'web'
-
-    if (host_name_arr.length === 3 && host_name_arr[0]) {
-        subdomain = host_name_arr[0]
-    }
-
-    // new subdomain structure => subdomain.subdomain.advoca.no
-    if (host_name_arr.length === 4 && host_name_arr[0]) {
-        subdomain = host_name_arr[0] + '.' + host_name_arr[1]
-    }
-
-    // excludes for shell => dev/stage.advoca.no, for more dynamic, depends on customer, convert it in code
-    if (host_name_arr.length === 4 && host_name_arr[0] && host_name_arr[1] && host_name_arr[0] === 'shell') {
-        subdomain = host_name_arr[1]
-    }
-
-    // for adcuris
-    if (realWindow.location.hostname.includes('adcuris')) {
-        advoca_url = advoca_url.replace('adcuris', 'advoca')
-        subdomain = subdomain.replace('advoca-', '').replace('advoca', 'www')
-    } */
-
     return advoca_url.replace('subdomain', subdomain)
 }
 
@@ -118,50 +89,7 @@ export function computeBaseUrl() {
      */
     let tld = domain === 'adcuris' ? 'health' : 'no'
 
-    if (domain === 'avans') {
-        domain = 'adopus'
-    }
-    /*   let tld = 'no'
-
-    if (domain === 'adcuris') {
-        tld = 'health'
-    }
- */
-    /* if (env == 'localhost') {
-        // default
-        if (!env_to_operate || env_to_operate.includes('localhost')) {
-            env_computed = subdomain ? subdomain + '.dev' : 'dev'
-            // custom
-        } else {
-            env_computed =
-                env_to_operate === 'prod' && !subdomain
-                    ? 'web'
-                    : env_to_operate === 'prod'
-                    ? subdomain
-                    : subdomain
-                    ? `${subdomain}.${env_to_operate}`
-                    : env_to_operate
-        }
-
-        base_url = `https://${env_computed}.${domain}.${tld}`
-    } else if (subdomain === 'cdn') {
-        env_computed = 'dev'
-
-        base_url = `https://${env_computed}.${domain}.${tld}`
-    } */
     let computed_subdomain = computedSubdomain()
-
-    /*  if (domain === 'advoca') {
-        computed_subdomain = computed_subdomain || window.location.host.split('.').slice(0, -2).join('.')
-
-        if () {
-            domain = 'adcuris'
-
-            tld = 'health'
-        } else {
-            domain = 'adopus'
-        }
-    } */
 
     if (computed_subdomain) {
         base_url = `https://${computed_subdomain}.${domain}.${tld}`
