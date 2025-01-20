@@ -40,6 +40,7 @@ export const EnvironmentsUrls1 = (adcuris_subdomains?: string[]) => {
 
         SRV_AO_DIRECTORY: `${base_url}/api-ao/directory`,
         SRV_AO_WRAPPER: '',
+        SRV_AO_WRAPPER_NEW: '/api/wrapper',
         SRV_AUTH: '/api/auth',
         DEVELOPMENT:
             realWindow.location.hostname.includes('dev.') || realWindow.location.hostname.includes('localhost'),
