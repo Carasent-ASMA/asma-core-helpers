@@ -79,4 +79,5 @@ export type ICheckSigninOptions<IFeaturesArr extends string> = Pick<
     advoca_info_link?: string
     /** @info only for anonymous */
     privacy_policy?: IPrivacyPolicy
+    device?: 'AUTHORIZED' | 'UNAUTHORIZED'
 }

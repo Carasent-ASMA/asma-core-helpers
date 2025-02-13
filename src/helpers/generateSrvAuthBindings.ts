@@ -238,14 +238,8 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     async function signin(url: string, headers?: Record<string, string>): Promise<ISigninResponse<FE>> {
         if (isJwtValid() && metadata) {
             return {
-                //features: metadata?.features ? Array.from(metadata.features) : [],
                 token: jwtToken,
-                // connector: metadata?.journal,
-                //  openreplay: metadata?.openreplay,
-                //   srv_urls: metadata?.srv_urls,
-                //   theme: getTheme(),
-                //   isTeamLeader: metadata?.isTeamLeader || false,
-                //   default_app_versions: metadata?.default_app_versions || {},
+
                 metadata: {
                     ...metadata,
                     features: metadata?.features ? Array.from(metadata.features) : undefined,
@@ -265,7 +259,6 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     }
     function resetData() {
         jwtToken = ''
-        // metadata = undefined
     }
 
     function setAuthData(data?: Partial<ISigninResponse<FE>>) {
