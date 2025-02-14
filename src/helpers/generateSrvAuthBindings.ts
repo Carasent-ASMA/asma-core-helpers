@@ -1,5 +1,4 @@
 import { EventBus } from 'asma-event-bus/lib/event-buss'
-import { EnvironmentEnums } from '../interfaces/enums'
 import { EnvConfigsFnInternal } from './generateEnvConfigsBindings'
 import { asmaOverridesEventBus } from 'asma-event-bus/lib'
 import { realWindow, type IAuthBindings } from '..'
@@ -11,12 +10,12 @@ import type { IBaseJwtClaims, IUUID } from 'asma-types/lib'
 
 export const { dispatch: dispatchSrvAuthEvents, register: registerCallbackOnSrvAuthEvents } = EventBus<{
     jwt_changed?: ICheckSigninOptions<any> //IBaseJwtClaims<'super_user' | 'therapist' | 'recipient'>
-    logout_event: {}
+    logout_event: { device?: 'TRUSTED' | 'UNTRUSTED' }
     customer_changed: {}
 }>('auth-bindings')
 
-function dispatchLogoutEvent() {
-    dispatchSrvAuthEvents('logout_event', {}, false)
+function dispatchLogoutEvent(device?: 'TRUSTED' | 'UNTRUSTED') {
+    dispatchSrvAuthEvents('logout_event', { device }, false)
 }
 function dispatchJwtChangedEvent(jwt?: ICheckSigninOptions<any>) {
     dispatchSrvAuthEvents('jwt_changed', jwt, false)
@@ -69,7 +68,7 @@ export function isJwtValidInternal(): boolean {
     return isJwtValid()
 }
 
-export async function srvAuthGetInternal<R>(url: string, headers?: Record<string, string>) {
+export async function srvAuthGetInternal<R>(url: string | URL, headers?: Record<string, string>) {
     const srvAuthGet = realWindow.__ASMA__SHELL__?.auth_bindings?.srvAuthGet
 
     if (!srvAuthGet) {
@@ -149,34 +148,40 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
 
     const promiseRegistry: Record<string, Promise<Response>> = <{}>{}
 
-    async function srvAuthGet<R>(url: string, headers?: Record<string, string>): Promise<R> {
-        const { ENVIRONMENT_TO_OPERATE, DEVELOPMENT } = EnvConfigsFnInternal()
+    async function srvAuthGet<R>(url: string | URL, headers?: Record<string, string>): Promise<R> {
+        //const { ENVIRONMENT_TO_OPERATE, DEVELOPMENT } = EnvConfigsFnInternal()
 
-        if (DEVELOPMENT && ENVIRONMENT_TO_OPERATE) {
-            if (ENVIRONMENT_TO_OPERATE in EnvironmentEnums) {
-                url = `${url}&env=${EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE}`
-
-                if (realWindow.location.port) {
-                    url = `${url}&port=${realWindow.location.port}`
-                }
-
-                // file deepcode ignore GlobalReplacementRegex: <it is intended to be replaced only first occurrence>
-                url = url.includes('&') && !url.includes('?') ? url.replace('&', '?') : url
-            } else {
-                console.warn(
-                    'EnvironmentToOperateFn() is not a valid EnvironmentEnums',
-                    'shall be one of:',
-                    EnvironmentEnums,
-                    'actual value:',
-                    EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE,
-                )
-            }
+        if (typeof url === 'string') {
+            url = buildURL(url)
         }
 
-        if (!promiseRegistry[url]) {
+        //if (DEVELOPMENT && ENVIRONMENT_TO_OPERATE) {
+        ///  if (ENVIRONMENT_TO_OPERATE in EnvironmentEnums) {
+        //url.searchParams.append('env', ENVIRONMENT_TO_OPERATE)
+        //url = `${url}&env=${EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE}`
+
+        //if (realWindow.location.port) {
+        //  url.searchParams.append('port', realWindow.location.port)
+        // url = `${url}&port=${realWindow.location.port}`
+        //}
+
+        // file deepcode ignore GlobalReplacementRegex: <it is intended to be replaced only first occurrence>
+        //url = url.includes('&') && !url.includes('?') ? url.replace('&', '?') : url
+        // } else {
+        //      console.warn(
+        //         'EnvironmentToOperateFn() is not a valid EnvironmentEnums',
+        //         'shall be one of:',
+        //         EnvironmentEnums,
+        //          'actual value:',
+        //         EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE,
+        //     )
+        //  }
+        // }
+
+        if (!promiseRegistry[url.pathname]) {
             headers = attachAdditionalHeaders(headers || {})
 
-            promiseRegistry[url] = fetch(`${EnvConfigsFnInternal().SRV_AUTH}${url}`, {
+            promiseRegistry[url.pathname] = fetch(url.toString(), {
                 headers: {
                     ...headers,
                 },
@@ -186,8 +191,8 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
             })
         }
 
-        const res = await promiseRegistry[url]!.finally(() => {
-            delete promiseRegistry[url]
+        const res = await promiseRegistry[url.pathname]!.finally(() => {
+            delete promiseRegistry[url.pathname]
         })
 
         const json: R = await res.clone().json()
@@ -229,13 +234,16 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
      *
      * TODO: need to investigate smarter way of registering and unregister on `logout_event`
      **/
-    registerCallbackOnSrvAuthEvents('logout_event', async () => {
+    registerCallbackOnSrvAuthEvents('logout_event', async ({ device }) => {
         resetData()
-
-        await srvAuthGet('/signout')
+        const url = buildURL('/signout')
+        if (device === 'UNTRUSTED') {
+            url.searchParams.append('unset', 'device_authorization_token')
+        }
+        await srvAuthGet(url)
     })
 
-    async function signin(url: string, headers?: Record<string, string>): Promise<ISigninResponse<FE>> {
+    async function signin(url: string | URL, headers?: Record<string, string>): Promise<ISigninResponse<FE>> {
         if (isJwtValid() && metadata) {
             return {
                 token: jwtToken,
@@ -337,7 +345,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         _cache_ttl = 24,
         _do_not_cache = false,
     ): Promise<ICheckRegisteredSubdomainResponse<FE> | undefined> {
-        const url = `/check?context=subdomain`
+        const url = buildURL(`/check?context=subdomain`)
 
         if (metadata) {
             return {
@@ -363,11 +371,8 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
 
     async function getNewJwtToken() {
         try {
-            const searchParams = new URLSearchParams(realWindow.location.search)
-
-            const data = await srvAuthGet<ISigninResponse<FE> & { signout?: boolean }>(
-                `/token?${searchParams.toString()}`,
-            )
+            const url = buildURL(`/token` + realWindow.location.search)
+            const data = await srvAuthGet<ISigninResponse<FE> & { signout?: boolean }>(url)
 
             data.signout && logout?.()
 
@@ -605,4 +610,14 @@ function attachAdditionalHeaders(headers: Record<string, string>) {
         headers = { ...headers, 'genesis-secret-activation-code': genesis_user_secret_enabling_code }
     }
     return headers
+}
+
+function buildURL(pathname = '') {
+    // If path is absolute, return it as-is
+    const srv_auth = EnvConfigsFnInternal().SRV_AUTH
+    if (srv_auth.startsWith('http://') || srv_auth.startsWith('https://')) {
+        return new URL(srv_auth + pathname)
+    }
+    // Otherwise, resolve against the base URL
+    return new URL(srv_auth + pathname, window.location.origin)
 }
