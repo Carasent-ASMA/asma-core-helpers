@@ -17,7 +17,8 @@ export type IAuthBindings<FE extends string> = {
     isJwtValid: () => boolean
     getConnector: () => string | undefined
     getCachedJwt: () => Promise<string | undefined>
-    srvAuthGet: <R>(url: string, headers?: Record<string, string>) => Promise<R>
+    /** @important do not use url as string but rather pass an URL object */
+    srvAuthGet: <R>(url: string | URL, headers?: Record<string, string>) => Promise<R>
     setReqConfig: <T = unknown>(
         data?: T | undefined,
         responseType?: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream',
@@ -62,7 +63,7 @@ export type IAuthBindings<FE extends string> = {
         callback: (
             val: {
                 jwt_changed?: Omit<ICheckSigninOptions<any>, 'features'>
-                logout_event: {}
+                logout_event: { device?: 'TRUSTED' | 'UNTRUSTED' }
                 customer_changed: {}
             }[Key_1],
         ) => void,
@@ -74,7 +75,7 @@ export type IAuthBindings<FE extends string> = {
         callback: (
             val: {
                 jwt_changed?: ICheckSigninOptions<any>
-                logout_event: {}
+                logout_event: { device?: 'TRUSTED' | 'UNTRUSTED' }
                 customer_changed: {}
             }[Key_1],
         ) => void,
