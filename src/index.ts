@@ -43,6 +43,7 @@ export * from './interfaces/enums'
 export * from './g-definitions'
 
 export * from './helpers/validateNorwegianPersonalNumber'
+export * from './helpers/generateSyntheticNorwegianNumber'
 export * from './helpers/generateRandomString'
 export * from './helpers/isUUID'
 export * from './helpers/JSONToBase64EncodeDecode'
