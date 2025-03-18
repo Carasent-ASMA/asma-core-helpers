@@ -1,7 +1,7 @@
 import { EventBus } from 'asma-event-bus/lib/event-buss'
 import { EnvConfigsFnInternal } from './generateEnvConfigsBindings'
 import { asmaOverridesEventBus } from 'asma-event-bus/lib'
-import { realWindow, type IAuthBindings } from '..'
+import { domain, realWindow, type IAuthBindings } from '..'
 import { get as _ } from 'idb-keyval'
 import type { ICheckSigninOptions, ICheckSigninTransformedOptions } from './generateSrvAuthBindings.types'
 import type { IBaseJwtClaims, IUUID } from 'asma-types/lib'
@@ -609,6 +609,12 @@ function attachAdditionalHeaders(headers: Record<string, string>) {
     if (genesis_user_secret_enabling_code) {
         headers = { ...headers, 'genesis-secret-activation-code': genesis_user_secret_enabling_code }
     }
+    const genesis_user_secret = localStorage.getItem('genesis-user-secret') || undefined
+
+    if (domain === 'advoca' && genesis_user_secret) {
+        headers = { ...headers, 'genesis-user-secret': `genesis_user_secret.${genesis_user_secret}` }
+    }
+
     return headers
 }
 
