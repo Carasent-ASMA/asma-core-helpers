@@ -1,11 +1,11 @@
 function generateSyntheticPnr({
     dateOfBirth,
     gender,
-    factor,
+    factor = 80,
 }: {
     dateOfBirth: Date
     gender: 'male' | 'female'
-    factor: 40 | 52 | 65 | 80
+    factor?: 40 | 52 | 65 | 80
 }) {
     const day = dateOfBirth.getDate().toString().padStart(2, '0')
     const month = (dateOfBirth.getMonth() + 1 + factor).toString().padStart(2, '0') // Add 40 to the month
@@ -76,7 +76,7 @@ function generateSyntheticPnr({
 export function generateSyntheticPnrWithRetries(data: {
     dateOfBirth: Date
     gender: 'male' | 'female'
-    factor: 40 | 52 | 65 | 80
+    factor?: 40 | 52 | 65 | 80
 }) {
     while (true) {
         const pnr = generateSyntheticPnr(data)
