@@ -1,10 +1,12 @@
+import type { GENDER } from './validateNorwegianPersonalNumber'
+
 function generateSyntheticPnr({
     dateOfBirth,
     gender,
     factor = 80,
 }: {
     dateOfBirth: Date
-    gender: 'male' | 'female'
+    gender: GENDER
     factor?: 40 | 52 | 65 | 80
 }) {
     const day = dateOfBirth.getDate().toString().padStart(2, '0')
@@ -14,7 +16,7 @@ function generateSyntheticPnr({
 
     // Generate individual numbers
     let individualNumber: number
-    if (gender === 'female') {
+    if (gender === 'FEMALE') {
         individualNumber = 0
     } else {
         individualNumber = 1
@@ -75,11 +77,12 @@ function generateSyntheticPnr({
  */
 export function generateSyntheticPnrWithRetries(data: {
     dateOfBirth: Date
-    gender: 'male' | 'female'
+    gender: GENDER
     factor?: 40 | 52 | 65 | 80
 }) {
     while (true) {
         const pnr = generateSyntheticPnr(data)
+
         if (pnr !== 'INVALID') {
             return pnr
         }
