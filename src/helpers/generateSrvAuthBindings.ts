@@ -531,6 +531,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         // cancelRequest,
         accessTokenHasExpired,
         checkForRegisteredSubdomain,
+        /**@deprecated - do not use it anymore is moved to features `TimeRegistration_TeamleaderOverview` */
         isTeamLeader,
     } satisfies IAuthBindings<FE>
 
