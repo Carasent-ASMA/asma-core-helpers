@@ -1,6 +1,6 @@
 {
     "name": "asma-helpers",
-    "version": "0.37.32",
+    "version": "0.37.33",
     "description": "helpers methods for asma",
     "main": "lib/index.js",
     "types": "lib",
