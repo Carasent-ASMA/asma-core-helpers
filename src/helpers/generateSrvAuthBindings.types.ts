@@ -29,6 +29,8 @@ type IOverviews = {
 type IPrivacyPolicy = {
     content_en: string | null
     content_no: string | null
+    monitoring_content_en: string | null
+    monitoring_content_no: string | null
 }
 
 export type ICheckSigninTransformedOptions<IFeaturesArr extends string> = Omit<
