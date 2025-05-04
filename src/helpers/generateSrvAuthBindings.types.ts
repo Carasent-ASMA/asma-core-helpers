@@ -82,4 +82,9 @@ export type ICheckSigninOptions<IFeaturesArr extends string> = Pick<
     /** @info only for anonymous */
     privacy_policy?: IPrivacyPolicy
     device?: 'TRUSTED' | 'UNTRUSTED'
+    step2_active_options?: {
+        email?: true
+        sms?: true
+        webauthn?: true
+    }
 }
