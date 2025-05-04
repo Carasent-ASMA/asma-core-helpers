@@ -7,5 +7,5 @@ export function base64toFile(b64Data: string, name: string, type = 'application/
     for (let i = 0; i < bytes.length; i++) {
         writer[i] = bytes.charCodeAt(i)
     }
-    return new File([writer.buffer], name, { type })
+    return new File([writer], name, { type })
 }

@@ -8,6 +8,7 @@
         "nbid",
         "nonprod",
         "preprod",
-        "signicat"
+        "signicat",
+        "webauthn"
     ]
 }
