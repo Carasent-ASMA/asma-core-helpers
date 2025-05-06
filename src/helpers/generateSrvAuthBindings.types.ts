@@ -86,5 +86,6 @@ export type ICheckSigninOptions<IFeaturesArr extends string> = Pick<
         email?: true
         sms?: true
         webauthn?: true
+        webauthn_register?: true
     }
 }
