@@ -271,6 +271,9 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
 
             //data.metadata?.theme!== metadata?.theme setTheme(data.metadata.theme)
         }
+        if (!data?.metadata && !data?.token) {
+            console.warn('no metadata or token present in the response', 'data: ', data)
+        }
     }
 
     function getJwtToken() {
