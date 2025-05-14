@@ -19,6 +19,11 @@ export type IAuthBindings<FE extends string> = {
     getCachedJwt: () => Promise<string | undefined>
     /** @important do not use url as string but rather pass an URL object */
     srvAuthGet: <R>(url: string | URL, headers?: Record<string, string>) => Promise<R>
+    srvAuthPost: <R = unknown, T = unknown>(
+        url: string | URL,
+        body?: T | undefined,
+        headers?: Record<string, string>,
+    ) => Promise<R>
     setReqConfig: <T = unknown>(
         data?: T | undefined,
         responseType?: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream',
