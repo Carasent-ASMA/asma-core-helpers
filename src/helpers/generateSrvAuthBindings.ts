@@ -148,76 +148,65 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
 
     const promiseRegistry: Record<string, Promise<Response>> = <{}>{}
 
-    async function srvAuthGet<R>(url: string | URL, headers?: Record<string, string>): Promise<R> {
-        //const { ENVIRONMENT_TO_OPERATE, DEVELOPMENT } = EnvConfigsFnInternal()
-
+    async function _handleSrvAuthRequest<R>(url: string | URL, fetchOptions: RequestInit): Promise<R> {
         if (typeof url === 'string') {
             url = buildURL(url)
         }
 
-        //if (DEVELOPMENT && ENVIRONMENT_TO_OPERATE) {
-        ///  if (ENVIRONMENT_TO_OPERATE in EnvironmentEnums) {
-        //url.searchParams.append('env', ENVIRONMENT_TO_OPERATE)
-        //url = `${url}&env=${EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE}`
-
-        //if (realWindow.location.port) {
-        //  url.searchParams.append('port', realWindow.location.port)
-        // url = `${url}&port=${realWindow.location.port}`
-        //}
-
-        // file deepcode ignore GlobalReplacementRegex: <it is intended to be replaced only first occurrence>
-        //url = url.includes('&') && !url.includes('?') ? url.replace('&', '?') : url
-        // } else {
-        //      console.warn(
-        //         'EnvironmentToOperateFn() is not a valid EnvironmentEnums',
-        //         'shall be one of:',
-        //         EnvironmentEnums,
-        //          'actual value:',
-        //         EnvConfigsFnInternal().ENVIRONMENT_TO_OPERATE,
-        //     )
-        //  }
-        // }
-
         if (!promiseRegistry[url.pathname]) {
-            headers = attachAdditionalHeaders(headers || {})
-
-            promiseRegistry[url.pathname] = fetch(url.toString(), {
-                headers: {
-                    ...headers,
-                },
-
-                credentials: 'include',
-                //withCredentials: true,
-            })
+            promiseRegistry[url.pathname] = fetch(url.toString(), fetchOptions)
         }
 
         const res = await promiseRegistry[url.pathname]!.finally(() => {
             delete promiseRegistry[url.pathname]
         })
 
-        const json: R = await res.clone().json()
+        const responseData = (await res.clone().json()) as R
 
-        if (typeof json === 'object' && json !== null && 'default_app_versions' in json) {
-            dispatchCustomerUserRelatedAppVersions(json.default_app_versions as Record<string, string>)
-
-            //delete json.default_app_versions
+        if (typeof responseData === 'object' && responseData !== null && 'default_app_versions' in responseData) {
+            dispatchCustomerUserRelatedAppVersions(responseData.default_app_versions as Record<string, string>)
         }
 
-        if (!res?.ok) {
-            let error: R | string = json
-
-            if (!json) {
-                error = await res.clone().text()
-            }
-
-            throw error
+        if (!res.ok) {
+            throw responseData
         }
 
         if (res.status === 299 && EnvConfigsFnInternal().DEVELOPMENT) {
-            console.info(json)
+            console.info(responseData)
         }
 
-        return json
+        setAuthData(responseData as Partial<ISigninResponse<FE>>)
+
+        return responseData
+    }
+
+    async function srvAuthPost<T = unknown, R = unknown>(
+        url: string | URL,
+        body: T,
+        headers?: Record<string, string>,
+    ): Promise<R> {
+        const fetchOptions: RequestInit = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...headers,
+            },
+            body: JSON.stringify(body),
+            credentials: 'include',
+        }
+        return _handleSrvAuthRequest<R>(url, fetchOptions)
+    }
+
+    async function srvAuthGet<R>(url: string | URL, headers?: Record<string, string>): Promise<R> {
+        //const { ENVIRONMENT_TO_OPERATE, DEVELOPMENT } = EnvConfigsFnInternal()
+        const attachedHeaders = attachAdditionalHeaders(headers || {})
+        const fetchOptions: RequestInit = {
+            headers: {
+                ...attachedHeaders,
+            },
+            credentials: 'include',
+        }
+        return _handleSrvAuthRequest<R>(url, fetchOptions)
     }
 
     function accessTokenHasExpired(): boolean {
@@ -257,8 +246,6 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         }
         const data = await srvAuthGet<ISigninResponse<FE>>(url, headers)
 
-        setAuthData(data)
-
         return data
     }
 
@@ -276,10 +263,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
                 features: new Set(data.metadata?.features),
                 overviews: data.metadata?.overviews ? data.metadata.overviews : metadata?.overviews,
             }
-        } else {
-            console.error('metadata is not defined in data:', data)
         }
-
         if (data?.token) {
             jwtToken = data?.token
 
@@ -364,8 +348,6 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
             data,
         }) */
 
-        setAuthData(data)
-
         return data
     }
 
@@ -381,8 +363,6 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
 
                 return
             }
-
-            setAuthData(data)
 
             return jwtToken
         } catch (error) {
@@ -502,6 +482,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         isJwtValid,
         signin,
         srvAuthGet,
+        srvAuthPost,
         getSrvUrls,
         /**
          * @deprecated use dispatchLogoutEvent directly
