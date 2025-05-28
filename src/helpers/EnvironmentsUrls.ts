@@ -37,10 +37,13 @@ export const EnvironmentsUrls1 = (adcuris_subdomains?: string[]) => {
         SRV_PROXY: `${base_url}/api/srvproxy`,
         SRV_NOTIFICATION: `${base_url}/api/notification`,
         SRV_ACTIVITIES: `${base_url}/api/activities`,
+        /**Use this in stead  url is the same for all journal where relevant only use in api-assembly do not access those directly in code may be issues */
+        SRV_WRAPPER: `${base_url}/api/wrapper`,
+        /**@deprecated use SRV_WRAPPER instead */
+        SRV_AO_WRAPPER_NEW: '/api/wrapper',
 
         SRV_AO_DIRECTORY: `${base_url}/api-ao/directory`,
         SRV_AO_WRAPPER: '',
-        SRV_AO_WRAPPER_NEW: '/api/wrapper',
         SRV_AUTH: '/api/auth',
         DEVELOPMENT:
             realWindow.location.hostname.includes('dev.') || realWindow.location.hostname.includes('localhost'),
