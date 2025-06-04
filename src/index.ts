@@ -28,8 +28,7 @@ export * from './helpers/registerOpenReplay'
 export * from './helpers/urlParams.helpers'
 //export * from './helpers/openReplayConfigs'
 export * from './helpers/sha256'
-export * from './helpers/injectAsmaCoreUiStylesheet'
-export * from './helpers/injectAsmaCoreUiStylesheet'
+export * from './helpers/requestIdleCallback'
 
 export * from './utility/fetch'
 
