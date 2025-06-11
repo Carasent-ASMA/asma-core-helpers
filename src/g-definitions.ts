@@ -26,10 +26,10 @@ export type IAuthBindings<FE extends string> = {
     ) => Promise<R>
     setReqConfig: <T = unknown>(
         data?: T | undefined,
-        responseType?: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream',
+        responseType?: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream' | 'formdata',
     ) => Promise<{
         data: T | undefined
-        responseType: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream' | undefined
+        responseType: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream' | 'formdata' | undefined
         headers: Record<string, string>
     }>
     getSrvUrls: () => Record<'ao_wrapper' | 'connector', string> | undefined

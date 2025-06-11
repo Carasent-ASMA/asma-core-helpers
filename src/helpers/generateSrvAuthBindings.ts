@@ -306,7 +306,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
 
     async function setReqConfig<T = unknown>(
         data?: T,
-        responseType?: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream',
+        responseType?: 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream' | 'formdata',
     ) {
         const token = await getCachedJwt()
 
