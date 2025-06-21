@@ -1,4 +1,4 @@
-import { EventBus } from 'asma-event-bus/lib/event-buss'
+import { EventBus } from 'asma-event-bus'
 import { EnvConfigsFnInternal } from './generateEnvConfigsBindings.js'
 import { asmaOverridesEventBus } from 'asma-event-bus/lib'
 import { realWindow } from './getSubdomain.js'
