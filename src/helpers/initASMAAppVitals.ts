@@ -8,8 +8,7 @@ import { clearCacheData } from './clearCacheData.js'
 import { EnvConfigsFnInternal } from './generateEnvConfigsBindings.js'
 import { getCachedJwtInternal, isJwtValidInternal, registerCallbackOnSrvAuthEvents } from './generateSrvAuthBindings.js'
 import { isNotEmptyObjArr } from './IsNotEmpty.js'
-import { subdomain } from './getSubdomain.js'
-import { realWindow } from '..'
+import { realWindow, subdomain } from './getSubdomain.js'
 //import { registerOpenReplay } from './registerOpenReplay'
 
 type IInitASMAAppVitalsParams = {

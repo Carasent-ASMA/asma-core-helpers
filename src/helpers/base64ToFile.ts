@@ -1,4 +1,4 @@
-import { realWindow } from '..'
+import { realWindow } from './getSubdomain.js'
 
 export function base64toFile(b64Data: string, name: string, type = 'application/pdf') {
     const bytes = realWindow.atob(b64Data)
