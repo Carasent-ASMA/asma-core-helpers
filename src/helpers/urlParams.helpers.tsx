@@ -1,5 +1,5 @@
 import { type ISearchParams, type SearchParamWithValues } from 'asma-types'
-import { history } from '../g-definitions'
+import { history } from '../g-definitions.js'
 
 type ISearchParamWithValues = keyof typeof SearchParamWithValues
 

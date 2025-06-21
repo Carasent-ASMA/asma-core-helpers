@@ -1,4 +1,4 @@
-import { sha256 } from './sha256'
+import { sha256 } from './sha256.js'
 
 export const NORWEGIAN_PERSONAL_NUMBER = ['REAL', 'DNUMBER', 'SYNTHETIC', 'TEMPORARY'] as const
 

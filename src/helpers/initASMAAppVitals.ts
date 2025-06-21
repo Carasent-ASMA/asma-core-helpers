@@ -3,12 +3,12 @@ import {
     checkForRegisteredSubdomain,
     type IResWithSubdomain,
     type IResWithSubdomainOnError,
-} from './checkForRegisteredSubdomains'
-import { clearCacheData } from './clearCacheData'
-import { EnvConfigsFnInternal } from './generateEnvConfigsBindings'
-import { getCachedJwtInternal, isJwtValidInternal, registerCallbackOnSrvAuthEvents } from './generateSrvAuthBindings'
-import { isNotEmptyObjArr } from './IsNotEmpty'
-import { subdomain } from './getSubdomain'
+} from './checkForRegisteredSubdomains.js'
+import { clearCacheData } from './clearCacheData.js'
+import { EnvConfigsFnInternal } from './generateEnvConfigsBindings.js'
+import { getCachedJwtInternal, isJwtValidInternal, registerCallbackOnSrvAuthEvents } from './generateSrvAuthBindings.js'
+import { isNotEmptyObjArr } from './IsNotEmpty.js'
+import { subdomain } from './getSubdomain.js'
 import { realWindow } from '..'
 //import { registerOpenReplay } from './registerOpenReplay'
 
@@ -101,17 +101,20 @@ export async function initASMAAppVitals({
     ) {
         const default_app_versions = resRegisteredSubdomain.props!.default_app_versions!
 
-        registry_urls = Object.keys(default_app_versions).reduce((acc, key) => {
-            const app_version = default_app_versions[key]
+        registry_urls = Object.keys(default_app_versions).reduce(
+            (acc, key) => {
+                const app_version = default_app_versions[key]
 
-            const base_url = EnvConfigsFnInternal().CDN_ASMA_BASE_URL || '/cdn'
+                const base_url = EnvConfigsFnInternal().CDN_ASMA_BASE_URL || '/cdn'
 
-            const app_version_url = `${base_url}/${key}/${app_version}/`
+                const app_version_url = `${base_url}/${key}/${app_version}/`
 
-            acc[key] = app_version_url.replace(/\s/g, '')
+                acc[key] = app_version_url.replace(/\s/g, '')
 
-            return acc
-        }, {} as Record<string, string>)
+                return acc
+            },
+            {} as Record<string, string>,
+        )
     } else {
         !is_child_app && console.info('No default_app_versions found in resRegisteredSubdomain.props')
     }
