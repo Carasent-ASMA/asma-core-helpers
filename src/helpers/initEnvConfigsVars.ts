@@ -1,5 +1,4 @@
-import { realWindow } from '..'
-import { subdomain } from './getSubdomain.js'
+import { realWindow, subdomain } from './getSubdomain.js'
 const _origin = realWindow.location.origin
 export const env =
     ((_origin.includes('.dev.') || _origin.includes('//dev.')) && 'dev') ||

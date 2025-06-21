@@ -1,10 +1,11 @@
 import { EventBus } from 'asma-event-bus/lib/event-buss'
 import { EnvConfigsFnInternal } from './generateEnvConfigsBindings.js'
 import { asmaOverridesEventBus } from 'asma-event-bus/lib'
-import { domain, realWindow, type IAuthBindings } from '..'
+import { realWindow } from './getSubdomain.js'
 import { get as _ } from 'idb-keyval'
 import type { ICheckSigninOptions, ICheckSigninTransformedOptions } from './generateSrvAuthBindings.types.js'
 import type { IBaseJwtClaims, IUUID } from 'asma-types/lib'
+import { domain, type IAuthBindings } from '../index.js'
 
 //let logoutSuccessful = false
 

@@ -1,4 +1,4 @@
-import { realWindow, subdomain /* , domain */ } from '..'
+import { realWindow, subdomain /* , domain */ } from './getSubdomain.js'
 import {
     srvConnector,
     env,
@@ -14,7 +14,7 @@ import {
     getOpenReplayKey,
     computeBaseUrl,
     domain,
-} from '../helpers/initEnvConfigsVars'
+} from '../helpers/initEnvConfigsVars.js'
 
 export const EnvironmentsUrls1 = (adcuris_subdomains?: string[]) => {
     let base_url = computeBaseUrl()
