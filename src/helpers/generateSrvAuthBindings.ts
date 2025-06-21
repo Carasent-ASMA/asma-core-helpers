@@ -1,6 +1,5 @@
-import { EventBus } from 'asma-event-bus'
+import { asmaOverridesEventBus, EventBus } from 'asma-event-bus'
 import { EnvConfigsFnInternal } from './generateEnvConfigsBindings.js'
-import { asmaOverridesEventBus } from 'asma-event-bus/lib'
 import { realWindow } from './getSubdomain.js'
 import { get as _ } from 'idb-keyval'
 import type { ICheckSigninOptions, ICheckSigninTransformedOptions } from './generateSrvAuthBindings.types.js'

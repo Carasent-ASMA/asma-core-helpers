@@ -5,7 +5,7 @@ import type {
     ISigninResponse,
 } from './helpers/generateSrvAuthBindings.js'
 import type { IGlobalOpenReplay } from './helpers/openReplayObject.js'
-import { realWindow } from '.'
+import { realWindow } from './helpers/getSubdomain.js'
 import type { ICheckSigninOptions, ICheckSigninTransformedOptions } from './helpers/generateSrvAuthBindings.types.js'
 import type { IBaseJwtClaims } from 'asma-types/lib'
 //import type { IGenerateSRVAuthBindings } from './helpers/generateSrvAuthBindings'

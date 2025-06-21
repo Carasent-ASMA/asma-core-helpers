@@ -1,4 +1,4 @@
-import { realWindow } from '..'
+import { realWindow } from './getSubdomain.js'
 import { httpToWs } from './Config.js'
 import { EnvironmentsUrls1 } from './EnvironmentsUrls.js'
 import { uuid4 } from './generateUUID4.js'
