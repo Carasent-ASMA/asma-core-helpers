@@ -1,13 +1,13 @@
 import type { createClient } from '@genql/runtime'
 import type { ClientOptions } from '@genql/runtime'
-import { httpToWs } from './Config'
+import { httpToWs } from './Config.js'
 import {
     EnvConfigsFnInternal,
     type IEnvironmentUrlsGenQLOnly,
     //IKeyEnvironmentUrls,
     //IKeyEnvironmentUrlsOmit,
-} from './generateEnvConfigsBindings'
-import { getSrvUrlsInternal, registerCallbackOnSrvAuthEvents, setReqConfigInternal } from './generateSrvAuthBindings'
+} from './generateEnvConfigsBindings.js'
+import { getSrvUrlsInternal, registerCallbackOnSrvAuthEvents, setReqConfigInternal } from './generateSrvAuthBindings.js'
 //import { parseJwt } from '../helpers/parseJwt'
 
 interface CliOptions extends Omit<ClientOptions, 'url' | 'signal'> {
