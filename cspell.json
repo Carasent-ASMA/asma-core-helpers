@@ -7,8 +7,10 @@
         "IUUID",
         "nbid",
         "nonprod",
+        "ONLYOFFICE",
         "preprod",
         "signicat",
-        "webauthn"
+        "webauthn",
+        "WOPI"
     ]
 }

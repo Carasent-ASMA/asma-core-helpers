@@ -37,6 +37,9 @@ export const EnvironmentsUrls1 = (adcuris_subdomains?: string[]) => {
         SRV_PROXY: `${base_url}/api/srvproxy`,
         SRV_NOTIFICATION: `${base_url}/api/notification`,
         SRV_ACTIVITIES: `${base_url}/api/activities`,
+        SRV_WOPI: `${base_url}/api/wopi`,
+        // FIXME replace with dynamic url
+        ONLYOFFICE_DOCUMENT_SERVER: `https://onlyoffice.stage.adopus.no`,
         /**Use this in stead  url is the same for all journal where relevant only use in api-assembly do not access those directly in code may be issues */
         SRV_WRAPPER: `${base_url}/api/wrapper`,
         /**@deprecated use SRV_WRAPPER instead */
