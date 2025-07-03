@@ -1,4 +1,4 @@
-import type { GENDER } from './validateNorwegianPersonalNumber'
+import type { GENDER } from './validateNorwegianPersonalNumber.js'
 
 function generateSyntheticPnr({
     dateOfBirth,

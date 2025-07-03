@@ -1,5 +1,4 @@
-import { realWindow } from '..'
-import { subdomain } from './getSubdomain'
+import { realWindow, subdomain } from './getSubdomain.js'
 const _origin = realWindow.location.origin
 export const env =
     ((_origin.includes('.dev.') || _origin.includes('//dev.')) && 'dev') ||
@@ -193,8 +192,8 @@ export function createOpenReplyIngestPoint() {
     return nonprod
         ? `https://openreplay.stage.advoca.no/ingest`
         : adcuris
-        ? `https://openreplay.adcuris.health/ingest`
-        : `https://openreplay.adopus.no/ingest`
+          ? `https://openreplay.adcuris.health/ingest`
+          : `https://openreplay.adopus.no/ingest`
 }
 
 export function getClientId() {

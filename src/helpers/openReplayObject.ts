@@ -1,5 +1,5 @@
 import type Tracker from '@openreplay/tracker'
-import { realWindow } from '..'
+import { realWindow } from './getSubdomain.js'
 
 const OpenReplayObject = {
     started: false,

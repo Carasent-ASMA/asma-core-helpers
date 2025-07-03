@@ -1,4 +1,4 @@
-import { history } from '../g-definitions'
+import { history } from '../g-definitions.js'
 
 export function attachUserJournalCredentials() {
     const URLSearch = new URLSearchParams(history.location.search)
