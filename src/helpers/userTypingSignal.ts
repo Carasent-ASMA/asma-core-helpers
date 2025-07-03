@@ -1,4 +1,4 @@
-import { realWindow } from '..'
+import { realWindow } from './getSubdomain.js'
 
 export function userTypingSignal(insertUserLastTyped: () => Promise<unknown>) {
     let timmer: number | undefined = undefined

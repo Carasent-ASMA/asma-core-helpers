@@ -1,4 +1,4 @@
-import { realWindow } from '..'
+import { realWindow } from './getSubdomain.js'
 
 type ObjectType<T> = T extends string ? string : T extends boolean ? boolean : never
 

@@ -1,5 +1,5 @@
-import { realWindow } from '..'
-import { getConnectorInternal } from './generateSrvAuthBindings'
+import { realWindow } from './getSubdomain.js'
+import { getConnectorInternal } from './generateSrvAuthBindings.js'
 
 let includesAdcurisInHost: boolean | undefined
 

@@ -3,10 +3,10 @@ import {
     //type IOpenReplay,
     checkForRegisteredSubdomainInternal,
     isJwtValidInternal,
-} from './generateSrvAuthBindings'
+} from './generateSrvAuthBindings.js'
 //import { _setOpenReplayConfig } from './openReplayConfigs'
 //import { redirectFromSubdomainToDomain } from './getSubdomain'
-import type { ICheckSigninOptions } from './generateSrvAuthBindings.types'
+import type { ICheckSigninOptions } from './generateSrvAuthBindings.types.js'
 
 /**
  * @private use only inside this file

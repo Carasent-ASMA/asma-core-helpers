@@ -1,10 +1,10 @@
-import { EventBus } from 'asma-event-bus/lib/event-buss'
-import { EnvConfigsFnInternal } from './generateEnvConfigsBindings'
-import { asmaOverridesEventBus } from 'asma-event-bus/lib'
-import { domain, realWindow, type IAuthBindings } from '..'
+import { asmaOverridesEventBus, EventBus } from 'asma-event-bus'
+import { EnvConfigsFnInternal } from './generateEnvConfigsBindings.js'
+import { realWindow } from './getSubdomain.js'
 import { get as _ } from 'idb-keyval'
-import type { ICheckSigninOptions, ICheckSigninTransformedOptions } from './generateSrvAuthBindings.types'
+import type { ICheckSigninOptions, ICheckSigninTransformedOptions } from './generateSrvAuthBindings.types.js'
 import type { IBaseJwtClaims, IUUID } from 'asma-types/lib'
+import { domain, type IAuthBindings } from '../index.js'
 
 //let logoutSuccessful = false
 
@@ -564,14 +564,17 @@ function deepEqual(x: Record<string, string>, y: Record<string, string>) {
 function sortStringify(x: Record<string, string>) {
     Object.keys(x)
         .sort()
-        .reduce((acc, key) => {
-            const x_key = x?.[key]
-            if (x_key) {
-                acc[key] = x_key
-            }
+        .reduce(
+            (acc, key) => {
+                const x_key = x?.[key]
+                if (x_key) {
+                    acc[key] = x_key
+                }
 
-            return acc
-        }, {} as Record<string, string>)
+                return acc
+            },
+            {} as Record<string, string>,
+        )
 
     return JSON.stringify(x)
 }
