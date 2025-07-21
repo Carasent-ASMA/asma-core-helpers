@@ -97,8 +97,15 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
 
         const abortControllerLocal = createAbortControllerAndAbortOnLogoutEvent(abortControllerFromOpts)
 
+        const serviceUrlWithPath = serviceUrlFn() + path
+
+        const url =
+            service === 'SRV_AO_WRAPPER' || service === 'SRV_CONNECTOR'
+                ? serviceUrlWithPath
+                : window.origin + serviceUrlWithPath
+
         return createClient({
-            url: `${serviceUrlFn()}${path}`,
+            url,
             headers: async () => ({
                 ...(options.anonymous ? {} : (((await reqConf()).headers ?? {}) as Record<string, string>)),
                 ...headers,
