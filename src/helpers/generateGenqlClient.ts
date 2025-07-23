@@ -99,13 +99,8 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
 
         const serviceUrlWithPath = serviceUrlFn() + path
 
-        const url =
-            service === 'SRV_AO_WRAPPER' || service === 'SRV_CONNECTOR'
-                ? serviceUrlWithPath
-                : window.origin + serviceUrlWithPath
-
         return createClient({
-            url,
+            url: serviceUrlWithPath,
             headers: async () => ({
                 ...(options.anonymous ? {} : (((await reqConf()).headers ?? {}) as Record<string, string>)),
                 ...headers,
