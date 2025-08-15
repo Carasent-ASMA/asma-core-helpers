@@ -88,4 +88,5 @@ export type ICheckSigninOptions<IFeaturesArr extends string> = Pick<
         webauthn?: true
         webauthn_register?: true
     }
+    has_wards?: true
 }
