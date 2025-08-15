@@ -233,7 +233,9 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     })
 
     async function signin(url: string | URL, headers?: Record<string, string>): Promise<ISigninResponse<FE>> {
-        if (isJwtValid() && metadata) {
+        const isLegalGuardianPath = url.toString().includes('advoca.lg.change-user')
+
+        if (!isLegalGuardianPath && isJwtValid() && metadata) {
             return {
                 token: jwtToken,
 
@@ -564,17 +566,14 @@ function deepEqual(x: Record<string, string>, y: Record<string, string>) {
 function sortStringify(x: Record<string, string>) {
     Object.keys(x)
         .sort()
-        .reduce(
-            (acc, key) => {
-                const x_key = x?.[key]
-                if (x_key) {
-                    acc[key] = x_key
-                }
+        .reduce((acc, key) => {
+            const x_key = x?.[key]
+            if (x_key) {
+                acc[key] = x_key
+            }
 
-                return acc
-            },
-            {} as Record<string, string>,
-        )
+            return acc
+        }, {} as Record<string, string>)
 
     return JSON.stringify(x)
 }
