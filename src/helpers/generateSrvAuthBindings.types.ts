@@ -89,4 +89,10 @@ export type ICheckSigninOptions<IFeaturesArr extends string> = Pick<
         webauthn_register?: true
     }
     has_wards?: true
+    legal_guardian?: {
+        journal_user_id: string
+        full_name: string
+        phone_nr: string | null
+        pnr: string
+    }
 }
