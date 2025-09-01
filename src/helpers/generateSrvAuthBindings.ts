@@ -3,8 +3,8 @@ import { EnvConfigsFnInternal } from './generateEnvConfigsBindings.js'
 import { realWindow } from './getSubdomain.js'
 import { get as _ } from 'idb-keyval'
 import type { ICheckSigninOptions, ICheckSigninTransformedOptions } from './generateSrvAuthBindings.types.js'
-import type { IBaseJwtClaims, IUUID } from 'asma-types/lib'
 import { domain, type IAuthBindings } from '../index.js'
+import type { IBaseJwtClaims, IUUID } from 'asma-types'
 
 //let logoutSuccessful = false
 
@@ -406,7 +406,12 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
                 user_id: metadata.user_id as IUUID,
                 brukerBrukerNavn: metadata.brukerBrukerNavn || '',
                 access_level: metadata.access_level || 1,
-            } satisfies Omit<IBaseJwtClaims<never>, 'subdomain' | 'genesis_set'> & { access_level: 1 | 2 | 3 | 4 }
+            } satisfies Omit<IBaseJwtClaims<never>, 'subdomain' | 'genesis_set'> & {
+                access_level: 1 | 2 | 3 | 4
+                region: string
+                journal_role: string
+                brukerBrukerNavn: string
+            }
         }
         return undefined
     }
