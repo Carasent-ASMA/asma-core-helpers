@@ -23,33 +23,11 @@ const SIGNICAT_SIGN_URL = {
     prod: 'https://secure.avans.no/std/docaction/avans',
 }
 
-// TODO detect sign url by user token,
-// so test users will receive nonprod sign url all the time
-const CRIIPTO_SIGN_URL = {
-    dev: 'https://asma-test.criipto.id/signatures',
-    localhost: 'https://asma-test.criipto.id/signatures',
-    test: 'https://asma-test.criipto.id/signatures',
-    stage: 'https://asma.criipto.id/signatures',
-    prod: 'https://asma.criipto.id/signatures',
-}
 export function signicatSignUrl(_env: typeof env, env_to_operate?: typeof env) {
-    // first detect what type of pnr user have
-    // const pnrType = validateNorwegianPersonalNumberAndGetBirthDateFromToken()?.class
-
-    //if (someCheckForValidPnrType) {
-    //return needed url
-    //}
     if (_env === 'localhost' && env_to_operate) {
         return SIGNICAT_SIGN_URL[env_to_operate]
     }
     return SIGNICAT_SIGN_URL[_env]
-}
-
-export function CRIIPTOSignUrl(_env: typeof env, env_to_operate?: typeof env) {
-    if (_env === 'localhost' && env_to_operate) {
-        return CRIIPTO_SIGN_URL[env_to_operate]
-    }
-    return CRIIPTO_SIGN_URL[_env]
 }
 
 const SRV_CONNECTOR = {

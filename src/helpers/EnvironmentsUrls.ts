@@ -14,7 +14,6 @@ import {
     getOpenReplayKey,
     computeBaseUrl,
     domain,
-    CRIIPTOSignUrl,
 } from '../helpers/initEnvConfigsVars.js'
 
 export const EnvironmentsUrls1 = (adcuris_subdomains?: string[]) => {
@@ -55,7 +54,8 @@ export const EnvironmentsUrls1 = (adcuris_subdomains?: string[]) => {
         DEBUG_ADCURIS: false,
         //SRV_FORWARDER_SECRET: '',
         SIGNICAT_SIGN_URL: signicatSignUrl(env, env_to_operate),
-        CRIIPTO_SIGN_URL: CRIIPTOSignUrl(env, env_to_operate),
+        CRIIPTO_SIGN_URL: 'https://asma.criipto.id/signatures',
+        CRIIPTO_SIGN_URL_NONPROD: 'https://asma-test.criipto.id/signatures',
         INFO_ADVOCA: 'https://carasent.no/ad-voca/deltaker-bruker',
         DEVEXPRESS: devExpress(env, env_to_operate),
         ADVOCA_ACCESS_URL: createAdvocaAccessUrl(),
