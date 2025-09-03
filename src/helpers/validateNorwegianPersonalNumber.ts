@@ -15,16 +15,6 @@ export function isNorwegianSyntheticNumber(number: string): boolean {
 export function isNorwegianRealNumber(number: string): boolean {
     return validateNorwegianPersonalNumber(number) === 'REAL'
 }
-
-export function validateNorwegianPersonalNumberAndGetBirthDateFromToken(): {
-    class: NORWEGIAN_PERSONAL_NUMBER_TYPES
-    birthDate?: string
-} {
-    // const token = await getCachedJwtInternal()
-    // get personnr from token and check it
-    const personnr = '12345678901'
-    return validateNorwegianPersonalNumberAndGetBirthDate(personnr)
-}
 export function validateNorwegianPersonalNumberAndGetBirthDate(number: string): {
     class: NORWEGIAN_PERSONAL_NUMBER_TYPES
     birthDate?: string
