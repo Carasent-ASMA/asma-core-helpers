@@ -8,7 +8,7 @@ type IOpenreplay = {
     profiler: boolean
 }
 
-export type ISrvUrls = Record<'ao_wrapper' | 'connector', string>
+export type ISrvUrls = Record<'ao_wrapper' | 'connector' | 'onlyoffice', string>
 
 type IOverviews = {
     name: string
