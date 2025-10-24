@@ -10,7 +10,7 @@ import {
 import { getSrvUrlsInternal, registerCallbackOnSrvAuthEvents, setReqConfigInternal } from './generateSrvAuthBindings.js'
 //import { parseJwt } from '../helpers/parseJwt'
 
-interface CliOptions extends Omit<ClientOptions, 'url' | 'signal'> {
+export interface CliOptions extends Omit<ClientOptions, 'url' | 'signal'> {
     anonymous?: boolean
 }
 
