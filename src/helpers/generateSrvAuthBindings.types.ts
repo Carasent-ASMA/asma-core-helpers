@@ -95,4 +95,6 @@ export type ICheckSigninOptions<IFeaturesArr extends string> = Pick<
         phone_nr: string | null
         pnr: string
     }
+    of_max_connections?: number
+    of_connections_per_user?: number
 }
