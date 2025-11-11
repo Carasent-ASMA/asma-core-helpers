@@ -56,5 +56,7 @@
         "signin",
         "signout",
         "subapps"
-    ]
+    ],
+    "oxc.enable": false,
+    "biome.enabled": false
 }
