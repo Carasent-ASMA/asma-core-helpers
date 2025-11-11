@@ -2,7 +2,7 @@ export const realWindow = window.rawWindow || window
 
 export function getRealWindow() {
     if (!realWindow) {
-        return realWindow
+        return realWindow as Window
     }
     return
 }
