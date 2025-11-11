@@ -21,18 +21,18 @@ importers:
         specifier: ^6.12.3
         version: 6.12.3
       mobx-state-tree:
-        specifier: ^5.4.2
-        version: 5.4.2(mobx@6.12.3)
+        specifier: ^7.0.2
+        version: 7.0.2(mobx@6.12.3)(typescript@5.6.3)
     devDependencies:
       '@genql/runtime':
         specifier: ^2.10.0
         version: 2.10.0(graphql@16.8.1)
       '@openreplay/tracker':
-        specifier: ^12.0.10
-        version: 12.0.10
+        specifier: ^16.4.10
+        version: 16.4.10
       asma-qiankun-react-loader:
-        specifier: ^0.6.51
-        version: 0.6.51
+        specifier: ^0.8.2
+        version: 0.8.2
       asma-types:
         specifier: ^2.0.64
         version: 2.0.64
@@ -54,11 +54,11 @@ packages:
     peerDependencies:
       graphql: '*'
 
-  '@medv/finder@3.2.0':
-    resolution: {integrity: sha512-JmU7JIBwyL8RAzefvzALT4sP2M0biGk8i2invAgpQmma/QgfsaqoHIvJ7S0YC8n9hUVG8X3Leul2nGa06PvhbQ==}
+  '@openreplay/network-proxy@1.2.2':
+    resolution: {integrity: sha512-Zr53s6DZvBvHTDyASMKA4G1pGHZtXLDdmWAk6hDKtnzUdRuNW66D+ja2v+x+zbCGBN95iBlOcAxbLlYbwmoMjg==}
 
-  '@openreplay/tracker@12.0.10':
-    resolution: {integrity: sha512-9E+qFNVAEYbT/IQCtSfayPbNavNbCJ/dTkwFfylR6GXJkZlhjHljTWJxhN9c4h6ZCooVN897l+dAeCcDWVDi8Q==}
+  '@openreplay/tracker@16.4.10':
+    resolution: {integrity: sha512-aPwvRAZH+je82P3Ag6KWsmjTympx4Acw55daiOd0eNpICGbFeVynzv3zfHQJ4MvpGGIi1OvHfXnR3SXyGNHpbg==}
     engines: {node: '>=14.0'}
 
   '@types/node@20.12.7':
@@ -73,8 +73,8 @@ packages:
   asma-event-bus@0.7.27:
     resolution: {integrity: sha512-mhyyLRpYDi36SJ9p1bFQCwtXjBKcZY1NvzopB7YkDqPIJAN2b4ZZ6d3aqBdqEo7Rw0xqdengtcgo57m8060yjw==}
 
-  asma-qiankun-react-loader@0.6.51:
-    resolution: {integrity: sha512-o1ONvw8ZQLRFj6Kdz7UyGVJSbYyoUabi3wkqbVhSdn8/UDG6X1+C8OOZrCgDdkgxRUSdVJbopZLcbTSqTFWGaQ==}
+  asma-qiankun-react-loader@0.8.2:
+    resolution: {integrity: sha512-z2eCnb6g8GPbjhJAuCfIhg8qTfvoIpGFzolohDRk/vrEgc0miiIVRYDAoIy4KyGh3tatsSdD7ucp19i94Tltmg==}
 
   asma-qiankun@1.8.0:
     resolution: {integrity: sha512-nxn7FnyH0p1oUnSsTxnPEhe1DN0oXHaQdpRRDYm+Hr3K7wnLrm6zQZ5NckbyU8v9C29ZksqbnofoG0efDB1a6w==}
@@ -93,6 +93,9 @@ packages:
 
   buffer@6.0.3:
     resolution: {integrity: sha512-FTiCpNxtwiZZHEZbcbTIcZjERVICn9yq/pDFkTl95/AxzD1naBctN7YO68riM/gLSDY7sdrMby8hofADYuuqOA==}
+
+  error-stack-parser-es@0.1.5:
+    resolution: {integrity: sha512-xHku1X40RO+fO8yJ8Wh2f2rZWVjqyhb1zgq1yZ8aZRQkv6OOKhKWRUaht3eSCUbAOBaKIgM+ykwFLE+QUxgGeg==}
 
   error-stack-parser@2.1.4:
     resolution: {integrity: sha512-Sk5V6wVazPhq5MhpO+AUxJn5x7XSXGl1R93Vn7i+zS15KDVxQijejNCrz8340/2bgLBjR9GtEG8ZVKONDjcqGQ==}
@@ -131,8 +134,8 @@ packages:
   lodash@4.17.21:
     resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
 
-  mobx-state-tree@5.4.2:
-    resolution: {integrity: sha512-SGXAh2KCBQbWVcxeQbZEr5pchTgcfNZmGVRL2a2Me+pSMH98bZWXD6EOuuijbTGbc0hOoOsbab3JdwJyr+fW7Q==}
+  mobx-state-tree@7.0.2:
+    resolution: {integrity: sha512-Qmqgo2Ho1/JRTquo0EWw0ZA/k4wTUNPMIBg98ALGN1V/0Gupic7dg4GDYUhNbiLsYHpp48VgpaCDpDIKV+jNkQ==}
     peerDependencies:
       mobx: ^6.3.0
 
@@ -173,6 +176,14 @@ packages:
   tr46@0.0.3:
     resolution: {integrity: sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw==}
 
+  ts-essentials@9.4.2:
+    resolution: {integrity: sha512-mB/cDhOvD7pg3YCLk2rOtejHjjdSi9in/IBYE13S+8WA5FBSraYf4V/ws55uvs0IvQ/l0wBOlXy5yBNZ9Bl8ZQ==}
+    peerDependencies:
+      typescript: '>=4.1.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   tslib@1.14.1:
     resolution: {integrity: sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==}
 
@@ -193,6 +204,9 @@ packages:
   utility-types@3.11.0:
     resolution: {integrity: sha512-6Z7Ma2aVEWisaL6TvBCy7P8rm2LQoPv6dJ7ecIaIixHcwfbJ0x7mWdbcwlIM5IGQxPZSFYeqRCqlOOeKoJYMkw==}
     engines: {node: '>= 4'}
+
+  web-vitals@4.2.4:
+    resolution: {integrity: sha512-r4DIlprAGwJ7YM11VZp4R884m0Vmgr6EAKe3P+kO0PPj3Unqyvv59rczf6UiGcb9Z8QxZVcqKNwv/g0WNdWwsw==}
 
   webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
@@ -241,13 +255,15 @@ snapshots:
       - encoding
       - utf-8-validate
 
-  '@medv/finder@3.2.0': {}
+  '@openreplay/network-proxy@1.2.2': {}
 
-  '@openreplay/tracker@12.0.10':
+  '@openreplay/tracker@16.4.10':
     dependencies:
-      '@medv/finder': 3.2.0
+      '@openreplay/network-proxy': 1.2.2
       error-stack-parser: 2.1.4
+      error-stack-parser-es: 0.1.5
       fflate: 0.8.2
+      web-vitals: 4.2.4
 
   '@types/node@20.12.7':
     dependencies:
@@ -263,7 +279,7 @@ snapshots:
     dependencies:
       asma-types: 2.0.64
 
-  asma-qiankun-react-loader@0.6.51:
+  asma-qiankun-react-loader@0.8.2:
     dependencies:
       asma-qiankun: 1.8.0
       qiankun-overrides: 1.0.1
@@ -285,6 +301,8 @@ snapshots:
     dependencies:
       base64-js: 1.5.1
       ieee754: 1.2.1
+
+  error-stack-parser-es@0.1.5: {}
 
   error-stack-parser@2.1.4:
     dependencies:
@@ -321,9 +339,12 @@ snapshots:
 
   lodash@4.17.21: {}
 
-  mobx-state-tree@5.4.2(mobx@6.12.3):
+  mobx-state-tree@7.0.2(mobx@6.12.3)(typescript@5.6.3):
     dependencies:
       mobx: 6.12.3
+      ts-essentials: 9.4.2(typescript@5.6.3)
+    transitivePeerDependencies:
+      - typescript
 
   mobx@6.12.3: {}
 
@@ -355,6 +376,10 @@ snapshots:
 
   tr46@0.0.3: {}
 
+  ts-essentials@9.4.2(typescript@5.6.3):
+    optionalDependencies:
+      typescript: 5.6.3
+
   tslib@1.14.1: {}
 
   tslib@2.6.2: {}
@@ -366,6 +391,8 @@ snapshots:
   unfetch@4.2.0: {}
 
   utility-types@3.11.0: {}
+
+  web-vitals@4.2.4: {}
 
   webidl-conversions@3.0.1: {}
 
