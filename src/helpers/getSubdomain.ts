@@ -1,10 +1,7 @@
 export const realWindow = window.rawWindow || window
 
 export function getRealWindow() {
-    if (!realWindow) {
-        return realWindow as Window
-    }
-    return
+    return realWindow
 }
 
 const hostname_arr = () => {
