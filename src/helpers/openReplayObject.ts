@@ -23,7 +23,9 @@ export function getOpenReplayObject() {
     }
     return OpenReplayObject
 }
-export function getOpenReplayTrackerObject<Keys extends keyof IGlobalOpenReplay>(name: Keys) {
+export function getOpenReplayTrackerObject<Keys extends keyof IGlobalOpenReplay>(
+    name: Keys,
+): (typeof OpenReplayObject)[Keys] {
     if (realWindow.__ASMA__SHELL__?.openreplay_object) {
         return realWindow.__ASMA__SHELL__.openreplay_object[name]
     }
