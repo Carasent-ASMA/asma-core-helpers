@@ -117,6 +117,7 @@ export type IOpenReplay = {
     graphql: boolean
     mobx: boolean
     profiler: boolean
+    advoca: boolean
 }
 
 export type ISigninResponse<FE extends string> = {
