@@ -6,6 +6,7 @@ type IOpenreplay = {
     graphql: boolean
     mobx: boolean
     profiler: boolean
+    advoca: boolean
 }
 
 export type ISrvUrls = Record<'ao_wrapper' | 'connector' | 'onlyoffice', string>
