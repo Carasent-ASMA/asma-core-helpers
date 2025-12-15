@@ -97,9 +97,9 @@ export function computeBaseUrl() {
     return base_url
 }
 function computedSubdomain() {
-    if (env_to_operate?.includes('localhost') || window.location.host.includes('localhost')) {
-        return subdomain ? subdomain + '.dev' : 'web.dev'
-    }
+    // if (env_to_operate?.includes('localhost') || window.location.host.includes('localhost')) {
+    //return subdomain ? subdomain /* + '.dev' */ : 'web' /* .dev' */
+    //  }
 
     // custom
     if (env_to_operate) {
