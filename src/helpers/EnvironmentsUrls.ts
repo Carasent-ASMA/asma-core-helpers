@@ -17,7 +17,7 @@ import {
 } from '../helpers/initEnvConfigsVars.js'
 
 export const EnvironmentsUrls1 = (adcuris_subdomains?: string[]) => {
-    let ac_prefix
+    let ac_prefix = ''
 
     if (domain === 'advoca' && env === 'prod' && adcuris_subdomains?.includes(subdomain)) {
         ac_prefix = ac_prefix + '/ac'
