@@ -7,48 +7,48 @@ import {
     signicatSignUrl,
     devExpress,
     createAdvocaAccessUrl,
-    getClientId,
-    createSignicatAuthUrl,
+    //getClientId,
+    //createSignicatAuthUrl,
     nbid_env,
     createOpenReplyIngestPoint,
     getOpenReplayKey,
-    computeBaseUrl,
+    // computeBaseUrl,
     domain,
 } from '../helpers/initEnvConfigsVars.js'
 
 export const EnvironmentsUrls1 = (adcuris_subdomains?: string[]) => {
-    let base_url = computeBaseUrl()
+    let ac_prefix
 
     if (domain === 'advoca' && env === 'prod' && adcuris_subdomains?.includes(subdomain)) {
-        base_url = base_url + '/ac'
+        ac_prefix = ac_prefix + '/ac'
     }
 
     return {
-        SRV_DIRECTORY: `${base_url}/api/directory`,
-        SRV_CALENDAR: `${base_url}/api/calendar`,
-        SRV_PROXY_OLD: `${base_url}/api/proxy`,
-        SRV_PROXY_OLD_HELSE: `${base_url}/api/proxy/helse`,
-        SRV_PROXY_OLD_WEB: `${base_url}/api/proxy/web`,
-        SRV_STORAGE: `${base_url}/api/storage`,
-        SRV_CHAT: `${base_url}/api/chat`,
+        SRV_DIRECTORY: `${ac_prefix}/api/directory`,
+        SRV_CALENDAR: `${ac_prefix}/api/calendar`,
+        SRV_PROXY_OLD: `${ac_prefix}/api/proxy`,
+        SRV_PROXY_OLD_HELSE: `${ac_prefix}/api/proxy/helse`,
+        SRV_PROXY_OLD_WEB: `${ac_prefix}/api/proxy/web`,
+        SRV_STORAGE: `${ac_prefix}/api/storage`,
+        SRV_CHAT: `${ac_prefix}/api/chat`,
         SRV_CONNECTOR: srvConnector(env, env_to_operate),
         SRV_ARTIFACT: '',
-        SRV_ADVOCA: `${base_url}/api/service`,
-        SRV_PROXY: `${base_url}/api/srvproxy`,
-        SRV_NOTIFICATION: `${base_url}/api/notification`,
-        SRV_ACTIVITIES: `${base_url}/api/activities`,
-        SRV_WOPI: `${base_url}/wopi`,
+        SRV_ADVOCA: `${ac_prefix}/api/service`,
+        SRV_PROXY: `${ac_prefix}/api/srvproxy`,
+        SRV_NOTIFICATION: `${ac_prefix}/api/notification`,
+        SRV_ACTIVITIES: `${ac_prefix}/api/activities`,
+        SRV_WOPI: `${ac_prefix}/wopi`,
+        SRV_AO_DIRECTORY: `${ac_prefix}/api-ao/directory`,
+        SRV_WRAPPER: `${ac_prefix}/api/wrapper`,
+        SRV_AUTH: '/api/auth',
         // FIXME replace with dynamic url
         ONLYOFFICE_DOCUMENT_SERVER:
             env === 'prod' ? `https://onlyoffice.adopus.no` : `https://onlyoffice.stage.adopus.no`,
         /**Use this in stead  url is the same for all journal where relevant only use in api-assembly do not access those directly in code may be issues */
-        SRV_WRAPPER: `${base_url}/api/wrapper`,
         /**@deprecated use SRV_WRAPPER instead */
         SRV_AO_WRAPPER_NEW: '/api/wrapper',
 
-        SRV_AO_DIRECTORY: `${base_url}/api-ao/directory`,
         SRV_AO_WRAPPER: '',
-        SRV_AUTH: '/api/auth',
         DEVELOPMENT:
             realWindow.location.hostname.includes('dev.') || realWindow.location.hostname.includes('localhost'),
         ENVIRONMENT_TO_OPERATE: env_to_operate,
@@ -71,11 +71,11 @@ export const EnvironmentsUrls1 = (adcuris_subdomains?: string[]) => {
         /**
          * @deprecated - use NBID_REDIRECT_URL instead
          */
-        SIGNICAT_REDIRECT_URL: `${realWindow.location.origin}/auth/callback`,
+        // SIGNICAT_REDIRECT_URL: `${realWindow.location.origin}/auth/callback`,
         NBID_REDIRECT_URL: `${realWindow.location.origin}/auth/callback`,
-        SIGNICAT_AUTH_URL: createSignicatAuthUrl(),
+        //SIGNICAT_AUTH_URL: createSignicatAuthUrl(),
         ADOPUS_ACCESS_URL: realWindow.location.origin,
-        SIGNICAT_CLIENT_ID: getClientId(),
+        //  SIGNICAT_CLIENT_ID: getClientId(),
         NBID_ENV: nbid_env,
         OPENREPLAY_INGEST_POINT: createOpenReplyIngestPoint(),
     }
