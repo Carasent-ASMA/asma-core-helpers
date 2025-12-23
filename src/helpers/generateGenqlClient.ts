@@ -84,6 +84,7 @@ export function generateGenqlClient<T extends ReturnType<typeof createClient>>({
             const message = `'required param serviceUrl() is undefined, please check EnvConfig object!', service: ${service}`
             throw Error(message)
         }
+        console.log('asma-helpers - generateGenqlClient service_url', service_url)
         return service_url
     }
     const reqConf = setReqConfig || setReqConfigInternal
