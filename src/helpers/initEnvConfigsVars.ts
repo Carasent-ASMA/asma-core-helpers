@@ -1,4 +1,4 @@
-import { realWindow, subdomain } from './getSubdomain.js'
+import { realWindow /* subdomain */ } from './getSubdomain.js'
 const _origin = realWindow.location.origin
 export const env =
     ((_origin.includes('.dev.') || _origin.includes('//dev.')) && 'dev') ||
@@ -82,11 +82,11 @@ export function devExpress(_env: IEnv, env_to_operate?: IEnv) {
 
 //let env_computed = ''
 
-export function computeBaseUrl() {
+/* export function computeBaseUrl() {
     let base_url = ''
     /**
      * tld - top level domain. This is last part of domain name. For example, in google.com, com is tld.
-     */
+     *\/
     let tld = domain === 'adcuris' ? 'health' : 'no'
 
     let computed_subdomain = computedSubdomain()
@@ -95,11 +95,9 @@ export function computeBaseUrl() {
         base_url = `https://${computed_subdomain}.${domain}.${tld}`
     }
     return base_url
-}
-function computedSubdomain() {
-    // if (env_to_operate?.includes('localhost') || window.location.host.includes('localhost')) {
-    //return subdomain ? subdomain /* + '.dev' */ : 'web' /* .dev' */
-    //  }
+} */
+/* function computedSubdomain() {
+    
 
     // custom
     if (env_to_operate) {
@@ -116,19 +114,19 @@ function computedSubdomain() {
 
     /*  if (subdomain) {
         return env_to_operate !== 'prod' ? `${subdomain}.${env_to_operate}` : subdomain
-    } */
+    } *\/
 
-    return
-    /*  env_to_operate === 'prod' && !subdomain
+return
+/*  env_to_operate === 'prod' && !subdomain
             ? 'web'
             : env_to_operate === 'prod'
             ? subdomain
             : subdomain
             ? `${subdomain}.${env_to_operate}`
-            : env_to_operate */
+            : env_to_operate *\/
 
     //return env_computed
-}
+} */
 
 //export const base_url = computeBaseUrl()
 const OPENREPLAY_PROJECT_KEY = {
@@ -169,24 +167,24 @@ export function getOpenReplayKey(journal: string) {
     return key as string
 }
 
-const { origin } = realWindow.location
+//const { origin } = realWindow.location
 export const nbid_env = localStorage.getItem('nbid-env')
 
-const nbidNonprod =
+/* const nbidNonprod =
     nbid_env === 'nonprod' ||
     ['.dev.', '//dev.', 'localhost', '.test.', '//test.'].some((substring) => origin.includes(substring))
 
 const hostnameNonprod = ['.dev.', '//dev.', 'localhost', '.test.', '//test.'].some((substring) =>
     origin.includes(substring),
-)
+) */
 
-export function createSignicatAuthUrl() {
+/* export function createSignicatAuthUrl() {
     const nonprod = nbidNonprod || hostnameNonprod
 
     const url = nonprod ? 'https://preprod.signicat.com/oidc/authorize' : 'https://secure.avans.no/oidc/authorize'
 
     return url
-}
+} */
 const nonprod = env === 'localhost' || env === 'dev' || env === 'test' || env === 'stage'
 const adcuris = domain === 'adcuris'
 export function createOpenReplyIngestPoint() {
@@ -197,10 +195,10 @@ export function createOpenReplyIngestPoint() {
         : `https://openreplay.adopus.no/ingest`
 }
 
-export function getClientId() {
+/* export function getClientId() {
     const nonprod = nbidNonprod || hostnameNonprod
 
     const url = nonprod ? 'preprod.advoca.no' : 'prod.advoca.no'
 
     return url
-}
+} */
