@@ -8,6 +8,7 @@ import type { IGlobalOpenReplay } from './helpers/openReplayObject.js'
 import { realWindow } from './helpers/getSubdomain.js'
 import type { ICheckSigninOptions, ICheckSigninTransformedOptions } from './helpers/generateSrvAuthBindings.types.js'
 import type { IBaseJwtClaims } from 'asma-types/lib'
+import type { ActivityStatus } from './helpers/getActivityStatus.js'
 //import type { IGenerateSRVAuthBindings } from './helpers/generateSrvAuthBindings'
 //import type { IGenerateSRVAuthBindings } from './helpers/generateSrvAuthBindings'
 export {}
@@ -94,6 +95,7 @@ export type IAuthBindings<FE extends string> = {
     getUserId: () => string | undefined
     getJwtToken: () => string
     accessTokenHasExpired: () => boolean
+    getActivityStatuses: (activity_ids: string[]) => Promise<Map<string, ActivityStatus>>
 }
 declare global {
     interface Window {
