@@ -3,8 +3,9 @@ import { EnvConfigsFnInternal } from './generateEnvConfigsBindings.js'
 import { realWindow } from './getSubdomain.js'
 import { get as _ } from 'idb-keyval'
 import type { ICheckSigninOptions, ICheckSigninTransformedOptions } from './generateSrvAuthBindings.types.js'
-import { domain, type IAuthBindings } from '../index.js'
+import { domain, type ActivityStatus, type IAuthBindings } from '../index.js'
 import type { IBaseJwtClaims, IUUID } from 'asma-types'
+import { getActivityStatus } from './getActivityStatus'
 
 //let logoutSuccessful = false
 
@@ -196,6 +197,30 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
             credentials: 'include',
         }
         return _handleSrvAuthRequest<R>(url, fetchOptions)
+    }
+
+    async function connectorPost<T = unknown, R = unknown>({
+        url,
+        body,
+        headers,
+    }: {
+        url: string | URL
+        body?: T
+        headers?: Record<string, string>
+    }): Promise<R> {
+        const fetchOptions: RequestInit = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': metadata?.customer_id ?? '',
+                region: metadata?.region ?? '',
+                ...headers,
+            },
+            body: JSON.stringify(body),
+            credentials: 'include',
+        }
+        const response = await fetch(url.toString(), fetchOptions)
+        return response as R
     }
 
     async function srvAuthGet<R>(url: string | URL, headers?: Record<string, string>): Promise<R> {
@@ -485,6 +510,92 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         return metadata.theme
     }
 
+    type CachedActivityStatus = {
+        value: ActivityStatus
+        expiresAt: number
+    }
+
+    const CACHE_TTL = 1000 * 60 * 5 // 5 minutes
+    const activityStatusesCached = new Map<string, CachedActivityStatus>()
+
+    // Tracks ongoing requests to deduplicate
+    const pendingRequests = new Map<string, Promise<Map<string, ActivityStatus>>>()
+
+    async function getActivityStatuses(activityIds: string[]): Promise<Map<string, ActivityStatus>> {
+        const result = new Map<string, ActivityStatus>()
+        const missingIds: number[] = []
+        const now = Date.now()
+
+        for (const id of activityIds) {
+            const cached = activityStatusesCached.get(id)
+            if (cached && cached.expiresAt > now) {
+                result.set(id, cached.value)
+            } else {
+                const numeric = Number(id)
+                if (!Number.isNaN(numeric)) missingIds.push(numeric)
+            }
+        }
+
+        if (!missingIds.length) return result
+
+        const requestKey = missingIds.join(',')
+
+        if (pendingRequests.has(requestKey)) {
+            const ongoing = await pendingRequests.get(requestKey)!
+            ongoing.forEach((v, k) => result.set(k, v))
+            return result
+        }
+
+        const requestPromise = (async () => {
+            try {
+                const response = await connectorPost<
+                    { SoknadID: number[] },
+                    {
+                        data?: { soknadID?: number | null; adgangkode?: number | null }[]
+                        error?: string
+                        error_full?: string
+                        error_response?: string
+                    }
+                >({
+                    url: new URL(
+                        EnvConfigsFnInternal().SRV_CONNECTOR + '/api/ReadOnlyAccessCheck',
+                        window.location.origin,
+                    ),
+                    body: { SoknadID: missingIds },
+                })
+
+                if (response.error || response.error_full || response.error_response) {
+                    throw new Error(response.error || response.error_full || response.error_response)
+                }
+
+                const map = new Map<string, ActivityStatus>()
+
+                response.data?.forEach(({ soknadID, adgangkode }) => {
+                    if (!soknadID || !adgangkode) return
+
+                    const key = soknadID.toString()
+                    const status = getActivityStatus(adgangkode)
+                    map.set(key, status)
+                    activityStatusesCached.set(key, { value: status, expiresAt: Date.now() + CACHE_TTL })
+                })
+
+                return map
+            } catch (error) {
+                console.error(error)
+                return new Map<string, ActivityStatus>()
+            } finally {
+                pendingRequests.delete(requestKey)
+            }
+        })()
+
+        pendingRequests.set(requestKey, requestPromise)
+
+        const fetched = await requestPromise
+        fetched.forEach((v, k) => result.set(k, v))
+
+        return result
+    }
+
     const auth_bindings = {
         hasFeature: (featureName: FE) => hasFeature(featureName),
         getConnector,
@@ -525,6 +636,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         checkForRegisteredSubdomain,
         /**@deprecated - do not use it anymore is moved to features `TimeRegistration_TeamleaderOverview` */
         isTeamLeader,
+        getActivityStatuses,
     } satisfies IAuthBindings<FE>
 
     realWindow.__ASMA__SHELL__ = realWindow.__ASMA__SHELL__ || {}
@@ -572,14 +684,17 @@ function deepEqual(x: Record<string, string>, y: Record<string, string>) {
 function sortStringify(x: Record<string, string>) {
     Object.keys(x)
         .sort()
-        .reduce((acc, key) => {
-            const x_key = x?.[key]
-            if (x_key) {
-                acc[key] = x_key
-            }
+        .reduce(
+            (acc, key) => {
+                const x_key = x?.[key]
+                if (x_key) {
+                    acc[key] = x_key
+                }
 
-            return acc
-        }, {} as Record<string, string>)
+                return acc
+            },
+            {} as Record<string, string>,
+        )
 
     return JSON.stringify(x)
 }
