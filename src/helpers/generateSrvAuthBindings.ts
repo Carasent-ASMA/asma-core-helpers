@@ -204,7 +204,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         body,
         headers,
     }: {
-        url: string | URL
+        url: string
         body?: T
         headers?: Record<string, string>
     }): Promise<R> {
@@ -219,7 +219,8 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
             body: JSON.stringify(body),
             credentials: 'include',
         }
-        const response = await fetch(url.toString(), fetchOptions)
+        const baseURL = metadata?.srv_urls?.['connector'] || EnvConfigsFnInternal().SRV_CONNECTOR
+        const response = await fetch(new URL(baseURL + url, window.location.origin).toString(), fetchOptions)
         return response as R
     }
 
@@ -557,10 +558,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
                         error_response?: string
                     }
                 >({
-                    url: new URL(
-                        EnvConfigsFnInternal().SRV_CONNECTOR + '/api/ReadOnlyAccessCheck',
-                        window.location.origin,
-                    ),
+                    url: '/api/ReadOnlyAccessCheck',
                     body: { SoknadID: missingIds },
                 })
 
