@@ -208,12 +208,14 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         body?: T
         headers?: Record<string, string>
     }): Promise<R> {
+        const token = await getCachedJwt()
         const fetchOptions: RequestInit = {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'x-api-key': metadata?.customer_id ?? '',
                 region: metadata?.region ?? '',
+                Authorization: `Bearer ${token}`,
                 ...headers,
             },
             body: JSON.stringify(body),
