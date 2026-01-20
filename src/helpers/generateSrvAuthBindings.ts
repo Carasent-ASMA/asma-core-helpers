@@ -214,16 +214,14 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
             headers: {
                 'Content-Type': 'application/json',
                 'x-api-key': metadata?.customer_id ?? '',
-                region: metadata?.region ?? '',
                 Authorization: `Bearer ${token}`,
                 ...headers,
             },
             body: JSON.stringify(body),
-            credentials: 'include',
         }
         const baseURL = metadata?.srv_urls?.['connector'] || EnvConfigsFnInternal().SRV_CONNECTOR
         const response = await fetch(new URL(baseURL + url, window.location.origin).toString(), fetchOptions)
-        return response as R
+        return response.json() as R
     }
 
     async function srvAuthGet<R>(url: string | URL, headers?: Record<string, string>): Promise<R> {
@@ -518,10 +516,9 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         expiresAt: number
     }
 
-    const CACHE_TTL = 1000 * 60 * 5 // 5 minutes
+    const CACHE_TTL = 1000 * 60 * 5
     const activityStatusesCached = new Map<string, CachedActivityStatus>()
 
-    // Tracks ongoing requests to deduplicate
     const pendingRequests = new Map<string, Promise<Map<string, ActivityStatus>>>()
 
     async function getActivityStatuses(activityIds: string[]): Promise<Map<string, ActivityStatus>> {
@@ -553,24 +550,15 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
             try {
                 const response = await connectorPost<
                     { SoknadID: number[] },
-                    {
-                        data?: { soknadID?: number | null; adgangkode?: number | null }[]
-                        error?: string
-                        error_full?: string
-                        error_response?: string
-                    }
+                    { soknadID?: number | null; adgangkode?: number | null }[]
                 >({
                     url: '/api/ReadOnlyAccessCheck',
                     body: { SoknadID: missingIds },
                 })
 
-                if (response.error || response.error_full || response.error_response) {
-                    throw new Error(response.error || response.error_full || response.error_response)
-                }
-
                 const map = new Map<string, ActivityStatus>()
 
-                response.data?.forEach(({ soknadID, adgangkode }) => {
+                response?.forEach(({ soknadID, adgangkode }) => {
                     if (!soknadID || !adgangkode) return
 
                     const key = soknadID.toString()
