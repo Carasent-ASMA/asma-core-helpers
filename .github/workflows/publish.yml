@@ -155,9 +155,22 @@ jobs:
 
       - name: Bump version
         if: steps.check_changes.outputs.code_changed == 'true' && steps.check_publish.outputs.should_publish == 'true'
+        id: bump_version
         run: |
           npm version ${{ steps.check_publish.outputs.bump_type }} -m "chore: bump version to %s [skip ci]"
           git push --follow-tags
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        if: steps.check_changes.outputs.code_changed == 'true' && steps.check_publish.outputs.should_publish == 'true'
+        run: |
+          gh release create "v${{ steps.bump_version.outputs.version }}" \
+            --title "Release v${{ steps.bump_version.outputs.version }}" \
+            --notes "Release v${{ steps.bump_version.outputs.version }} - ${{ steps.check_publish.outputs.bump_type }} version bump" \
+            --verify-tag
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -178,7 +191,9 @@ jobs:
             echo "- ✅ Package built successfully" >> $GITHUB_STEP_SUMMARY
             
             if [ "${{ steps.check_publish.outputs.should_publish }}" == "true" ]; then
-              echo "- ✅ Published to npm with ${{ steps.check_publish.outputs.bump_type }} version bump" >> $GITHUB_STEP_SUMMARY
+              echo "- ✅ Version bumped to v${{ steps.bump_version.outputs.version }} (${{ steps.check_publish.outputs.bump_type }})" >> $GITHUB_STEP_SUMMARY
+              echo "- ✅ GitHub Release created" >> $GITHUB_STEP_SUMMARY
+              echo "- ✅ Published to npm" >> $GITHUB_STEP_SUMMARY
             else
               echo "- ⏭️ Publish skipped (no feat/fix/perf/breaking commits found)" >> $GITHUB_STEP_SUMMARY
             fi
