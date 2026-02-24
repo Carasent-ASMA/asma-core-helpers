@@ -19,12 +19,12 @@ import { ActorTypes, ActivityStatuses } from 'asma-core-helpers'
 
 ## Features
 
-- **Environment utilities**: Environment detection, URL helpers, domain utilities
-- **Authentication**: Service authentication bindings and helpers
-- **History management**: Browser history utilities
-- **Type definitions**: Shared TypeScript types and enums
-- **State management**: MST (MobX State Tree) helpers
-- **Data utilities**: Validation, formatting, and transformation helpers
+-   **Environment utilities**: Environment detection, URL helpers, domain utilities
+-   **Authentication**: Service authentication bindings and helpers
+-   **History management**: Browser history utilities
+-   **Type definitions**: Shared TypeScript types and enums
+-   **State management**: MST (MobX State Tree) helpers
+-   **Data utilities**: Validation, formatting, and transformation helpers
 
 ## Development
 
@@ -38,40 +38,55 @@ pnpm build
 
 ## Publishing
 
-This package uses automated CI/CD via GitHub Actions. To publish a new version:
+This package uses automated CI/CD via GitHub Actions with conventional commit-based versioning.
+
+**The workflow automatically analyzes your commits and publishes when it detects:**
 
 ```bash
-# Patch version (0.0.0 → 0.0.1)
-git commit -m "fix: your changes --publish"
+# Patch version (0.0.0 → 0.0.1) - Bug fixes
+git commit -m "fix: Resolve authentication timeout"
+git commit -m "perf: Improve query performance"
 
-# Minor version (0.0.0 → 0.1.0)
-git commit -m "feat: your feature --publish minor"
+# Minor version (0.0.0 → 0.1.0) - New features
+git commit -m "feat: Add new utility function"
+git commit -m "feat(auth): Add SSO support"
 
-# Major version (0.0.0 → 1.0.0)
-git commit -m "feat!: breaking change --publish major"
+# Major version (0.0.0 → 1.0.0) - Breaking changes
+git commit -m "feat!: Change API response structure"
+git commit -m "fix!: Remove deprecated methods"
 ```
+
+**Priority**: When multiple commits are pushed:
+
+-   Breaking changes (`!`) → **major** version bump
+-   Features (`feat:`) → **minor** version bump (if no breaking changes)
+-   Fixes (`fix:`, `perf:`) → **patch** version bump (if no features or breaking changes)
+
+**Note**: The workflow uses [conventional commit](https://www.conventionalcommits.org/) format and follows the project's commit policy (validated by lefthook pre-commit hooks).
 
 ## Migration from asma-helpers
 
 If you're migrating from `asma-helpers`:
 
 1. Update your `package.json`:
-   ```json
-   {
-     "dependencies": {
-       "asma-core-helpers": "^0.0.0"
-     }
-   }
-   ```
+
+    ```json
+    {
+        "dependencies": {
+            "asma-core-helpers": "^0.0.0"
+        }
+    }
+    ```
 
 2. Update imports in your code:
-   ```typescript
-   // Before
-   import { ... } from 'asma-helpers'
-   
-   // After
-   import { ... } from 'asma-core-helpers'
-   ```
+
+    ```typescript
+    // Before
+    import { ... } from 'asma-helpers'
+
+    // After
+    import { ... } from 'asma-core-helpers'
+    ```
 
 ## License
 
