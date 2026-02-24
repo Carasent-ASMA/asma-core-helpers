@@ -62,6 +62,11 @@ git commit -m "fix!: Remove deprecated methods"
 -   Features (`feat:`) → **minor** version bump (if no breaking changes)
 -   Fixes (`fix:`, `perf:`) → **patch** version bump (if no features or breaking changes)
 
+**Smart Build**: The workflow intelligently skips build/publish when only documentation or configuration files change:
+
+- **Triggers build**: Changes to `src/`, `package.json`, `pnpm-lock.yaml`, `tsconfig.json`, `.npmignore`
+- **Skips build**: Changes to `README.md`, `.github/`, `.vscode/`, `.prettierrc`, `cspell.json`, etc.
+
 **Note**: The workflow uses [conventional commit](https://www.conventionalcommits.org/) format and follows the project's commit policy (validated by lefthook pre-commit hooks).
 
 ## Migration from asma-helpers
