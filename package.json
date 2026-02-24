@@ -4,9 +4,9 @@
     "description": "Core helper utilities for ASMA applications",
     "main": "lib/index.js",
     "files": [
-        "lib/**/*"
+        "src/**/*"
     ],
-    "types": "lib",
+    "types": "src",
     "type": "module",
     "scripts": {
         "build": "npx tsc && npx tsc -p ."
