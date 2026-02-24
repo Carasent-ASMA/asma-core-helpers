@@ -1,0 +1,83 @@
+name: Build and Publish
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Build package
+        run: pnpm build
+      
+      - name: Check if publish needed
+        id: check_publish
+        run: |
+          if echo "${{ github.event.head_commit.message }}" | grep -q "\-\-publish"; then
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+            
+            # Determine version bump type
+            if echo "${{ github.event.head_commit.message }}" | grep -q "\-\-publish major"; then
+              echo "bump_type=major" >> $GITHUB_OUTPUT
+            elif echo "${{ github.event.head_commit.message }}" | grep -q "\-\-publish minor"; then
+              echo "bump_type=minor" >> $GITHUB_OUTPUT
+            else
+              echo "bump_type=patch" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Configure git
+        if: steps.check_publish.outputs.should_publish == 'true'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Bump version
+        if: steps.check_publish.outputs.should_publish == 'true'
+        run: |
+          npm version ${{ steps.check_publish.outputs.bump_type }} -m "chore: bump version to %s [skip ci]"
+          git push --follow-tags
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Publish to npm
+        if: steps.check_publish.outputs.should_publish == 'true'
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+      - name: Build summary
+        run: |
+          echo "### Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Dependencies installed" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Package built successfully" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.check_publish.outputs.should_publish }}" == "true" ]; then
+            echo "- ✅ Published to npm with ${{ steps.check_publish.outputs.bump_type }} version bump" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ⏭️ Publish skipped (no --publish flag in commit message)" >> $GITHUB_STEP_SUMMARY
+          fi

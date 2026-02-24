@@ -1,7 +1,7 @@
 {
-    "name": "asma-helpers",
-    "version": "0.39.53",
-    "description": "helpers methods for asma",
+    "name": "asma-core-helpers",
+    "version": "0.0.0",
+    "description": "Core helper utilities for ASMA applications",
     "main": "lib/index.js",
     "files": [
         "lib/**/*"
@@ -13,7 +13,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://avanssoma@dev.azure.com/avanssoma/Arbeidoginkludering/_git/asma-helpers"
+        "url": "https://github.com/Carasent-ASMA/asma-core-helpers.git"
     },
     "keywords": [],
     "author": "",
