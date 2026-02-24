@@ -1,20 +1,78 @@
-# Introduction 
-TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project. 
+# asma-core-helpers
 
-# Getting Started
-TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
-1.	Installation process
-2.	Software dependencies
-3.	Latest releases
-4.	API references
+Core helper utilities for ASMA applications. This package provides shared utilities, type definitions, and helper functions used across the ASMA ecosystem.
 
-# Build and Test
-TODO: Describe and show how to build your code and run the tests. 
+> **Note:** This package was formerly known as `asma-helpers`. It has been renamed to `asma-core-helpers` and migrated from Bitbucket to GitHub.
 
-# Contribute
-TODO: Explain how other users and developers can contribute to make your code better. 
+## Installation
 
-If you want to learn more about creating good readme files then refer the following [guidelines](https://docs.microsoft.com/en-us/azure/devops/repos/git/create-a-readme?view=azure-devops). You can also seek inspiration from the below readme files:
-- [ASP.NET Core](https://github.com/aspnet/Home)
-- [Visual Studio Code](https://github.com/Microsoft/vscode)
-- [Chakra Core](https://github.com/Microsoft/ChakraCore)
+```bash
+pnpm add asma-core-helpers
+```
+
+## Usage
+
+```typescript
+import { history, isAdcuris, getParamByName } from 'asma-core-helpers/lib'
+import { ActorTypes, ActivityStatuses } from 'asma-core-helpers'
+```
+
+## Features
+
+- **Environment utilities**: Environment detection, URL helpers, domain utilities
+- **Authentication**: Service authentication bindings and helpers
+- **History management**: Browser history utilities
+- **Type definitions**: Shared TypeScript types and enums
+- **State management**: MST (MobX State Tree) helpers
+- **Data utilities**: Validation, formatting, and transformation helpers
+
+## Development
+
+```bash
+# Install dependencies
+pnpm install
+
+# Build the package
+pnpm build
+```
+
+## Publishing
+
+This package uses automated CI/CD via GitHub Actions. To publish a new version:
+
+```bash
+# Patch version (0.0.0 → 0.0.1)
+git commit -m "fix: your changes --publish"
+
+# Minor version (0.0.0 → 0.1.0)
+git commit -m "feat: your feature --publish minor"
+
+# Major version (0.0.0 → 1.0.0)
+git commit -m "feat!: breaking change --publish major"
+```
+
+## Migration from asma-helpers
+
+If you're migrating from `asma-helpers`:
+
+1. Update your `package.json`:
+   ```json
+   {
+     "dependencies": {
+       "asma-core-helpers": "^0.0.0"
+     }
+   }
+   ```
+
+2. Update imports in your code:
+   ```typescript
+   // Before
+   import { ... } from 'asma-helpers'
+   
+   // After
+   import { ... } from 'asma-core-helpers'
+   ```
+
+## License
+
+MIT
