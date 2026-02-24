@@ -33,22 +33,65 @@ jobs:
       - name: Build package
         run: pnpm build
       
-      - name: Check if publish needed
+      - name: Analyze commits and determine version bump
         id: check_publish
         run: |
-          if echo "${{ github.event.head_commit.message }}" | grep -q "\-\-publish"; then
-            echo "should_publish=true" >> $GITHUB_OUTPUT
-            
-            # Determine version bump type
-            if echo "${{ github.event.head_commit.message }}" | grep -q "\-\-publish major"; then
-              echo "bump_type=major" >> $GITHUB_OUTPUT
-            elif echo "${{ github.event.head_commit.message }}" | grep -q "\-\-publish minor"; then
-              echo "bump_type=minor" >> $GITHUB_OUTPUT
-            else
-              echo "bump_type=patch" >> $GITHUB_OUTPUT
-            fi
+          # Get commits since last tag (or all if no tags)
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            # No tags yet, get all commits
+            COMMITS=$(git log --format=%s origin/master)
           else
-            echo "should_publish=false" >> $GITHUB_OUTPUT
+            # Get commits since last tag
+            COMMITS=$(git log ${LAST_TAG}..HEAD --format=%s)
+          fi
+          
+          echo "Analyzing commits for version bump..."
+          echo "$COMMITS"
+          
+          # Initialize bump type (none/patch/minor/major)
+          # Priority: major > minor > patch
+          BUMP_TYPE="none"
+          SHOULD_PUBLISH="false"
+          
+          # Check each commit for conventional commit types
+          while IFS= read -r commit; do
+            # Skip empty lines
+            [ -z "$commit" ] && continue
+            
+            # Check for breaking change (!) - MAJOR
+            if echo "$commit" | grep -qE '^[a-z]+!(\([^)]*\))?:'; then
+              BUMP_TYPE="major"
+              SHOULD_PUBLISH="true"
+              echo "Found breaking change: $commit"
+              continue
+            fi
+            
+            # Check for feat - MINOR (only if not already major)
+            if [ "$BUMP_TYPE" != "major" ] && echo "$commit" | grep -qE '^feat(\([^)]*\))?:'; then
+              BUMP_TYPE="minor"
+              SHOULD_PUBLISH="true"
+              echo "Found feature: $commit"
+              continue
+            fi
+            
+            # Check for fix, perf - PATCH (only if not already minor or major)
+            if [ "$BUMP_TYPE" != "major" ] && [ "$BUMP_TYPE" != "minor" ] && \
+               echo "$commit" | grep -qE '^(fix|perf)(\([^)]*\))?:'; then
+              BUMP_TYPE="patch"
+              SHOULD_PUBLISH="true"
+              echo "Found fix/perf: $commit"
+            fi
+          done <<< "$COMMITS"
+          
+          # Output results
+          echo "should_publish=${SHOULD_PUBLISH}" >> $GITHUB_OUTPUT
+          echo "bump_type=${BUMP_TYPE}" >> $GITHUB_OUTPUT
+          
+          if [ "$SHOULD_PUBLISH" = "true" ]; then
+            echo "✅ Will publish with ${BUMP_TYPE} version bump"
+          else
+            echo "⏭️  No version bump needed (no feat/fix/perf/breaking commits)"
           fi
       
       - name: Configure git
@@ -79,5 +122,5 @@ jobs:
           if [ "${{ steps.check_publish.outputs.should_publish }}" == "true" ]; then
             echo "- ✅ Published to npm with ${{ steps.check_publish.outputs.bump_type }} version bump" >> $GITHUB_STEP_SUMMARY
           else
-            echo "- ⏭️ Publish skipped (no --publish flag in commit message)" >> $GITHUB_STEP_SUMMARY
+            echo "- ⏭️ Publish skipped (no feat/fix/perf/breaking commits found)" >> $GITHUB_STEP_SUMMARY
           fi
