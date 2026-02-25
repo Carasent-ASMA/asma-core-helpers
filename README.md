@@ -64,8 +64,8 @@ git commit -m "fix!: Remove deprecated methods"
 
 **Smart Build**: The workflow intelligently skips build/publish when only documentation or configuration files change:
 
-- **Triggers build**: Changes to `src/`, `package.json`, `pnpm-lock.yaml`, `tsconfig.json`, `.npmignore`
-- **Skips build**: Changes to `README.md`, `.github/`, `.vscode/`, `.prettierrc`, `cspell.json`, etc.
+-   **Triggers build**: Changes to `src/`, `package.json`, `pnpm-lock.yaml`, `tsconfig.json`, `.npmignore`
+-   **Skips build**: Changes to `README.md`, `.github/`, `.vscode/`, `.prettierrc`, `cspell.json`, etc.
 
 **Note**: The workflow uses [conventional commit](https://www.conventionalcommits.org/) format and follows the project's commit policy (validated by lefthook pre-commit hooks).
 
@@ -92,6 +92,10 @@ If you're migrating from `asma-helpers`:
     // After
     import { ... } from 'asma-core-helpers'
     ```
+
+## Testing Parallel Operations
+
+This is a test message to verify parallel AI commit message generation and git push operations work correctly with up to 20 workers. 🚀
 
 ## License
 
