@@ -5,7 +5,7 @@ import { get as _ } from 'idb-keyval'
 import type { ICheckSigninOptions, ICheckSigninTransformedOptions } from './generateSrvAuthBindings.types.js'
 import { domain, type ActivityStatus, type IAuthBindings } from '../index.js'
 import type { IBaseJwtClaims, IUUID } from 'asma-types'
-import { getActivityStatus } from './getActivityStatus'
+import { ActivityStatuses, getActivityStatus } from './getActivityStatus'
 
 //let logoutSuccessful = false
 
@@ -549,14 +549,16 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         const requestPromise = (async () => {
             try {
                 const response = await connectorPost<
-                    { SoknadID: number[] },
+                    { SoknadID: number[]; AdVoca: 0 | 1 },
                     { soknadID?: number | null; adgangkode?: number | null }[]
                 >({
                     url: '/api/ReadOnlyAccessCheck',
-                    body: { SoknadID: missingIds },
+                    body: { SoknadID: missingIds, AdVoca: domain === 'advoca' ? 1 : 0 },
                 })
 
                 const map = new Map<string, ActivityStatus>()
+
+                const unresolved = new Set(missingIds.map((id) => id.toString()))
 
                 response?.forEach(({ soknadID, adgangkode }) => {
                     if (!soknadID || !adgangkode) return
@@ -565,6 +567,15 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
                     const status = getActivityStatus(adgangkode)
                     map.set(key, status)
                     activityStatusesCached.set(key, { value: status, expiresAt: Date.now() + CACHE_TTL })
+                    unresolved.delete(key)
+                })
+
+                unresolved.forEach((key) => {
+                    map.set(key, ActivityStatuses.NO_ACCESS)
+                    activityStatusesCached.set(key, {
+                        value: ActivityStatuses.NO_ACCESS,
+                        expiresAt: Date.now() + CACHE_TTL,
+                    })
                 })
 
                 return map
