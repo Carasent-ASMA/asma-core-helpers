@@ -1,0 +1,14 @@
+name: Build and Publish
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  publish:
+    uses: Carasent-ASMA/asma-modules/.github/workflows/reusable-publish.yml@master
+    with:
+      publish_npm: true
+      package_name: "asma-core-helpers"
+    secrets: inherit

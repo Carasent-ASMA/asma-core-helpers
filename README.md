@@ -1,20 +1,104 @@
-# Introduction 
-TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project. 
+# asma-core-helpers
 
-# Getting Started
-TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
-1.	Installation process
-2.	Software dependencies
-3.	Latest releases
-4.	API references
+Core helper utilities for ASMA applications. This package provides shared utilities, type definitions, and helper functions used across the ASMA ecosystem.
 
-# Build and Test
-TODO: Describe and show how to build your code and run the tests. 
+> **Note:** This package was formerly known as `asma-helpers`. It has been renamed to `asma-core-helpers` and migrated from Bitbucket to GitHub.
 
-# Contribute
-TODO: Explain how other users and developers can contribute to make your code better. 
+## Installation
 
-If you want to learn more about creating good readme files then refer the following [guidelines](https://docs.microsoft.com/en-us/azure/devops/repos/git/create-a-readme?view=azure-devops). You can also seek inspiration from the below readme files:
-- [ASP.NET Core](https://github.com/aspnet/Home)
-- [Visual Studio Code](https://github.com/Microsoft/vscode)
-- [Chakra Core](https://github.com/Microsoft/ChakraCore)
+```bash
+pnpm add asma-core-helpers
+```
+
+## Usage
+
+```typescript
+import { history, isAdcuris, getParamByName } from 'asma-core-helpers/lib'
+import { ActorTypes, ActivityStatuses } from 'asma-core-helpers'
+```
+
+## Features
+
+-   **Environment utilities**: Environment detection, URL helpers, domain utilities
+-   **Authentication**: Service authentication bindings and helpers
+-   **History management**: Browser history utilities
+-   **Type definitions**: Shared TypeScript types and enums
+-   **State management**: MST (MobX State Tree) helpers
+-   **Data utilities**: Validation, formatting, and transformation helpers
+
+## Development
+
+```bash
+# Install dependencies
+pnpm install
+
+# Build the package
+pnpm build
+```
+
+## Publishing
+
+This package uses automated CI/CD via GitHub Actions with conventional commit-based versioning.
+
+**The workflow automatically analyzes your commits and publishes when it detects:**
+
+```bash
+# Patch version (0.0.0 → 0.0.1) - Bug fixes
+git commit -m "fix: Resolve authentication timeout"
+git commit -m "perf: Improve query performance"
+
+# Minor version (0.0.0 → 0.1.0) - New features
+git commit -m "feat: Add new utility function"
+git commit -m "feat(auth): Add SSO support"
+
+# Major version (0.0.0 → 1.0.0) - Breaking changes
+git commit -m "feat!: Change API response structure"
+git commit -m "fix!: Remove deprecated methods"
+```
+
+**Priority**: When multiple commits are pushed:
+
+-   Breaking changes (`!`) → **major** version bump
+-   Features (`feat:`) → **minor** version bump (if no breaking changes)
+-   Fixes (`fix:`, `perf:`) → **patch** version bump (if no features or breaking changes)
+
+**Smart Build**: The workflow intelligently skips build/publish when only documentation or configuration files change:
+
+-   **Triggers build**: Changes to `src/`, `package.json`, `pnpm-lock.yaml`, `tsconfig.json`, `.npmignore`
+-   **Skips build**: Changes to `README.md`, `.github/`, `.vscode/`, `.prettierrc`, `cspell.json`, etc.
+
+**Note**: The workflow uses [conventional commit](https://www.conventionalcommits.org/) format and follows the project's commit policy (validated by lefthook pre-commit hooks).
+
+## Migration from asma-helpers
+
+If you're migrating from `asma-helpers`:
+
+1. Update your `package.json`:
+
+    ```json
+    {
+        "dependencies": {
+            "asma-core-helpers": "^0.0.0"
+        }
+    }
+    ```
+
+2. Update imports in your code:
+
+    ```typescript
+    // Before
+    import { ... } from 'asma-helpers'
+
+    // After
+    import { ... } from 'asma-core-helpers'
+    ```
+
+## Testing Parallel Operations
+
+This is a test message to verify parallel AI commit message generation and git push operations work correctly with up to 20 workers. 🚀
+
+**Update 2**: Testing after fixing GitHub workflow access and adopus-gql-directory remote URL! ✨
+
+## License
+
+MIT
