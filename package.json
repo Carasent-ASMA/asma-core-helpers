@@ -1,6 +1,6 @@
 {
     "name": "asma-core-helpers",
-    "version": "0.1.14",
+    "version": "0.1.18",
     "description": "Core helper utilities for ASMA applications",
     "main": "lib/index.js",
     "files": [
