@@ -683,21 +683,22 @@ function deepEqual(x: Record<string, string>, y: Record<string, string>) {
 function sortStringify(x: Record<string, string>) {
     Object.keys(x)
         .sort()
-        .reduce(
-            (acc, key) => {
-                const x_key = x?.[key]
-                if (x_key) {
-                    acc[key] = x_key
-                }
+        .reduce((acc, key) => {
+            const x_key = x?.[key]
+            if (x_key) {
+                acc[key] = x_key
+            }
 
-                return acc
-            },
-            {} as Record<string, string>,
-        )
+            return acc
+        }, {} as Record<string, string>)
 
     return JSON.stringify(x)
 }
-
+/**
+ *
+ * @param headers
+ * @returns
+ */
 function attachAdditionalHeaders(headers: Record<string, string>) {
     const predefined_debug_user_secret = localStorage.getItem('predefined-debug-user-secret') || undefined
 
