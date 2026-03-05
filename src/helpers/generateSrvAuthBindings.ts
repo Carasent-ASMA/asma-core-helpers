@@ -442,6 +442,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         }
         return undefined
     }
+
     function getFeatures() {
         if (!metadata?.features) {
             console.warn('no features present in the metadata', 'metadata: ', metadata)
@@ -449,6 +450,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         }
         return Array.from(metadata.features)
     }
+
     function getSrvUrls() {
         if (!metadata?.srv_urls) {
             console.warn('no srv_urls present in the metadata', 'metadata: ', metadata)
