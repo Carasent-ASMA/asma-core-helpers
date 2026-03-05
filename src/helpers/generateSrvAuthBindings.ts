@@ -722,7 +722,7 @@ function attachAdditionalHeaders(headers: Record<string, string>) {
     const genesis_user_secret = localStorage.getItem('genesis-user-secret') || undefined
 
     if (domain === 'advoca' && genesis_user_secret) {
-        headers = { ...headers, 'genesis-user-secret': `genesis-user-secret.${genesis_user_secret}`}
+        headers = { ...headers, 'genesis-user-secret': `genesis_user-secret.${genesis_user_secret}`}
     }
 
     return headers
