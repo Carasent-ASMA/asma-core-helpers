@@ -96,6 +96,7 @@ export type IAuthBindings<FE extends string> = {
     getJwtToken: () => string
     accessTokenHasExpired: () => boolean
     getActivityStatuses: (activity_ids: string[]) => Promise<Map<string, ActivityStatus>>
+    invalidateActivityStatuses: (activityIds?: string[]) => void
 }
 declare global {
     interface Window {

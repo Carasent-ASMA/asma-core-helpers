@@ -523,6 +523,18 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
 
     const pendingRequests = new Map<string, Promise<Map<string, ActivityStatus>>>()
 
+    function invalidateActivityStatuses(activityIds?: string[]) {
+        if (!activityIds?.length) {
+            activityStatusesCached.clear()
+            pendingRequests.clear()
+            return
+        }
+
+        for (const id of activityIds) {
+            activityStatusesCached.delete(id)
+        }
+    }
+
     async function getActivityStatuses(activityIds: string[]): Promise<Map<string, ActivityStatus>> {
         const result = new Map<string, ActivityStatus>()
         const missingIds: number[] = []
@@ -638,6 +650,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         /**@deprecated - do not use it anymore is moved to features `TimeRegistration_TeamleaderOverview` */
         isTeamLeader,
         getActivityStatuses,
+        invalidateActivityStatuses,
     } satisfies IAuthBindings<FE>
 
     realWindow.__ASMA__SHELL__ = realWindow.__ASMA__SHELL__ || {}
@@ -685,14 +698,17 @@ function deepEqual(x: Record<string, string>, y: Record<string, string>) {
 function sortStringify(x: Record<string, string>) {
     Object.keys(x)
         .sort()
-        .reduce((acc, key) => {
-            const x_key = x?.[key]
-            if (x_key) {
-                acc[key] = x_key
-            }
+        .reduce(
+            (acc, key) => {
+                const x_key = x?.[key]
+                if (x_key) {
+                    acc[key] = x_key
+                }
 
-            return acc
-        }, {} as Record<string, string>)
+                return acc
+            },
+            {} as Record<string, string>,
+        )
 
     return JSON.stringify(x)
 }
