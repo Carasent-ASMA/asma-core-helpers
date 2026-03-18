@@ -18,10 +18,10 @@ export function _getServerErrorMessage(error: Record<string, any> | string): str
         return error['data']['Message']
     }
     if (Array.isArray(error)) {
-        return _getArrayErrorsMessage(error)
+        return _getArrayErrorsMessage(error as Record<string, unknown>[])
     }
     if (Array.isArray(error?.['errors'])) {
-        return _getArrayErrorsMessage(error['errors'])
+        return _getArrayErrorsMessage(error['errors'] as Record<string, unknown>[])
     }
     //graphql
     else if (error['bodyText']) {
