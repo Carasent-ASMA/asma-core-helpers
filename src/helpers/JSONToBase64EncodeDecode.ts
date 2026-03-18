@@ -1,7 +1,7 @@
 import { Buffer } from 'buffer'
 export function fromBase64ToJSON<T>(base64: string): T {
     const json_str = Buffer.from(base64, 'base64').toString('utf-8')
-    return JSON.parse(json_str)
+    return JSON.parse(json_str) as T
 }
 
 export function fromJSONToBase64<T>(json: T): string {
