@@ -34,7 +34,7 @@ export const EnvironmentsUrls1 = (adcuris_subdomains?: string[]) => {
         SRV_CONNECTOR: srvConnector(env, env_to_operate),
         SRV_ARTIFACT: '',
         SRV_ADVOCA: `${ac_prefix}/api/service`,
-        SRV_PROXY: `${ac_prefix}/api/srvproxy`,
+        SRV_PROXY: `${ac_prefix}/api/artifact`,
         SRV_NOTIFICATION: `${ac_prefix}/api/notification`,
         SRV_ACTIVITIES: `${ac_prefix}/api/activities`,
         SRV_WOPI: `${ac_prefix}/wopi`,
