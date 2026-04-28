@@ -203,10 +203,12 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         url,
         body,
         headers,
+        signal,
     }: {
         url: string
         body?: T
         headers?: Record<string, string>
+        signal?: AbortSignal
     }): Promise<R> {
         const token = await getCachedJwt()
         const fetchOptions: RequestInit = {
@@ -218,6 +220,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
                 ...headers,
             },
             body: JSON.stringify(body),
+            signal,
         }
         const baseURL = metadata?.srv_urls?.['connector'] || EnvConfigsFnInternal().SRV_CONNECTOR
         const response = await fetch(new URL(baseURL + url, window.location.origin).toString(), fetchOptions)
@@ -535,7 +538,10 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         }
     }
 
-    async function getActivityStatuses(activityIds: string[]): Promise<Map<string, ActivityStatus>> {
+    async function getActivityStatuses(
+        activityIds: string[],
+        signal?: AbortSignal,
+    ): Promise<Map<string, ActivityStatus>> {
         const result = new Map<string, ActivityStatus>()
         const missingIds: number[] = []
         const now = Date.now()
@@ -568,6 +574,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
                 >({
                     url: '/api/ReadOnlyAccessCheck',
                     body: { SoknadID: missingIds, AdVoca: domain === 'advoca' ? 1 : 0 },
+                    signal,
                 })
 
                 const map = new Map<string, ActivityStatus>()
