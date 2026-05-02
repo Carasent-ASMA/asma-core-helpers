@@ -51,9 +51,13 @@ function deleteParams(search_params: URLSearchParams, name: ISearchParams | ISea
 export function deleteParamByName(name: ISearchParams | ISearchParams[]) {
     const searchParams = new URLSearchParams(globalThis.location.search)
 
+    const hadParams = Array.isArray(name) ? name.some((n) => searchParams.has(n)) : searchParams.has(name)
+
+    if (!hadParams) return
+
     deleteParams(searchParams, name)
 
-    history.push(`${globalThis.location.pathname}?${searchParams.toString()}`)
+    history.replace(`${globalThis.location.pathname}?${searchParams.toString()}`)
 }
 
 export function getParamByName<Key extends ISearchParamWithValues>(name: Key) {
