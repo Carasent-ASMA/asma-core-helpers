@@ -38,10 +38,10 @@ export const EnvironmentsUrls1 = (adcuris_subdomains?: string[]) => {
         SRV_NOTIFICATION: `${ac_prefix}/api/notification`,
         SRV_ACTIVITIES: `${ac_prefix}/api/activities`,
         SRV_WOPI: `${ac_prefix}/wopi`,
+        BUNJS_EDITOR: `${ac_prefix}/api/editor`,
         SRV_AO_DIRECTORY: `${ac_prefix}/api-ao/directory`,
         SRV_WRAPPER: `${ac_prefix}/api/wrapper`,
         SRV_AUTH: '/api/auth',
-        BUNJS_EDITOR_URL: '/api/editor',
         // FIXME replace with dynamic url
         ONLYOFFICE_DOCUMENT_SERVER:
             env === 'prod' ? `https://onlyoffice.adopus.no` : `https://onlyoffice.stage.adopus.no`,
