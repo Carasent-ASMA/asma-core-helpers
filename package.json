@@ -8,6 +8,10 @@
     ],
     "types": "lib/index.d.ts",
     "type": "module",
+    "exports": {
+        ".": "./lib/index.js",
+        "./lib": "./lib/index.js"
+    },
     "scripts": {
         "build": "npx tsc && npx tsc -p ."
     },
