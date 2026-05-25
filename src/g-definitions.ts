@@ -156,6 +156,8 @@ declare global {
 
 export const history = getHistory()
 
+export const subscribeToHistory = (listener: () => void) => history.listen(listener)
+
 export { type History, createBrowserHistory }
 
 function getHistory() {
