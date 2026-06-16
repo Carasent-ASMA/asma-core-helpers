@@ -34,8 +34,8 @@ importers:
         specifier: ^0.8.2
         version: 0.8.2
       asma-types:
-        specifier: ^2.2.0
-        version: 2.2.0
+        specifier: ^2.7.0
+        version: 2.7.0
       history:
         specifier: ^5.3.0
         version: 5.3.0
@@ -82,8 +82,11 @@ packages:
   asma-qiankun@1.8.0:
     resolution: {integrity: sha512-nxn7FnyH0p1oUnSsTxnPEhe1DN0oXHaQdpRRDYm+Hr3K7wnLrm6zQZ5NckbyU8v9C29ZksqbnofoG0efDB1a6w==}
 
-  asma-types@2.2.0:
-    resolution: {integrity: sha512-LbPvbDI+vDpPrzppqbFBvq3srEXkHUW4JH9gKYonzvlr4Kr3ul5hzySd0EdaWzqH5kMm8jgUlvqtM3zb50zaUA==}
+  asma-types@2.6.0:
+    resolution: {integrity: sha512-w7MmrSHLXlbayqSwG6eNF57mYh7AzgnNgypBb2oJHukqMYLEZBJymDCrj6HVyjvG0t4MmtgAFdj9P8PFqk6o/w==}
+
+  asma-types@2.7.0:
+    resolution: {integrity: sha512-RhqMOgzGPV073Dz/WN06oT50V6HtUrqMou3Fck+EnK5LNhcPYdzL1KV13JV95yq8F1GhyWlPA7JQCN0ntSn5uA==}
 
   async-limiter@1.0.1:
     resolution: {integrity: sha512-csOlWGAcRFJaI6m+F2WKdnMKr4HhdhFVBk0H/QbJFMCr+uO2kwohwXQPxw/9OCxp05r5ghVBFSyioixx3gfkNQ==}
@@ -334,7 +337,7 @@ snapshots:
 
   asma-event-bus@0.7.27:
     dependencies:
-      asma-types: 2.2.0
+      asma-types: 2.6.0
 
   asma-qiankun-react-loader@0.8.2:
     dependencies:
@@ -346,7 +349,9 @@ snapshots:
     dependencies:
       import-html-entry: 1.15.2
 
-  asma-types@2.2.0: {}
+  asma-types@2.6.0: {}
+
+  asma-types@2.7.0: {}
 
   async-limiter@1.0.1: {}
 
