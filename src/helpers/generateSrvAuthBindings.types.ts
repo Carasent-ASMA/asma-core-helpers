@@ -1,4 +1,4 @@
-import type { ITherapistOrSuperUserJwtClaims } from 'asma-types/lib'
+import type { ITherapistOrSuperUserJwtClaims } from 'asma-types'
 type IOpenreplay = {
     enable: boolean
     block: boolean
