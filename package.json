@@ -13,7 +13,8 @@
         "./lib": "./lib/index.js"
     },
     "scripts": {
-        "build": "npx tsc && npx tsc -p ."
+        "build": "npx tsc && npx tsc -p .",
+        "test": "node --import tsx --test \"src/**/*.test.ts\""
     },
     "repository": {
         "type": "git",

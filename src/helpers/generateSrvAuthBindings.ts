@@ -1,6 +1,7 @@
 import { asmaOverridesEventBus, EventBus } from 'asma-event-bus'
 import { EnvConfigsFnInternal } from './generateEnvConfigsBindings.js'
 import { realWindow } from './getSubdomain.js'
+import { getInjectedPlatform } from './getDefaultAppVersions.js'
 import { get as _ } from 'idb-keyval'
 import type { ICheckSigninOptions, ICheckSigninTransformedOptions } from './generateSrvAuthBindings.types.js'
 import { domain, type ActivityStatus, type IAuthBindings } from '../index.js'
@@ -663,6 +664,10 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     realWindow.__ASMA__SHELL__ = realWindow.__ASMA__SHELL__ || {}
 
     realWindow.__ASMA__SHELL__.auth_bindings = auth_bindings
+
+    // Seed the overrides bus from the server-injected first-hit versions so the map is available
+    // before any auth response arrives (later responses still dispatch updates). ASMA-7544.
+    dispatchCustomerUserRelatedAppVersions(getInjectedPlatform()?.default_app_versions)
 
     return auth_bindings
 }
