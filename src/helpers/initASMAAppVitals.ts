@@ -5,6 +5,7 @@ import {
     type IResWithSubdomainOnError,
 } from './checkForRegisteredSubdomains.js'
 import { clearCacheData } from './clearCacheData.js'
+import { getDefaultAppVersions } from './getDefaultAppVersions.js'
 import { EnvConfigsFnInternal } from './generateEnvConfigsBindings.js'
 import { getCachedJwtInternal, isJwtValidInternal, registerCallbackOnSrvAuthEvents } from './generateSrvAuthBindings.js'
 import { isNotEmptyObjArr } from './IsNotEmpty.js'
@@ -93,16 +94,21 @@ export async function initASMAAppVitals({
 
     let registry_urls: (typeof _registry_envs)['local'] | undefined = undefined
 
-    if (
-        resRegisteredSubdomain &&
-        'props' in resRegisteredSubdomain &&
-        isNotEmptyObjArr(resRegisteredSubdomain.props.default_app_versions)
-    ) {
-        const default_app_versions = resRegisteredSubdomain.props!.default_app_versions!
+    // Prefer the server-injected first-hit versions (window.__ASMA_PLATFORM__); fall back to the
+    // signin/subdomain response value — same source of truth, no dependency on its round-trip timing.
+    const propsDefaultAppVersions =
+        resRegisteredSubdomain && 'props' in resRegisteredSubdomain
+            ? resRegisteredSubdomain.props.default_app_versions
+            : undefined
 
-        registry_urls = Object.keys(default_app_versions).reduce(
+    const default_app_versions = getDefaultAppVersions(propsDefaultAppVersions)
+
+    if (default_app_versions && isNotEmptyObjArr(default_app_versions)) {
+        const resolved_versions = default_app_versions
+
+        registry_urls = Object.keys(resolved_versions).reduce(
             (acc, key) => {
-                const app_version = default_app_versions[key]
+                const app_version = resolved_versions[key]
 
                 const base_url = EnvConfigsFnInternal().CDN_ASMA_BASE_URL || '/cdn'
 

@@ -115,6 +115,15 @@ declare global {
             setTheme: (theme: string) => void
         }
         rawWindow?: typeof window
+        /**
+         * Server-injected (first-hit) per-user platform payload — see asma-static-server ASMA-7544.
+         * Present when `ESM_PLATFORM_INJECTION` is on; the seed both the old (qiankun) and the new
+         * (ESM) architecture read their app versions/bases from.
+         */
+        __ASMA_PLATFORM__?: {
+            default_app_versions?: Record<string, string>
+            apps?: Record<string, { version: string; base: string }>
+        }
         __ENV?: Record<string, string>
         __ENV_MICRO: {
             [key: string]: Record<string, string>
