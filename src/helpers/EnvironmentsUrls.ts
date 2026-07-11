@@ -40,6 +40,7 @@ export const EnvironmentsUrls1 = (adcuris_subdomains?: string[]) => {
         SRV_WOPI: `${ac_prefix}/wopi`,
         BUNJS_EDITOR: `${ac_prefix}/api/editor`,
         SRV_AO_DIRECTORY: `${ac_prefix}/api-ao/directory`,
+        /**@deprecated not used anywhere no such service */
         SRV_WRAPPER: `${ac_prefix}/api/wrapper`,
         SRV_AUTH: '/api/auth',
         // FIXME replace with dynamic url
@@ -49,7 +50,7 @@ export const EnvironmentsUrls1 = (adcuris_subdomains?: string[]) => {
         /**@deprecated use SRV_WRAPPER instead */
         SRV_AO_WRAPPER_NEW: '/api/wrapper',
 
-        SRV_AO_WRAPPER: '',
+        HSR_AO_WRAPPER: '/api/hsr-wrapper',
         DEVELOPMENT:
             realWindow.location.hostname.includes('dev.') || realWindow.location.hostname.includes('localhost'),
         ENVIRONMENT_TO_OPERATE: env_to_operate,

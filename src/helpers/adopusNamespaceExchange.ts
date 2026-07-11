@@ -11,8 +11,8 @@
  *   5. response: strip the `<slug>_` prefix from `__typename` values
  *
  * `prefixedTypes` is the exact set of names the engine prefixes for the tenant source —
- * generated at codegen time by adopus-hsr-wrapper/scripts/unwrap_client_schema.mjs
- * (adopus-prefixed-types.json) so the runtime never guesses which names carry the prefix.
+ * generated at codegen time by the `asma-gql-unwrap` bin (asma-core-toolchain)
+ * (adopus-prefixed-types.ts) so the runtime never guesses which names carry the prefix.
  *
  * Install it only on the SRV_AO_WRAPPER client and only when the resolved endpoint is the
  * consolidated engine (`/api/hsr-wrapper/`) — the per-tenant `srv_urls.ao_wrapper` flip then
