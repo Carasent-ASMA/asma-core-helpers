@@ -33,6 +33,9 @@ importers:
       '@urql/core':
         specifier: ^6.0.3
         version: 6.0.3
+      '@urql/exchange-auth':
+        specifier: ^3.0.0
+        version: 3.0.0(@urql/core@6.0.3)
       asma-qiankun-react-loader:
         specifier: ^0.8.2
         version: 0.8.2
@@ -234,6 +237,11 @@ packages:
 
   '@urql/core@6.0.3':
     resolution: {integrity: sha512-0F39XWR21+IVLJfsqBvLShvoSzxT6h6wWXwrDhN8j9J+IEVOpQIUNHwpgjsp+2ePzn9aCH+rpDonn3HOAUnn9A==}
+
+  '@urql/exchange-auth@3.0.0':
+    resolution: {integrity: sha512-tj09xiOR2f1J2h8TE9uZWjRZipCdmDoTewEytOacDQ+0Teo+yIZxm3ppHxolQtiA51OHrGYiNTkMte8HtfvaBw==}
+    peerDependencies:
+      '@urql/core': ^6.0.0
 
   asma-event-bus@0.7.27:
     resolution: {integrity: sha512-mhyyLRpYDi36SJ9p1bFQCwtXjBKcZY1NvzopB7YkDqPIJAN2b4ZZ6d3aqBdqEo7Rw0xqdengtcgo57m8060yjw==}
@@ -487,6 +495,11 @@ snapshots:
       wonka: 6.3.6
     transitivePeerDependencies:
       - graphql
+
+  '@urql/exchange-auth@3.0.0(@urql/core@6.0.3)':
+    dependencies:
+      '@urql/core': 6.0.3
+      wonka: 6.3.6
 
   asma-event-bus@0.7.27:
     dependencies:

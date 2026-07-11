@@ -46,3 +46,6 @@ export * from './helpers/isUUID.js'
 export * from './helpers/JSONToBase64EncodeDecode.js'
 export * from './helpers/getActivityStatus.js'
 export * from './helpers/stringToKeyValueMap.js'
+
+export { createTadaBrowserClient } from './helpers/createTadaBrowserClient.js'
+export type { CreateTadaBrowserClientOptions, ResolveExchanges } from './helpers/createTadaBrowserClient.js'
