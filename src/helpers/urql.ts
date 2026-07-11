@@ -1,3 +1,5 @@
 export { adopusNamespaceExchange, adopusSlugFromJwt, denamespaceData, namespaceDocument } from './adopusNamespaceExchange.js'
 export { createTadaBrowserClient } from './createTadaBrowserClient.js'
 export type { CreateTadaBrowserClientOptions, ResolveExchanges } from './createTadaBrowserClient.js'
+export { initTadaBrowserClient, resolveSrvUrl } from './initTadaBrowserClient.js'
+export type { InitTadaBrowserClientOptions } from './initTadaBrowserClient.js'
