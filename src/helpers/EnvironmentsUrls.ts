@@ -47,9 +47,12 @@ export const EnvironmentsUrls1 = (adcuris_subdomains?: string[]) => {
         ONLYOFFICE_DOCUMENT_SERVER:
             env === 'prod' ? `https://onlyoffice.adopus.no` : `https://onlyoffice.stage.adopus.no`,
         /**Use this in stead  url is the same for all journal where relevant only use in api-assembly do not access those directly in code may be issues */
+
         /**@deprecated use SRV_WRAPPER instead */
         SRV_AO_WRAPPER_NEW: '/api/wrapper',
 
+        /**@deprecated use SRV_WRAPPER instead */
+        SRV_AO_WRAPPER: '',
         HSR_AO_WRAPPER: '/api/hsr-wrapper',
         DEVELOPMENT:
             realWindow.location.hostname.includes('dev.') || realWindow.location.hostname.includes('localhost'),

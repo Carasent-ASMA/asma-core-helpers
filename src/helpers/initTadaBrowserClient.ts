@@ -24,8 +24,8 @@ import { getCachedJwtInternal, getSrvUrlsInternal, isJwtValidInternal } from './
  */
 export function resolveSrvUrl(service: keyof IEnvironmentUrlsGenQLOnly): string {
     let service_url = EnvConfigsFnInternal()[service]
-
-    if (service === 'HSR_AO_WRAPPER') {
+    /** for legacy compatibility new wrapper is HSR_AO_WRAPPER adopus specific!!! */
+    if (service === 'SRV_AO_WRAPPER') {
         const url = getSrvUrlsInternal()?.ao_wrapper
         if (url) {
             service_url = url
@@ -38,9 +38,7 @@ export function resolveSrvUrl(service: keyof IEnvironmentUrlsGenQLOnly): string 
     }
 
     if (!service_url) {
-        throw Error(
-            `'required param serviceUrl() is undefined, please check EnvConfig object!', service: ${service}`,
-        )
+        throw Error(`'required param serviceUrl() is undefined, please check EnvConfig object!', service: ${service}`)
     }
     return service_url
 }
@@ -59,7 +57,11 @@ export interface InitTadaBrowserClientOptions {
  * from just a `service` name. URL resolution (`resolveSrvUrl`) and JWT binding
  * (`getCachedJwtInternal` / `isJwtValidInternal`) are wired internally.
  */
-export function initTadaBrowserClient({ service, path = '/v1/graphql', resolveExchanges }: InitTadaBrowserClientOptions) {
+export function initTadaBrowserClient({
+    service,
+    path = '/v1/graphql',
+    resolveExchanges,
+}: InitTadaBrowserClientOptions) {
     return createTadaBrowserClient({
         url: `${resolveSrvUrl(service)}${path}`,
         getJwt: getCachedJwtInternal,
