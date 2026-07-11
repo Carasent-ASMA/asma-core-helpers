@@ -25,7 +25,7 @@ export type IKeyEnvironmentUrls = keyof IEnvironmentUrls
 type StartsWith<T, U extends string> = T extends `${U}${infer _}` ? T : never
 
 type SRVKeys<T> = {
-    [K in keyof T as StartsWith<K & string, 'SRV_'>]: T[K]
+    [K in keyof T as StartsWith<K & string, 'SRV_'> | StartsWith<K & string, 'HSR_'>]: T[K]
 }
 
 export type IEnvironmentUrlsGenQLOnly = SRVKeys<IEnvironmentUrls> /* Omit<
