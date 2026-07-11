@@ -23,8 +23,8 @@ function dispatchJwtChangedEvent(jwt?: ICheckSigninOptions<any>) {
     dispatchSrvAuthEvents('jwt_changed', jwt, false)
 }
 /**
- * @generic FeatureEnums - feature_names_enums from asma-genql-directory
- * @generic SrvUrlsEnums - srv_names_enums from asma-genql-directory
+ * @generic FeatureEnums - feature_names_enums from directory introspection
+ * @generic SrvUrlsEnums - srv_names_enums from directory introspection
  */
 //type EnvConfigsFn = () => { SRV_AUTH: string; DEVELOPMENT: boolean; ENVIRONMENT_TO_OPERATE: string }
 
