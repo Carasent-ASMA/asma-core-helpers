@@ -76,7 +76,8 @@ export function createTadaBrowserClient({
 
         _clientOptions.url = url
         _clientOptions.preferGetMethod = false
-        _clientOptions.requestPolicy = 'cache-and-network'
+        // Honor a caller-provided requestPolicy (e.g. devextreme's 'network-only'); default otherwise.
+        _clientOptions.requestPolicy = _clientOptions.requestPolicy ?? 'cache-and-network'
 
         // Start with fetchExchange + caller-provided exchanges
         _clientOptions.exchanges = [
