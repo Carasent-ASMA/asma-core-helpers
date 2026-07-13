@@ -200,7 +200,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         return _handleSrvAuthRequest<R>(url, fetchOptions)
     }
 
-    async function connectorPost<T = unknown, R = unknown>({
+    async function editorPost<T = unknown, R = unknown>({
         url,
         body,
         headers,
@@ -223,8 +223,14 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
             body: JSON.stringify(body),
             signal,
         }
-        const baseURL = metadata?.srv_urls?.['connector'] || EnvConfigsFnInternal().SRV_CONNECTOR
-        const response = await fetch(new URL(baseURL + url, window.location.origin).toString(), fetchOptions)
+        const baseURL = EnvConfigsFnInternal().BUNJS_EDITOR
+        const response = await fetch(
+            new URL(`${baseURL.replace(/\/+$/, '')}${url}`, window.location.origin).toString(),
+            fetchOptions,
+        )
+
+        if (!response.ok) throw new Error(`Editor request failed with status ${response.status}`)
+
         return response.json() as R
     }
 
@@ -569,11 +575,11 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
 
         const requestPromise = (async () => {
             try {
-                const response = await connectorPost<
+                const response = await editorPost<
                     { SoknadID: number[]; AdVoca: 0 | 1 },
                     { soknadID?: number | null; adgangkode?: number | null }[]
                 >({
-                    url: '/api/ReadOnlyAccessCheck',
+                    url: '/legacy-ao/ReadOnlyAccessCheck',
                     body: { SoknadID: missingIds, AdVoca: domain === 'advoca' ? 1 : 0 },
                     signal,
                 })
