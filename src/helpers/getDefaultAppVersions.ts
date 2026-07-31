@@ -7,7 +7,7 @@
  * versions no longer depend on the `checkForRegisteredSubdomain`/signin round-trip timing. Absent
  * injection (flag off / old HTML), the fallback IS today's behaviour.
  *
- * @see _docs/frontend/plans/2026-07-02-14-25-plan-asma-static-server-esm-first-hit-compatibility.md:? — REQ-008, TASK-014
+ * @see _docs/frontend/history/2026-07-04-21-00-history-server-first-hit-esm-delivery.md — REQ-008, TASK-014
  */
 
 export interface InjectedPlatformApp {
