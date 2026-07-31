@@ -14,6 +14,10 @@
         "./urql": {
             "types": "./lib/helpers/urql.d.ts",
             "default": "./lib/helpers/urql.js"
+        },
+        "./collaboration": {
+            "types": "./lib/collaboration/index.d.ts",
+            "default": "./lib/collaboration/index.js"
         }
     },
     "scripts": {
