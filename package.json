@@ -45,6 +45,7 @@
         "@0no-co/graphql.web": "^1.0.9",
         "@urql/core": "^6.0.3",
         "@urql/exchange-auth": "^3.0.0",
+        "arktype": "^2.2.3",
         "asma-event-bus": "^0.7.27",
         "buffer": "^6.0.3",
         "idb-keyval": "^6.2.1",

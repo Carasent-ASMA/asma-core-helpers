@@ -7,9 +7,9 @@
  * to a total in-memory model once at the document boundary rather than writing `?? {}`
  * at each use site.
  *
- * @see _docs/editor/qnrs/cross/2026-07-12-20-20-architecture-qnr-v2-model-collaboration-sync.md:152 (document shape)
- * @see _docs/editor/qnrs/cross/2026-07-12-20-20-architecture-qnr-v2-model-collaboration-sync.md:193 (DOC-LAW-1)
- * @see _docs/editor/qnrs/cross/2026-07-12-20-20-architecture-qnr-v2-model-collaboration-sync.md:214 (§2.2a mapping graph)
+ * @see asma-modules/_docs/editor/qnrs/cross/2026-07-12-20-20-architecture-qnr-v2-model-collaboration-sync.md:152 (document shape)
+ * @see asma-modules/_docs/editor/qnrs/cross/2026-07-12-20-20-architecture-qnr-v2-model-collaboration-sync.md:193 (DOC-LAW-1)
+ * @see asma-modules/_docs/editor/qnrs/cross/2026-07-12-20-20-architecture-qnr-v2-model-collaboration-sync.md:214 (§2.2a mapping graph)
  */
 
 import type { QuestionSubtype, QuestionType } from './questionTypes.js'
@@ -23,9 +23,92 @@ export type NodeId = string
 export type BindingId = string
 export type FilterId = string
 export type MappingId = string
+export type VisibilityRuleId = string
+export type HighlightRuleId = string
 
 /** A scalar a document may carry. Deliberately not `any`: DOC-LAW-2 bans `null`. */
 export type DocScalar = string | number | boolean
+
+/**
+ * The required access level of the pinned version (OQ-V2-2): 1 anonymous, 2 identifiable
+ * without authentication, 3 lower-assurance authentication, 4 BankID. Never collapsed
+ * to a boolean; `invitationRequired` is a separate axis.
+ */
+export type RequiredAccessLevel = 1 | 2 | 3 | 4
+
+/** Who the questionnaire is initiated by (OQ-V2-15 wire vocabulary). */
+export type Initiator = 'coordinator' | 'recipient'
+
+/**
+ * What happens to in-flight instances when the family publishes a new version
+ * (OQ-V2-16, IMM-I5). v1 implements `never`; `always`/`ask` land later.
+ */
+export type TemplateUpdateMode = 'never' | 'always' | 'ask'
+
+/**
+ * The typed semantic body of the document (`meta`). Absent means the default, per
+ * DOC-LAW-2 — a questionnaire that requires nothing special stores `meta` with only
+ * what differs. Fields still open after the naming freeze (Gate-4) ride the index
+ * signature; the decided fields are spelled out so a typo is a compile error.
+ */
+export type QnrTemplateMeta = {
+    title?: string
+    description?: string
+    /** Journal-wiring settings (M-007 aliases normalize here). */
+    settings?: {
+        journal?: {
+            /** `activityId_required`/`soknadid_required`/`sokndaid_required` unify here (architecture §2.2(7)). */
+            requires_activity_id?: boolean
+        }
+        /** Recipient-side requirements. */
+        recipient?: {
+            /** Legacy `ask_for_phone_nr`. */
+            ask_for_phone_nr?: boolean
+        }
+    }
+    /** Admission policy of the pinned version (OQ-V2-2/15/16). */
+    instancePolicy?: {
+        requiredAccessLevel?: RequiredAccessLevel
+        /** Open level-1 is invitation-free; invitation-protected level-1 sets this. */
+        invitationRequired?: boolean
+        initiator?: Initiator
+        template_update_mode?: TemplateUpdateMode
+    }
+    /** Presentation profiles (PM-6): audience/flow/layout/visibility — still loose pending their editor. */
+    presentationProfiles?: Record<string, unknown>
+    /** Owner-domain soft references (REQ-013): ids only, no bodies, no FK validation. */
+    compatibility?: {
+        consentTemplateIds?: string[]
+        smsTemplateIds?: string[]
+    }
+    [key: string]: unknown
+}
+
+/**
+ * The per-question-type configuration of a `QuestionGrid` (OQ-V2-17) — the repeat
+ * policy of the grid's rows. Lives at `question.grid.*`.
+ */
+export type QuestionGridConfig = {
+    minRows?: number
+    maxRows?: number
+    /** `single_row` in OQ-V2-17 prose — max 1 row. */
+    singleRow?: boolean
+    deletableRows?: boolean
+    alwaysNew?: boolean
+    timestamps?: boolean
+}
+
+/**
+ * Grid-owned presentation (OQ-V2-17/25): row-editor layout, filters, grid actions,
+ * highlight rules, the header-tab reference and authored default column widths live
+ * here — there is no parallel `settings_ui` or `layoutByQuestionId` map.
+ */
+export type QuestionGridPresentation = {
+    headerTabId?: TabId
+    /** OQ-V2-25: authored defaults; per-user widths are preference state outside both documents. */
+    defaultColumnWidthsByQuestionId?: Record<QuestionId, number>
+    [key: string]: unknown
+}
 
 /**
  * `type` is the question's own discriminator (M-062), a closed union rather than a string — see
@@ -39,13 +122,41 @@ export type QnrQuestion = {
     label?: string
     required?: boolean
     defaultValue?: DocScalar
+    /** `QuestionGrid` only: the row repeat policy. */
+    grid?: QuestionGridConfig
+    /** `QuestionGrid` only: grid-owned presentation (layout, filters, actions, column widths). */
+    presentation?: QuestionGridPresentation
     [key: string]: unknown
 }
 
 export type QnrAlternative = { label?: string; value?: DocScalar; [key: string]: unknown }
-export type QnrGridRow = { label?: string; [key: string]: unknown }
+
+/** An authored predefined grid row; cells are keyed by column question id. */
+export type QnrGridRow = {
+    label?: string
+    /** Authored default cell values, keyed by the column question id. */
+    cells?: Record<QuestionId, DocScalar>
+    [key: string]: unknown
+}
+
 export type QnrTab = { label?: string; [key: string]: unknown }
 export type QnrAction = { kind?: string; [key: string]: unknown }
+
+/**
+ * A typed conditional (OQ-V2-17/architecture §2.2(4)): question visibility/highlight
+ * depends on another question's answer. Legacy `dependent_question`+`dependent_questions`
+ * duals normalize into rule collections (byId + per-question order, DOC-LAW-1).
+ */
+export type RuleCondition = {
+    sourceQuestionId: QuestionId
+    alternativeId?: AltId
+    operator?: string
+    value?: DocScalar
+    [key: string]: unknown
+}
+
+export type VisibilityRule = { condition: RuleCondition; [key: string]: unknown }
+export type HighlightRule = { condition: RuleCondition; [key: string]: unknown }
 
 /** One traversal step. Many questions off one entity share a single node (§2.2a). */
 export type MappingNode = {
@@ -84,7 +195,7 @@ export type MappingFilter = {
 export type QnrTemplateDocument = {
     documentId: string
     revision: number
-    meta?: Record<string, unknown>
+    meta?: QnrTemplateMeta
     questionsById?: Record<QuestionId, QnrQuestion>
     questionOrder: QuestionId[]
     gridRowsById?: Record<RowId, QnrGridRow>
@@ -94,10 +205,31 @@ export type QnrTemplateDocument = {
     tabsById?: Record<TabId, QnrTab>
     tabOrder?: TabId[]
     actionsById?: Record<ActionId, QnrAction>
+    visibilityRulesById?: Record<VisibilityRuleId, VisibilityRule>
+    visibilityRuleOrderByQuestionId?: Record<QuestionId, VisibilityRuleId[]>
+    highlightRulesById?: Record<HighlightRuleId, HighlightRule>
+    highlightRuleOrderByQuestionId?: Record<QuestionId, HighlightRuleId[]>
     dataMappingsById?: Record<MappingId, { sourceId: string; rootNodeId: NodeId; bindingOrder?: BindingId[] }>
     mappingNodesById?: Record<NodeId, MappingNode>
     mappingBindingsById?: Record<BindingId, MappingBinding>
     mappingFiltersById?: Record<FilterId, MappingFilter>
+}
+
+/**
+ * A reusable question-template bundle (OQ-V2-1): the root question plus every owned
+ * child question, alternative, predefined grid row, scoped tab/action, order and
+ * internal reference needed to use it. Stored whole in `qnr_question_templates.bundle`;
+ * a manual pick deep-copies and validates it into the family document.
+ */
+export type QnrQuestionBundle = {
+    rootQuestionId: QuestionId
+    questionsById: Record<QuestionId, QnrQuestion>
+    gridRowsById?: Record<RowId, QnrGridRow>
+    gridRowOrderByQuestionId?: Record<QuestionId, RowId[]>
+    alternativesById?: Record<AltId, QnrAlternative>
+    alternativeOrderByQuestionId?: Record<QuestionId, AltId[]>
+    tabsById?: Record<TabId, QnrTab>
+    actionsById?: Record<ActionId, QnrAction>
 }
 
 /**
