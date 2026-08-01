@@ -203,5 +203,7 @@ export const webCryptoSha256: Sha256Hex = async (utf8) => {
  * form. `hasher` is injectable so a server can use sync node:crypto while the browser
  * keeps the WebCrypto default — the bytes hashed are identical either way.
  */
-export const hashCanonical = (value: unknown, hasher: Sha256Hex = webCryptoSha256): Promise<string> =>
-    hasher(canonicalJson(value)).then((hex) => `sha256:${hex}`)
+export const hashCanonical = (value: unknown, hasher: Sha256Hex = webCryptoSha256): Promise<string> => {
+    const maybeHex = hasher(canonicalJson(value))
+    return Promise.resolve(maybeHex).then((hex) => `sha256:${hex}`)
+}
