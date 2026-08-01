@@ -24,6 +24,7 @@ const doc0 = emptyTemplateDocument('tpl-1')
 
 const apply = (ops: TemplateOp[], from = doc0) => ops.reduce((doc, op) => applyOperation(doc, op), from)
 
+
 const threeQuestions = apply([
     { type: 'question.create', questionId: 'q-1', questionType: 'TextShort' },
     { type: 'question.create', questionId: 'q-2', questionType: 'TextShort' },

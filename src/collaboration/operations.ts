@@ -64,22 +64,29 @@ export type TemplateOpType = TemplateOp['type']
  * The op types this reducer implements. The vocabulary in the architecture doc is
  * larger (grid rows, tabs, actions, layout, visibility/highlight rules); those slot
  * into the same registry without changing the envelope.
+ *
+ * Declared as a total `Record` over the union rather than a bare list, so **omitting an op is a
+ * compile error**. `satisfies readonly TemplateOpType[]` only rejected entries that are not op types;
+ * it could not notice a missing one, and this list is what downstream validators are built against —
+ * an op absent here is an op the server rejects at runtime with nothing red anywhere first.
  */
-export const IMPLEMENTED_OP_TYPES = [
-    'template.updateMeta',
-    'question.create',
-    'question.updateField',
-    'question.move',
-    'question.delete',
-    'alternative.create',
-    'alternative.updateField',
-    'alternative.move',
-    'alternative.delete',
-    'mappingNode.create',
-    'mappingNode.delete',
-    'mappingBinding.create',
-    'mappingBinding.update',
-    'mappingBinding.delete',
-    'mappingFilter.set',
-    'mappingFilter.delete',
-] as const satisfies readonly TemplateOpType[]
+const OP_TYPE_COVERAGE: Record<TemplateOpType, true> = {
+    'template.updateMeta': true,
+    'question.create': true,
+    'question.updateField': true,
+    'question.move': true,
+    'question.delete': true,
+    'alternative.create': true,
+    'alternative.updateField': true,
+    'alternative.move': true,
+    'alternative.delete': true,
+    'mappingNode.create': true,
+    'mappingNode.delete': true,
+    'mappingBinding.create': true,
+    'mappingBinding.update': true,
+    'mappingBinding.delete': true,
+    'mappingFilter.set': true,
+    'mappingFilter.delete': true,
+}
+
+export const IMPLEMENTED_OP_TYPES = Object.keys(OP_TYPE_COVERAGE) as readonly TemplateOpType[]
