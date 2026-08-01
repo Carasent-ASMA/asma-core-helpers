@@ -230,6 +230,44 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             }
         }
 
+        case 'alternative.updateField': {
+            const alternative = doc.alternativesById?.[op.alternativeId]
+            if (!alternative) {
+                throw new OperationConflictError(`Unknown alternative "${op.alternativeId}"`)
+            }
+            // The question is checked too: an alternative id that exists but hangs off a different
+            // question means the two clients disagree about the structure, not just the value, and
+            // writing the field anyway would hide that behind a successful edit.
+            if (!doc.alternativeOrderByQuestionId?.[op.questionId]?.includes(op.alternativeId)) {
+                throw new OperationConflictError(
+                    `Alternative "${op.alternativeId}" does not belong to question "${op.questionId}"`,
+                )
+            }
+            return {
+                ...doc,
+                alternativesById: {
+                    ...doc.alternativesById,
+                    [op.alternativeId]: writeField(alternative, op.field, op.value),
+                },
+            }
+        }
+
+        case 'alternative.move': {
+            const order = doc.alternativeOrderByQuestionId?.[op.questionId]
+            if (!order?.includes(op.alternativeId)) {
+                throw new OperationConflictError(
+                    `Alternative "${op.alternativeId}" does not belong to question "${op.questionId}"`,
+                )
+            }
+            return {
+                ...doc,
+                alternativeOrderByQuestionId: {
+                    ...doc.alternativeOrderByQuestionId,
+                    [op.questionId]: moveInOrder(order, op.alternativeId, op.toIndex),
+                },
+            }
+        }
+
         case 'alternative.delete': {
             const order = doc.alternativeOrderByQuestionId?.[op.questionId] ?? []
             const remaining = order.filter((id) => id !== op.alternativeId)

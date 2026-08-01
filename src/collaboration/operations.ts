@@ -25,6 +25,13 @@ export type TemplateOp =
     | { type: 'question.move'; questionId: QuestionId; toIndex: number }
     | { type: 'question.delete'; questionId: QuestionId }
     | { type: 'alternative.create'; questionId: QuestionId; alternativeId: AltId; label?: string; atIndex?: number }
+    /**
+     * Renaming is its own operation rather than delete-then-create because an alternative's id is
+     * referenced by every answer that selected it — recreating it under a new id is how the legacy
+     * data ended up with ~11,000 answers pointing at options that no longer exist.
+     */
+    | { type: 'alternative.updateField'; questionId: QuestionId; alternativeId: AltId; field: string; value: OpValue }
+    | { type: 'alternative.move'; questionId: QuestionId; alternativeId: AltId; toIndex: number }
     | { type: 'alternative.delete'; questionId: QuestionId; alternativeId: AltId }
     | { type: 'mappingNode.create'; nodeId: NodeId; entityId: string; parentNodeId?: NodeId; relationshipId?: string }
     | { type: 'mappingNode.delete'; nodeId: NodeId }
@@ -65,6 +72,8 @@ export const IMPLEMENTED_OP_TYPES = [
     'question.move',
     'question.delete',
     'alternative.create',
+    'alternative.updateField',
+    'alternative.move',
     'alternative.delete',
     'mappingNode.create',
     'mappingNode.delete',

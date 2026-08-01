@@ -94,6 +94,88 @@ describe('applyOperation', () => {
         assert.equal(removed.alternativesById, undefined)
     })
 
+    it('renames an alternative in place, keeping the id every answer references', () => {
+        // The whole reason this op exists rather than delete-then-create: an answer stores the
+        // alternative id, so a rename that mints a new id orphans every answer that chose it.
+        const created = apply([
+            { type: 'question.create', questionId: 'q-1', questionType: 'RadioButtons' },
+            { type: 'alternative.create', questionId: 'q-1', alternativeId: 'a-1', label: 'Ja' },
+        ])
+
+        const renamed = applyOperation(created, {
+            type: 'alternative.updateField',
+            questionId: 'q-1',
+            alternativeId: 'a-1',
+            field: 'label',
+            value: 'Ja, alltid',
+        })
+
+        assert.deepEqual(renamed.alternativesById, { 'a-1': { label: 'Ja, alltid' } })
+        assert.deepEqual(renamed.alternativeOrderByQuestionId, { 'q-1': ['a-1'] })
+    })
+
+    it('reorders alternatives without touching their values', () => {
+        const created = apply([
+            { type: 'question.create', questionId: 'q-1', questionType: 'CheckBoxes' },
+            { type: 'alternative.create', questionId: 'q-1', alternativeId: 'a-1', label: 'En' },
+            { type: 'alternative.create', questionId: 'q-1', alternativeId: 'a-2', label: 'To' },
+            { type: 'alternative.create', questionId: 'q-1', alternativeId: 'a-3', label: 'Tre' },
+        ])
+
+        const moved = applyOperation(created, {
+            type: 'alternative.move',
+            questionId: 'q-1',
+            alternativeId: 'a-3',
+            toIndex: 0,
+        })
+
+        assert.deepEqual(moved.alternativeOrderByQuestionId?.['q-1'], ['a-3', 'a-1', 'a-2'])
+        assert.deepEqual(moved.alternativesById, created.alternativesById)
+    })
+
+    it('refuses to edit or move an alternative through the wrong question', () => {
+        // An id that exists but hangs off another question means the clients disagree about
+        // structure; writing the value anyway would report success and diverge the documents.
+        const created = apply([
+            { type: 'question.create', questionId: 'q-1', questionType: 'RadioButtons' },
+            { type: 'question.create', questionId: 'q-2', questionType: 'RadioButtons' },
+            { type: 'alternative.create', questionId: 'q-1', alternativeId: 'a-1', label: 'Ja' },
+        ])
+
+        assert.throws(
+            () =>
+                applyOperation(created, {
+                    type: 'alternative.updateField',
+                    questionId: 'q-2',
+                    alternativeId: 'a-1',
+                    field: 'label',
+                    value: 'Nei',
+                }),
+            OperationConflictError,
+        )
+
+        assert.throws(
+            () => applyOperation(created, { type: 'alternative.move', questionId: 'q-2', alternativeId: 'a-1', toIndex: 0 }),
+            OperationConflictError,
+        )
+    })
+
+    it('refuses to edit an alternative that does not exist', () => {
+        const created = apply([{ type: 'question.create', questionId: 'q-1', questionType: 'RadioButtons' }])
+
+        assert.throws(
+            () =>
+                applyOperation(created, {
+                    type: 'alternative.updateField',
+                    questionId: 'q-1',
+                    alternativeId: 'ghost',
+                    field: 'label',
+                    value: 'Ja',
+                }),
+            OperationConflictError,
+        )
+    })
+
     it('refuses a duplicate create as a conflict', () => {
         const once = applyOperation(doc0, { type: 'question.create', questionId: 'q-1', questionType: 'TextShort' })
 
