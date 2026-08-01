@@ -28,10 +28,7 @@ type SRVKeys<T> = {
     [K in keyof T as StartsWith<K & string, 'SRV_'> | StartsWith<K & string, 'HSR_'>]: T[K]
 }
 
-export type IEnvironmentUrlsGenQLOnly = SRVKeys<IEnvironmentUrls> /* Omit<
-    IEnvironmentUrls,
-    'SRV_PROXY_OLD' | 'SRV_PROXY_OLD_HELSE' | 'SRV_PROXY_OLD_WEB' | 'SRV_ADVOCA'
-> */
+export type IEnvironmentUrlsGenQLOnly = SRVKeys<IEnvironmentUrls>
 
 //type ISrvKeysTransformToWs<T> = T extends `SRV_${infer K}` ? `SRV_${K}_WS` : never
 
