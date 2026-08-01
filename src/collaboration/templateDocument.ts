@@ -12,6 +12,8 @@
  * @see _docs/editor/qnrs/cross/2026-07-12-20-20-architecture-qnr-v2-model-collaboration-sync.md:214 (§2.2a mapping graph)
  */
 
+import type { QuestionSubtype, QuestionType } from './questionTypes.js'
+
 export type QuestionId = string
 export type RowId = string
 export type AltId = string
@@ -25,8 +27,15 @@ export type MappingId = string
 /** A scalar a document may carry. Deliberately not `any`: DOC-LAW-2 bans `null`. */
 export type DocScalar = string | number | boolean
 
+/**
+ * `type` is the question's own discriminator (M-062), a closed union rather than a string — see
+ * `questionTypes.ts` for why the value cannot be loose. Not to be confused with the other `kind`
+ * slots in this file: `QnrAction.kind` and `BindingTarget.kind` discriminate *structure*, not the
+ * question a user authored.
+ */
 export type QnrQuestion = {
-    kind: string
+    type: QuestionType
+    subtype?: QuestionSubtype
     label?: string
     required?: boolean
     defaultValue?: DocScalar
