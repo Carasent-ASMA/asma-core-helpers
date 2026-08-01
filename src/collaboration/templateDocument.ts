@@ -184,6 +184,12 @@ export type BindingTarget =
     | { kind: 'question'; questionId: QuestionId }
     | { kind: 'gridColumn'; gridQuestionId: QuestionId; columnQuestionId: QuestionId }
 
+/** Serialises a binding target so the "one binding per target" invariant is checkable. */
+export const bindingTargetKey = (target: BindingTarget): string =>
+    target.kind === 'question'
+        ? `question:${target.questionId}`
+        : `gridColumn:${target.gridQuestionId}:${target.columnQuestionId}`
+
 export type MappingBinding = {
     nodeId: NodeId
     fieldId: string

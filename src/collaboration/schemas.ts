@@ -1,0 +1,587 @@
+import { type, type Type } from 'arktype'
+
+import type { IsDefault } from './canonicalize.js'
+import { findDocLawViolations, type DocLawViolation } from './docLaws.js'
+import { IMPLEMENTED_ANSWER_OP_TYPES } from './answerOperations.js'
+import { IMPLEMENTED_OP_TYPES } from './operations.js'
+import { QUESTION_TYPES } from './questionTypes.js'
+import type { BindingTarget, QnrTemplateDocument } from './templateDocument.js'
+import { bindingTargetKey } from './templateDocument.js'
+
+/**
+ * The ArkType schemas for the two hashed documents and both op vocabularies (plan TASK-003),
+ * plus the mechanical DOC-LAW enforcement the plan calls the "schema lint".
+ *
+ * Three enforcement layers, deliberately layered (the docLaws.ts header explains why the
+ * instance lint alone is not enough — and why the schema lint alone is not either):
+ *
+ * 1. **The schemas themselves** — typed document positions, closed discriminators, no `null`
+ *    in document positions. Because a question's per-type bag is genuinely open, the schemas
+ *    carry `[string]: unknown` index signatures; validation never sees inside those bags.
+ * 2. **`findSchemaDocLawViolations`** — walks the schema's JSON Schema output and rejects
+ *    *any* array-of-objects (DOC-LAW-1) or `null` (DOC-LAW-2) in a document schema. It runs
+ *    over the schema, not over instances, so it is total: a shape can never violate the law
+ *    "in an untested payload". The answer document is the named DOC-LAW-2 exception (OQ-V2-24):
+ *    `null` is legal at answer-value leaves only.
+ * 3. **`findDocLawDefaultViolations` + `templateDocumentIsDefault`** — the DOC-LAW-2 default
+ *    half: "no key present with its own default value". `templateDocumentIsDefault` feeds
+ *    `reduceToMinimalForm` so a spelled-out default and its absence hash identically, and
+ *    `findDocLawDefaultViolations` reports the same fact on a stored document so the
+ *    contract test can reject it before it reaches storage.
+ *
+ * The storage-side guard is the plan's `document <> jsonb_strip_nulls(document)` (catches
+ * explicit null object fields only); the schema lint owns everything else.
+ *
+ * @see asma-modules/_docs/editor/qnrs/cross/2026-07-12-21-40-plan-qnr-stage2-new-model-editor-and-sync.md:563 — TASK-003
+ * @see asma-modules/_docs/editor/qnrs/cross/2026-07-12-20-20-architecture-qnr-v2-model-collaboration-sync.md:193 — DOC-LAW-1
+ * @see asma-modules/_docs/editor/qnrs/cross/2026-07-12-20-20-architecture-qnr-v2-model-collaboration-sync.md:195 — DOC-LAW-2
+ */
+
+// ─────────────────────────────── atoms ───────────────────────────────
+
+const docScalar = 'string | number | boolean'
+
+/** `OpValue` — the op layer keeps the explicit-unset tri-state DOC-LAW-2 bans in documents. */
+const opValue = 'string | number | boolean | (string | number | boolean)[] | null'
+
+/** `AnswerValue` — `null` is the deliberate-clear marker, legal in answer state only. */
+const answerValue = 'string | number | boolean | (string | number | boolean)[] | null'
+
+/** A byId collection — `Record<Id, X>`, DOC-LAW-1's keyed shape. */
+const recordOf = <T extends Type>(value: T): { '[string]': T } => ({ '[string]': value })
+
+// ─────────────────────────────── template document ───────────────────────────────
+
+const ruleConditionSchema = type({
+    sourceQuestionId: 'string',
+    alternativeId: 'string?',
+    operator: 'string?',
+    "value?": docScalar,
+    ...({ '[string]': 'unknown' } as const),
+})
+
+const visibilityRuleSchema = type({
+    condition: ruleConditionSchema,
+    ...({ '[string]': 'unknown' } as const),
+})
+
+const highlightRuleSchema = type({
+    condition: ruleConditionSchema,
+    ...({ '[string]': 'unknown' } as const),
+})
+
+const questionGridConfigSchema = type({
+    columnIds: 'string[]?',
+    minRows: 'number?',
+    maxRows: 'number?',
+    singleRow: 'boolean?',
+    deletableRows: 'boolean?',
+    alwaysNew: 'boolean?',
+    timestamps: 'boolean?',
+    editable: 'boolean?',
+    rowTitle: 'string?',
+})
+
+const questionGridPresentationSchema = type({
+    headerTabId: 'string?',
+    defaultColumnWidthsByQuestionId: 'Record<string, number>?',
+    ...({ '[string]': 'unknown' } as const),
+})
+
+const qnrQuestionSchema = type({
+    type: type.enumerated(...QUESTION_TYPES),
+    "subtype?": type.enumerated('ORDINARY', 'EMAIL'),
+    "label?": 'string',
+    "required?": 'boolean',
+    "defaultValue?": docScalar,
+    "grid?": questionGridConfigSchema,
+    "presentation?": questionGridPresentationSchema,
+    ...({ '[string]': 'unknown' } as const),
+})
+
+const qnrAlternativeSchema = type({
+    "label?": 'string',
+    "value?": docScalar,
+    ...({ '[string]': 'unknown' } as const),
+})
+
+const qnrGridRowSchema = type({
+    label: 'string?',
+    cells: 'Record<string, string | number | boolean>?',
+    ...({ '[string]': 'unknown' } as const),
+})
+
+const qnrTabSchema = type({
+    label: 'string?',
+    ...({ '[string]': 'unknown' } as const),
+})
+
+const qnrActionSchema = type({
+    kind: 'string?',
+    ...({ '[string]': 'unknown' } as const),
+})
+
+const mappingNodeSchema = type({
+    entityId: 'string',
+    parentNodeId: 'string?',
+    relationshipId: 'string?',
+    filterOrder: 'string[]?',
+    ...({ '[string]': 'unknown' } as const),
+})
+
+const bindingTargetSchema = type.or(
+    type({ kind: '"question"', questionId: 'string' }),
+    type({ kind: '"gridColumn"', gridQuestionId: 'string', columnQuestionId: 'string' }),
+)
+
+const mappingBindingSchema = type({
+    nodeId: 'string',
+    fieldId: 'string',
+    target: bindingTargetSchema,
+    cardinality: 'string?',
+    onMissing: 'string?',
+    onMany: 'string?',
+    ...({ '[string]': 'unknown' } as const),
+})
+
+const mappingFilterSchema = type({
+    fieldId: 'string',
+    operator: 'string',
+    "value?": docScalar,
+})
+
+const dataMappingSchema = type({
+    sourceId: 'string',
+    rootNodeId: 'string',
+    bindingOrder: 'string[]?',
+})
+
+const qnrTemplateMetaSchema = type({
+    title: 'string?',
+    description: 'string?',
+    "settings?": type({
+        "journal?": type({
+            requires_activity_id: 'boolean?',
+        }),
+        "recipient?": type({
+            ask_for_phone_nr: 'boolean?',
+        }),
+        ...({ '[string]': 'unknown' } as const),
+    }),
+    "instancePolicy?": type({
+        "requiredAccessLevel?": '1 | 2 | 3 | 4',
+        invitationRequired: 'boolean?',
+        "initiator?": '"coordinator" | "recipient"',
+        "template_update_mode?": '"never" | "always" | "ask"',
+    }),
+    presentationProfiles: 'Record<string, unknown>?',
+    "compatibility?": type({
+        consentTemplateIds: 'string[]?',
+        smsTemplateIds: 'string[]?',
+    }),
+    ...({ '[string]': 'unknown' } as const),
+})
+
+export const qnrTemplateDocumentSchema = type({
+    documentId: 'string',
+    revision: 'number',
+    "meta?": qnrTemplateMetaSchema,
+    "questionsById?": recordOf(qnrQuestionSchema),
+    questionOrder: 'string[]',
+    "gridRowsById?": recordOf(qnrGridRowSchema),
+    gridRowOrderByQuestionId: 'Record<string, string[]>?',
+    "alternativesById?": recordOf(qnrAlternativeSchema),
+    alternativeOrderByQuestionId: 'Record<string, string[]>?',
+    "tabsById?": recordOf(qnrTabSchema),
+    tabOrder: 'string[]?',
+    "actionsById?": recordOf(qnrActionSchema),
+    "visibilityRulesById?": recordOf(visibilityRuleSchema),
+    visibilityRuleOrderByQuestionId: 'Record<string, string[]>?',
+    "highlightRulesById?": recordOf(highlightRuleSchema),
+    highlightRuleOrderByQuestionId: 'Record<string, string[]>?',
+    "dataMappingsById?": recordOf(dataMappingSchema),
+    "mappingNodesById?": recordOf(mappingNodeSchema),
+    "mappingBindingsById?": recordOf(mappingBindingSchema),
+    "mappingFiltersById?": recordOf(mappingFilterSchema),
+})
+
+// ─────────────────────────────── answer document ───────────────────────────────
+
+export const qnrAnswerDocumentSchema = type({
+    documentId: 'string',
+    revision: 'number',
+    answersByQuestionId: `Record<string, ${answerValue}>?`,
+    gridAnswersByQuestionId: `Record<string, Record<string, Record<string, ${answerValue}>>>?`,
+    "answerGridRowsById?": recordOf(
+        type({
+            questionGridId: 'string',
+            entityRef: 'string?',
+            deleted: 'true',
+        }),
+    ),
+    answerGridRowOrderByQuestionId: 'Record<string, string[]>?',
+})
+
+// ─────────────────────────────── op vocabularies ───────────────────────────────
+
+export const templateOpSchema = type.or(
+    type({ type: '"template.updateMeta"', patch: `Record<string, ${opValue} | Record<string, unknown>>` }),
+    type({ type: '"template.updateSettings"', patch: `Record<string, ${opValue} | Record<string, unknown>>` }),
+    type({
+        type: '"question.create"',
+        questionId: 'string',
+        questionType: type.enumerated(...QUESTION_TYPES),
+        atIndex: 'number?',
+    }),
+    type({ type: '"question.updateField"', questionId: 'string', field: 'string', value: opValue }),
+    type({ type: '"question.move"', questionId: 'string', toIndex: 'number' }),
+    type({ type: '"question.delete"', questionId: 'string' }),
+    type({ type: '"gridRow.create"', questionId: 'string', rowId: 'string', label: 'string?', atIndex: 'number?' }),
+    type({ type: '"gridRow.move"', questionId: 'string', rowId: 'string', afterRowId: 'string | null' }),
+    type({ type: '"gridRow.delete"', questionId: 'string', rowId: 'string' }),
+    type({
+        type: '"gridRow.updateCell"',
+        questionId: 'string',
+        rowId: 'string',
+        columnQuestionId: 'string',
+        value: opValue,
+    }),
+    type({ type: '"alternative.create"', questionId: 'string', alternativeId: 'string', label: 'string?', atIndex: 'number?' }),
+    type({
+        type: '"alternative.updateField"',
+        questionId: 'string',
+        alternativeId: 'string',
+        field: 'string',
+        value: opValue,
+    }),
+    type({ type: '"alternative.move"', questionId: 'string', alternativeId: 'string', toIndex: 'number' }),
+    type({ type: '"alternative.delete"', questionId: 'string', alternativeId: 'string' }),
+    type({ type: '"tab.create"', tabId: 'string', label: 'string?', atIndex: 'number?' }),
+    type({ type: '"tab.updateField"', tabId: 'string', field: 'string', value: opValue }),
+    type({ type: '"tab.move"', tabId: 'string', toIndex: 'number' }),
+    type({ type: '"tab.delete"', tabId: 'string' }),
+    type({ type: '"action.create"', actionId: 'string', kind: 'string?' }),
+    type({ type: '"action.updateField"', actionId: 'string', field: 'string', value: opValue }),
+    type({ type: '"action.delete"', actionId: 'string' }),
+    type({ type: '"dataMapping.create"', mappingId: 'string', sourceId: 'string', rootNodeId: 'string' }),
+    type({ type: '"dataMapping.delete"', mappingId: 'string' }),
+    type({
+        type: '"mappingNode.create"',
+        nodeId: 'string',
+        entityId: 'string',
+        parentNodeId: 'string?',
+        relationshipId: 'string?',
+    }),
+    type({
+        type: '"mappingNode.update"',
+        nodeId: 'string',
+        patch: type({
+            entityId: 'string?',
+            "parentNodeId?": 'string | null',
+            "relationshipId?": 'string | null',
+            filterOrder: 'string[]?',
+        }),
+    }),
+    type({ type: '"mappingNode.delete"', nodeId: 'string' }),
+    type({
+        type: '"mappingBinding.create"',
+        bindingId: 'string',
+        nodeId: 'string',
+        fieldId: 'string',
+        target: bindingTargetSchema,
+    }),
+    type({
+        type: '"mappingBinding.update"',
+        bindingId: 'string',
+        patch: type({
+            nodeId: 'string?',
+            fieldId: 'string?',
+            "target?": bindingTargetSchema,
+        }),
+    }),
+    type({ type: '"mappingBinding.delete"', bindingId: 'string' }),
+    type({
+        type: '"mappingFilter.set"',
+        filterId: 'string',
+        nodeId: 'string',
+        fieldId: 'string',
+        operator: 'string',
+        value: docScalar,
+    }),
+    type({ type: '"mappingFilter.delete"', filterId: 'string' }),
+    type({ type: '"visibilityRule.set"', ruleId: 'string', questionId: 'string', condition: ruleConditionSchema }),
+    type({ type: '"visibilityRule.delete"', ruleId: 'string' }),
+    type({ type: '"highlightRule.set"', ruleId: 'string', questionId: 'string', condition: ruleConditionSchema }),
+    type({ type: '"highlightRule.delete"', ruleId: 'string' }),
+)
+
+export const answerOpSchema = type.or(
+    type({ type: '"answer.set"', questionId: 'string', value: answerValue }),
+    type({ type: '"answer.clear"', questionId: 'string' }),
+    type({ type: '"gridRow.add"', questionId: 'string', rowId: 'string', afterRowId: 'string?' }),
+    type({ type: '"gridRow.move"', questionId: 'string', rowId: 'string', afterRowId: 'string | null' }),
+    type({ type: '"gridRow.remove"', questionId: 'string', rowId: 'string' }),
+    type({
+        type: '"gridAnswer.set"',
+        questionId: 'string',
+        rowId: 'string',
+        columnQuestionId: 'string',
+        value: answerValue,
+    }),
+)
+
+// ─────────────────────────────── schema ↔ vocabulary parity ───────────────────────────────
+
+type JsonSchemaLike = {
+    anyOf?: JsonSchemaLike[]
+    properties?: { type?: { const?: unknown } }
+}
+
+const opTypeNames = (schema: Type): string[] => {
+    const json = schema.toJsonSchema() as unknown as JsonSchemaLike
+    const members = json.anyOf ?? [json]
+    return members
+        .map((member) => member.properties?.type?.const)
+        .filter((value): value is string => typeof value === 'string')
+}
+
+/**
+ * The op names the schemas actually validate, extracted from the JSON Schema output. The
+ * parity test asserts these equal `IMPLEMENTED_OP_TYPES` — a vocabulary member added to the
+ * TS union but forgotten in the schemas (or vice versa) is a red build, not a runtime gap.
+ */
+export const SCHEMA_TEMPLATE_OP_TYPES: readonly string[] = opTypeNames(templateOpSchema)
+export const SCHEMA_ANSWER_OP_TYPES: readonly string[] = opTypeNames(answerOpSchema)
+
+// ─────────────────────────────── DOC-LAW schema lint ───────────────────────────────
+
+/** A schema position where a DOC-LAW violation is reported (path follows the JSON pointer). */
+export type SchemaViolation = {
+    law: 'DOC-LAW-1' | 'DOC-LAW-2'
+    /** Path into the JSON Schema document; `[]` marks array element positions. */
+    path: string
+    detail: string
+}
+
+type JsonSchemaNode = {
+    $ref?: string
+    $defs?: Record<string, JsonSchemaNode>
+    type?: string | string[]
+    const?: unknown
+    enum?: unknown[]
+    properties?: Record<string, JsonSchemaNode>
+    additionalProperties?: JsonSchemaNode | boolean
+    items?: JsonSchemaNode | JsonSchemaNode[]
+    prefixItems?: JsonSchemaNode[]
+    anyOf?: JsonSchemaNode[]
+    oneOf?: JsonSchemaNode[]
+    allOf?: JsonSchemaNode[]
+    not?: JsonSchemaNode
+}
+
+const primitiveTypeOf = (value: unknown): string =>
+    typeof value === 'object' && value !== null ? 'object' : typeof value
+
+/**
+ * The JSON-schema-level types a node can match. A union node contributes the union of its
+ * branches' types (so a primitive union never collapses to 'object', which would turn an
+ * array-of-primitives into a false DOC-LAW-1 finding); an object-shaped node is 'object'.
+ */
+const nodeTypes = (node: JsonSchemaNode, depth = 0): string[] => {
+    if (node.type !== undefined) return Array.isArray(node.type) ? node.type : [node.type]
+    if (node.enum !== undefined) return [...new Set(node.enum.map(primitiveTypeOf))]
+    if (node.const !== undefined) return [primitiveTypeOf(node.const)]
+    if (depth > 20) return []
+    const merged: string[] = []
+    for (const branches of [node.anyOf ?? [], node.oneOf ?? [], node.allOf ?? []]) {
+        for (const branch of branches) merged.push(...nodeTypes(branch, depth + 1))
+    }
+    if (node.properties !== undefined || node.additionalProperties !== undefined || node.not !== undefined) {
+        merged.push('object')
+    }
+    return [...new Set(merged)]
+}
+
+const joinSchemaPath = (parent: string, key: string): string => (parent === '' ? key : `${parent}.${key}`)
+
+/**
+ * The DOC-LAW-1/2 schema lint (plan TASK-003). Walks the JSON Schema output of a document
+ * schema and reports every array-of-objects (DOC-LAW-1) and every position that allows
+ * `null` (DOC-LAW-2). `allowNullAt` names the DOC-LAW-2 exception positions — the answer
+ * document's answer-value leaves (OQ-V2-24); the template document allows none.
+ *
+ * It is a contract test, not a runtime guard: validation of incoming documents happens on
+ * the schema itself, and a payload can only fail the law by failing the schema.
+ */
+export const findSchemaDocLawViolations = (
+    schemaJson: JsonSchemaNode,
+    options: { allowNullAt?: (path: string) => boolean } = {},
+): SchemaViolation[] => {
+    const violations: SchemaViolation[] = []
+    const seen = new Set<JsonSchemaNode>()
+
+    const resolveRef = (ref: string): JsonSchemaNode | undefined => {
+        if (!ref.startsWith('#/$defs/')) return undefined
+        const name = ref.slice('#/$defs/'.length)
+        return schemaJson.$defs?.[name]
+    }
+
+    const walk = (node: JsonSchemaNode | boolean | undefined, path: string): void => {
+        if (typeof node === 'boolean' || node === undefined) return
+        if (seen.has(node)) return
+        seen.add(node)
+
+        const resolved = node.$ref !== undefined ? (resolveRef(node.$ref) ?? node) : node
+        if (resolved !== node) {
+            walk(resolved, path)
+            return
+        }
+
+        const types = nodeTypes(resolved)
+
+        if (types.includes('null') || resolved.enum?.includes(null) || resolved.const === null) {
+            if (!options.allowNullAt?.(path)) {
+                violations.push({ law: 'DOC-LAW-2', path, detail: 'schema allows explicit null; absent is the only encoding of "not set"' })
+            }
+        }
+
+        if (types.includes('array')) {
+            const items = Array.isArray(resolved.items) ? resolved.items : resolved.items !== undefined ? [resolved.items] : []
+            const itemTypes = [...new Set(items.flatMap((item) => (typeof item === 'object' ? nodeTypes(item) : [])))]
+            if (itemTypes.some((t) => t === 'object' || t === 'array')) {
+                violations.push({
+                    law: 'DOC-LAW-1',
+                    path,
+                    detail: 'array of objects; use <x>ById plus a primitive order array',
+                })
+            }
+        }
+
+        for (const [key, child] of Object.entries(resolved.properties ?? {})) walk(child, joinSchemaPath(path, key))
+        for (const branch of resolved.anyOf ?? []) walk(branch, path)
+        for (const branch of resolved.oneOf ?? []) walk(branch, path)
+        for (const branch of resolved.allOf ?? []) walk(branch, path)
+        if (resolved.not !== undefined) walk(resolved.not, path)
+        if (typeof resolved.additionalProperties === 'object') walk(resolved.additionalProperties, `${path}[]`)
+        if (Array.isArray(resolved.items)) {
+            for (const item of resolved.items) walk(item, `${path}[]`)
+        } else if (typeof resolved.items === 'object') {
+            walk(resolved.items, `${path}[]`)
+        }
+        for (const item of resolved.prefixItems ?? []) walk(item, `${path}[]`)
+    }
+
+    walk(schemaJson, '')
+    return violations
+}
+
+/** The template document admits no explicit null anywhere (DOC-LAW-2, strict scope). */
+export const findTemplateSchemaDocLawViolations = (): SchemaViolation[] =>
+    findSchemaDocLawViolations(qnrTemplateDocumentSchema.toJsonSchema() as unknown as JsonSchemaNode)
+
+/** The answer document's answer-value leaves are the one legal null home (OQ-V2-24). */
+export const findAnswerSchemaDocLawViolations = (): SchemaViolation[] =>
+    findSchemaDocLawViolations(qnrAnswerDocumentSchema.toJsonSchema() as unknown as JsonSchemaNode, {
+        allowNullAt: (path) =>
+            path.startsWith('answersByQuestionId') || path.startsWith('gridAnswersByQuestionId'),
+    })
+
+// ─────────────────────────────── DOC-LAW-2 defaults ───────────────────────────────
+
+/**
+ * The template document's default registry (DOC-LAW-2: "no key present with its own default
+ * value"). Boolean flags whose legacy encoding is a `true | undefined` sentinel (M-069) have
+ * `false` as their default — the stored minimal form omits them, and canonicalization must
+ * hash a spelled-out `false` identically to its absence.
+ *
+ * Fields WITHOUT a declared default here are deliberately absent: no default is asserted
+ * where the legacy semantics do not prove one (e.g. `grid.deletableRows`, `grid.editable`).
+ */
+const TEMPLATE_DOCUMENT_DEFAULT_PATHS: readonly string[] = [
+    'required', // question-level (M-063: dedupe of the `@deprecated` dual; sentinel semantics)
+    'requires_activity_id', // settings.journal (M-007 aliases; conservative OR resolves to required)
+    'ask_for_phone_nr', // settings.recipient (recipient requirement, sentinel semantics)
+    'invitationRequired', // instancePolicy (open level-1 is invitation-free — OQ-V2-2)
+    'singleRow', // question.grid (legacy composite flag, sentinel semantics — OQ-V2-17)
+    'alwaysNew', // question.grid (legacy base flag)
+    'timestamps', // question.grid (legacy composite `row_timestamps`)
+]
+
+export const templateDocumentIsDefault: IsDefault = (path, value) =>
+    value === false && TEMPLATE_DOCUMENT_DEFAULT_PATHS.some((name) => path.endsWith(`.${name}`))
+
+/**
+ * The instance-side half of the default lint: every present-and-default field on a stored
+ * template document, ready for the contract test to reject. Complements
+ * `findDocLawViolations` (which owns null/empty collections); this one owns defaults.
+ */
+export const findDocLawDefaultViolations = (document: QnrTemplateDocument): DocLawViolation[] => {
+    const violations: DocLawViolation[] = []
+    const walk = (value: unknown, path: string): void => {
+        if (value === null || typeof value !== 'object') return
+        if (Array.isArray(value)) {
+            value.forEach((member, index) => walk(member, `${path}.${index}`))
+            return
+        }
+        for (const [key, member] of Object.entries(value)) {
+            const memberPath = path === '' ? key : `${path}.${key}`
+            if (templateDocumentIsDefault(memberPath, member)) {
+                violations.push({ law: 'DOC-LAW-2', path: memberPath, detail: 'key present with its own default value' })
+            }
+            walk(member, memberPath)
+        }
+    }
+    walk(document, '')
+    return violations
+}
+
+// ─────────────────────────────── binding-target uniqueness ───────────────────────────────
+
+/**
+ * The §2.2a cardinality invariant as an executable check: at most one binding per target.
+ * The reducer enforces it on `mappingBinding.create/update`; this validator covers every
+ * other writer (import, direct document writes) so the invariant is total.
+ */
+export const findDuplicateBindingTargets = (
+    document: QnrTemplateDocument,
+): Array<{ target: BindingTarget; bindingIds: string[] }> => {
+    const byTarget = new Map<string, { target: BindingTarget; bindingIds: string[] }>()
+    for (const [bindingId, binding] of Object.entries(document.mappingBindingsById ?? {})) {
+        const key = bindingTargetKey(binding.target)
+        const entry = byTarget.get(key)
+        if (entry === undefined) byTarget.set(key, { target: binding.target, bindingIds: [bindingId] })
+        else entry.bindingIds.push(bindingId)
+    }
+    return [...byTarget.values()].filter((entry) => entry.bindingIds.length > 1)
+}
+
+// ─────────────────────────────── typed validators ───────────────────────────────
+
+export type Validation<T> = { ok: true; value: T } | { ok: false; summary: string }
+
+const validate =
+    <T>(schema: Type) =>
+    (value: unknown): Validation<T> => {
+        const out = schema(value)
+        if (out instanceof type.errors) return { ok: false, summary: out.summary }
+        return { ok: true, value: out as T }
+    }
+
+export const validateTemplateDocument = validate<QnrTemplateDocument>(qnrTemplateDocumentSchema)
+
+/**
+ * Full template-document admission check for the contract test: schema + DOC-LAW-1/2 lints +
+ * default lint + binding uniqueness. A document passes only in its canonical minimal form.
+ */
+export const findTemplateDocumentContractViolations = (document: QnrTemplateDocument): DocLawViolation[] => [
+    ...findDocLawViolations(document),
+    ...findDocLawDefaultViolations(document),
+]
+
+export const findDuplicateBindingTargetsSummary = (document: QnrTemplateDocument): string[] =>
+    findDuplicateBindingTargets(document).map(
+        ({ target, bindingIds }) => `${bindingTargetKey(target)} bound by [${bindingIds.join(', ')}]`,
+    )
+
+// Referenced by the parity test without importing node internals into the browser bundle.
+export { IMPLEMENTED_OP_TYPES, IMPLEMENTED_ANSWER_OP_TYPES }

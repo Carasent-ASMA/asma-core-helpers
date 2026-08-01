@@ -1,6 +1,5 @@
 import type { TemplateOp } from './operations.js'
 import type {
-    BindingTarget,
     MappingNode,
     QnrDataMapping,
     QnrQuestion,
@@ -8,6 +7,7 @@ import type {
     QuestionId,
     RuleCondition,
 } from './templateDocument.js'
+import { bindingTargetKey } from './templateDocument.js'
 
 /**
  * The authoring reducer. Pure: takes a document and an op, returns a new document with
@@ -59,10 +59,7 @@ export class OperationConflictError extends CollaborationError {
 }
 
 /** Serialises a binding target so the "one binding per target" invariant is checkable. */
-const targetKey = (target: BindingTarget): string =>
-    target.kind === 'question'
-        ? `question:${target.questionId}`
-        : `gridColumn:${target.gridQuestionId}:${target.columnQuestionId}`
+const targetKey = bindingTargetKey
 
 /**
  * Sets a key, or removes it when the op carried an explicit unset.
