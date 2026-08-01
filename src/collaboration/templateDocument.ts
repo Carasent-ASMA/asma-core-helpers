@@ -85,17 +85,26 @@ export type QnrTemplateMeta = {
 }
 
 /**
- * The per-question-type configuration of a `QuestionGrid` (OQ-V2-17) — the repeat
- * policy of the grid's rows. Lives at `question.grid.*`.
+ * The per-question-type configuration of a `QuestionGrid` (OQ-V2-17) — the grid's own
+ * structure and row repeat policy. Lives at `question.grid.*`.
+ *
+ * `singleRow` is kept as the authored boolean rather than normalized to `maxRows: 1`
+ * (OQ-V2-17's "single_row → max 1"): the legacy flag also drives the add/remove-row UI,
+ * so the derivation happens at read time and the document stores the intent.
  */
 export type QuestionGridConfig = {
+    /** The grid's columns — the simple child questions, in authored order (OQ-V2-17: `grid.columnIds`). */
+    columnIds?: QuestionId[]
     minRows?: number
     maxRows?: number
-    /** `single_row` in OQ-V2-17 prose — max 1 row. */
+    /** `single_row` in OQ-V2-17 prose — at most one row, no add/remove-row UI. */
     singleRow?: boolean
     deletableRows?: boolean
     alwaysNew?: boolean
     timestamps?: boolean
+    /** M-117: legacy `CompositeQuestion.editable` / `row_title`. */
+    editable?: boolean
+    rowTitle?: string
 }
 
 /**
@@ -192,6 +201,17 @@ export type MappingFilter = {
     value?: DocScalar
 }
 
+/**
+ * One mapping root (§2.2a): a binding set over one traversal tree. `sourceId` names the
+ * concrete data source (never an abstract `'journal'` — OQ-V2-42); two entries may share
+ * one `sourceId` when a template binds two disjoint roots of the same source.
+ */
+export type QnrDataMapping = {
+    sourceId: string
+    rootNodeId: NodeId
+    bindingOrder?: BindingId[]
+}
+
 export type QnrTemplateDocument = {
     documentId: string
     revision: number
@@ -209,7 +229,7 @@ export type QnrTemplateDocument = {
     visibilityRuleOrderByQuestionId?: Record<QuestionId, VisibilityRuleId[]>
     highlightRulesById?: Record<HighlightRuleId, HighlightRule>
     highlightRuleOrderByQuestionId?: Record<QuestionId, HighlightRuleId[]>
-    dataMappingsById?: Record<MappingId, { sourceId: string; rootNodeId: NodeId; bindingOrder?: BindingId[] }>
+    dataMappingsById?: Record<MappingId, QnrDataMapping>
     mappingNodesById?: Record<NodeId, MappingNode>
     mappingBindingsById?: Record<BindingId, MappingBinding>
     mappingFiltersById?: Record<FilterId, MappingFilter>

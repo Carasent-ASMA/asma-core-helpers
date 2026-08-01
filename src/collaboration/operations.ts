@@ -6,6 +6,7 @@ import type {
     DocScalar,
     FilterId,
     HighlightRuleId,
+    MappingId,
     NodeId,
     QuestionId,
     RowId,
@@ -32,8 +33,12 @@ import type { QuestionType } from './questionTypes.js'
  * @see asma-modules/_docs/editor/qnrs/cross/2026-07-12-20-20-architecture-qnr-v2-model-collaboration-sync.md:195 (DOC-LAW-2 tri-state)
  */
 
-/** A value an op may write. `null` means unset. */
-export type OpValue = DocScalar | null
+/**
+ * A value an op may write. `null` means unset. A primitive ARRAY is legal (DOC-LAW-1
+ * allows arrays of primitives: order arrays, `grid.columnIds`, filter orders) and is
+ * written wholesale — it is never merged member-wise.
+ */
+export type OpValue = DocScalar | DocScalar[] | null
 
 export type TemplateOp =
     | { type: 'template.updateMeta'; patch: Record<string, OpValue | Record<string, unknown>> }
@@ -73,11 +78,14 @@ export type TemplateOp =
     | { type: 'tab.updateField'; tabId: TabId; field: string; value: OpValue }
     | { type: 'tab.move'; tabId: TabId; toIndex: number }
     | { type: 'tab.delete'; tabId: TabId }
-    | { type: 'layout.updateQuestion'; questionId: QuestionId; patch: Record<string, OpValue> }
     // Actions are a set, not an ordered collection (architecture §2.1: `actionsById`, no order array).
     | { type: 'action.create'; actionId: ActionId; kind?: string }
     | { type: 'action.updateField'; actionId: ActionId; field: string; value: OpValue }
     | { type: 'action.delete'; actionId: ActionId }
+    // One entry per mapping root (§2.2a): the root node must exist first (structure pass),
+    // the mapping attaches it to a source (mapping pass). Delete cascades the whole tree.
+    | { type: 'dataMapping.create'; mappingId: MappingId; sourceId: string; rootNodeId: NodeId }
+    | { type: 'dataMapping.delete'; mappingId: MappingId }
     | { type: 'mappingNode.create'; nodeId: NodeId; entityId: string; parentNodeId?: NodeId; relationshipId?: string }
     | {
           type: 'mappingNode.update'
@@ -146,10 +154,11 @@ const OP_TYPE_COVERAGE: Record<TemplateOpType, true> = {
     'tab.updateField': true,
     'tab.move': true,
     'tab.delete': true,
-    'layout.updateQuestion': true,
     'action.create': true,
     'action.updateField': true,
     'action.delete': true,
+    'dataMapping.create': true,
+    'dataMapping.delete': true,
     'mappingNode.create': true,
     'mappingNode.update': true,
     'mappingNode.delete': true,

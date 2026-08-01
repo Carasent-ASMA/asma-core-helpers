@@ -431,4 +431,138 @@ describe('applyOperation', () => {
             OperationConflictError,
         )
     })
+
+    it('writes a grid column list as a primitive id array', () => {
+        // `grid.columnIds` is a DOC-LAW-1 order array, so the op value carries the whole
+        // array — never member-wise edits by position.
+        const doc = apply([
+            { type: 'question.create', questionId: 'g-1', questionType: 'QuestionGrid' },
+            { type: 'question.create', questionId: 'c-1', questionType: 'TextShort' },
+        ])
+
+        const columns = applyOperation(doc, { type: 'question.updateField', questionId: 'g-1', field: 'grid.columnIds', value: ['c-1'] })
+
+        assert.deepEqual(columns.questionsById?.['g-1'], { type: 'QuestionGrid', grid: { columnIds: ['c-1'] } })
+    })
+
+    it('drops a deleted question from every grid\'s column list', () => {
+        const doc = apply([
+            { type: 'question.create', questionId: 'g-1', questionType: 'QuestionGrid' },
+            { type: 'question.create', questionId: 'c-1', questionType: 'TextShort' },
+            { type: 'question.create', questionId: 'c-2', questionType: 'DateField' },
+            { type: 'question.updateField', questionId: 'g-1', field: 'grid.columnIds', value: ['c-1', 'c-2'] },
+        ])
+
+        const deleted = applyOperation(doc, { type: 'question.delete', questionId: 'c-1' })
+
+        assert.deepEqual(deleted.questionsById?.['g-1']?.grid?.columnIds, ['c-2'])
+    })
+
+    it('drops the grid config key when its last field goes with a deleted column', () => {
+        const doc = apply([
+            { type: 'question.create', questionId: 'g-1', questionType: 'QuestionGrid' },
+            { type: 'question.create', questionId: 'c-1', questionType: 'TextShort' },
+            { type: 'question.updateField', questionId: 'g-1', field: 'grid.columnIds', value: ['c-1'] },
+        ])
+
+        const deleted = applyOperation(doc, { type: 'question.delete', questionId: 'c-1' })
+
+        // DOC-LAW-2: no `grid: {}` left behind — that would hash differently from never configured.
+        assert.deepEqual(deleted.questionsById?.['g-1'], { type: 'QuestionGrid' })
+    })
+
+    it('attaches a mapping root and maintains bindingOrder across create and delete', () => {
+        const attached = apply([
+            { type: 'question.create', questionId: 'q-1', questionType: 'TextShort' },
+            { type: 'question.create', questionId: 'q-2', questionType: 'TextShort' },
+            { type: 'mappingNode.create', nodeId: 'n-root', entityId: 'Actor' },
+            { type: 'dataMapping.create', mappingId: 'm-1', sourceId: 'adopus-legacy', rootNodeId: 'n-root' },
+            {
+                type: 'mappingBinding.create',
+                bindingId: 'b-1',
+                nodeId: 'n-root',
+                fieldId: 'Navn',
+                target: { kind: 'question', questionId: 'q-1' },
+            },
+            {
+                type: 'mappingBinding.create',
+                bindingId: 'b-2',
+                nodeId: 'n-root',
+                fieldId: 'Adresse',
+                target: { kind: 'question', questionId: 'q-2' },
+            },
+        ])
+        assert.deepEqual(attached.dataMappingsById?.['m-1']?.bindingOrder, ['b-1', 'b-2'])
+
+        const removed = applyOperation(attached, { type: 'mappingBinding.delete', bindingId: 'b-1' })
+        assert.deepEqual(removed.dataMappingsById?.['m-1']?.bindingOrder, ['b-2'])
+
+        // …and an emptied order array is dropped, not stored (DOC-LAW-2).
+        const emptied = applyOperation(removed, { type: 'mappingBinding.delete', bindingId: 'b-2' })
+        assert.deepEqual(emptied.dataMappingsById?.['m-1'], { sourceId: 'adopus-legacy', rootNodeId: 'n-root' })
+    })
+
+    it('adopts bindings authored before the tree was attached into bindingOrder', () => {
+        const doc = apply([
+            { type: 'question.create', questionId: 'q-1', questionType: 'TextShort' },
+            { type: 'mappingNode.create', nodeId: 'n-root', entityId: 'Actor' },
+            // Binding BEFORE the mapping exists — structure first, mapping afterwards (Gate 2).
+            {
+                type: 'mappingBinding.create',
+                bindingId: 'b-1',
+                nodeId: 'n-root',
+                fieldId: 'Navn',
+                target: { kind: 'question', questionId: 'q-1' },
+            },
+        ])
+        assert.equal(doc.dataMappingsById, undefined)
+
+        const attached = applyOperation(doc, {
+            type: 'dataMapping.create',
+            mappingId: 'm-1',
+            sourceId: 'adopus-legacy',
+            rootNodeId: 'n-root',
+        })
+
+        assert.deepEqual(attached.dataMappingsById?.['m-1']?.bindingOrder, ['b-1'])
+    })
+
+    it('rejects a dataMapping on a node that is not a root, and cascades the tree on delete', () => {
+        const doc = apply([
+            { type: 'question.create', questionId: 'q-1', questionType: 'TextShort' },
+            { type: 'mappingNode.create', nodeId: 'n-root', entityId: 'Actor' },
+            { type: 'mappingNode.create', nodeId: 'n-child', entityId: 'Soknad', parentNodeId: 'n-root', relationshipId: 'rel-1' },
+        ])
+        assert.throws(
+            () => applyOperation(doc, { type: 'dataMapping.create', mappingId: 'm-1', sourceId: 's', rootNodeId: 'n-child' }),
+            OperationConflictError,
+        )
+
+        const attached = apply(
+            [
+                { type: 'dataMapping.create', mappingId: 'm-1', sourceId: 'adopus-legacy', rootNodeId: 'n-root' },
+                { type: 'mappingFilter.set', filterId: 'f-1', nodeId: 'n-child', fieldId: 'Status', operator: 'eq', value: 'Active' },
+                {
+                    type: 'mappingBinding.create',
+                    bindingId: 'b-1',
+                    nodeId: 'n-child',
+                    fieldId: 'Dato',
+                    target: { kind: 'question', questionId: 'q-1' },
+                },
+            ],
+            doc,
+        )
+
+        const deleted = applyOperation(attached, { type: 'dataMapping.delete', mappingId: 'm-1' })
+        assert.equal(deleted.dataMappingsById, undefined)
+        assert.equal(deleted.mappingNodesById, undefined)
+        assert.equal(deleted.mappingFiltersById, undefined)
+        assert.equal(deleted.mappingBindingsById, undefined)
+
+        // An already-gone mapping is a replayed duplicate — converge silently, content unchanged
+        // (only the revision moves, which is the reducer's bookkeeping, not content).
+        const replayed = applyOperation(deleted, { type: 'dataMapping.delete', mappingId: 'm-1' })
+        assert.equal(replayed.dataMappingsById, undefined)
+        assert.equal(replayed.revision, deleted.revision + 1)
+    })
 })

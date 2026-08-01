@@ -1,5 +1,13 @@
 import type { TemplateOp } from './operations.js'
-import type { BindingTarget, MappingNode, QnrTemplateDocument, QuestionId, RuleCondition } from './templateDocument.js'
+import type {
+    BindingTarget,
+    MappingNode,
+    QnrDataMapping,
+    QnrQuestion,
+    QnrTemplateDocument,
+    QuestionId,
+    RuleCondition,
+} from './templateDocument.js'
 
 /**
  * The authoring reducer. Pure: takes a document and an op, returns a new document with
@@ -217,6 +225,94 @@ const setScopedRule = (
     }
 }
 
+/**
+ * Walks `parentNodeId` links to the root of the node's traversal tree. A cycle is malformed
+ * data; bailing with `undefined` treats the node as unattached rather than hanging the reducer.
+ */
+const rootOfNode = (doc: QnrTemplateDocument, nodeId: string): string | undefined => {
+    const visited = new Set<string>()
+    let current: string | undefined = nodeId
+    while (current !== undefined && !visited.has(current)) {
+        visited.add(current)
+        const node: MappingNode | undefined = doc.mappingNodesById?.[current]
+        if (node === undefined) return undefined
+        if (node.parentNodeId === undefined) return current
+        current = node.parentNodeId
+    }
+    return undefined
+}
+
+/** The data mapping whose traversal tree contains `nodeId`, when the tree is attached to one. */
+const mappingForNode = (doc: QnrTemplateDocument, nodeId: string): [string, QnrDataMapping] | undefined => {
+    const rootId = rootOfNode(doc, nodeId)
+    if (rootId === undefined) return undefined
+    return Object.entries(doc.dataMappingsById ?? {}).find(([, mapping]) => mapping.rootNodeId === rootId)
+}
+
+/** Every node of the traversal tree under `rootNodeId`, root included. */
+const collectTreeNodeIds = (doc: QnrTemplateDocument, rootNodeId: string): Set<string> => {
+    const ids = new Set<string>()
+    const queue = [rootNodeId]
+    while (queue.length > 0) {
+        const current = queue.pop() as string
+        if (ids.has(current)) continue
+        ids.add(current)
+        for (const [nodeId, node] of Object.entries(doc.mappingNodesById ?? {})) {
+            if (node.parentNodeId === current) queue.push(nodeId)
+        }
+    }
+    return ids
+}
+
+/**
+ * Removes the given binding ids from every `bindingOrder` — a deleted binding must not leave
+ * its id behind in the order array (dangling prevention by construction, §2.2a).
+ */
+const scrubBindingOrders = (doc: QnrTemplateDocument, bindingIds: ReadonlySet<string>): QnrTemplateDocument => {
+    if (!doc.dataMappingsById) return doc
+    let changed = false
+    const next: Record<string, QnrDataMapping> = {}
+    for (const [mappingId, mapping] of Object.entries(doc.dataMappingsById)) {
+        if (!mapping.bindingOrder?.some((id) => bindingIds.has(id))) {
+            next[mappingId] = mapping
+            continue
+        }
+        changed = true
+        const kept = mapping.bindingOrder.filter((id) => !bindingIds.has(id))
+        if (kept.length > 0) {
+            next[mappingId] = { ...mapping, bindingOrder: kept }
+        } else {
+            // DOC-LAW-2: an emptied order array is dropped, never stored.
+            const { bindingOrder: _removed, ...rest } = mapping
+            next[mappingId] = rest
+        }
+    }
+    return changed ? { ...doc, dataMappingsById: next } : doc
+}
+
+/** Removes a deleted question's id from every grid's column list (OQ-V2-17 `grid.columnIds`). */
+const dropFromGridColumns = (doc: QnrTemplateDocument, questionId: QuestionId): QnrTemplateDocument => {
+    if (!doc.questionsById) return doc
+    let changed = false
+    const next: typeof doc.questionsById = {}
+    for (const [qid, question] of Object.entries(doc.questionsById)) {
+        const columnIds = question.grid?.columnIds
+        if (!columnIds?.includes(questionId)) {
+            next[qid] = question
+            continue
+        }
+        changed = true
+        const kept = columnIds.filter((id) => id !== questionId)
+        const grid = { ...question.grid }
+        if (kept.length === 0) delete grid.columnIds
+        else grid.columnIds = kept
+        const nextQuestion: QnrQuestion = { ...question, grid }
+        if (Object.keys(grid).length === 0) delete nextQuestion.grid
+        next[qid] = nextQuestion
+    }
+    return changed ? { ...doc, questionsById: next } : doc
+}
+
 export const applyOperation = (document: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument => {
     const next = reduce(document, op)
     return prune({ ...next, revision: document.revision + 1 })
@@ -317,8 +413,9 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
                     omitKey(doc.highlightRuleOrderByQuestionId, op.questionId),
             })
             // A binding pointing at a deleted question is an unresolvable reference the
-            // compiler would reject at publication; drop it with its target.
-            return dropBindingsForQuestion(withoutQuestion, op.questionId)
+            // compiler would reject at publication; drop it with its target. A grid column
+            // list pointing at it is the same class of reference and goes the same way.
+            return dropBindingsForQuestion(dropFromGridColumns(withoutQuestion, op.questionId), op.questionId)
         }
 
         case 'gridRow.create': {
@@ -507,21 +604,6 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             })
         }
 
-        case 'layout.updateQuestion': {
-            const question = doc.questionsById?.[op.questionId]
-            if (!question) {
-                throw new OperationConflictError(`Unknown question "${op.questionId}"`)
-            }
-            let presentation = { ...(question.presentation ?? {}) }
-            for (const [key, value] of Object.entries(op.patch)) {
-                presentation = writeField(presentation, key, value)
-            }
-            const next = { ...question }
-            if (Object.keys(presentation).length === 0) delete next.presentation
-            else next.presentation = presentation
-            return { ...doc, questionsById: { ...doc.questionsById, [op.questionId]: next } }
-        }
-
         case 'action.create': {
             if (doc.actionsById?.[op.actionId]) {
                 throw new OperationConflictError(`Action "${op.actionId}" already exists`)
@@ -549,6 +631,65 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             }
             return patchDocument(doc, {
                 actionsById: doc.actionsById && omitKey(doc.actionsById, op.actionId),
+            })
+        }
+
+        case 'dataMapping.create': {
+            if (doc.dataMappingsById?.[op.mappingId]) {
+                throw new OperationConflictError(`Data mapping "${op.mappingId}" already exists`)
+            }
+            const root = doc.mappingNodesById?.[op.rootNodeId]
+            if (!root) {
+                throw new OperationConflictError(`Unknown mapping node "${op.rootNodeId}"`)
+            }
+            if (root.parentNodeId !== undefined) {
+                throw new OperationConflictError(`Mapping root "${op.rootNodeId}" is not a root node — it has a parent`)
+            }
+            // Adopt the tree's existing bindings into `bindingOrder` — bindings authored before
+            // the tree was attached (structure first, §2.2a Gate 2) must not stay unordered.
+            const treeNodeIds = collectTreeNodeIds(doc, op.rootNodeId)
+            const bindingOrder = Object.entries(doc.mappingBindingsById ?? {})
+                .filter(([, binding]) => treeNodeIds.has(binding.nodeId))
+                .map(([bindingId]) => bindingId)
+            return {
+                ...doc,
+                dataMappingsById: {
+                    ...(doc.dataMappingsById ?? {}),
+                    [op.mappingId]: {
+                        sourceId: op.sourceId,
+                        rootNodeId: op.rootNodeId,
+                        ...(bindingOrder.length === 0 ? {} : { bindingOrder }),
+                    },
+                },
+            }
+        }
+
+        case 'dataMapping.delete': {
+            const mapping = doc.dataMappingsById?.[op.mappingId]
+            // An already-gone mapping is a replayed duplicate in the common case — converge
+            // silently, the way mappingNode.delete and mappingBinding.delete do.
+            if (!mapping) return doc
+            // Cascade the whole traversal tree — nodes, their filters and bindings — so an
+            // orphaned subtree never remains as dead hash weight. The entry's own
+            // `bindingOrder` goes with it, so no order scrub is needed here.
+            const treeNodeIds = collectTreeNodeIds(doc, mapping.rootNodeId)
+            const filterIds = new Set<string>()
+            for (const nodeId of treeNodeIds) {
+                for (const filterId of doc.mappingNodesById?.[nodeId]?.filterOrder ?? []) filterIds.add(filterId)
+            }
+            return patchDocument(doc, {
+                dataMappingsById: doc.dataMappingsById && omitKey(doc.dataMappingsById, op.mappingId),
+                mappingNodesById:
+                    doc.mappingNodesById &&
+                    Object.fromEntries(Object.entries(doc.mappingNodesById).filter(([id]) => !treeNodeIds.has(id))),
+                mappingFiltersById:
+                    doc.mappingFiltersById &&
+                    Object.fromEntries(Object.entries(doc.mappingFiltersById).filter(([id]) => !filterIds.has(id))),
+                mappingBindingsById:
+                    doc.mappingBindingsById &&
+                    Object.fromEntries(
+                        Object.entries(doc.mappingBindingsById).filter(([, binding]) => !treeNodeIds.has(binding.nodeId)),
+                    ),
             })
         }
 
@@ -589,14 +730,20 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             if (filtersById) {
                 filtersById = filterIds.reduce((acc, id) => omitKey(acc, id), filtersById)
             }
+            const removedBindingIds = new Set(
+                Object.entries(doc.mappingBindingsById ?? {})
+                    .filter(([, binding]) => binding.nodeId === op.nodeId)
+                    .map(([bindingId]) => bindingId),
+            )
             const bindings = Object.entries(doc.mappingBindingsById ?? {}).filter(
                 ([, binding]) => binding.nodeId !== op.nodeId,
             )
-            return patchDocument(doc, {
+            const withoutNode = patchDocument(doc, {
                 mappingNodesById: doc.mappingNodesById && omitKey(doc.mappingNodesById, op.nodeId),
                 mappingFiltersById: filtersById,
                 mappingBindingsById: Object.fromEntries(bindings),
             })
+            return scrubBindingOrders(withoutNode, removedBindingIds)
         }
 
         case 'mappingBinding.create': {
@@ -612,11 +759,27 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
                     `Target ${wanted} is already bound by "${clash[0]}" — at most one binding per target`,
                 )
             }
-            return {
+            const created = {
                 ...doc,
                 mappingBindingsById: {
                     ...(doc.mappingBindingsById ?? {}),
                     [op.bindingId]: { nodeId: op.nodeId, fieldId: op.fieldId, target: op.target },
+                },
+            }
+            // The owning mapping root's `bindingOrder` lists the new binding — when the tree is
+            // attached to one. A binding on a not-yet-attached tree is legal (structure first,
+            // mapping afterwards — §2.2a Gate 2), and `dataMapping.create` adopts its bindings'
+            // ids when the tree attaches.
+            const owner = mappingForNode(created, op.nodeId)
+            if (owner === undefined) return created
+            const [mappingId, mapping] = owner
+            const bindingOrder = mapping.bindingOrder ?? []
+            if (bindingOrder.includes(op.bindingId)) return created
+            return {
+                ...created,
+                dataMappingsById: {
+                    ...created.dataMappingsById,
+                    [mappingId]: { ...mapping, bindingOrder: [...bindingOrder, op.bindingId] },
                 },
             }
         }
@@ -652,9 +815,12 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
         }
 
         case 'mappingBinding.delete':
-            return patchDocument(doc, {
-                mappingBindingsById: doc.mappingBindingsById && omitKey(doc.mappingBindingsById, op.bindingId),
-            })
+            return scrubBindingOrders(
+                patchDocument(doc, {
+                    mappingBindingsById: doc.mappingBindingsById && omitKey(doc.mappingBindingsById, op.bindingId),
+                }),
+                new Set([op.bindingId]),
+            )
 
         case 'mappingFilter.set': {
             const node = doc.mappingNodesById?.[op.nodeId]
