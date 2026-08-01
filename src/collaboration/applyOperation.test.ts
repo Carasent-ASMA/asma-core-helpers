@@ -25,14 +25,14 @@ const doc0 = emptyTemplateDocument('tpl-1')
 const apply = (ops: TemplateOp[], from = doc0) => ops.reduce((doc, op) => applyOperation(doc, op), from)
 
 const threeQuestions = apply([
-    { type: 'question.create', questionId: 'q-1', kind: 'text' },
-    { type: 'question.create', questionId: 'q-2', kind: 'text' },
-    { type: 'question.create', questionId: 'q-3', kind: 'text', atIndex: 0 },
+    { type: 'question.create', questionId: 'q-1', questionType: 'TextShort' },
+    { type: 'question.create', questionId: 'q-2', questionType: 'TextShort' },
+    { type: 'question.create', questionId: 'q-3', questionType: 'TextShort', atIndex: 0 },
 ])
 
 describe('applyOperation', () => {
     it('bumps the revision by one and leaves its input untouched', () => {
-        const next = applyOperation(doc0, { type: 'question.create', questionId: 'q-1', kind: 'text' })
+        const next = applyOperation(doc0, { type: 'question.create', questionId: 'q-1', questionType: 'TextShort' })
 
         assert.equal(next.revision, 1)
         assert.equal(doc0.revision, 0)
@@ -45,7 +45,7 @@ describe('applyOperation', () => {
         const clamped = applyOperation(threeQuestions, {
             type: 'question.create',
             questionId: 'q-4',
-            kind: 'text',
+            questionType: 'TextShort',
             atIndex: 99,
         })
 
@@ -60,7 +60,7 @@ describe('applyOperation', () => {
 
     it('drops the bindings that targeted a deleted question, keeping the shared node', () => {
         const bound = apply([
-            { type: 'question.create', questionId: 'q-1', kind: 'text' },
+            { type: 'question.create', questionId: 'q-1', questionType: 'TextShort' },
             { type: 'mappingNode.create', nodeId: 'n-1', entityId: 'Actor' },
             {
                 type: 'mappingBinding.create',
@@ -80,7 +80,7 @@ describe('applyOperation', () => {
 
     it('removes a collection that just became empty rather than storing it empty', () => {
         const withAlternative = apply([
-            { type: 'question.create', questionId: 'q-1', kind: 'radio' },
+            { type: 'question.create', questionId: 'q-1', questionType: 'RadioButtons' },
             { type: 'alternative.create', questionId: 'q-1', alternativeId: 'a-1', label: 'Yes' },
         ])
         assert.deepEqual(withAlternative.alternativesById, { 'a-1': { label: 'Yes' } })
@@ -95,10 +95,10 @@ describe('applyOperation', () => {
     })
 
     it('refuses a duplicate create as a conflict', () => {
-        const once = applyOperation(doc0, { type: 'question.create', questionId: 'q-1', kind: 'text' })
+        const once = applyOperation(doc0, { type: 'question.create', questionId: 'q-1', questionType: 'TextShort' })
 
         assert.throws(
-            () => applyOperation(once, { type: 'question.create', questionId: 'q-1', kind: 'text' }),
+            () => applyOperation(once, { type: 'question.create', questionId: 'q-1', questionType: 'TextShort' }),
             (error: unknown) => {
                 assert.ok(error instanceof OperationConflictError)
                 assert.equal(error.statusCode, 409)

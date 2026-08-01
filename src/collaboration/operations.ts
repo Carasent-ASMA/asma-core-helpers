@@ -1,4 +1,5 @@
 import type { AltId, BindingId, BindingTarget, DocScalar, FilterId, NodeId, QuestionId } from './templateDocument.js'
+import type { QuestionType } from './questionTypes.js'
 
 /**
  * The authoring op vocabulary. `entity.action`, stable-id targets only, append-only —
@@ -17,7 +18,9 @@ export type OpValue = DocScalar | null
 
 export type TemplateOp =
     | { type: 'template.updateMeta'; patch: Record<string, OpValue | Record<string, unknown>> }
-    | { type: 'question.create'; questionId: QuestionId; kind: string; atIndex?: number }
+    // `questionType`, not `type`: the envelope already owns `type` for the op name, so the question's
+    // own type (which is what lands in the document) needs a distinct key here.
+    | { type: 'question.create'; questionId: QuestionId; questionType: QuestionType; atIndex?: number }
     | { type: 'question.updateField'; questionId: QuestionId; field: string; value: OpValue }
     | { type: 'question.move'; questionId: QuestionId; toIndex: number }
     | { type: 'question.delete'; questionId: QuestionId }

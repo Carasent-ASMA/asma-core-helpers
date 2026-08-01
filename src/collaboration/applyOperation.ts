@@ -166,7 +166,7 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             }
             return {
                 ...doc,
-                questionsById: { ...(doc.questionsById ?? {}), [op.questionId]: { kind: op.kind } },
+                questionsById: { ...(doc.questionsById ?? {}), [op.questionId]: { type: op.questionType } },
                 questionOrder: insertAt(doc.questionOrder, op.questionId, op.atIndex),
             }
         }

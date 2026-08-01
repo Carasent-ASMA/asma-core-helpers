@@ -19,6 +19,7 @@
  * @see asma-modules/_docs/editor/qnrs/cross/2026-07-12-21-40-plan-qnr-stage2-new-model-editor-and-sync.md:690 (FILE-001)
  */
 
+export * from './questionTypes.js'
 export * from './templateDocument.js'
 export * from './operations.js'
 export * from './applyOperation.js'
