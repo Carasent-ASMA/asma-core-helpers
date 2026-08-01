@@ -26,9 +26,6 @@ export const EnvironmentsUrls1 = (adcuris_subdomains?: string[]) => {
     return {
         SRV_DIRECTORY: `${ac_prefix}/api/directory`,
         SRV_CALENDAR: `${ac_prefix}/api/calendar`,
-        SRV_PROXY_OLD: `${ac_prefix}/api/proxy`,
-        SRV_PROXY_OLD_HELSE: `${ac_prefix}/api/proxy/helse`,
-        SRV_PROXY_OLD_WEB: `${ac_prefix}/api/proxy/web`,
         SRV_STORAGE: `${ac_prefix}/api/storage`,
         SRV_CHAT: `${ac_prefix}/api/chat`,
         SRV_CONNECTOR: srvConnector(env, env_to_operate),
