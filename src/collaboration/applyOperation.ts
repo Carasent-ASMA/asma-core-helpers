@@ -1,5 +1,5 @@
 import type { TemplateOp } from './operations.js'
-import type { BindingTarget, QnrTemplateDocument, QuestionId } from './templateDocument.js'
+import type { BindingTarget, MappingNode, QnrTemplateDocument, QuestionId } from './templateDocument.js'
 
 /**
  * The authoring reducer. Pure: takes a document and an op, returns a new document with
@@ -137,6 +137,10 @@ const OPTIONAL_COLLECTIONS = [
     'tabsById',
     'tabOrder',
     'actionsById',
+    'visibilityRulesById',
+    'visibilityRuleOrderByQuestionId',
+    'highlightRulesById',
+    'highlightRuleOrderByQuestionId',
     'dataMappingsById',
     'mappingNodesById',
     'mappingBindingsById',
@@ -187,6 +191,17 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             return { ...doc, meta }
         }
 
+        case 'template.updateSettings': {
+            let meta = { ...(doc.meta ?? {}) }
+            let settings = { ...(meta.settings ?? {}) }
+            for (const [key, value] of Object.entries(op.patch)) {
+                settings = writeField(settings, key, value)
+            }
+            if (Object.keys(settings).length === 0) delete meta.settings
+            else meta.settings = settings
+            return { ...doc, meta }
+        }
+
         case 'question.create': {
             if (doc.questionsById?.[op.questionId]) {
                 throw new OperationConflictError(`Question "${op.questionId}" already exists`)
@@ -233,10 +248,86 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
                     doc.alternativeOrderByQuestionId && omitKey(doc.alternativeOrderByQuestionId, op.questionId),
                 gridRowOrderByQuestionId:
                     doc.gridRowOrderByQuestionId && omitKey(doc.gridRowOrderByQuestionId, op.questionId),
+                visibilityRuleOrderByQuestionId:
+                    doc.visibilityRuleOrderByQuestionId && omitKey(doc.visibilityRuleOrderByQuestionId, op.questionId),
+                highlightRuleOrderByQuestionId:
+                    doc.highlightRuleOrderByQuestionId &&
+                    omitKey(doc.highlightRuleOrderByQuestionId, op.questionId),
             })
             // A binding pointing at a deleted question is an unresolvable reference the
             // compiler would reject at publication; drop it with its target.
             return dropBindingsForQuestion(withoutQuestion, op.questionId)
+        }
+
+        case 'gridRow.create': {
+            if (!doc.questionsById?.[op.questionId]) {
+                throw new OperationConflictError(`Unknown question "${op.questionId}"`)
+            }
+            if (doc.gridRowsById?.[op.rowId]) {
+                throw new OperationConflictError(`Grid row "${op.rowId}" already exists`)
+            }
+            const order = doc.gridRowOrderByQuestionId?.[op.questionId] ?? []
+            return {
+                ...doc,
+                gridRowsById: {
+                    ...(doc.gridRowsById ?? {}),
+                    [op.rowId]: op.label === undefined ? {} : { label: op.label },
+                },
+                gridRowOrderByQuestionId: {
+                    ...(doc.gridRowOrderByQuestionId ?? {}),
+                    [op.questionId]: insertAt(order, op.rowId, op.atIndex),
+                },
+            }
+        }
+
+        case 'gridRow.move': {
+            const order = doc.gridRowOrderByQuestionId?.[op.questionId]
+            if (!order?.includes(op.rowId)) {
+                throw new OperationConflictError(`Grid row "${op.rowId}" does not belong to question "${op.questionId}"`)
+            }
+            // Anchor-relative (OQ-V2-24): a null anchor moves to the front. A move is a
+            // remove-then-insert, so the anchor is looked up in the row set that no longer
+            // contains the moved row itself.
+            const without = order.filter((id) => id !== op.rowId)
+            const anchorIndex = op.afterRowId === null ? -1 : without.indexOf(op.afterRowId)
+            if (op.afterRowId !== null && anchorIndex === -1) {
+                throw new OperationConflictError(`Unknown anchor grid row "${op.afterRowId}"`)
+            }
+            const at = anchorIndex + 1
+            return {
+                ...doc,
+                gridRowOrderByQuestionId: {
+                    ...(doc.gridRowOrderByQuestionId ?? {}),
+                    [op.questionId]: [...without.slice(0, at), op.rowId, ...without.slice(at)],
+                },
+            }
+        }
+
+        case 'gridRow.delete': {
+            const order = doc.gridRowOrderByQuestionId?.[op.questionId] ?? []
+            const remaining = order.filter((id) => id !== op.rowId)
+            return patchDocument(doc, {
+                gridRowsById: doc.gridRowsById && omitKey(doc.gridRowsById, op.rowId),
+                gridRowOrderByQuestionId: {
+                    ...(doc.gridRowOrderByQuestionId ?? {}),
+                    [op.questionId]: remaining,
+                },
+            })
+        }
+
+        case 'gridRow.updateCell': {
+            const row = doc.gridRowsById?.[op.rowId]
+            if (!row) {
+                throw new OperationConflictError(`Unknown grid row "${op.rowId}"`)
+            }
+            const cells = writeField({ ...(row.cells ?? {}) }, op.columnQuestionId, op.value)
+            return {
+                ...doc,
+                gridRowsById: {
+                    ...doc.gridRowsById,
+                    [op.rowId]: { ...row, cells: Object.keys(cells).length === 0 ? undefined : cells },
+                },
+            }
         }
 
         case 'alternative.create': {
@@ -307,6 +398,87 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             })
         }
 
+        case 'tab.create': {
+            if (doc.tabsById?.[op.tabId]) {
+                throw new OperationConflictError(`Tab "${op.tabId}" already exists`)
+            }
+            return {
+                ...doc,
+                tabsById: { ...(doc.tabsById ?? {}), [op.tabId]: op.label === undefined ? {} : { label: op.label } },
+                tabOrder: insertAt(doc.tabOrder ?? [], op.tabId, op.atIndex),
+            }
+        }
+
+        case 'tab.updateField': {
+            const tab = doc.tabsById?.[op.tabId]
+            if (!tab) {
+                throw new OperationConflictError(`Unknown tab "${op.tabId}"`)
+            }
+            return { ...doc, tabsById: { ...doc.tabsById, [op.tabId]: writeField(tab, op.field, op.value) } }
+        }
+
+        case 'tab.move': {
+            if (!doc.tabOrder?.includes(op.tabId)) {
+                throw new OperationConflictError(`Unknown tab "${op.tabId}"`)
+            }
+            return { ...doc, tabOrder: moveInOrder(doc.tabOrder, op.tabId, op.toIndex) }
+        }
+
+        case 'tab.delete': {
+            if (!doc.tabsById?.[op.tabId]) {
+                throw new OperationConflictError(`Unknown tab "${op.tabId}"`)
+            }
+            return patchDocument(doc, {
+                tabsById: doc.tabsById && omitKey(doc.tabsById, op.tabId),
+                tabOrder: (doc.tabOrder ?? []).filter((id) => id !== op.tabId),
+            })
+        }
+
+        case 'layout.updateQuestion': {
+            const question = doc.questionsById?.[op.questionId]
+            if (!question) {
+                throw new OperationConflictError(`Unknown question "${op.questionId}"`)
+            }
+            let presentation = { ...(question.presentation ?? {}) }
+            for (const [key, value] of Object.entries(op.patch)) {
+                presentation = writeField(presentation, key, value)
+            }
+            const next = { ...question }
+            if (Object.keys(presentation).length === 0) delete next.presentation
+            else next.presentation = presentation
+            return { ...doc, questionsById: { ...doc.questionsById, [op.questionId]: next } }
+        }
+
+        case 'action.create': {
+            if (doc.actionsById?.[op.actionId]) {
+                throw new OperationConflictError(`Action "${op.actionId}" already exists`)
+            }
+            return {
+                ...doc,
+                actionsById: {
+                    ...(doc.actionsById ?? {}),
+                    [op.actionId]: op.kind === undefined ? {} : { kind: op.kind },
+                },
+            }
+        }
+
+        case 'action.updateField': {
+            const action = doc.actionsById?.[op.actionId]
+            if (!action) {
+                throw new OperationConflictError(`Unknown action "${op.actionId}"`)
+            }
+            return { ...doc, actionsById: { ...doc.actionsById, [op.actionId]: writeField(action, op.field, op.value) } }
+        }
+
+        case 'action.delete': {
+            if (!doc.actionsById?.[op.actionId]) {
+                throw new OperationConflictError(`Unknown action "${op.actionId}"`)
+            }
+            return patchDocument(doc, {
+                actionsById: doc.actionsById && omitKey(doc.actionsById, op.actionId),
+            })
+        }
+
         case 'mappingNode.create': {
             if (doc.mappingNodesById?.[op.nodeId]) {
                 throw new OperationConflictError(`Mapping node "${op.nodeId}" already exists`)
@@ -317,6 +489,25 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
                 op.relationshipId ?? null,
             )
             return { ...doc, mappingNodesById: { ...(doc.mappingNodesById ?? {}), [op.nodeId]: node } }
+        }
+
+        case 'mappingNode.update': {
+            const node = doc.mappingNodesById?.[op.nodeId]
+            if (!node) {
+                throw new OperationConflictError(`Unknown mapping node "${op.nodeId}"`)
+            }
+            const next: MappingNode = { ...node }
+            if (op.patch.entityId !== undefined) next.entityId = op.patch.entityId
+            if (op.patch.parentNodeId !== undefined) {
+                if (op.patch.parentNodeId === null) delete next.parentNodeId
+                else next.parentNodeId = op.patch.parentNodeId
+            }
+            if (op.patch.relationshipId !== undefined) {
+                if (op.patch.relationshipId === null) delete next.relationshipId
+                else next.relationshipId = op.patch.relationshipId
+            }
+            if (op.patch.filterOrder !== undefined) next.filterOrder = op.patch.filterOrder
+            return { ...doc, mappingNodesById: { ...doc.mappingNodesById, [op.nodeId]: next } }
         }
 
         case 'mappingNode.delete': {
@@ -411,6 +602,62 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             return patchDocument(doc, {
                 mappingFiltersById: doc.mappingFiltersById && omitKey(doc.mappingFiltersById, op.filterId),
                 mappingNodesById: nodes,
+            })
+        }
+
+        case 'visibilityRule.set': {
+            const order = doc.visibilityRuleOrderByQuestionId?.[op.questionId] ?? []
+            return {
+                ...doc,
+                visibilityRulesById: {
+                    ...(doc.visibilityRulesById ?? {}),
+                    [op.ruleId]: { condition: op.condition },
+                },
+                visibilityRuleOrderByQuestionId: {
+                    ...(doc.visibilityRuleOrderByQuestionId ?? {}),
+                    [op.questionId]: order.includes(op.ruleId) ? order : [...order, op.ruleId],
+                },
+            }
+        }
+
+        case 'visibilityRule.delete': {
+            const orders = Object.fromEntries(
+                Object.entries(doc.visibilityRuleOrderByQuestionId ?? {}).map(([questionId, ruleIds]) => [
+                    questionId,
+                    ruleIds.filter((id) => id !== op.ruleId),
+                ]),
+            )
+            return patchDocument(doc, {
+                visibilityRulesById: doc.visibilityRulesById && omitKey(doc.visibilityRulesById, op.ruleId),
+                visibilityRuleOrderByQuestionId: orders,
+            })
+        }
+
+        case 'highlightRule.set': {
+            const order = doc.highlightRuleOrderByQuestionId?.[op.questionId] ?? []
+            return {
+                ...doc,
+                highlightRulesById: {
+                    ...(doc.highlightRulesById ?? {}),
+                    [op.ruleId]: { condition: op.condition },
+                },
+                highlightRuleOrderByQuestionId: {
+                    ...(doc.highlightRuleOrderByQuestionId ?? {}),
+                    [op.questionId]: order.includes(op.ruleId) ? order : [...order, op.ruleId],
+                },
+            }
+        }
+
+        case 'highlightRule.delete': {
+            const orders = Object.fromEntries(
+                Object.entries(doc.highlightRuleOrderByQuestionId ?? {}).map(([questionId, ruleIds]) => [
+                    questionId,
+                    ruleIds.filter((id) => id !== op.ruleId),
+                ]),
+            )
+            return patchDocument(doc, {
+                highlightRulesById: doc.highlightRulesById && omitKey(doc.highlightRulesById, op.ruleId),
+                highlightRuleOrderByQuestionId: orders,
             })
         }
 
