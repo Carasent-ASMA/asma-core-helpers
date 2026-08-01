@@ -293,8 +293,10 @@ const dropFromGridColumns = (doc: QnrTemplateDocument, questionId: QuestionId): 
     let changed = false
     const next: typeof doc.questionsById = {}
     for (const [qid, question] of Object.entries(doc.questionsById)) {
+        // Defensive: the per-type bags are open, so a malformed `columnIds` must not crash
+        // the reducer — it is a schema violation for validation to catch, not a crash here.
         const columnIds = question.grid?.columnIds
-        if (!columnIds?.includes(questionId)) {
+        if (!Array.isArray(columnIds) || !columnIds.includes(questionId)) {
             next[qid] = question
             continue
         }
@@ -717,7 +719,11 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
                 if (op.patch.relationshipId === null) delete next.relationshipId
                 else next.relationshipId = op.patch.relationshipId
             }
-            if (op.patch.filterOrder !== undefined) next.filterOrder = op.patch.filterOrder
+            if (op.patch.filterOrder !== undefined) {
+                // An empty order is an explicit unset (DOC-LAW-2 stores no empty array).
+                if (op.patch.filterOrder.length === 0) delete next.filterOrder
+                else next.filterOrder = op.patch.filterOrder
+            }
             return { ...doc, mappingNodesById: { ...doc.mappingNodesById, [op.nodeId]: next } }
         }
 
@@ -841,12 +847,13 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
 
         case 'mappingFilter.delete': {
             const nodes = Object.fromEntries(
-                Object.entries(doc.mappingNodesById ?? {}).map(([nodeId, node]) => [
-                    nodeId,
-                    node.filterOrder?.includes(op.filterId)
-                        ? { ...node, filterOrder: node.filterOrder.filter((id) => id !== op.filterId) }
-                        : node,
-                ]),
+                Object.entries(doc.mappingNodesById ?? {}).map(([nodeId, node]) => {
+                    if (!node.filterOrder?.includes(op.filterId)) return [nodeId, node]
+                    const filterOrder = node.filterOrder.filter((id) => id !== op.filterId)
+                    // DOC-LAW-2: an emptied order array is dropped, never stored as [].
+                    const { filterOrder: _removed, ...rest } = node
+                    return [nodeId, filterOrder.length === 0 ? rest : { ...node, filterOrder }]
+                }),
             )
             return patchDocument(doc, {
                 mappingFiltersById: doc.mappingFiltersById && omitKey(doc.mappingFiltersById, op.filterId),
