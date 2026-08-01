@@ -51,11 +51,38 @@ const targetKey = (target: BindingTarget): string =>
         ? `question:${target.questionId}`
         : `gridColumn:${target.gridQuestionId}:${target.columnQuestionId}`
 
-/** Sets a key, or removes it when the op carried an explicit unset. */
+/**
+ * Sets a key, or removes it when the op carried an explicit unset.
+ *
+ * `field` may be a dotted path (`scale.from`). The per-type configuration in the document is nested
+ * — `question.scale.{from, to, …}`, `question.numberFormat.{…}` — while an op value is a scalar, so
+ * without a path those groups are unauthorable. Intermediate objects are created on write and
+ * **removed again when their last key is unset**, because DOC-LAW-2 forbids storing an empty
+ * collection: leaving `{ scale: {} }` behind would change `document_hash` for a document that
+ * carries no scale at all.
+ */
 const writeField = <T extends Record<string, unknown>>(record: T, field: string, value: unknown): T => {
+    const [head, ...rest] = field.split('.')
+    if (head === undefined || head === '') return record
+
     const next = { ...record } as Record<string, unknown>
-    if (value === null || value === undefined) delete next[field]
-    else next[field] = value
+
+    if (rest.length === 0) {
+        if (value === null || value === undefined) delete next[head]
+        else next[head] = value
+        return next as T
+    }
+
+    const child = next[head]
+    const nested = writeField(
+        (typeof child === 'object' && child !== null && !Array.isArray(child) ? child : {}) as Record<string, unknown>,
+        rest.join('.'),
+        value,
+    )
+
+    if (Object.keys(nested).length === 0) delete next[head]
+    else next[head] = nested
+
     return next as T
 }
 
@@ -226,6 +253,44 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
                 alternativeOrderByQuestionId: {
                     ...(doc.alternativeOrderByQuestionId ?? {}),
                     [op.questionId]: insertAt(order, op.alternativeId, op.atIndex),
+                },
+            }
+        }
+
+        case 'alternative.updateField': {
+            const alternative = doc.alternativesById?.[op.alternativeId]
+            if (!alternative) {
+                throw new OperationConflictError(`Unknown alternative "${op.alternativeId}"`)
+            }
+            // The question is checked too: an alternative id that exists but hangs off a different
+            // question means the two clients disagree about the structure, not just the value, and
+            // writing the field anyway would hide that behind a successful edit.
+            if (!doc.alternativeOrderByQuestionId?.[op.questionId]?.includes(op.alternativeId)) {
+                throw new OperationConflictError(
+                    `Alternative "${op.alternativeId}" does not belong to question "${op.questionId}"`,
+                )
+            }
+            return {
+                ...doc,
+                alternativesById: {
+                    ...doc.alternativesById,
+                    [op.alternativeId]: writeField(alternative, op.field, op.value),
+                },
+            }
+        }
+
+        case 'alternative.move': {
+            const order = doc.alternativeOrderByQuestionId?.[op.questionId]
+            if (!order?.includes(op.alternativeId)) {
+                throw new OperationConflictError(
+                    `Alternative "${op.alternativeId}" does not belong to question "${op.questionId}"`,
+                )
+            }
+            return {
+                ...doc,
+                alternativeOrderByQuestionId: {
+                    ...doc.alternativeOrderByQuestionId,
+                    [op.questionId]: moveInOrder(order, op.alternativeId, op.toIndex),
                 },
             }
         }
