@@ -94,6 +94,75 @@ describe('applyOperation', () => {
         assert.equal(removed.alternativesById, undefined)
     })
 
+    it('writes a nested per-type field through a dotted path', () => {
+        // The per-type configuration is nested in the document (`question.scale.{from, to}`) while an
+        // op value is a scalar, so without path support a LinearScale's own settings cannot be
+        // authored at all.
+        const created = apply([{ type: 'question.create', questionId: 'q-1', questionType: 'LinearScale' }])
+
+        const configured = apply(
+            [
+                { type: 'question.updateField', questionId: 'q-1', field: 'scale.from', value: 1 },
+                { type: 'question.updateField', questionId: 'q-1', field: 'scale.toLabel', value: 'Svært godt' },
+            ],
+            created,
+        )
+
+        assert.deepEqual(configured.questionsById?.['q-1'], {
+            type: 'LinearScale',
+            scale: { from: 1, toLabel: 'Svært godt' },
+        })
+    })
+
+    it('removes the nested group when its last key is unset, never storing it empty', () => {
+        // DOC-LAW-2: an empty collection is not stored. Leaving `{ scale: {} }` behind would change
+        // `document_hash` for a document that carries no scale at all, so two clients that took
+        // different routes to the same state would disagree about the hash.
+        const configured = apply([
+            { type: 'question.create', questionId: 'q-1', questionType: 'LinearScale' },
+            { type: 'question.updateField', questionId: 'q-1', field: 'scale.from', value: 1 },
+        ])
+
+        const cleared = applyOperation(configured, {
+            type: 'question.updateField',
+            questionId: 'q-1',
+            field: 'scale.from',
+            value: null,
+        })
+
+        assert.deepEqual(cleared.questionsById?.['q-1'], { type: 'LinearScale' })
+    })
+
+    it('keeps sibling keys when one nested key is unset', () => {
+        const configured = apply([
+            { type: 'question.create', questionId: 'q-1', questionType: 'LinearScale' },
+            { type: 'question.updateField', questionId: 'q-1', field: 'scale.from', value: 1 },
+            { type: 'question.updateField', questionId: 'q-1', field: 'scale.to', value: 10 },
+        ])
+
+        const cleared = applyOperation(configured, {
+            type: 'question.updateField',
+            questionId: 'q-1',
+            field: 'scale.from',
+            value: null,
+        })
+
+        assert.deepEqual(cleared.questionsById?.['q-1'], { type: 'LinearScale', scale: { to: 10 } })
+    })
+
+    it('does not mutate the document a nested write was derived from', () => {
+        // The store keeps the confirmed base and replays pending ops onto it, so a nested write that
+        // reached into the previous object would corrupt the base and make the replay non-repeatable.
+        const before = apply([
+            { type: 'question.create', questionId: 'q-1', questionType: 'LinearScale' },
+            { type: 'question.updateField', questionId: 'q-1', field: 'scale.from', value: 1 },
+        ])
+
+        applyOperation(before, { type: 'question.updateField', questionId: 'q-1', field: 'scale.to', value: 10 })
+
+        assert.deepEqual(before.questionsById?.['q-1'], { type: 'LinearScale', scale: { from: 1 } })
+    })
+
     it('renames an alternative in place, keeping the id every answer references', () => {
         // The whole reason this op exists rather than delete-then-create: an answer stores the
         // alternative id, so a rename that mints a new id orphans every answer that chose it.
