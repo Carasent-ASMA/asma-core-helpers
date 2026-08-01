@@ -93,6 +93,8 @@ describe('applyOperation', () => {
         })
 
         assert.equal(removed.alternativesById, undefined)
+        // …and the question's order key goes with it — DOC-LAW-2 stores no empty array.
+        assert.equal(removed.alternativeOrderByQuestionId, undefined)
     })
 
     it('writes a nested per-type field through a dotted path', () => {
@@ -271,6 +273,162 @@ describe('applyOperation', () => {
                 assert.equal(error.code, 'qnr_unknown_operation')
                 return true
             },
+        )
+    })
+
+    it('drops a deleted question\'s own rule records along with its order entries', () => {
+        const doc = apply([
+            { type: 'question.create', questionId: 'q-1', questionType: 'TextShort' },
+            { type: 'question.create', questionId: 'q-2', questionType: 'TextShort' },
+            { type: 'visibilityRule.set', ruleId: 'vr-1', questionId: 'q-1', condition: { sourceQuestionId: 'q-2', value: 'x' } },
+            { type: 'highlightRule.set', ruleId: 'hr-1', questionId: 'q-1', condition: { sourceQuestionId: 'q-2', value: 'y' } },
+        ])
+
+        const deleted = applyOperation(doc, { type: 'question.delete', questionId: 'q-1' })
+
+        assert.equal(deleted.visibilityRulesById, undefined)
+        assert.equal(deleted.visibilityRuleOrderByQuestionId, undefined)
+        assert.equal(deleted.highlightRulesById, undefined)
+        assert.equal(deleted.highlightRuleOrderByQuestionId, undefined)
+    })
+
+    it('keeps another question\'s rule that references the deleted question, for validation to surface', () => {
+        // Dropping the surviving question's authored rule silently would be data loss; the
+        // dangling sourceQuestionId is a validation finding, not a reducer decision.
+        const doc = apply([
+            { type: 'question.create', questionId: 'q-1', questionType: 'TextShort' },
+            { type: 'question.create', questionId: 'q-2', questionType: 'TextShort' },
+            { type: 'visibilityRule.set', ruleId: 'vr-1', questionId: 'q-2', condition: { sourceQuestionId: 'q-1' } },
+        ])
+
+        const deleted = applyOperation(doc, { type: 'question.delete', questionId: 'q-1' })
+
+        assert.deepEqual(deleted.visibilityRuleOrderByQuestionId, { 'q-2': ['vr-1'] })
+        assert.ok(deleted.visibilityRulesById?.['vr-1'])
+    })
+
+    it('rejects a binding update that would put two bindings on one target', () => {
+        const doc = apply([
+            { type: 'question.create', questionId: 'q-1', questionType: 'TextShort' },
+            { type: 'question.create', questionId: 'q-2', questionType: 'TextShort' },
+            { type: 'mappingNode.create', nodeId: 'n-1', entityId: 'Actor' },
+            {
+                type: 'mappingBinding.create',
+                bindingId: 'b-1',
+                nodeId: 'n-1',
+                fieldId: 'Navn',
+                target: { kind: 'question', questionId: 'q-1' },
+            },
+            {
+                type: 'mappingBinding.create',
+                bindingId: 'b-2',
+                nodeId: 'n-1',
+                fieldId: 'Adresse',
+                target: { kind: 'question', questionId: 'q-2' },
+            },
+        ])
+
+        assert.throws(
+            () =>
+                applyOperation(doc, {
+                    type: 'mappingBinding.update',
+                    bindingId: 'b-2',
+                    patch: { target: { kind: 'question', questionId: 'q-1' } },
+                }),
+            OperationConflictError,
+        )
+    })
+
+    it('moves a rule instead of listing it under two questions when it is set again elsewhere', () => {
+        const doc = apply([
+            { type: 'question.create', questionId: 'q-1', questionType: 'TextShort' },
+            { type: 'question.create', questionId: 'q-2', questionType: 'TextShort' },
+            { type: 'visibilityRule.set', ruleId: 'vr-1', questionId: 'q-1', condition: { sourceQuestionId: 'q-2' } },
+        ])
+
+        const moved = applyOperation(doc, {
+            type: 'visibilityRule.set',
+            ruleId: 'vr-1',
+            questionId: 'q-2',
+            condition: { sourceQuestionId: 'q-1' },
+        })
+
+        assert.equal(moved.visibilityRuleOrderByQuestionId?.['q-1'], undefined)
+        assert.deepEqual(moved.visibilityRuleOrderByQuestionId?.['q-2'], ['vr-1'])
+        assert.deepEqual(Object.keys(moved.visibilityRulesById ?? {}), ['vr-1'])
+    })
+
+    it('refuses to set a rule on a question that does not exist', () => {
+        const doc = apply([{ type: 'question.create', questionId: 'q-1', questionType: 'TextShort' }])
+
+        assert.throws(
+            () =>
+                applyOperation(doc, {
+                    type: 'visibilityRule.set',
+                    ruleId: 'vr-1',
+                    questionId: 'ghost',
+                    condition: { sourceQuestionId: 'q-1' },
+                }),
+            OperationConflictError,
+        )
+    })
+
+    it('refuses to delete or edit a grid row through the wrong grid', () => {
+        // Same divergence rule as alternatives: a row id that exists but hangs off another
+        // grid means the two clients disagree about the structure, not just the value.
+        const doc = apply([
+            { type: 'question.create', questionId: 'g-1', questionType: 'QuestionGrid' },
+            { type: 'question.create', questionId: 'g-2', questionType: 'QuestionGrid' },
+            { type: 'gridRow.create', questionId: 'g-1', rowId: 'r-1', label: 'Row' },
+        ])
+
+        assert.throws(
+            () => applyOperation(doc, { type: 'gridRow.delete', questionId: 'g-2', rowId: 'r-1' }),
+            OperationConflictError,
+        )
+        assert.throws(
+            () =>
+                applyOperation(doc, {
+                    type: 'gridRow.updateCell',
+                    questionId: 'g-2',
+                    rowId: 'r-1',
+                    columnQuestionId: 'c-1',
+                    value: 1,
+                }),
+            OperationConflictError,
+        )
+    })
+
+    it('refuses to delete an alternative through the wrong question', () => {
+        const created = apply([
+            { type: 'question.create', questionId: 'q-1', questionType: 'RadioButtons' },
+            { type: 'question.create', questionId: 'q-2', questionType: 'RadioButtons' },
+            { type: 'alternative.create', questionId: 'q-1', alternativeId: 'a-1', label: 'Ja' },
+        ])
+
+        assert.throws(
+            () => applyOperation(created, { type: 'alternative.delete', questionId: 'q-2', alternativeId: 'a-1' }),
+            OperationConflictError,
+        )
+    })
+
+    it('moves a grid row relative to its anchor, and to the front on a null anchor', () => {
+        const doc = apply([
+            { type: 'question.create', questionId: 'g-1', questionType: 'QuestionGrid' },
+            { type: 'gridRow.create', questionId: 'g-1', rowId: 'r-1', label: 'One' },
+            { type: 'gridRow.create', questionId: 'g-1', rowId: 'r-2', label: 'Two' },
+            { type: 'gridRow.create', questionId: 'g-1', rowId: 'r-3', label: 'Three' },
+        ])
+
+        const reordered = applyOperation(doc, { type: 'gridRow.move', questionId: 'g-1', rowId: 'r-3', afterRowId: 'r-1' })
+        assert.deepEqual(reordered.gridRowOrderByQuestionId?.['g-1'], ['r-1', 'r-3', 'r-2'])
+
+        const fronted = applyOperation(doc, { type: 'gridRow.move', questionId: 'g-1', rowId: 'r-3', afterRowId: null })
+        assert.deepEqual(fronted.gridRowOrderByQuestionId?.['g-1'], ['r-3', 'r-1', 'r-2'])
+
+        assert.throws(
+            () => applyOperation(doc, { type: 'gridRow.move', questionId: 'g-1', rowId: 'r-1', afterRowId: 'ghost' }),
+            OperationConflictError,
         )
     })
 })

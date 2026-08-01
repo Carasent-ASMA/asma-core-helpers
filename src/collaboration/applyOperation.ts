@@ -1,5 +1,5 @@
 import type { TemplateOp } from './operations.js'
-import type { BindingTarget, MappingNode, QnrTemplateDocument, QuestionId } from './templateDocument.js'
+import type { BindingTarget, MappingNode, QnrTemplateDocument, QuestionId, RuleCondition } from './templateDocument.js'
 
 /**
  * The authoring reducer. Pure: takes a document and an op, returns a new document with
@@ -9,6 +9,11 @@ import type { BindingTarget, MappingNode, QnrTemplateDocument, QuestionId } from
  *
  * Idempotency by `op_id` and revision assignment on the wire are persistence concerns
  * and deliberately live outside this function.
+ *
+ * Create ops mint a transient empty record when no initial field is supplied (`{}`): it
+ * carries no information, `reduceToMinimalForm` erases it from the canonical form, and
+ * `findDocLawViolations` flags it at publish time — so it never reaches a stored version
+ * and two clients taking different routes to the same content still agree on the hash.
  *
  * @see _docs/editor/qnrs/cross/2026-07-12-20-20-architecture-qnr-v2-model-collaboration-sync.md:380 (vocabulary)
  * @see _docs/editor/qnrs/cross/2026-07-12-20-20-architecture-qnr-v2-model-collaboration-sync.md:384 (authoring dataflow)
@@ -172,6 +177,46 @@ const dropBindingsForQuestion = (doc: QnrTemplateDocument, questionId: QuestionI
     return { ...doc, mappingBindingsById: Object.fromEntries(kept) }
 }
 
+/**
+ * Writes a question's order array, or drops its key when the last member left — DOC-LAW-2
+ * stores no empty array, and `{ q1: [] }` would also hash differently from the key's absence.
+ */
+const setOrRemoveOrder = (
+    orderByQuestionId: Record<QuestionId, string[]> | undefined,
+    questionId: QuestionId,
+    ids: string[],
+): Record<QuestionId, string[]> => {
+    const map = { ...(orderByQuestionId ?? {}) }
+    if (ids.length === 0) delete map[questionId]
+    else map[questionId] = ids
+    return map
+}
+
+/**
+ * Shared setter for the per-question rule collections (visibility/highlight). A rule has exactly
+ * one owner: setting it under a different question MOVES it there, so it can never sit in two
+ * order arrays at once — and the previous owner's key goes when its last rule leaves (DOC-LAW-2).
+ */
+const setScopedRule = (
+    rulesById: Record<string, { condition: RuleCondition }> | undefined,
+    orderByQuestionId: Record<QuestionId, string[]> | undefined,
+    ruleId: string,
+    questionId: QuestionId,
+    condition: RuleCondition,
+): { rulesById: Record<string, { condition: RuleCondition }>; orderByQuestionId: Record<QuestionId, string[]> } => {
+    const orders: Record<QuestionId, string[]> = {}
+    for (const [ownerId, ruleIds] of Object.entries(orderByQuestionId ?? {})) {
+        const kept = ownerId === questionId ? ruleIds : ruleIds.filter((id) => id !== ruleId)
+        if (kept.length > 0) orders[ownerId] = kept
+    }
+    const order = orders[questionId] ?? []
+    orders[questionId] = order.includes(ruleId) ? order : [...order, ruleId]
+    return {
+        rulesById: { ...(rulesById ?? {}), [ruleId]: { condition } },
+        orderByQuestionId: orders,
+    }
+}
+
 export const applyOperation = (document: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument => {
     const next = reduce(document, op)
     return prune({ ...next, revision: document.revision + 1 })
@@ -240,6 +285,21 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             if (alternativesById) {
                 alternativesById = alternativeIds.reduce((acc, id) => omitKey(acc, id), alternativesById)
             }
+            // The question's own rules go with it, the same way its alternatives do: an orphaned
+            // rule record is referenced by no order array and only pollutes the hash. Rules of
+            // OTHER questions whose condition points at this one are deliberately KEPT — silently
+            // dropping a surviving question's authored logic would be data loss, so the dangling
+            // `sourceQuestionId` is left for validation to surface instead.
+            const visibilityRuleIds = doc.visibilityRuleOrderByQuestionId?.[op.questionId] ?? []
+            let visibilityRulesById = doc.visibilityRulesById
+            if (visibilityRulesById) {
+                visibilityRulesById = visibilityRuleIds.reduce((acc, id) => omitKey(acc, id), visibilityRulesById)
+            }
+            const highlightRuleIds = doc.highlightRuleOrderByQuestionId?.[op.questionId] ?? []
+            let highlightRulesById = doc.highlightRulesById
+            if (highlightRulesById) {
+                highlightRulesById = highlightRuleIds.reduce((acc, id) => omitKey(acc, id), highlightRulesById)
+            }
             const withoutQuestion = patchDocument(doc, {
                 questionsById: doc.questionsById && omitKey(doc.questionsById, op.questionId),
                 questionOrder: doc.questionOrder.filter((id) => id !== op.questionId),
@@ -248,8 +308,10 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
                     doc.alternativeOrderByQuestionId && omitKey(doc.alternativeOrderByQuestionId, op.questionId),
                 gridRowOrderByQuestionId:
                     doc.gridRowOrderByQuestionId && omitKey(doc.gridRowOrderByQuestionId, op.questionId),
+                visibilityRulesById,
                 visibilityRuleOrderByQuestionId:
                     doc.visibilityRuleOrderByQuestionId && omitKey(doc.visibilityRuleOrderByQuestionId, op.questionId),
+                highlightRulesById,
                 highlightRuleOrderByQuestionId:
                     doc.highlightRuleOrderByQuestionId &&
                     omitKey(doc.highlightRuleOrderByQuestionId, op.questionId),
@@ -304,14 +366,14 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
         }
 
         case 'gridRow.delete': {
-            const order = doc.gridRowOrderByQuestionId?.[op.questionId] ?? []
+            const order = doc.gridRowOrderByQuestionId?.[op.questionId]
+            if (!order?.includes(op.rowId)) {
+                throw new OperationConflictError(`Grid row "${op.rowId}" does not belong to question "${op.questionId}"`)
+            }
             const remaining = order.filter((id) => id !== op.rowId)
             return patchDocument(doc, {
                 gridRowsById: doc.gridRowsById && omitKey(doc.gridRowsById, op.rowId),
-                gridRowOrderByQuestionId: {
-                    ...(doc.gridRowOrderByQuestionId ?? {}),
-                    [op.questionId]: remaining,
-                },
+                gridRowOrderByQuestionId: setOrRemoveOrder(doc.gridRowOrderByQuestionId, op.questionId, remaining),
             })
         }
 
@@ -319,6 +381,11 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             const row = doc.gridRowsById?.[op.rowId]
             if (!row) {
                 throw new OperationConflictError(`Unknown grid row "${op.rowId}"`)
+            }
+            if (!doc.gridRowOrderByQuestionId?.[op.questionId]?.includes(op.rowId)) {
+                throw new OperationConflictError(
+                    `Grid row "${op.rowId}" does not belong to question "${op.questionId}"`,
+                )
             }
             const cells = writeField({ ...(row.cells ?? {}) }, op.columnQuestionId, op.value)
             return {
@@ -387,14 +454,20 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
         }
 
         case 'alternative.delete': {
-            const order = doc.alternativeOrderByQuestionId?.[op.questionId] ?? []
+            const order = doc.alternativeOrderByQuestionId?.[op.questionId]
+            if (!order?.includes(op.alternativeId)) {
+                throw new OperationConflictError(
+                    `Alternative "${op.alternativeId}" does not belong to question "${op.questionId}"`,
+                )
+            }
             const remaining = order.filter((id) => id !== op.alternativeId)
             return patchDocument(doc, {
                 alternativesById: doc.alternativesById && omitKey(doc.alternativesById, op.alternativeId),
-                alternativeOrderByQuestionId: {
-                    ...(doc.alternativeOrderByQuestionId ?? {}),
-                    [op.questionId]: remaining,
-                },
+                alternativeOrderByQuestionId: setOrRemoveOrder(
+                    doc.alternativeOrderByQuestionId,
+                    op.questionId,
+                    remaining,
+                ),
             })
         }
 
@@ -556,6 +629,19 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             if (op.patch.nodeId && !doc.mappingNodesById?.[op.patch.nodeId]) {
                 throw new OperationConflictError(`Unknown mapping node "${op.patch.nodeId}"`)
             }
+            // A target change must clear the same cardinality check as a create — otherwise an
+            // update is a back door around "at most one binding per target" (§2.2a).
+            if (op.patch.target !== undefined) {
+                const wanted = targetKey(op.patch.target)
+                const clash = Object.entries(doc.mappingBindingsById ?? {}).find(
+                    ([bindingId, other]) => bindingId !== op.bindingId && targetKey(other.target) === wanted,
+                )
+                if (clash) {
+                    throw new OperationConflictError(
+                        `Target ${wanted} is already bound by "${clash[0]}" — at most one binding per target`,
+                    )
+                }
+            }
             return {
                 ...doc,
                 mappingBindingsById: {
@@ -606,18 +692,17 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
         }
 
         case 'visibilityRule.set': {
-            const order = doc.visibilityRuleOrderByQuestionId?.[op.questionId] ?? []
-            return {
-                ...doc,
-                visibilityRulesById: {
-                    ...(doc.visibilityRulesById ?? {}),
-                    [op.ruleId]: { condition: op.condition },
-                },
-                visibilityRuleOrderByQuestionId: {
-                    ...(doc.visibilityRuleOrderByQuestionId ?? {}),
-                    [op.questionId]: order.includes(op.ruleId) ? order : [...order, op.ruleId],
-                },
+            if (!doc.questionsById?.[op.questionId]) {
+                throw new OperationConflictError(`Unknown question "${op.questionId}"`)
             }
+            const { rulesById, orderByQuestionId } = setScopedRule(
+                doc.visibilityRulesById,
+                doc.visibilityRuleOrderByQuestionId,
+                op.ruleId,
+                op.questionId,
+                op.condition,
+            )
+            return { ...doc, visibilityRulesById: rulesById, visibilityRuleOrderByQuestionId: orderByQuestionId }
         }
 
         case 'visibilityRule.delete': {
@@ -634,18 +719,17 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
         }
 
         case 'highlightRule.set': {
-            const order = doc.highlightRuleOrderByQuestionId?.[op.questionId] ?? []
-            return {
-                ...doc,
-                highlightRulesById: {
-                    ...(doc.highlightRulesById ?? {}),
-                    [op.ruleId]: { condition: op.condition },
-                },
-                highlightRuleOrderByQuestionId: {
-                    ...(doc.highlightRuleOrderByQuestionId ?? {}),
-                    [op.questionId]: order.includes(op.ruleId) ? order : [...order, op.ruleId],
-                },
+            if (!doc.questionsById?.[op.questionId]) {
+                throw new OperationConflictError(`Unknown question "${op.questionId}"`)
             }
+            const { rulesById, orderByQuestionId } = setScopedRule(
+                doc.highlightRulesById,
+                doc.highlightRuleOrderByQuestionId,
+                op.ruleId,
+                op.questionId,
+                op.condition,
+            )
+            return { ...doc, highlightRulesById: rulesById, highlightRuleOrderByQuestionId: orderByQuestionId }
         }
 
         case 'highlightRule.delete': {
