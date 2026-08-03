@@ -6,4 +6,4 @@ allowBuilds:
   lefthook: true
 
 minimumReleaseAgeExclude:
-  - asma-types@2.8.0
+  - asma-types@2.10.0
