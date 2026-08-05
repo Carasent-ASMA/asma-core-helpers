@@ -1,9 +1,9 @@
 packages:
-  - .
+    - .
 
 allowBuilds:
-  esbuild: true
-  lefthook: true
+    esbuild: true
+    lefthook: true
 
 minimumReleaseAgeExclude:
-  - asma-types@2.10.0
+    - asma-types@2.11.0
