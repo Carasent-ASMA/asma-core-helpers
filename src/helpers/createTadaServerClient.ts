@@ -16,7 +16,7 @@ export function createTadaServerClient({ url, jwt, fetch }: CreateTadaServerClie
         fetch,
         fetchOptions: {
             headers: {
-                    Authorization: `Bearer ${jwt}`,
+                Authorization: `Bearer ${jwt}`,
             },
         },
         exchanges: [fetchExchange],
