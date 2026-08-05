@@ -15,6 +15,10 @@
             "types": "./lib/helpers/urql.d.ts",
             "default": "./lib/helpers/urql.js"
         },
+        "./urql-server": {
+            "types": "./lib/helpers/createTadaServerClient.d.ts",
+            "default": "./lib/helpers/createTadaServerClient.js"
+        },
         "./collaboration": {
             "types": "./lib/collaboration/index.d.ts",
             "default": "./lib/collaboration/index.js"
@@ -23,7 +27,8 @@
     "scripts": {
         "build": "pnpm ts:check",
         "ts:check": "tsc",
-        "test": "node --import tsx --test \"src/**/*.test.ts\""
+        "test": "node --import tsx --test \"src/**/*.test.ts\"",
+        "test:package": "pnpm build && node --import tsx --test \"tests/*.test.ts\""
     },
     "repository": {
         "type": "git",
