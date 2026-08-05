@@ -46,8 +46,8 @@ importers:
         specifier: ^0.8.2
         version: 0.8.2
       asma-types:
-        specifier: ^2.10.0
-        version: 2.10.0
+        specifier: ^2.11.0
+        version: 2.11.0
       history:
         specifier: ^5.3.0
         version: 5.3.0
@@ -390,8 +390,8 @@ packages:
   asma-types@2.10.0:
     resolution: {integrity: sha512-Ks6JzKmc+OBHRJ/XQ83S+r29kttDZPwzzMJmQQ4insgeiNQ3dQAzFgaxz45U2TXJMV1ig8QBYooUK/Bg0SaXRA==}
 
-  asma-types@2.9.0:
-    resolution: {integrity: sha512-XEGeszjng1fTA5w4edP1UFYt8vYq7kbGfPXezqcDOlp2HUa3XRPzq2pUBkMam9SbQWokEKb7Micpvqwyr0e1Eg==}
+  asma-types@2.11.0:
+    resolution: {integrity: sha512-1Ev/4g4dXnk+vK2tRV4YWnrpdl91nyA6mc4wkEyBjbBcyrptgTe3+Xmo8O9qA9+fDj1vdArl/eH3T6Wp2eZx/g==}
 
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
@@ -714,7 +714,7 @@ snapshots:
 
   asma-event-bus@0.7.27:
     dependencies:
-      asma-types: 2.9.0
+      asma-types: 2.10.0
 
   asma-qiankun-react-loader@0.8.2:
     dependencies:
@@ -728,7 +728,7 @@ snapshots:
 
   asma-types@2.10.0: {}
 
-  asma-types@2.9.0: {}
+  asma-types@2.11.0: {}
 
   base64-js@1.5.1: {}
 
