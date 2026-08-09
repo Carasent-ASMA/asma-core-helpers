@@ -22,6 +22,10 @@
         "./collaboration": {
             "types": "./lib/collaboration/index.d.ts",
             "default": "./lib/collaboration/index.js"
+        },
+        "./html-text": {
+            "types": "./lib/helpers/htmlText.d.ts",
+            "default": "./lib/helpers/htmlText.js"
         }
     },
     "scripts": {
