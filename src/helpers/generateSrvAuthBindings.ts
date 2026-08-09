@@ -6,7 +6,7 @@ import { get as _ } from 'idb-keyval'
 import type { ICheckSigninOptions, ICheckSigninTransformedOptions } from './generateSrvAuthBindings.types.js'
 import { domain, type ActivityStatus, type IAuthBindings } from '../index.js'
 import type { IBaseJwtClaims, IUUID } from 'asma-types'
-import { ActivityStatuses, getActivityStatus } from './getActivityStatus'
+import { ActivityStatuses, getActivityStatus } from './getActivityStatus.js'
 
 //let logoutSuccessful = false
 
