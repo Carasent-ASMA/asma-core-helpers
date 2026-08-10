@@ -26,6 +26,10 @@
         "./html-text": {
             "types": "./lib/helpers/htmlText.d.ts",
             "default": "./lib/helpers/htmlText.js"
+        },
+        "./validation": {
+            "types": "./lib/validation/index.d.ts",
+            "default": "./lib/validation/index.js"
         }
     },
     "scripts": {
