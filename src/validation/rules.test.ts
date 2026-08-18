@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { email, hasDigit, httpUrl, name, pattern, phoneNr, pnr, required } from './rules.js'
+import { email, hasDigit, httpUrl, name, nameChars, pattern, phoneNr, pnr, required } from './rules.js'
 
 describe('required', () => {
     it('rejects empty, whitespace, null, undefined', () => {
@@ -89,6 +89,29 @@ describe('name', () => {
         assert.equal(name('kenneth Jul-Larsen'), false)
         assert.equal(name('Foo;Bar'), false)
         assert.equal(name('Foo@Bar'), false)
+    })
+})
+
+describe('nameChars', () => {
+    it('accepts every character a name is built from', () => {
+        assert.equal(nameChars('Bargan, Constantin'), true)
+        assert.equal(nameChars("Lone Mjørnaren Darum Jr. O'Brien"), true)
+        assert.equal(nameChars('vasilii'), true) // case is not its business
+    })
+
+    it('rejects anything else, which is what lets the field name the real problem', () => {
+        assert.equal(nameChars('Vasilii&'), false)
+        assert.equal(nameChars('Foo;Bar'), false)
+        assert.equal(nameChars('Foo@Bar'), false)
+        assert.equal(nameChars('Ivan123'), false)
+    })
+
+    /** Both regexes are built from one punctuation constant; this is the guard that they stay so. */
+    it('agrees with nameRegex about every character it allows', () => {
+        for (const char of ["-", ".", ",", "'", "\u2019"]) {
+            assert.equal(nameChars(`Aa${char}bb`), true, char)
+            assert.equal(name(`Aa${char}bb`), true, char)
+        }
     })
 })
 

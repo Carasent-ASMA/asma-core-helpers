@@ -23,11 +23,31 @@ export const emailRegex = /^[\w.-]+@([\w-]+\.)+[\w-]{2,4}$/
  * which reads as nonsense to someone who just typed a number. Rejecting digits outright is what lets
  * the field say "Name cannot contain numbers" and mean it (product decision, 2026-08-18).
  */
-export const nameRegex = /^\s*\p{Lu}[\p{L}.,'\u2019-]*(\s+\p{L}[\p{L}.,'\u2019-]*)*\s*$/u
+const NAME_PUNCTUATION = ".,'’-"
+
+export const nameRegex = new RegExp(
+    `^\\s*\\p{Lu}[\\p{L}${NAME_PUNCTUATION}]*(\\s+\\p{L}[\\p{L}${NAME_PUNCTUATION}]*)*\\s*$`,
+    'u',
+)
+
+/**
+ * The characters a name may be built from, ignoring word order and capitalisation.
+ *
+ * Exists so a caller can tell "there is a character in here that names never contain" (`Vasilii&`)
+ * apart from "the letters are fine, the first one is just lower case" (`vasilii`). One regex only
+ * answers pass/fail, and a field that answers the wrong question is the trap this rule set keeps
+ * falling into. Built from the same `NAME_PUNCTUATION` as `nameRegex`, so the two cannot drift.
+ */
+export const nameCharsRegex = new RegExp(`^[\\p{L}\\s${NAME_PUNCTUATION}]*$`, 'u')
 
 /** Whether a value carries a digit — the caller's cue to say so instead of blaming the capital. */
 export function hasDigit(value: string): boolean {
     return /\d/.test(value)
+}
+
+/** Whether every character is one a name may contain. Says nothing about order or capitalisation. */
+export function nameChars(value: string): boolean {
+    return nameCharsRegex.test(value)
 }
 
 export function required(value: unknown): boolean {

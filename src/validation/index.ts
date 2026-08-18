@@ -20,6 +20,8 @@ export {
     hasDigit,
     httpUrl,
     name,
+    nameChars,
+    nameCharsRegex,
     nameRegex,
     pattern,
     phoneNr,
