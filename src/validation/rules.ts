@@ -3,7 +3,21 @@ import { getValidNorwegianPersonalNumber } from '../helpers/validateNorwegianPer
 /** Copied from directory/asma-app-directory ActorToUpsertValidator regex helpers — keep pilot behavior identical. */
 export const phoneNrRegex = /^\+?\d{6,13}$/
 export const emailRegex = /^[\w.-]+@([\w-]+\.)+[\w-]{2,4}$/
-export const nameRegex = /^\s*\p{Lu}[\p{L}0-9-]*(\s+\p{L}[\p{L}0-9-]*)*\s*$/u
+/**
+ * A person's name: each word starts with a letter (the first with a capital), and letters or hyphens
+ * follow.
+ *
+ * Digits used to be allowed mid-word, which made `Ivan123` a valid name while `123` was rejected —
+ * so the only honest message the caller could show for `123` was "start with a capital letter",
+ * which reads as nonsense to someone who just typed a number. Rejecting digits outright is what lets
+ * the field say "Name cannot contain numbers" and mean it (product decision, 2026-08-18).
+ */
+export const nameRegex = /^\s*\p{Lu}[\p{L}-]*(\s+\p{L}[\p{L}-]*)*\s*$/u
+
+/** Whether a value carries a digit — the caller's cue to say so instead of blaming the capital. */
+export function hasDigit(value: string): boolean {
+    return /\d/.test(value)
+}
 
 export function required(value: unknown): boolean {
     if (value == null) return false

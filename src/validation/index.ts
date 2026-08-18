@@ -17,6 +17,7 @@ export {
 export {
     email,
     emailRegex,
+    hasDigit,
     httpUrl,
     name,
     nameRegex,

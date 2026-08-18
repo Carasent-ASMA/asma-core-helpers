@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { email, httpUrl, name, pattern, phoneNr, pnr, required } from './rules.js'
-import { email, name, pattern, phoneNr, pnr, required } from './rules.js'
+import { email, hasDigit, httpUrl, name, pattern, phoneNr, pnr, required } from './rules.js'
 
 describe('required', () => {
     it('rejects empty, whitespace, null, undefined', () => {
@@ -38,6 +37,30 @@ describe('name', () => {
         assert.equal(name('John Doe'), true)
         assert.equal(name('john'), false)
         assert.equal(name(''), false)
+    })
+
+    it('keeps hyphenated and non-Latin names', () => {
+        assert.equal(name('Ann-Kristin'), true)
+        assert.equal(name('Øystein'), true)
+    })
+
+    /**
+     * The asymmetry this removes: `Ivan123` passed while `123` failed, so the only message the
+     * caller could show for `123` was "start with a capital letter".
+     */
+    it('rejects digits anywhere, not just as the first character', () => {
+        assert.equal(name('Ivan123'), false)
+        assert.equal(name('123'), false)
+        assert.equal(name('Ivan 123'), false)
+    })
+})
+
+describe('hasDigit', () => {
+    it('separates "there is a number in here" from every other name failure', () => {
+        assert.equal(hasDigit('Ivan123'), true)
+        assert.equal(hasDigit('123'), true)
+        assert.equal(hasDigit('ivan'), false)
+        assert.equal(hasDigit('Ann-Kristin'), false)
     })
 })
 
