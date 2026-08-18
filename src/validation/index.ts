@@ -14,4 +14,15 @@ export {
     type ValidationMessages,
 } from './messages.js'
 
-export { email, emailRegex, name, nameRegex, pattern, phoneNr, phoneNrRegex, pnr, required } from './rules.js'
+export {
+    email,
+    emailRegex,
+    httpUrl,
+    name,
+    nameRegex,
+    pattern,
+    phoneNr,
+    phoneNrRegex,
+    pnr,
+    required,
+} from './rules.js'

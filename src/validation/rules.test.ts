@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { email, name, pattern, phoneNr, pnr, required } from './rules.js'
+import { email, httpUrl, name, pattern, phoneNr, pnr, required } from './rules.js'
 
 describe('required', () => {
     it('rejects empty, whitespace, null, undefined', () => {
@@ -68,5 +68,32 @@ describe('pnr', () => {
         assert.equal(pnr(''), false)
         assert.equal(pnr('123'), false)
         assert.equal(pnr('00000000000'), false)
+    })
+})
+
+describe('httpUrl', () => {
+    it('accepts ordinary web addresses', () => {
+        assert.equal(httpUrl('https://example.com'), true)
+        assert.equal(httpUrl('http://example.com'), true)
+        assert.equal(httpUrl('https://dok.adcuris.no/ad-voca/uO5TQY5Z2K271Ycumsj5'), true)
+        assert.equal(httpUrl('  https://example.com  '), true)
+    })
+
+    /** The shapes the hand-rolled URL regex used to reject even though they are perfectly valid. */
+    it('accepts ports, fragments, internationalised hosts and full path/query syntax', () => {
+        assert.equal(httpUrl('https://example.com:8080'), true)
+        assert.equal(httpUrl('https://example.com/page#section'), true)
+        assert.equal(httpUrl('https://bxrum.no'.replace('x', '\u00e6')), true)
+        assert.equal(httpUrl('https://example.com/a+b,c~d'), true)
+        assert.equal(httpUrl('https://x.no/a?b=c&d=e'), true)
+    })
+
+    /** The shapes a bare `new URL()` check used to let through as a "web address". */
+    it('rejects non-web schemes and scheme-less input', () => {
+        assert.equal(httpUrl('mailto:a@b.c'), false)
+        assert.equal(httpUrl('foo:bar'), false)
+        assert.equal(httpUrl('javascript:alert(1)'), false)
+        assert.equal(httpUrl('example.com'), false)
+        assert.equal(httpUrl(''), false)
     })
 })

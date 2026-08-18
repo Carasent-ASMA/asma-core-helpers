@@ -30,3 +30,24 @@ export function pattern(value: string, regex: RegExp): boolean {
 export function pnr(value: string): boolean {
     return getValidNorwegianPersonalNumber(value) != null
 }
+
+/**
+ * An `http`/`https` URL.
+ *
+ * Parsing is delegated to `URL` rather than a regex on purpose. The hand-rolled URL regexes this
+ * replaces rejected plenty of perfectly valid addresses — ports (`https://x.no:8080`), fragments
+ * (`…#section`), internationalised hosts (`https://bærum.no`) and ordinary path characters like
+ * `+` or `,` — while a bare `new URL()` check went the other way and accepted `mailto:` and even
+ * `foo:bar` as a web address.
+ *
+ * The explicit protocol check is what makes the rule match its own error message: the copy promises
+ * `https://example.com`, so a non-web scheme must not pass.
+ */
+export function httpUrl(value: string): boolean {
+    try {
+        const { protocol } = new URL(value.trim())
+        return protocol === 'http:' || protocol === 'https:'
+    } catch {
+        return false
+    }
+}
