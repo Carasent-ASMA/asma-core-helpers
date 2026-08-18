@@ -21,13 +21,13 @@ function generateSyntheticPnr({
     } else {
         individualNumber = 1
     }
-    console.log({ individualNumber })
-    // Adjust individual number into a realistic range for randomness
-    individualNumber = 500 + Math.floor(Math.random() * 250) * 2 + individualNumber // Ensures gender parity
+    // The individual number encodes the birth century: 000–499 → 1900–1999, 500–999 → 2000–2039.
+    // A mismatched range makes BankID RA resolve the birth year into the 1800s and reject the number (ASMA-7830).
+    const centuryBase = dateOfBirth.getFullYear() >= 2000 ? 500 : 0
+    individualNumber = centuryBase + Math.floor(Math.random() * 250) * 2 + individualNumber // Ensures gender parity
 
     const individualNumberString = individualNumber.toString().padStart(3, '0')
     const basicNumber = `${day}${month}${year}${individualNumberString}`
-    console.log({ individualNumber, basicNumber, individualNumberString })
     // Calculate control numbers
     const control1 =
         (11 -

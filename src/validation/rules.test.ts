@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
 import { email, httpUrl, name, pattern, phoneNr, pnr, required } from './rules.js'
+import { email, name, pattern, phoneNr, pnr, required } from './rules.js'
 
 describe('required', () => {
     it('rejects empty, whitespace, null, undefined', () => {
