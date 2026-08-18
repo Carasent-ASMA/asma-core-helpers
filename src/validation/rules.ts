@@ -4,15 +4,22 @@ import { getValidNorwegianPersonalNumber } from '../helpers/validateNorwegianPer
 export const phoneNrRegex = /^\+?\d{6,13}$/
 export const emailRegex = /^[\w.-]+@([\w-]+\.)+[\w-]{2,4}$/
 /**
- * A person's name: each word starts with a letter (the first with a capital), and letters or hyphens
- * follow.
+ * A person's name: each word starts with a letter (the first with a capital), then letters, hyphens,
+ * dots or apostrophes — `Kenneth Jul-Larsen`, `Lone Mjørnaren Darum Jr.`, `O'Brien`.
+ *
+ * Both apostrophes are accepted. macOS and Word silently substitute the typographic `’` for the
+ * typed `'`, so a pasted name would otherwise be rejected for a character the user cannot see.
+ *
+ * `\p{L}` with the `u` flag is the whole point: it already covers `Æ æ Ø ø Å å`, `é` and every other
+ * script, so Norwegian names need no special case. Spelling those letters out explicitly would only
+ * invite the next reader to think the list is the definition and "fix" it.
  *
  * Digits used to be allowed mid-word, which made `Ivan123` a valid name while `123` was rejected —
  * so the only honest message the caller could show for `123` was "start with a capital letter",
  * which reads as nonsense to someone who just typed a number. Rejecting digits outright is what lets
  * the field say "Name cannot contain numbers" and mean it (product decision, 2026-08-18).
  */
-export const nameRegex = /^\s*\p{Lu}[\p{L}-]*(\s+\p{L}[\p{L}-]*)*\s*$/u
+export const nameRegex = /^\s*\p{Lu}[\p{L}.'\u2019-]*(\s+\p{L}[\p{L}.'\u2019-]*)*\s*$/u
 
 /** Whether a value carries a digit — the caller's cue to say so instead of blaming the capital. */
 export function hasDigit(value: string): boolean {

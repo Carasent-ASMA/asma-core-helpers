@@ -39,8 +39,37 @@ describe('name', () => {
         assert.equal(name(''), false)
     })
 
-    it('keeps hyphenated and non-Latin names', () => {
-        assert.equal(name('Ann-Kristin'), true)
+    /**
+     * Real names from the directory, supplied as the acceptance set. They are the specification:
+     * a rule that rejects any of these is wrong however tidy it looks.
+     */
+    it('accepts the real names it has to accept', () => {
+        for (const real of [
+            'Bo Henki Steinsland-Tønnessen',
+            'Bjørn Emil Gloppen Jørgensen',
+            'Bjørge Øfstaas',
+            'Kenneth Jul-Larsen',
+            'Gun Jorunn Haughom Sørheim',
+            'Lone Mjørnaren Darum Jr.',
+            'Martine Mosengen Sr.',
+            'Tommy André Pedersen',
+            'Tuva Elisabeth Næs Andersen',
+            'Willian Garthner II ',
+            'Porsgrunn commune IKT',
+        ]) {
+            assert.equal(name(real), true, real)
+        }
+    })
+
+    it('accepts both apostrophes — editors substitute the typographic one silently', () => {
+        assert.equal(name("O'Brien"), true)
+        assert.equal(name('O\u2019Brien'), true)
+        assert.equal(name("Lars D'Angelo Næss"), true)
+    })
+
+    /** `\p{L}` already spans every script — Norwegian letters are not a special case. */
+    it('treats Norwegian letters as ordinary letters', () => {
+        assert.equal(name('Æse Ørn Ådne'), true)
         assert.equal(name('Øystein'), true)
     })
 
@@ -52,6 +81,13 @@ describe('name', () => {
         assert.equal(name('Ivan123'), false)
         assert.equal(name('123'), false)
         assert.equal(name('Ivan 123'), false)
+        assert.equal(name('Willian Garthner 2'), false)
+    })
+
+    it('rejects a lower-case opening and punctuation the set does not cover', () => {
+        assert.equal(name('kenneth Jul-Larsen'), false)
+        assert.equal(name('Lastname, Firstname'), false)
+        assert.equal(name('Foo;Bar'), false)
     })
 })
 
