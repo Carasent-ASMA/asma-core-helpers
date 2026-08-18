@@ -56,6 +56,7 @@ describe('name', () => {
             'Tuva Elisabeth Næs Andersen',
             'Willian Garthner II ',
             'Porsgrunn commune IKT',
+            'Bargan, Constantin',
         ]) {
             assert.equal(name(real), true, real)
         }
@@ -86,8 +87,8 @@ describe('name', () => {
 
     it('rejects a lower-case opening and punctuation the set does not cover', () => {
         assert.equal(name('kenneth Jul-Larsen'), false)
-        assert.equal(name('Lastname, Firstname'), false)
         assert.equal(name('Foo;Bar'), false)
+        assert.equal(name('Foo@Bar'), false)
     })
 })
 
