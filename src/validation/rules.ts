@@ -5,24 +5,18 @@ export const phoneNrRegex = /^\+?\d{6,13}$/
 export const emailRegex = /^[\w.-]+@([\w-]+\.)+[\w-]{2,4}$/
 /**
  * A person's name: each word starts with a letter (the first with a capital), then letters, hyphens,
- * dots, commas or apostrophes — `Kenneth Jul-Larsen`, `Lone Mjørnaren Darum Jr.`, `O'Brien`.
+ * dots, commas or apostrophes — `Kenneth Jul-Larsen`, `Lone Mjørnaren Darum Jr.`, `Bargan, Constantin`.
  *
- * The comma is not decoration: the journal stores people as `Bargan, Constantin`, and the app
- * itself composes that shape before an insert (Actor.model.ts, `insertActor`). A rule that rejected
- * it would refuse to save names the system had just written.
+ * Three things here are load-bearing and easy to "tidy" away:
+ * - the comma: the journal stores people as `Lastname, Firstname` and the app composes that shape
+ *   itself before an insert, so rejecting it would refuse names the system just wrote;
+ * - both apostrophes and all three dashes: editors silently substitute `’`/`–`/`—` for what the
+ *   user typed, and the character they see is not the one the rule would reject;
+ * - `\p{L}`: it already spans `Æ æ Ø ø Å å` and every other script, so listing Norwegian letters
+ *   would only invite someone to treat the list as the definition.
  *
- * Both apostrophes and all three dashes are accepted. macOS and Word silently substitute the
- * typographic `’` for the typed `'`, and turn a hyphen into `–`/`—`; a pasted `Anne–Marie` would
- * otherwise be rejected for a character the user cannot tell apart from the one they typed.
- *
- * `\p{L}` with the `u` flag is the whole point: it already covers `Æ æ Ø ø Å å`, `é` and every other
- * script, so Norwegian names need no special case. Spelling those letters out explicitly would only
- * invite the next reader to think the list is the definition and "fix" it.
- *
- * Digits used to be allowed mid-word, which made `Ivan123` a valid name while `123` was rejected —
- * so the only honest message the caller could show for `123` was "start with a capital letter",
- * which reads as nonsense to someone who just typed a number. Rejecting digits outright is what lets
- * the field say "Name cannot contain numbers" and mean it (product decision, 2026-08-18).
+ * Digits are rejected outright so the field can say "Name cannot contain numbers" and mean it —
+ * they used to be legal mid-word, which made `Ivan123` valid while `123` was not.
  */
 const NAME_PUNCTUATION = ".,'\u2019\u2013\u2014-"
 
