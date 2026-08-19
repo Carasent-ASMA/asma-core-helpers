@@ -11,8 +11,9 @@ export const emailRegex = /^[\w.-]+@([\w-]+\.)+[\w-]{2,4}$/
  * itself composes that shape before an insert (Actor.model.ts, `insertActor`). A rule that rejected
  * it would refuse to save names the system had just written.
  *
- * Both apostrophes are accepted. macOS and Word silently substitute the typographic `’` for the
- * typed `'`, so a pasted name would otherwise be rejected for a character the user cannot see.
+ * Both apostrophes and all three dashes are accepted. macOS and Word silently substitute the
+ * typographic `’` for the typed `'`, and turn a hyphen into `–`/`—`; a pasted `Anne–Marie` would
+ * otherwise be rejected for a character the user cannot tell apart from the one they typed.
  *
  * `\p{L}` with the `u` flag is the whole point: it already covers `Æ æ Ø ø Å å`, `é` and every other
  * script, so Norwegian names need no special case. Spelling those letters out explicitly would only
@@ -23,7 +24,7 @@ export const emailRegex = /^[\w.-]+@([\w-]+\.)+[\w-]{2,4}$/
  * which reads as nonsense to someone who just typed a number. Rejecting digits outright is what lets
  * the field say "Name cannot contain numbers" and mean it (product decision, 2026-08-18).
  */
-const NAME_PUNCTUATION = ".,'’-"
+const NAME_PUNCTUATION = ".,'\u2019\u2013\u2014-"
 
 export const nameRegex = new RegExp(
     `^\\s*\\p{Lu}[\\p{L}${NAME_PUNCTUATION}]*(\\s+\\p{L}[\\p{L}${NAME_PUNCTUATION}]*)*\\s*$`,

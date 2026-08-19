@@ -62,6 +62,12 @@ describe('name', () => {
         }
     })
 
+    it('accepts every dash an editor may have substituted for the typed hyphen', () => {
+        assert.equal(name('Anne-Marie Hansen'), true)
+        assert.equal(name('Anne\u2013Marie Hansen'), true)
+        assert.equal(name('Anne\u2014Marie Hansen'), true)
+    })
+
     it('accepts both apostrophes — editors substitute the typographic one silently', () => {
         assert.equal(name("O'Brien"), true)
         assert.equal(name('O\u2019Brien'), true)
