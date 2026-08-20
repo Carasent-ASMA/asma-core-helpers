@@ -13,6 +13,7 @@ import {
     findAnswerSchemaDocLawViolations,
     findDocLawDefaultViolations,
     findDuplicateBindingTargets,
+    findQuestionOwnershipViolations,
     findSchemaDocLawViolations,
     findTemplateDocumentContractViolations,
     findTemplateSchemaDocLawViolations,
@@ -72,7 +73,7 @@ describe('document schemas', () => {
                 'q-1': { type: 'QuestionGrid', grid: { columnIds: ['c-1'], singleRow: true } },
                 'c-1': { type: 'TextShort', required: true },
             },
-            questionOrder: ['q-1', 'c-1'],
+            questionOrder: ['q-1'],
             gridRowOrderByQuestionId: { 'q-1': ['r-1'] },
             gridRowsById: { 'r-1': { label: 'Row' } },
             alternativesById: { 'a-1': { label: 'Ja' } },
@@ -95,6 +96,63 @@ describe('document schemas', () => {
         const result = validateTemplateDocument(doc)
         assert.ok(result.ok, result.ok ? '' : result.summary)
         assert.equal(findDocLawDefaultViolations(doc).length, 0)
+    })
+})
+
+describe('question ownership invariant', () => {
+    it('reports orphaned, top-level-and-column, multi-grid, and dangling column questions', () => {
+        const doc: QnrTemplateDocument = {
+            documentId: 'tpl-1',
+            revision: 0,
+            questionsById: {
+                'g-1': { type: 'QuestionGrid', grid: { columnIds: ['c-ordered', 'c-shared', 'c-missing'] } },
+                'g-2': { type: 'QuestionGrid', grid: { columnIds: ['c-shared'] } },
+                'c-ordered': { type: 'TextShort' },
+                'c-shared': { type: 'TextShort' },
+                'q-orphan': { type: 'TextShort' },
+            },
+            questionOrder: ['g-1', 'g-2', 'c-ordered'],
+        }
+
+        assert.deepEqual(findQuestionOwnershipViolations(doc), [
+            {
+                law: 'QUESTION-OWNERSHIP',
+                kind: 'dangling-column',
+                questionId: 'c-missing',
+                gridQuestionIds: ['g-1'],
+                path: 'questionsById.g-1.grid.columnIds',
+                detail: 'column question is absent from questionsById',
+            },
+            {
+                law: 'QUESTION-OWNERSHIP',
+                kind: 'ordered-and-column',
+                questionId: 'c-ordered',
+                gridQuestionIds: ['g-1'],
+                path: 'questionsById.c-ordered',
+                detail: 'question is both top-level and owned by a grid',
+            },
+            {
+                law: 'QUESTION-OWNERSHIP',
+                kind: 'two-grids',
+                questionId: 'c-shared',
+                gridQuestionIds: ['g-1', 'g-2'],
+                path: 'questionsById.c-shared',
+                detail: 'question is owned by more than one grid',
+            },
+            {
+                law: 'QUESTION-OWNERSHIP',
+                kind: 'orphan',
+                questionId: 'q-orphan',
+                gridQuestionIds: [],
+                path: 'questionsById.q-orphan',
+                detail: 'question is neither top-level nor owned by a grid',
+            },
+        ])
+        assert.equal(
+            findTemplateDocumentContractViolations(doc).filter((violation) => violation.law === 'QUESTION-OWNERSHIP')
+                .length,
+            4,
+        )
     })
 })
 
@@ -211,6 +269,34 @@ describe('op schemas', () => {
         assert.equal(unset instanceof type.errors, false)
         const moved = templateOpSchema({ type: 'gridRow.move', questionId: 'g-1', rowId: 'r-1', afterRowId: null })
         assert.equal(moved instanceof type.errors, false)
+    })
+
+    it('accepts narrative rules and makes a qnr rule version reference unrepresentable', () => {
+        const narrative = templateOpSchema({
+            type: 'narrativeRule.set',
+            ruleId: 'nr-1',
+            questionId: 'q-1',
+            condition: { sourceQuestionId: 'q-2' },
+        })
+        const family = templateOpSchema({
+            type: 'qnrRule.set',
+            ruleId: 'qr-1',
+            questionId: 'q-1',
+            condition: { sourceQuestionId: 'q-1' },
+            templateFamilyId: 'family-1',
+        })
+        const pinnedVersion = templateOpSchema({
+            type: 'qnrRule.set',
+            ruleId: 'qr-1',
+            questionId: 'q-1',
+            condition: { sourceQuestionId: 'q-1' },
+            templateFamilyId: 'family-1',
+            templateVersion: 3,
+        })
+
+        assert.equal(narrative instanceof type.errors, false)
+        assert.equal(family instanceof type.errors, false)
+        assert.equal(pinnedVersion instanceof type.errors, true)
     })
 
     it('validates answer ops including the answer-side move', () => {

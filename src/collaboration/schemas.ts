@@ -70,6 +70,17 @@ const highlightRuleSchema = type({
     ...({ '[string]': 'unknown' } as const),
 })
 
+const narrativeRuleSchema = type({
+    condition: ruleConditionSchema,
+    ...({ '[string]': 'unknown' } as const),
+})
+
+const qnrRuleSchema = type({
+    condition: ruleConditionSchema,
+    templateFamilyId: 'string',
+    '+': 'reject',
+})
+
 const questionGridConfigSchema = type({
     columnIds: 'string[]?',
     minRows: 'number?',
@@ -82,8 +93,20 @@ const questionGridConfigSchema = type({
     rowTitle: 'string?',
 })
 
+const layoutPlacementSchema = type({
+    row: 'number',
+    cell: 'number',
+    keepCellSize: 'boolean?',
+})
+
+const questionGridRowEditorSchema = type({
+    "layoutByQuestionId?": recordOf(layoutPlacementSchema),
+    ...({ '[string]': 'unknown' } as const),
+})
+
 const questionGridPresentationSchema = type({
     headerTabId: 'string?',
+    "rowEditor?": questionGridRowEditorSchema,
     defaultColumnWidthsByQuestionId: 'Record<string, number>?',
     ...({ '[string]': 'unknown' } as const),
 })
@@ -199,6 +222,10 @@ export const qnrTemplateDocumentSchema = type({
     visibilityRuleOrderByQuestionId: 'Record<string, string[]>?',
     "highlightRulesById?": recordOf(highlightRuleSchema),
     highlightRuleOrderByQuestionId: 'Record<string, string[]>?',
+    "narrativeRulesById?": recordOf(narrativeRuleSchema),
+    narrativeRuleOrderByQuestionId: 'Record<string, string[]>?',
+    "qnrRulesById?": recordOf(qnrRuleSchema),
+    qnrRuleOrderByQuestionId: 'Record<string, string[]>?',
     "dataMappingsById?": recordOf(dataMappingSchema),
     "mappingNodesById?": recordOf(mappingNodeSchema),
     "mappingBindingsById?": recordOf(mappingBindingSchema),
@@ -236,6 +263,20 @@ export const templateOpSchema = type.or(
     type({ type: '"question.updateField"', questionId: 'string', field: 'string', value: opValue }),
     type({ type: '"question.move"', questionId: 'string', toIndex: 'number' }),
     type({ type: '"question.delete"', questionId: 'string' }),
+    type({
+        type: '"gridColumn.create"',
+        questionId: 'string',
+        columnQuestionId: 'string',
+        questionType: type.enumerated(...QUESTION_TYPES),
+        atIndex: 'number?',
+    }),
+    type({ type: '"gridColumn.move"', questionId: 'string', columnQuestionId: 'string', toIndex: 'number' }),
+    type({
+        type: '"gridColumn.setLayout"',
+        questionId: 'string',
+        columnQuestionId: 'string',
+        placement: type.or(layoutPlacementSchema, type('null')),
+    }),
     type({ type: '"gridRow.create"', questionId: 'string', rowId: 'string', label: 'string?', atIndex: 'number?' }),
     type({ type: '"gridRow.move"', questionId: 'string', rowId: 'string', afterRowId: 'string | null' }),
     type({ type: '"gridRow.delete"', questionId: 'string', rowId: 'string' }),
@@ -313,6 +354,17 @@ export const templateOpSchema = type.or(
     type({ type: '"visibilityRule.delete"', ruleId: 'string' }),
     type({ type: '"highlightRule.set"', ruleId: 'string', questionId: 'string', condition: ruleConditionSchema }),
     type({ type: '"highlightRule.delete"', ruleId: 'string' }),
+    type({ type: '"narrativeRule.set"', ruleId: 'string', questionId: 'string', condition: ruleConditionSchema }),
+    type({ type: '"narrativeRule.delete"', ruleId: 'string' }),
+    type({
+        type: '"qnrRule.set"',
+        ruleId: 'string',
+        questionId: 'string',
+        condition: ruleConditionSchema,
+        templateFamilyId: 'string',
+        '+': 'reject',
+    }),
+    type({ type: '"qnrRule.delete"', ruleId: 'string' }),
 )
 
 export const answerOpSchema = type.or(
@@ -555,6 +607,85 @@ export const findDuplicateBindingTargets = (
     return [...byTarget.values()].filter((entry) => entry.bindingIds.length > 1)
 }
 
+// ─────────────────────────────── question ownership ───────────────────────────────
+
+export type QuestionOwnershipViolation = {
+    law: 'QUESTION-OWNERSHIP'
+    kind: 'orphan' | 'ordered-and-column' | 'two-grids' | 'dangling-column'
+    questionId: string
+    gridQuestionIds: string[]
+    path: string
+    detail: string
+}
+
+/**
+ * A question has exactly one structural owner: either `questionOrder` or one grid's
+ * `columnIds`. This validator covers imported/directly-written documents in addition to
+ * the reducer, and reports absent column records as dangling ownership references.
+ */
+export const findQuestionOwnershipViolations = (
+    document: QnrTemplateDocument,
+): QuestionOwnershipViolation[] => {
+    const ownersByQuestionId = new Map<string, string[]>()
+    for (const [gridQuestionId, question] of Object.entries(document.questionsById ?? {})) {
+        for (const columnQuestionId of question.grid?.columnIds ?? []) {
+            const owners = ownersByQuestionId.get(columnQuestionId) ?? []
+            if (!owners.includes(gridQuestionId)) owners.push(gridQuestionId)
+            ownersByQuestionId.set(columnQuestionId, owners)
+        }
+    }
+
+    const violations: QuestionOwnershipViolation[] = []
+    for (const [questionId, gridQuestionIds] of ownersByQuestionId) {
+        if (document.questionsById?.[questionId] !== undefined) continue
+        violations.push({
+            law: 'QUESTION-OWNERSHIP',
+            kind: 'dangling-column',
+            questionId,
+            gridQuestionIds,
+            path: `questionsById.${gridQuestionIds[0]}.grid.columnIds`,
+            detail: 'column question is absent from questionsById',
+        })
+    }
+
+    const topLevel = new Set(document.questionOrder)
+    for (const questionId of Object.keys(document.questionsById ?? {})) {
+        const gridQuestionIds = ownersByQuestionId.get(questionId) ?? []
+        const path = `questionsById.${questionId}`
+        if (!topLevel.has(questionId) && gridQuestionIds.length === 0) {
+            violations.push({
+                law: 'QUESTION-OWNERSHIP',
+                kind: 'orphan',
+                questionId,
+                gridQuestionIds,
+                path,
+                detail: 'question is neither top-level nor owned by a grid',
+            })
+        }
+        if (topLevel.has(questionId) && gridQuestionIds.length > 0) {
+            violations.push({
+                law: 'QUESTION-OWNERSHIP',
+                kind: 'ordered-and-column',
+                questionId,
+                gridQuestionIds,
+                path,
+                detail: 'question is both top-level and owned by a grid',
+            })
+        }
+        if (gridQuestionIds.length > 1) {
+            violations.push({
+                law: 'QUESTION-OWNERSHIP',
+                kind: 'two-grids',
+                questionId,
+                gridQuestionIds,
+                path,
+                detail: 'question is owned by more than one grid',
+            })
+        }
+    }
+    return violations
+}
+
 // ─────────────────────────────── typed validators ───────────────────────────────
 
 export type Validation<T> = { ok: true; value: T } | { ok: false; summary: string }
@@ -573,9 +704,14 @@ export const validateTemplateDocument = validate<QnrTemplateDocument>(qnrTemplat
  * Full template-document admission check for the contract test: schema + DOC-LAW-1/2 lints +
  * default lint + binding uniqueness. A document passes only in its canonical minimal form.
  */
-export const findTemplateDocumentContractViolations = (document: QnrTemplateDocument): DocLawViolation[] => [
+export type TemplateDocumentContractViolation = DocLawViolation | QuestionOwnershipViolation
+
+export const findTemplateDocumentContractViolations = (
+    document: QnrTemplateDocument,
+): TemplateDocumentContractViolation[] => [
     ...findDocLawViolations(document),
     ...findDocLawDefaultViolations(document),
+    ...findQuestionOwnershipViolations(document),
 ]
 
 export const findDuplicateBindingTargetsSummary = (document: QnrTemplateDocument): string[] =>

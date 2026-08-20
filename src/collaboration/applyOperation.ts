@@ -5,7 +5,6 @@ import type {
     QnrQuestion,
     QnrTemplateDocument,
     QuestionId,
-    RuleCondition,
 } from './templateDocument.js'
 import { bindingTargetKey } from './templateDocument.js'
 
@@ -151,6 +150,10 @@ const OPTIONAL_COLLECTIONS = [
     'visibilityRuleOrderByQuestionId',
     'highlightRulesById',
     'highlightRuleOrderByQuestionId',
+    'narrativeRulesById',
+    'narrativeRuleOrderByQuestionId',
+    'qnrRulesById',
+    'qnrRuleOrderByQuestionId',
     'dataMappingsById',
     'mappingNodesById',
     'mappingBindingsById',
@@ -202,13 +205,13 @@ const setOrRemoveOrder = (
  * one owner: setting it under a different question MOVES it there, so it can never sit in two
  * order arrays at once — and the previous owner's key goes when its last rule leaves (DOC-LAW-2).
  */
-const setScopedRule = (
-    rulesById: Record<string, { condition: RuleCondition }> | undefined,
+const setScopedRule = <T extends object>(
+    rulesById: Record<string, T> | undefined,
     orderByQuestionId: Record<QuestionId, string[]> | undefined,
     ruleId: string,
     questionId: QuestionId,
-    condition: RuleCondition,
-): { rulesById: Record<string, { condition: RuleCondition }>; orderByQuestionId: Record<QuestionId, string[]> } => {
+    rule: T,
+): { rulesById: Record<string, T>; orderByQuestionId: Record<QuestionId, string[]> } => {
     const orders: Record<QuestionId, string[]> = {}
     for (const [ownerId, ruleIds] of Object.entries(orderByQuestionId ?? {})) {
         const kept = ownerId === questionId ? ruleIds : ruleIds.filter((id) => id !== ruleId)
@@ -217,7 +220,24 @@ const setScopedRule = (
     const order = orders[questionId] ?? []
     orders[questionId] = order.includes(ruleId) ? order : [...order, ruleId]
     return {
-        rulesById: { ...(rulesById ?? {}), [ruleId]: { condition } },
+        rulesById: { ...(rulesById ?? {}), [ruleId]: rule },
+        orderByQuestionId: orders,
+    }
+}
+
+/** Removes one scoped rule and any order key emptied by that removal. */
+const deleteScopedRule = <T>(
+    rulesById: Record<string, T> | undefined,
+    orderByQuestionId: Record<QuestionId, string[]> | undefined,
+    ruleId: string,
+): { rulesById: Record<string, T>; orderByQuestionId: Record<QuestionId, string[]> } => {
+    const orders: Record<QuestionId, string[]> = {}
+    for (const [questionId, ruleIds] of Object.entries(orderByQuestionId ?? {})) {
+        const kept = ruleIds.filter((id) => id !== ruleId)
+        if (kept.length > 0) orders[questionId] = kept
+    }
+    return {
+        rulesById: rulesById ? omitKey(rulesById, ruleId) : {},
         orderByQuestionId: orders,
     }
 }
@@ -287,29 +307,97 @@ const scrubBindingOrders = (doc: QnrTemplateDocument, bindingIds: ReadonlySet<st
     return changed ? { ...doc, dataMappingsById: next } : doc
 }
 
-/** Removes a deleted question's id from every grid's column list (OQ-V2-17 `grid.columnIds`). */
-const dropFromGridColumns = (doc: QnrTemplateDocument, questionId: QuestionId): QnrTemplateDocument => {
-    if (!doc.questionsById) return doc
+type ScrubbedPresentation = { value: Record<string, unknown>; changed: boolean }
+
+/**
+ * Removes a question key from convention-owned presentation maps at any depth. The
+ * presentation bag deliberately has an open index, so enumerating today's layout and
+ * width maps would make tomorrow's map retain dangling column state.
+ */
+const scrubPresentationQuestionMaps = (
+    value: Record<string, unknown>,
+    questionId: QuestionId,
+): ScrubbedPresentation => {
     let changed = false
-    const next: typeof doc.questionsById = {}
-    for (const [qid, question] of Object.entries(doc.questionsById)) {
+    const next: Record<string, unknown> = {}
+    for (const [key, child] of Object.entries(value)) {
+        if (typeof child !== 'object' || child === null || Array.isArray(child)) {
+            next[key] = child
+            continue
+        }
+
+        if (key.endsWith('ByQuestionId')) {
+            const map = child as Record<string, unknown>
+            if (!(questionId in map)) {
+                next[key] = child
+                continue
+            }
+            changed = true
+            const kept = omitKey(map, questionId)
+            if (Object.keys(kept).length > 0) next[key] = kept
+            continue
+        }
+
+        const nested = scrubPresentationQuestionMaps(child as Record<string, unknown>, questionId)
+        changed ||= nested.changed
+        if (!nested.changed || Object.keys(nested.value).length > 0) next[key] = nested.value
+    }
+    return { value: changed ? next : value, changed }
+}
+
+/**
+ * Removes a deleted question's id from every record owned by a grid: its ordered
+ * columns, authored row cells, and convention-named presentation maps.
+ */
+const dropFromGridColumns = (doc: QnrTemplateDocument, questionId: QuestionId): QnrTemplateDocument => {
+    let changed = false
+    const nextQuestions: typeof doc.questionsById = {}
+    for (const [qid, question] of Object.entries(doc.questionsById ?? {})) {
         // Defensive: the per-type bags are open, so a malformed `columnIds` must not crash
         // the reducer — it is a schema violation for validation to catch, not a crash here.
         const columnIds = question.grid?.columnIds
-        if (!Array.isArray(columnIds) || !columnIds.includes(questionId)) {
-            next[qid] = question
+        let nextQuestion: QnrQuestion = question
+        if (Array.isArray(columnIds) && columnIds.includes(questionId)) {
+            changed = true
+            const kept = columnIds.filter((id) => id !== questionId)
+            const grid = { ...question.grid }
+            if (kept.length === 0) delete grid.columnIds
+            else grid.columnIds = kept
+            nextQuestion = { ...nextQuestion, grid }
+            if (Object.keys(grid).length === 0) delete nextQuestion.grid
+        }
+
+        if (question.presentation) {
+            const scrubbed = scrubPresentationQuestionMaps(question.presentation, questionId)
+            if (scrubbed.changed) {
+                changed = true
+                nextQuestion = { ...nextQuestion }
+                if (Object.keys(scrubbed.value).length === 0) delete nextQuestion.presentation
+                else nextQuestion.presentation = scrubbed.value
+            }
+        }
+        nextQuestions[qid] = nextQuestion
+    }
+
+    const nextRows: typeof doc.gridRowsById = {}
+    for (const [rowId, row] of Object.entries(doc.gridRowsById ?? {})) {
+        if (!row.cells || !(questionId in row.cells)) {
+            nextRows[rowId] = row
             continue
         }
         changed = true
-        const kept = columnIds.filter((id) => id !== questionId)
-        const grid = { ...question.grid }
-        if (kept.length === 0) delete grid.columnIds
-        else grid.columnIds = kept
-        const nextQuestion: QnrQuestion = { ...question, grid }
-        if (Object.keys(grid).length === 0) delete nextQuestion.grid
-        next[qid] = nextQuestion
+        const cells = omitKey(row.cells, questionId)
+        const nextRow = { ...row }
+        if (Object.keys(cells).length === 0) delete nextRow.cells
+        else nextRow.cells = cells
+        nextRows[rowId] = nextRow
     }
-    return changed ? { ...doc, questionsById: next } : doc
+
+    if (!changed) return doc
+    return patchDocument(doc, {
+        questionsById: doc.questionsById ? nextQuestions : undefined,
+        gridRowsById: doc.gridRowsById ? nextRows : undefined,
+    })
 }
 
 export const applyOperation = (document: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument => {
@@ -371,6 +459,9 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             if (!doc.questionsById?.[op.questionId]) {
                 throw new OperationConflictError(`Unknown question "${op.questionId}"`)
             }
+            if (!doc.questionOrder.includes(op.questionId)) {
+                throw new OperationConflictError(`Question "${op.questionId}" is not top-level`)
+            }
             return { ...doc, questionOrder: moveInOrder(doc.questionOrder, op.questionId, op.toIndex) }
         }
 
@@ -395,6 +486,16 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             if (highlightRulesById) {
                 highlightRulesById = highlightRuleIds.reduce((acc, id) => omitKey(acc, id), highlightRulesById)
             }
+            const narrativeRuleIds = doc.narrativeRuleOrderByQuestionId?.[op.questionId] ?? []
+            let narrativeRulesById = doc.narrativeRulesById
+            if (narrativeRulesById) {
+                narrativeRulesById = narrativeRuleIds.reduce((acc, id) => omitKey(acc, id), narrativeRulesById)
+            }
+            const qnrRuleIds = doc.qnrRuleOrderByQuestionId?.[op.questionId] ?? []
+            let qnrRulesById = doc.qnrRulesById
+            if (qnrRulesById) {
+                qnrRulesById = qnrRuleIds.reduce((acc, id) => omitKey(acc, id), qnrRulesById)
+            }
             const withoutQuestion = patchDocument(doc, {
                 questionsById: doc.questionsById && omitKey(doc.questionsById, op.questionId),
                 questionOrder: doc.questionOrder.filter((id) => id !== op.questionId),
@@ -410,11 +511,104 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
                 highlightRuleOrderByQuestionId:
                     doc.highlightRuleOrderByQuestionId &&
                     omitKey(doc.highlightRuleOrderByQuestionId, op.questionId),
+                narrativeRulesById,
+                narrativeRuleOrderByQuestionId:
+                    doc.narrativeRuleOrderByQuestionId &&
+                    omitKey(doc.narrativeRuleOrderByQuestionId, op.questionId),
+                qnrRulesById,
+                qnrRuleOrderByQuestionId:
+                    doc.qnrRuleOrderByQuestionId && omitKey(doc.qnrRuleOrderByQuestionId, op.questionId),
             })
             // A binding pointing at a deleted question is an unresolvable reference the
             // compiler would reject at publication; drop it with its target. A grid column
             // list pointing at it is the same class of reference and goes the same way.
             return dropBindingsForQuestion(dropFromGridColumns(withoutQuestion, op.questionId), op.questionId)
+        }
+
+        case 'gridColumn.create': {
+            const gridQuestion = doc.questionsById?.[op.questionId]
+            if (!gridQuestion) {
+                throw new OperationConflictError(`Unknown question "${op.questionId}"`)
+            }
+            if (doc.questionsById?.[op.columnQuestionId]) {
+                throw new OperationConflictError(`Question "${op.columnQuestionId}" already exists`)
+            }
+            const columnIds = gridQuestion.grid?.columnIds ?? []
+            return {
+                ...doc,
+                questionsById: {
+                    ...doc.questionsById,
+                    [op.questionId]: {
+                        ...gridQuestion,
+                        grid: {
+                            ...(gridQuestion.grid ?? {}),
+                            columnIds: insertAt(columnIds, op.columnQuestionId, op.atIndex),
+                        },
+                    },
+                    [op.columnQuestionId]: { type: op.questionType },
+                },
+            }
+        }
+
+        case 'gridColumn.move': {
+            const gridQuestion = doc.questionsById?.[op.questionId]
+            const columnIds = gridQuestion?.grid?.columnIds
+            if (!gridQuestion) {
+                throw new OperationConflictError(`Unknown question "${op.questionId}"`)
+            }
+            if (!doc.questionsById?.[op.columnQuestionId] || !columnIds?.includes(op.columnQuestionId)) {
+                throw new OperationConflictError(
+                    `Question "${op.columnQuestionId}" does not belong to grid "${op.questionId}"`,
+                )
+            }
+            return {
+                ...doc,
+                questionsById: {
+                    ...doc.questionsById,
+                    [op.questionId]: {
+                        ...gridQuestion,
+                        grid: {
+                            ...gridQuestion.grid,
+                            columnIds: moveInOrder(columnIds, op.columnQuestionId, op.toIndex),
+                        },
+                    },
+                },
+            }
+        }
+
+        case 'gridColumn.setLayout': {
+            const gridQuestion = doc.questionsById?.[op.questionId]
+            const columnIds = gridQuestion?.grid?.columnIds
+            if (!gridQuestion) {
+                throw new OperationConflictError(`Unknown question "${op.questionId}"`)
+            }
+            if (!doc.questionsById?.[op.columnQuestionId] || !columnIds?.includes(op.columnQuestionId)) {
+                throw new OperationConflictError(
+                    `Question "${op.columnQuestionId}" does not belong to grid "${op.questionId}"`,
+                )
+            }
+
+            const presentation = { ...(gridQuestion.presentation ?? {}) }
+            const rowEditor = { ...(presentation.rowEditor ?? {}) }
+            const layoutByQuestionId = { ...(rowEditor.layoutByQuestionId ?? {}) }
+            if (op.placement === null) delete layoutByQuestionId[op.columnQuestionId]
+            else layoutByQuestionId[op.columnQuestionId] = op.placement
+
+            if (Object.keys(layoutByQuestionId).length === 0) delete rowEditor.layoutByQuestionId
+            else rowEditor.layoutByQuestionId = layoutByQuestionId
+            if (Object.keys(rowEditor).length === 0) delete presentation.rowEditor
+            else presentation.rowEditor = rowEditor
+
+            const nextQuestion = { ...gridQuestion }
+            if (Object.keys(presentation).length === 0) delete nextQuestion.presentation
+            else nextQuestion.presentation = presentation
+            return {
+                ...doc,
+                questionsById: {
+                    ...doc.questionsById,
+                    [op.questionId]: nextQuestion,
+                },
+            }
         }
 
         case 'gridRow.create': {
@@ -870,21 +1064,20 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
                 doc.visibilityRuleOrderByQuestionId,
                 op.ruleId,
                 op.questionId,
-                op.condition,
+                { condition: op.condition },
             )
             return { ...doc, visibilityRulesById: rulesById, visibilityRuleOrderByQuestionId: orderByQuestionId }
         }
 
         case 'visibilityRule.delete': {
-            const orders = Object.fromEntries(
-                Object.entries(doc.visibilityRuleOrderByQuestionId ?? {}).map(([questionId, ruleIds]) => [
-                    questionId,
-                    ruleIds.filter((id) => id !== op.ruleId),
-                ]),
+            const { rulesById, orderByQuestionId } = deleteScopedRule(
+                doc.visibilityRulesById,
+                doc.visibilityRuleOrderByQuestionId,
+                op.ruleId,
             )
             return patchDocument(doc, {
-                visibilityRulesById: doc.visibilityRulesById && omitKey(doc.visibilityRulesById, op.ruleId),
-                visibilityRuleOrderByQuestionId: orders,
+                visibilityRulesById: rulesById,
+                visibilityRuleOrderByQuestionId: orderByQuestionId,
             })
         }
 
@@ -897,21 +1090,72 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
                 doc.highlightRuleOrderByQuestionId,
                 op.ruleId,
                 op.questionId,
-                op.condition,
+                { condition: op.condition },
             )
             return { ...doc, highlightRulesById: rulesById, highlightRuleOrderByQuestionId: orderByQuestionId }
         }
 
         case 'highlightRule.delete': {
-            const orders = Object.fromEntries(
-                Object.entries(doc.highlightRuleOrderByQuestionId ?? {}).map(([questionId, ruleIds]) => [
-                    questionId,
-                    ruleIds.filter((id) => id !== op.ruleId),
-                ]),
+            const { rulesById, orderByQuestionId } = deleteScopedRule(
+                doc.highlightRulesById,
+                doc.highlightRuleOrderByQuestionId,
+                op.ruleId,
             )
             return patchDocument(doc, {
-                highlightRulesById: doc.highlightRulesById && omitKey(doc.highlightRulesById, op.ruleId),
-                highlightRuleOrderByQuestionId: orders,
+                highlightRulesById: rulesById,
+                highlightRuleOrderByQuestionId: orderByQuestionId,
+            })
+        }
+
+        case 'narrativeRule.set': {
+            if (!doc.questionsById?.[op.questionId]) {
+                throw new OperationConflictError(`Unknown question "${op.questionId}"`)
+            }
+            const { rulesById, orderByQuestionId } = setScopedRule(
+                doc.narrativeRulesById,
+                doc.narrativeRuleOrderByQuestionId,
+                op.ruleId,
+                op.questionId,
+                { condition: op.condition },
+            )
+            return { ...doc, narrativeRulesById: rulesById, narrativeRuleOrderByQuestionId: orderByQuestionId }
+        }
+
+        case 'narrativeRule.delete': {
+            const { rulesById, orderByQuestionId } = deleteScopedRule(
+                doc.narrativeRulesById,
+                doc.narrativeRuleOrderByQuestionId,
+                op.ruleId,
+            )
+            return patchDocument(doc, {
+                narrativeRulesById: rulesById,
+                narrativeRuleOrderByQuestionId: orderByQuestionId,
+            })
+        }
+
+        case 'qnrRule.set': {
+            if (!doc.questionsById?.[op.questionId]) {
+                throw new OperationConflictError(`Unknown question "${op.questionId}"`)
+            }
+            const { rulesById, orderByQuestionId } = setScopedRule(
+                doc.qnrRulesById,
+                doc.qnrRuleOrderByQuestionId,
+                op.ruleId,
+                op.questionId,
+                { condition: op.condition, templateFamilyId: op.templateFamilyId },
+            )
+            return { ...doc, qnrRulesById: rulesById, qnrRuleOrderByQuestionId: orderByQuestionId }
+        }
+
+        case 'qnrRule.delete': {
+            const { rulesById, orderByQuestionId } = deleteScopedRule(
+                doc.qnrRulesById,
+                doc.qnrRuleOrderByQuestionId,
+                op.ruleId,
+            )
+            return patchDocument(doc, {
+                qnrRulesById: rulesById,
+                qnrRuleOrderByQuestionId: orderByQuestionId,
             })
         }
 

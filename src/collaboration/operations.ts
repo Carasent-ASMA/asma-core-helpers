@@ -6,9 +6,12 @@ import type {
     DocScalar,
     FilterId,
     HighlightRuleId,
+    LayoutPlacement,
     MappingId,
+    NarrativeRuleId,
     NodeId,
     QuestionId,
+    QnrRuleId,
     RowId,
     RuleCondition,
     TabId,
@@ -53,6 +56,20 @@ export type TemplateOp =
     | { type: 'question.updateField'; questionId: QuestionId; field: string; value: OpValue }
     | { type: 'question.move'; questionId: QuestionId; toIndex: number }
     | { type: 'question.delete'; questionId: QuestionId }
+    | {
+          type: 'gridColumn.create'
+          questionId: QuestionId
+          columnQuestionId: QuestionId
+          questionType: QuestionType
+          atIndex?: number
+      }
+    | { type: 'gridColumn.move'; questionId: QuestionId; columnQuestionId: QuestionId; toIndex: number }
+    | {
+          type: 'gridColumn.setLayout'
+          questionId: QuestionId
+          columnQuestionId: QuestionId
+          placement: LayoutPlacement | null
+      }
     // Authoring-side grid rows are the template's *predefined* rows; instance-added rows
     // are answer ops (answerOperations.ts). `gridRow.move` is anchor-relative (OQ-V2-24).
     | { type: 'gridRow.create'; questionId: QuestionId; rowId: RowId; label?: string; atIndex?: number }
@@ -125,6 +142,17 @@ export type TemplateOp =
     | { type: 'visibilityRule.delete'; ruleId: VisibilityRuleId }
     | { type: 'highlightRule.set'; ruleId: HighlightRuleId; questionId: QuestionId; condition: RuleCondition }
     | { type: 'highlightRule.delete'; ruleId: HighlightRuleId }
+    | { type: 'narrativeRule.set'; ruleId: NarrativeRuleId; questionId: QuestionId; condition: RuleCondition }
+    | { type: 'narrativeRule.delete'; ruleId: NarrativeRuleId }
+    | {
+          type: 'qnrRule.set'
+          ruleId: QnrRuleId
+          questionId: QuestionId
+          condition: RuleCondition
+          /** Family id only (OQ-F18/M-066); there is deliberately no version member. */
+          templateFamilyId: string
+      }
+    | { type: 'qnrRule.delete'; ruleId: QnrRuleId }
 
 export type TemplateOpType = TemplateOp['type']
 
@@ -142,6 +170,9 @@ const OP_TYPE_COVERAGE: Record<TemplateOpType, true> = {
     'question.updateField': true,
     'question.move': true,
     'question.delete': true,
+    'gridColumn.create': true,
+    'gridColumn.move': true,
+    'gridColumn.setLayout': true,
     'gridRow.create': true,
     'gridRow.move': true,
     'gridRow.delete': true,
@@ -171,6 +202,10 @@ const OP_TYPE_COVERAGE: Record<TemplateOpType, true> = {
     'visibilityRule.delete': true,
     'highlightRule.set': true,
     'highlightRule.delete': true,
+    'narrativeRule.set': true,
+    'narrativeRule.delete': true,
+    'qnrRule.set': true,
+    'qnrRule.delete': true,
 }
 
 export const IMPLEMENTED_OP_TYPES = Object.keys(OP_TYPE_COVERAGE) as readonly TemplateOpType[]
