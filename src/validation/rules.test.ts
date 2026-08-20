@@ -39,10 +39,6 @@ describe('name', () => {
         assert.equal(name(''), false)
     })
 
-    /**
-     * Real names from the directory, supplied as the acceptance set. They are the specification:
-     * a rule that rejects any of these is wrong however tidy it looks.
-     */
     it('accepts the real names it has to accept', () => {
         for (const real of [
             'Bo Henki Steinsland-Tønnessen',
@@ -74,16 +70,11 @@ describe('name', () => {
         assert.equal(name("Lars D'Angelo Næss"), true)
     })
 
-    /** `\p{L}` already spans every script — Norwegian letters are not a special case. */
     it('treats Norwegian letters as ordinary letters', () => {
         assert.equal(name('Æse Ørn Ådne'), true)
         assert.equal(name('Øystein'), true)
     })
 
-    /**
-     * The asymmetry this removes: `Ivan123` passed while `123` failed, so the only message the
-     * caller could show for `123` was "start with a capital letter".
-     */
     it('rejects digits anywhere, not just as the first character', () => {
         assert.equal(name('Ivan123'), false)
         assert.equal(name('123'), false)
@@ -112,7 +103,6 @@ describe('nameChars', () => {
         assert.equal(nameChars('Ivan123'), false)
     })
 
-    /** Both regexes are built from one punctuation constant; this is the guard that they stay so. */
     it('agrees with nameRegex about every character it allows', () => {
         for (const char of ["-", ".", ",", "'", "\u2019"]) {
             assert.equal(nameChars(`Aa${char}bb`), true, char)
@@ -169,7 +159,6 @@ describe('httpUrl', () => {
         assert.equal(httpUrl('  https://example.com  '), true)
     })
 
-    /** The shapes the hand-rolled URL regex used to reject even though they are perfectly valid. */
     it('accepts ports, fragments, internationalised hosts and full path/query syntax', () => {
         assert.equal(httpUrl('https://example.com:8080'), true)
         assert.equal(httpUrl('https://example.com/page#section'), true)
@@ -178,7 +167,6 @@ describe('httpUrl', () => {
         assert.equal(httpUrl('https://x.no/a?b=c&d=e'), true)
     })
 
-    /** The shapes a bare `new URL()` check used to let through as a "web address". */
     it('rejects non-web schemes and scheme-less input', () => {
         assert.equal(httpUrl('mailto:a@b.c'), false)
         assert.equal(httpUrl('foo:bar'), false)
