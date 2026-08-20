@@ -114,6 +114,15 @@ const omitKey = <V>(record: Record<string, V>, key: string): Record<string, V> =
     return rest
 }
 
+const requireGridQuestion = (doc: QnrTemplateDocument, questionId: QuestionId): QnrQuestion => {
+    const question = doc.questionsById?.[questionId]
+    if (!question) throw new OperationConflictError(`Unknown question "${questionId}"`)
+    if (question.type !== 'QuestionGrid') {
+        throw new OperationConflictError(`Question "${questionId}" is not a question grid`)
+    }
+    return question
+}
+
 /**
  * Spreads `patch` onto `base`, **omitting** keys whose value is `undefined` rather than
  * assigning it. Required by `exactOptionalPropertyTypes`: `{ ...doc, x: undefined }` is
@@ -526,10 +535,7 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
         }
 
         case 'gridColumn.create': {
-            const gridQuestion = doc.questionsById?.[op.questionId]
-            if (!gridQuestion) {
-                throw new OperationConflictError(`Unknown question "${op.questionId}"`)
-            }
+            const gridQuestion = requireGridQuestion(doc, op.questionId)
             if (doc.questionsById?.[op.columnQuestionId]) {
                 throw new OperationConflictError(`Question "${op.columnQuestionId}" already exists`)
             }
@@ -551,11 +557,8 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
         }
 
         case 'gridColumn.move': {
-            const gridQuestion = doc.questionsById?.[op.questionId]
+            const gridQuestion = requireGridQuestion(doc, op.questionId)
             const columnIds = gridQuestion?.grid?.columnIds
-            if (!gridQuestion) {
-                throw new OperationConflictError(`Unknown question "${op.questionId}"`)
-            }
             if (!doc.questionsById?.[op.columnQuestionId] || !columnIds?.includes(op.columnQuestionId)) {
                 throw new OperationConflictError(
                     `Question "${op.columnQuestionId}" does not belong to grid "${op.questionId}"`,
@@ -577,11 +580,8 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
         }
 
         case 'gridColumn.setLayout': {
-            const gridQuestion = doc.questionsById?.[op.questionId]
+            const gridQuestion = requireGridQuestion(doc, op.questionId)
             const columnIds = gridQuestion?.grid?.columnIds
-            if (!gridQuestion) {
-                throw new OperationConflictError(`Unknown question "${op.questionId}"`)
-            }
             if (!doc.questionsById?.[op.columnQuestionId] || !columnIds?.includes(op.columnQuestionId)) {
                 throw new OperationConflictError(
                     `Question "${op.columnQuestionId}" does not belong to grid "${op.questionId}"`,

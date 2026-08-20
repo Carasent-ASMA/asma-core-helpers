@@ -87,6 +87,21 @@ describe('applyOperation', () => {
         assert.deepEqual(withColumns.questionsById?.['c-2'], { type: 'DateField' })
     })
 
+    it('refuses to attach a grid column to a non-grid question', () => {
+        const ordinary = apply([{ type: 'question.create', questionId: 'q-1', questionType: 'TextShort' }])
+
+        assert.throws(
+            () =>
+                applyOperation(ordinary, {
+                    type: 'gridColumn.create',
+                    questionId: 'q-1',
+                    columnQuestionId: 'c-1',
+                    questionType: 'TextShort',
+                }),
+            OperationConflictError,
+        )
+    })
+
     it('moves a column only inside its grid and refuses to inject it into the top-level order', () => {
         const withColumns = apply([
             { type: 'question.create', questionId: 'g-1', questionType: 'QuestionGrid' },

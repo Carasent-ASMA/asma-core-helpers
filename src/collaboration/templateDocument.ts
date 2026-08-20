@@ -112,7 +112,7 @@ export type QuestionGridConfig = {
 /**
  * Grid-owned presentation (OQ-V2-17/25): row-editor layout, filters, grid actions,
  * highlight rules, the header-tab reference and authored default column widths live
- * here — there is no parallel `settings_ui` or `layoutByQuestionId` map.
+ * here — there is no parallel top-level layout map; `rowEditor` owns it.
  */
 /** One atomic row-editor placement for a grid-owned column. */
 export type LayoutPlacement = {
