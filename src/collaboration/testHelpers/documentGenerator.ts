@@ -27,10 +27,15 @@ const NEW_NODE_ID = (n: number): string => `n-${n}`
 const NEW_BINDING_ID = (n: number): string => `b-${n}`
 const NEW_FILTER_ID = (n: number): string => `f-${n}`
 const NEW_VISIBILITY_RULE_ID = (n: number): string => `vr-${n}`
+const NEW_COLUMN_ID = (n: number): string => `c-${n}`
+const NEW_NARRATIVE_RULE_ID = (n: number): string => `nr-${n}`
+const NEW_QNR_RULE_ID = (n: number): string => `qr-${n}`
 
 type IdPools = {
     questions: string[]
     grids: string[]
+    columns: string[]
+    columnOwnerById: Record<string, string>
     gridRows: string[]
     alternatives: string[]
     tabs: string[]
@@ -40,11 +45,15 @@ type IdPools = {
     filters: string[]
     visibilityRules: string[]
     highlightRules: string[]
+    narrativeRules: string[]
+    qnrRules: string[]
 }
 
 const emptyPools = (): IdPools => ({
     questions: [],
     grids: [],
+    columns: [],
+    columnOwnerById: {},
     gridRows: [],
     alternatives: [],
     tabs: [],
@@ -54,6 +63,8 @@ const emptyPools = (): IdPools => ({
     filters: [],
     visibilityRules: [],
     highlightRules: [],
+    narrativeRules: [],
+    qnrRules: [],
 })
 
 /** Picks an id from a pool, or mints a new one when the pool is empty. */
@@ -65,7 +76,7 @@ const pickOrFallback = (random: () => number, pool: string[], fallback: string):
     pool.length === 0 ? fallback : pick(random, pool)
 
 /** A schema-valid value for the given question field (op payloads are validated before the reducer). */
-const fieldValue = (field: 'label' | 'required' | 'scale.from' | 'grid.singleRow' | 'grid.columnIds', random: () => number) => {
+const fieldValue = (field: 'label' | 'required' | 'scale.from' | 'grid.singleRow', random: () => number) => {
     switch (field) {
         case 'label':
             return pick(random, ['Hei', 'Ha det', 'Tittel'])
@@ -74,8 +85,6 @@ const fieldValue = (field: 'label' | 'required' | 'scale.from' | 'grid.singleRow
             return pick(random, [true, false] as const)
         case 'scale.from':
             return 1
-        case 'grid.columnIds':
-            return pick(random, [['c-0'], ['c-1', 'c-2'], []] as Array<string[]>)
     }
 }
 
@@ -114,6 +123,7 @@ export const generateOpSequence = (
 }
 
 const nextOp = (random: () => number, pools: IdPools): TemplateOp => {
+    if (maybe(random, 0.22)) return nextAddedContractOp(random, pools)
     const roll = random()
 
     if (roll < 0.1) {
@@ -125,7 +135,7 @@ const nextOp = (random: () => number, pools: IdPools): TemplateOp => {
     }
     if (roll < 0.3) {
         const questionId = idOrNew(random, pools.questions, NEW_QUESTION_ID)
-        const field = pick(random, ['label', 'required', 'scale.from', 'grid.singleRow', 'grid.columnIds'] as const)
+        const field = pick(random, ['label', 'required', 'scale.from', 'grid.singleRow'] as const)
         // The op schema validates op payloads before the reducer runs, so generated ops must
         // be schema-valid: each field gets a value of the field's own type.
         const value = fieldValue(field, random)
@@ -199,14 +209,88 @@ const nextOp = (random: () => number, pools: IdPools): TemplateOp => {
     }
 }
 
+/** Operations added by ASMA-7676, kept in a dedicated mix so every seeded run exercises them. */
+const nextAddedContractOp = (random: () => number, pools: IdPools): TemplateOp => {
+    const choice = Math.floor(random() * 9)
+    const columnQuestionId = pickOrFallback(random, pools.columns, 'c-ghost')
+    const ownerQuestionId = pools.columnOwnerById[columnQuestionId] ?? pickOrFallback(random, pools.grids, 'g-ghost')
+    const questionId = idOrNew(random, pools.questions, NEW_QUESTION_ID)
+    switch (choice) {
+        case 0:
+            return {
+                type: 'gridColumn.create',
+                questionId: pickOrFallback(random, pools.grids, 'g-ghost'),
+                columnQuestionId: NEW_COLUMN_ID(pools.columns.length),
+                questionType: pick(random, ['TextShort', 'DateField', 'RadioButtons'] as const),
+                atIndex: Math.floor(random() * 4),
+            }
+        case 1:
+            return {
+                type: 'gridColumn.move',
+                questionId: ownerQuestionId,
+                columnQuestionId,
+                toIndex: Math.floor(random() * 5),
+            }
+        case 2:
+            return {
+                type: 'gridColumn.setLayout',
+                questionId: ownerQuestionId,
+                columnQuestionId,
+                placement: maybe(random, 0.25)
+                    ? null
+                    : { row: Math.floor(random() * 3), cell: Math.floor(random() * 4), keepCellSize: true },
+            }
+        case 3:
+            return {
+                type: 'narrativeRule.set',
+                ruleId: NEW_NARRATIVE_RULE_ID(pools.narrativeRules.length),
+                questionId,
+                condition: { sourceQuestionId: pickOrFallback(random, pools.questions, 'q-ghost') },
+            }
+        case 4:
+            return {
+                type: 'narrativeRule.delete',
+                ruleId: pickOrFallback(random, pools.narrativeRules, 'nr-ghost'),
+            }
+        case 5:
+            return {
+                type: 'qnrRule.set',
+                ruleId: NEW_QNR_RULE_ID(pools.qnrRules.length),
+                questionId,
+                condition: { sourceQuestionId: pickOrFallback(random, pools.questions, 'q-ghost') },
+                templateFamilyId: `family-${Math.floor(random() * 5)}`,
+            }
+        case 6:
+            return { type: 'qnrRule.delete', ruleId: pickOrFallback(random, pools.qnrRules, 'qr-ghost') }
+        case 7:
+            return { type: 'question.move', questionId: columnQuestionId, toIndex: Math.floor(random() * 5) }
+        default:
+            return {
+                type: 'gridColumn.setLayout',
+                questionId: ownerQuestionId,
+                columnQuestionId,
+                placement: null,
+            }
+    }
+}
+
 const updatePools = (op: TemplateOp, ok: boolean, pools: IdPools): void => {
     if (!ok) return
     switch (op.type) {
         case 'question.create':
             pools.questions.push(op.questionId)
+            if (op.questionType === 'QuestionGrid') pools.grids.push(op.questionId)
             break
         case 'question.delete':
             pools.questions = pools.questions.filter((id) => id !== op.questionId)
+            pools.grids = pools.grids.filter((id) => id !== op.questionId)
+            pools.columns = pools.columns.filter((id) => id !== op.questionId)
+            delete pools.columnOwnerById[op.questionId]
+            break
+        case 'gridColumn.create':
+            pools.questions.push(op.columnQuestionId)
+            pools.columns.push(op.columnQuestionId)
+            pools.columnOwnerById[op.columnQuestionId] = op.questionId
             break
         case 'gridRow.create':
             pools.gridRows.push(op.rowId)
@@ -229,7 +313,19 @@ const updatePools = (op: TemplateOp, ok: boolean, pools: IdPools): void => {
             pools.filters.push(op.filterId)
             break
         case 'visibilityRule.set':
-            pools.visibilityRules.push(op.ruleId)
+            if (!pools.visibilityRules.includes(op.ruleId)) pools.visibilityRules.push(op.ruleId)
+            break
+        case 'narrativeRule.set':
+            if (!pools.narrativeRules.includes(op.ruleId)) pools.narrativeRules.push(op.ruleId)
+            break
+        case 'narrativeRule.delete':
+            pools.narrativeRules = pools.narrativeRules.filter((id) => id !== op.ruleId)
+            break
+        case 'qnrRule.set':
+            if (!pools.qnrRules.includes(op.ruleId)) pools.qnrRules.push(op.ruleId)
+            break
+        case 'qnrRule.delete':
+            pools.qnrRules = pools.qnrRules.filter((id) => id !== op.ruleId)
             break
         case 'mappingBinding.create':
             pools.bindings.push(op.bindingId)

@@ -7,6 +7,7 @@ import { canonicalJson, hashCanonical, reduceToMinimalForm } from './canonicaliz
 import { findDocLawViolations } from './docLaws.js'
 import {
     findDuplicateBindingTargets,
+    findQuestionOwnershipViolations,
     templateDocumentIsDefault,
     validateTemplateDocument,
 } from './schemas.js'
@@ -47,6 +48,23 @@ const runSequence = (seed: number, count: number) => {
 }
 
 describe('applyOperation determinism', () => {
+    it('exercises every ASMA-7676 operation in the seeded generator', () => {
+        const { generated } = runSequence(7676, 800)
+        const generatedTypes = new Set(generated.ops.map((op) => op.type))
+
+        for (const type of [
+            'gridColumn.create',
+            'gridColumn.move',
+            'gridColumn.setLayout',
+            'narrativeRule.set',
+            'narrativeRule.delete',
+            'qnrRule.set',
+            'qnrRule.delete',
+        ] as const) {
+            assert.ok(generatedTypes.has(type), `generator did not exercise ${type}`)
+        }
+    })
+
     it('reproduces the identical document from the same seed', () => {
         const first = runSequence(42, 200)
         const second = runSequence(42, 200)
@@ -84,6 +102,8 @@ describe('DOC-LAW invariants under random op sequences', () => {
             assert.ok(validated.ok, validated.ok ? '' : validated.summary)
             // …and the one-binding-per-target invariant is never violated by construction.
             assert.deepEqual(findDuplicateBindingTargets(doc), [])
+            // Every accepted structural op preserves exactly one owner for each question.
+            assert.deepEqual(findQuestionOwnershipViolations(doc), [])
         })
     }
 })

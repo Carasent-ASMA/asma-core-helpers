@@ -25,6 +25,8 @@ export type FilterId = string
 export type MappingId = string
 export type VisibilityRuleId = string
 export type HighlightRuleId = string
+export type NarrativeRuleId = string
+export type QnrRuleId = string
 
 /** A scalar a document may carry. Deliberately not `any`: DOC-LAW-2 bans `null`. */
 export type DocScalar = string | number | boolean
@@ -110,10 +112,24 @@ export type QuestionGridConfig = {
 /**
  * Grid-owned presentation (OQ-V2-17/25): row-editor layout, filters, grid actions,
  * highlight rules, the header-tab reference and authored default column widths live
- * here — there is no parallel `settings_ui` or `layoutByQuestionId` map.
+ * here — there is no parallel top-level layout map; `rowEditor` owns it.
  */
+/** One atomic row-editor placement for a grid-owned column. */
+export type LayoutPlacement = {
+    row: number
+    cell: number
+    keepCellSize?: boolean
+}
+
+/** Row-editor state belongs to the owning grid, keyed by its column question ids. */
+export type QuestionGridRowEditor = {
+    layoutByQuestionId?: Record<QuestionId, LayoutPlacement>
+    [key: string]: unknown
+}
+
 export type QuestionGridPresentation = {
     headerTabId?: TabId
+    rowEditor?: QuestionGridRowEditor
     /** OQ-V2-25: authored defaults; per-user widths are preference state outside both documents. */
     defaultColumnWidthsByQuestionId?: Record<QuestionId, number>
     [key: string]: unknown
@@ -166,6 +182,12 @@ export type RuleCondition = {
 
 export type VisibilityRule = { condition: RuleCondition; [key: string]: unknown }
 export type HighlightRule = { condition: RuleCondition; [key: string]: unknown }
+export type NarrativeRule = { condition: RuleCondition; [key: string]: unknown }
+export type QnrRule = {
+    condition: RuleCondition
+    /** A `qnr_templates.id` family reference; pinned versions are intentionally unrepresentable. */
+    templateFamilyId: string
+}
 
 /** One traversal step. Many questions off one entity share a single node (§2.2a). */
 export type MappingNode = {
@@ -235,6 +257,10 @@ export type QnrTemplateDocument = {
     visibilityRuleOrderByQuestionId?: Record<QuestionId, VisibilityRuleId[]>
     highlightRulesById?: Record<HighlightRuleId, HighlightRule>
     highlightRuleOrderByQuestionId?: Record<QuestionId, HighlightRuleId[]>
+    narrativeRulesById?: Record<NarrativeRuleId, NarrativeRule>
+    narrativeRuleOrderByQuestionId?: Record<QuestionId, NarrativeRuleId[]>
+    qnrRulesById?: Record<QnrRuleId, QnrRule>
+    qnrRuleOrderByQuestionId?: Record<QuestionId, QnrRuleId[]>
     dataMappingsById?: Record<MappingId, QnrDataMapping>
     mappingNodesById?: Record<NodeId, MappingNode>
     mappingBindingsById?: Record<BindingId, MappingBinding>
