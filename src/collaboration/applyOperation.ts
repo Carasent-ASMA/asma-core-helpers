@@ -558,7 +558,7 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
 
         case 'gridColumn.move': {
             const gridQuestion = requireGridQuestion(doc, op.questionId)
-            const columnIds = gridQuestion?.grid?.columnIds
+            const columnIds = gridQuestion.grid?.columnIds
             if (!doc.questionsById?.[op.columnQuestionId] || !columnIds?.includes(op.columnQuestionId)) {
                 throw new OperationConflictError(
                     `Question "${op.columnQuestionId}" does not belong to grid "${op.questionId}"`,
@@ -581,7 +581,7 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
 
         case 'gridColumn.setLayout': {
             const gridQuestion = requireGridQuestion(doc, op.questionId)
-            const columnIds = gridQuestion?.grid?.columnIds
+            const columnIds = gridQuestion.grid?.columnIds
             if (!doc.questionsById?.[op.columnQuestionId] || !columnIds?.includes(op.columnQuestionId)) {
                 throw new OperationConflictError(
                     `Question "${op.columnQuestionId}" does not belong to grid "${op.questionId}"`,

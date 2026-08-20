@@ -8,7 +8,7 @@ import {
     applyOperation,
 } from './applyOperation.js'
 import type { TemplateOp } from './operations.js'
-import { emptyTemplateDocument } from './templateDocument.js'
+import { emptyTemplateDocument, type QnrTemplateDocument } from './templateDocument.js'
 
 /**
  * Guards the invariants a consumer would notice if a publish broke them. The exhaustive
@@ -87,7 +87,7 @@ describe('applyOperation', () => {
         assert.deepEqual(withColumns.questionsById?.['c-2'], { type: 'DateField' })
     })
 
-    it('refuses to attach a grid column to a non-grid question', () => {
+    it('refuses every grid-column operation through a non-grid question', () => {
         const ordinary = apply([{ type: 'question.create', questionId: 'q-1', questionType: 'TextShort' }])
 
         assert.throws(
@@ -97,6 +97,35 @@ describe('applyOperation', () => {
                     questionId: 'q-1',
                     columnQuestionId: 'c-1',
                     questionType: 'TextShort',
+                }),
+            OperationConflictError,
+        )
+
+        const malformed = {
+            ...ordinary,
+            questionsById: {
+                'q-1': { type: 'TextShort', grid: { columnIds: ['c-1'] } },
+                'c-1': { type: 'TextShort' },
+            },
+        } satisfies QnrTemplateDocument
+
+        assert.throws(
+            () =>
+                applyOperation(malformed, {
+                    type: 'gridColumn.move',
+                    questionId: 'q-1',
+                    columnQuestionId: 'c-1',
+                    toIndex: 0,
+                }),
+            OperationConflictError,
+        )
+        assert.throws(
+            () =>
+                applyOperation(malformed, {
+                    type: 'gridColumn.setLayout',
+                    questionId: 'q-1',
+                    columnQuestionId: 'c-1',
+                    placement: { row: 0, cell: 0 },
                 }),
             OperationConflictError,
         )
