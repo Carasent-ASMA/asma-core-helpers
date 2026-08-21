@@ -111,16 +111,37 @@ const questionGridPresentationSchema = type({
     ...({ '[string]': 'unknown' } as const),
 })
 
-const qnrQuestionSchema = type({
-    type: type.enumerated(...QUESTION_TYPES),
+/** Every question field except the discriminator and the grid-only `grid` bag. */
+const qnrQuestionCommonFields = {
     "subtype?": type.enumerated('ORDINARY', 'EMAIL'),
     "label?": 'string',
     "required?": 'boolean',
     "defaultValue?": docScalar,
-    "grid?": questionGridConfigSchema,
     "presentation?": questionGridPresentationSchema,
     ...({ '[string]': 'unknown' } as const),
-})
+} as const
+
+const NON_GRID_QUESTION_TYPES = QUESTION_TYPES.filter((questionType) => questionType !== 'QuestionGrid')
+
+/**
+ * A question, discriminated on `type` for one reason: `grid` carries `columnIds`, the array a
+ * question's structural owner is read from, and only a `QuestionGrid` may own columns. The
+ * per-type bag being open (`[string]: unknown`) means omitting the key from the non-grid branch
+ * would admit it anyway, so that branch types it `never` — the schema itself then refuses a
+ * document where an ordinary question claims to own questions.
+ */
+const qnrQuestionSchema = type.or(
+    type({
+        type: '"QuestionGrid"',
+        "grid?": questionGridConfigSchema,
+        ...qnrQuestionCommonFields,
+    }),
+    type({
+        type: type.enumerated(...NON_GRID_QUESTION_TYPES),
+        "grid?": 'never',
+        ...qnrQuestionCommonFields,
+    }),
+)
 
 const qnrAlternativeSchema = type({
     "label?": 'string',
@@ -628,6 +649,11 @@ export const findQuestionOwnershipViolations = (
 ): QuestionOwnershipViolation[] => {
     const ownersByQuestionId = new Map<string, string[]>()
     for (const [gridQuestionId, question] of Object.entries(document.questionsById ?? {})) {
+        // Only a grid owns columns. `grid` on any other type is a shape the document schema
+        // refuses outright, and reading it as ownership here would be worse than ignoring it:
+        // a stray key would adopt a top-level question, or cover for a real orphan by naming
+        // an owner that owns nothing.
+        if (question.type !== 'QuestionGrid') continue
         for (const columnQuestionId of question.grid?.columnIds ?? []) {
             const owners = ownersByQuestionId.get(columnQuestionId) ?? []
             if (!owners.includes(gridQuestionId)) owners.push(gridQuestionId)

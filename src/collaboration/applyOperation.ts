@@ -114,6 +114,29 @@ const omitKey = <V>(record: Record<string, V>, key: string): Record<string, V> =
     return rest
 }
 
+/**
+ * The document paths a grid operation owns, and no other op may write.
+ *
+ * `grid.columnIds` is the ownership array a question's single structural owner is read from
+ * (`gridColumn.create`/`move` maintain it), and `presentation.rowEditor.layoutByQuestionId`
+ * holds one placement per column (`gridColumn.setLayout` writes exactly one). An op that
+ * carries a scalar or a flat primitive array can only write such a map *wholesale*, so
+ * reaching either path through `question.updateField` replaces or clears it — columns left
+ * owned by nobody, or every other column's placement dropped in one edit. That is precisely
+ * the atomicity the grid ops exist to provide, so the paths are reserved for them.
+ */
+const GRID_OWNED_FIELD_PATHS = ['grid.columnIds', 'presentation.rowEditor.layoutByQuestionId'] as const
+
+/**
+ * The reserved path `field` would write, if any. Both directions count: the path itself, a
+ * path *below* it (`grid.columnIds.0`), and an *ancestor* whose write would take the reserved
+ * map with it (`grid`, `presentation.rowEditor`).
+ */
+const reservedGridFieldPath = (field: string): string | undefined =>
+    GRID_OWNED_FIELD_PATHS.find(
+        (owned) => field === owned || field.startsWith(`${owned}.`) || owned.startsWith(`${field}.`),
+    )
+
 const requireGridQuestion = (doc: QnrTemplateDocument, questionId: QuestionId): QnrQuestion => {
     const question = doc.questionsById?.[questionId]
     if (!question) throw new OperationConflictError(`Unknown question "${questionId}"`)
@@ -409,6 +432,102 @@ const dropFromGridColumns = (doc: QnrTemplateDocument, questionId: QuestionId): 
     })
 }
 
+/**
+ * Every question a grid owns, transitively, the grid itself excluded. `seen` makes it total on
+ * malformed data: an ownership cycle is not authorable but is importable, and a delete must
+ * terminate on one rather than blow the stack.
+ */
+const collectOwnedColumnIds = (doc: QnrTemplateDocument, gridQuestionId: QuestionId): QuestionId[] => {
+    const owned: QuestionId[] = []
+    const seen = new Set<QuestionId>([gridQuestionId])
+    const queue: QuestionId[] = [gridQuestionId]
+    while (queue.length > 0) {
+        const current = queue.pop() as QuestionId
+        const question = doc.questionsById?.[current]
+        // Only a grid owns columns; the per-type bag is open, so a malformed `columnIds` must
+        // not crash the reducer — that is a schema violation for validation to report.
+        const columnIds = question?.type === 'QuestionGrid' ? question.grid?.columnIds : undefined
+        if (!Array.isArray(columnIds)) continue
+        for (const columnId of columnIds) {
+            if (seen.has(columnId)) continue
+            seen.add(columnId)
+            owned.push(columnId)
+            queue.push(columnId)
+        }
+    }
+    return owned
+}
+
+/**
+ * Removes one question and everything it alone owns: its alternatives, its own rules, its
+ * predefined grid rows, its place in any grid's column list and every binding aimed at it.
+ * `question.delete` applies it to the deleted question and to each column that grid owns.
+ */
+const deleteQuestion = (doc: QnrTemplateDocument, questionId: QuestionId): QnrTemplateDocument => {
+    // A grid's predefined rows go with it: the order key is dropped below, and a row record
+    // no order array reaches is unreachable state that still changes `document_hash`.
+    const rowIds = doc.gridRowOrderByQuestionId?.[questionId] ?? []
+    let gridRowsById = doc.gridRowsById
+    if (gridRowsById) {
+        gridRowsById = rowIds.reduce((acc, id) => omitKey(acc, id), gridRowsById)
+    }
+    const alternativeIds = doc.alternativeOrderByQuestionId?.[questionId] ?? []
+    let alternativesById = doc.alternativesById
+    if (alternativesById) {
+        alternativesById = alternativeIds.reduce((acc, id) => omitKey(acc, id), alternativesById)
+    }
+    // The question's own rules go with it, the same way its alternatives do: an orphaned
+    // rule record is referenced by no order array and only pollutes the hash. Rules of
+    // OTHER questions whose condition points at this one are deliberately KEPT — silently
+    // dropping a surviving question's authored logic would be data loss, so the dangling
+    // `sourceQuestionId` is left for validation to surface instead.
+    const visibilityRuleIds = doc.visibilityRuleOrderByQuestionId?.[questionId] ?? []
+    let visibilityRulesById = doc.visibilityRulesById
+    if (visibilityRulesById) {
+        visibilityRulesById = visibilityRuleIds.reduce((acc, id) => omitKey(acc, id), visibilityRulesById)
+    }
+    const highlightRuleIds = doc.highlightRuleOrderByQuestionId?.[questionId] ?? []
+    let highlightRulesById = doc.highlightRulesById
+    if (highlightRulesById) {
+        highlightRulesById = highlightRuleIds.reduce((acc, id) => omitKey(acc, id), highlightRulesById)
+    }
+    const narrativeRuleIds = doc.narrativeRuleOrderByQuestionId?.[questionId] ?? []
+    let narrativeRulesById = doc.narrativeRulesById
+    if (narrativeRulesById) {
+        narrativeRulesById = narrativeRuleIds.reduce((acc, id) => omitKey(acc, id), narrativeRulesById)
+    }
+    const qnrRuleIds = doc.qnrRuleOrderByQuestionId?.[questionId] ?? []
+    let qnrRulesById = doc.qnrRulesById
+    if (qnrRulesById) {
+        qnrRulesById = qnrRuleIds.reduce((acc, id) => omitKey(acc, id), qnrRulesById)
+    }
+    const withoutQuestion = patchDocument(doc, {
+        questionsById: doc.questionsById && omitKey(doc.questionsById, questionId),
+        questionOrder: doc.questionOrder.filter((id) => id !== questionId),
+        alternativesById,
+        alternativeOrderByQuestionId:
+            doc.alternativeOrderByQuestionId && omitKey(doc.alternativeOrderByQuestionId, questionId),
+        gridRowsById,
+        gridRowOrderByQuestionId: doc.gridRowOrderByQuestionId && omitKey(doc.gridRowOrderByQuestionId, questionId),
+        visibilityRulesById,
+        visibilityRuleOrderByQuestionId:
+            doc.visibilityRuleOrderByQuestionId && omitKey(doc.visibilityRuleOrderByQuestionId, questionId),
+        highlightRulesById,
+        highlightRuleOrderByQuestionId:
+            doc.highlightRuleOrderByQuestionId && omitKey(doc.highlightRuleOrderByQuestionId, questionId),
+        narrativeRulesById,
+        narrativeRuleOrderByQuestionId:
+            doc.narrativeRuleOrderByQuestionId && omitKey(doc.narrativeRuleOrderByQuestionId, questionId),
+        qnrRulesById,
+        qnrRuleOrderByQuestionId:
+            doc.qnrRuleOrderByQuestionId && omitKey(doc.qnrRuleOrderByQuestionId, questionId),
+    })
+    // A binding pointing at a deleted question is an unresolvable reference the
+    // compiler would reject at publication; drop it with its target. A grid column
+    // list pointing at it is the same class of reference and goes the same way.
+    return dropBindingsForQuestion(dropFromGridColumns(withoutQuestion, questionId), questionId)
+}
+
 export const applyOperation = (document: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument => {
     const next = reduce(document, op)
     return prune({ ...next, revision: document.revision + 1 })
@@ -455,6 +574,20 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             if (!question) {
                 throw new OperationConflictError(`Unknown question "${op.questionId}"`)
             }
+            const reserved = reservedGridFieldPath(op.field)
+            if (reserved !== undefined) {
+                throw new OperationConflictError(
+                    `Field "${op.field}" writes "${reserved}", which only the gridColumn operations may author`,
+                )
+            }
+            // `grid` is the grid's own configuration and the document schema admits it on no
+            // other type, so authoring it through an ordinary question would store a bag no
+            // reader projects and the publication schema then refuses.
+            if (question.type !== 'QuestionGrid' && op.field.split('.')[0] === 'grid') {
+                throw new OperationConflictError(
+                    `Question "${op.questionId}" is not a question grid, so "${op.field}" is not authorable on it`,
+                )
+            }
             return {
                 ...doc,
                 questionsById: {
@@ -475,63 +608,12 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
         }
 
         case 'question.delete': {
-            const alternativeIds = doc.alternativeOrderByQuestionId?.[op.questionId] ?? []
-            let alternativesById = doc.alternativesById
-            if (alternativesById) {
-                alternativesById = alternativeIds.reduce((acc, id) => omitKey(acc, id), alternativesById)
-            }
-            // The question's own rules go with it, the same way its alternatives do: an orphaned
-            // rule record is referenced by no order array and only pollutes the hash. Rules of
-            // OTHER questions whose condition points at this one are deliberately KEPT — silently
-            // dropping a surviving question's authored logic would be data loss, so the dangling
-            // `sourceQuestionId` is left for validation to surface instead.
-            const visibilityRuleIds = doc.visibilityRuleOrderByQuestionId?.[op.questionId] ?? []
-            let visibilityRulesById = doc.visibilityRulesById
-            if (visibilityRulesById) {
-                visibilityRulesById = visibilityRuleIds.reduce((acc, id) => omitKey(acc, id), visibilityRulesById)
-            }
-            const highlightRuleIds = doc.highlightRuleOrderByQuestionId?.[op.questionId] ?? []
-            let highlightRulesById = doc.highlightRulesById
-            if (highlightRulesById) {
-                highlightRulesById = highlightRuleIds.reduce((acc, id) => omitKey(acc, id), highlightRulesById)
-            }
-            const narrativeRuleIds = doc.narrativeRuleOrderByQuestionId?.[op.questionId] ?? []
-            let narrativeRulesById = doc.narrativeRulesById
-            if (narrativeRulesById) {
-                narrativeRulesById = narrativeRuleIds.reduce((acc, id) => omitKey(acc, id), narrativeRulesById)
-            }
-            const qnrRuleIds = doc.qnrRuleOrderByQuestionId?.[op.questionId] ?? []
-            let qnrRulesById = doc.qnrRulesById
-            if (qnrRulesById) {
-                qnrRulesById = qnrRuleIds.reduce((acc, id) => omitKey(acc, id), qnrRulesById)
-            }
-            const withoutQuestion = patchDocument(doc, {
-                questionsById: doc.questionsById && omitKey(doc.questionsById, op.questionId),
-                questionOrder: doc.questionOrder.filter((id) => id !== op.questionId),
-                alternativesById,
-                alternativeOrderByQuestionId:
-                    doc.alternativeOrderByQuestionId && omitKey(doc.alternativeOrderByQuestionId, op.questionId),
-                gridRowOrderByQuestionId:
-                    doc.gridRowOrderByQuestionId && omitKey(doc.gridRowOrderByQuestionId, op.questionId),
-                visibilityRulesById,
-                visibilityRuleOrderByQuestionId:
-                    doc.visibilityRuleOrderByQuestionId && omitKey(doc.visibilityRuleOrderByQuestionId, op.questionId),
-                highlightRulesById,
-                highlightRuleOrderByQuestionId:
-                    doc.highlightRuleOrderByQuestionId &&
-                    omitKey(doc.highlightRuleOrderByQuestionId, op.questionId),
-                narrativeRulesById,
-                narrativeRuleOrderByQuestionId:
-                    doc.narrativeRuleOrderByQuestionId &&
-                    omitKey(doc.narrativeRuleOrderByQuestionId, op.questionId),
-                qnrRulesById,
-                qnrRuleOrderByQuestionId:
-                    doc.qnrRuleOrderByQuestionId && omitKey(doc.qnrRuleOrderByQuestionId, op.questionId),
-            })
-            // A binding pointing at a deleted question is an unresolvable reference the
-            // compiler would reject at publication; drop it with its target. A grid column
-            // list pointing at it is the same class of reference and goes the same way.
-            return dropBindingsForQuestion(dropFromGridColumns(withoutQuestion, op.questionId), op.questionId)
+            // A grid owns its columns, so they go with it: they sit in no order array of their
+            // own, and leaving them behind is the orphan half of the ownership invariant. The
+            // whole ownership subtree is collected first, then each question is removed on its
+            // own terms — its alternatives, rules and bindings included.
+            const ids = [op.questionId, ...collectOwnedColumnIds(doc, op.questionId)]
+            return ids.reduce((acc, id) => deleteQuestion(acc, id), doc)
         }
 
         case 'gridColumn.create': {
