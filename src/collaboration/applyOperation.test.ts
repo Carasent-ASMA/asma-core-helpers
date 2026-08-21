@@ -725,6 +725,38 @@ describe('applyOperation', () => {
         )
     })
 
+    it('refuses to write a question\'s type, so a grid cannot be flipped out from under its columns', () => {
+        // `type` is the discriminant the document schema branches on: only a `QuestionGrid` may
+        // carry `grid`. Flipping a grid that owns columns leaves a `columnIds` no reader accepts,
+        // and the columns it names are then owned by nobody — nor do they cascade with the
+        // delete, which collects owned columns only from a question still typed as a grid.
+        const doc = apply([
+            { type: 'question.create', questionId: 'g-1', questionType: 'QuestionGrid' },
+            { type: 'gridColumn.create', questionId: 'g-1', columnQuestionId: 'c-1', questionType: 'TextShort' },
+            { type: 'question.create', questionId: 'q-1', questionType: 'TextShort' },
+        ])
+
+        // Refused wherever it is aimed, and on any path below it: `question.create` is the only
+        // op that types a question, so there is no such thing as a legal type write here.
+        for (const [questionId, field] of [
+            ['g-1', 'type'],
+            ['g-1', 'type.name'],
+            ['c-1', 'type'],
+            ['q-1', 'type'],
+        ] as const) {
+            assert.throws(
+                () => applyOperation(doc, { type: 'question.updateField', questionId, field, value: 'TextShort' }),
+                OperationConflictError,
+                `${questionId} ${field}`,
+            )
+        }
+
+        // Only `type` itself: a field that merely starts with the same letters is ordinary.
+        const typed = applyOperation(doc, { type: 'question.updateField', questionId: 'g-1', field: 'typeHint', value: 'table' })
+        assert.equal(typed.questionsById?.['g-1']?.['typeHint'], 'table')
+        assert.equal(typed.questionsById?.['g-1']?.type, 'QuestionGrid')
+    })
+
     it('drops a deleted question from every grid\'s column list', () => {
         const doc = apply([
             { type: 'question.create', questionId: 'g-1', questionType: 'QuestionGrid' },

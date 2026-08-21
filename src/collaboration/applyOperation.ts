@@ -574,6 +574,15 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             if (!question) {
                 throw new OperationConflictError(`Unknown question "${op.questionId}"`)
             }
+            // `type` is the question's identity, not one of its fields: `question.create` sets it and
+            // every per-type shape hangs off it. A field write moves it alone — a grid flipped to
+            // another type keeps the `grid.columnIds` the document schema admits on no other type,
+            // its columns then owned by nobody and no longer cascading with its delete.
+            if (op.field === 'type' || op.field.startsWith('type.')) {
+                throw new OperationConflictError(
+                    `Field "${op.field}" writes the question type, which only question.create may set`,
+                )
+            }
             const reserved = reservedGridFieldPath(op.field)
             if (reserved !== undefined) {
                 throw new OperationConflictError(
