@@ -82,7 +82,10 @@ describe('applyOperation determinism', () => {
 })
 
 describe('DOC-LAW invariants under random op sequences', () => {
-    for (const seed of [7, 13, 99]) {
+    // Seed 4 is here for one reason: it is the smallest seed whose sequence deletes a grid that
+    // still owns columns. Without it the ownership assertion below never sees the cascade, which
+    // is the one path where a delete can strand questions in no order array at all.
+    for (const seed of [4, 7, 13, 99]) {
         it(`holds for seed ${seed}`, () => {
             const { doc } = runSequence(seed, 150)
 

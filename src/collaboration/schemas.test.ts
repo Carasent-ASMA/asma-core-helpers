@@ -100,6 +100,55 @@ describe('document schemas', () => {
 })
 
 describe('question ownership invariant', () => {
+    it('admits `grid` on a question grid alone', () => {
+        const withGrid = (type: string): QnrTemplateDocument =>
+            ({
+                ...emptyTemplateDocument('tpl-1'),
+                questionsById: { 'q-1': { type, grid: { columnIds: ['c-1'] } }, 'c-1': { type: 'TextShort' } },
+                questionOrder: ['q-1'],
+            }) as unknown as QnrTemplateDocument
+
+        assert.equal(validateTemplateDocument(withGrid('QuestionGrid')).ok, true)
+        // The per-type bag is open, so this is the one shape validation must NOT wave through:
+        // `columnIds` is ownership, and an ordinary question owning questions is unrepresentable.
+        assert.equal(validateTemplateDocument(withGrid('TextShort')).ok, false)
+        // The rest of the bag is untouched — an unknown per-type key is still an open extension.
+        assert.equal(
+            validateTemplateDocument({
+                ...emptyTemplateDocument('tpl-1'),
+                questionsById: { 'q-1': { type: 'TextShort', dropdown: { multi: true } } },
+                questionOrder: ['q-1'],
+            } as unknown as QnrTemplateDocument).ok,
+            true,
+        )
+    })
+
+    it('does not read a non-grid question as a column owner', () => {
+        // The publication gate refuses on any violation, so a stray `grid` on an ordinary
+        // question must not be able to *satisfy* ownership for the question it lists: that would
+        // hide the orphan instead of reporting it.
+        const doc = {
+            documentId: 'tpl-1',
+            revision: 0,
+            questionsById: {
+                'q-1': { type: 'TextShort', grid: { columnIds: ['c-1'] } },
+                'c-1': { type: 'TextShort' },
+            },
+            questionOrder: ['q-1'],
+        } as unknown as QnrTemplateDocument
+
+        assert.deepEqual(findQuestionOwnershipViolations(doc), [
+            {
+                law: 'QUESTION-OWNERSHIP',
+                kind: 'orphan',
+                questionId: 'c-1',
+                gridQuestionIds: [],
+                path: 'questionsById.c-1',
+                detail: 'question is neither top-level nor owned by a grid',
+            },
+        ])
+    })
+
     it('reports orphaned, top-level-and-column, multi-grid, and dangling column questions', () => {
         const doc: QnrTemplateDocument = {
             documentId: 'tpl-1',

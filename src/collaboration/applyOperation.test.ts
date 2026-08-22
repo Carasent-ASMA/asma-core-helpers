@@ -671,43 +671,171 @@ describe('applyOperation', () => {
         )
     })
 
-    it('writes a grid column list as a primitive id array', () => {
-        // `grid.columnIds` is a DOC-LAW-1 order array, so the op value carries the whole
-        // array — never member-wise edits by position.
+    it('reserves the column list and the row-editor layout for the grid-column operations', () => {
+        // Ownership (`grid.columnIds`) and one-placement-per-column layout are what the atomic
+        // grid ops exist to write. `question.updateField` carries a scalar or a whole primitive
+        // array, so reaching either path through it could only write the map wholesale — columns
+        // left owned by nobody, or every other column's placement dropped in one edit.
         const doc = apply([
             { type: 'question.create', questionId: 'g-1', questionType: 'QuestionGrid' },
-            { type: 'question.create', questionId: 'c-1', questionType: 'TextShort' },
+            { type: 'question.create', questionId: 'q-1', questionType: 'TextShort' },
         ])
 
-        const columns = applyOperation(doc, { type: 'question.updateField', questionId: 'g-1', field: 'grid.columnIds', value: ['c-1'] })
+        for (const field of [
+            'grid',
+            'grid.columnIds',
+            'grid.columnIds.0',
+            'presentation.rowEditor',
+            'presentation.rowEditor.layoutByQuestionId',
+            'presentation.rowEditor.layoutByQuestionId.c-1.row',
+        ]) {
+            assert.throws(
+                () => applyOperation(doc, { type: 'question.updateField', questionId: 'g-1', field, value: 'c-1' }),
+                OperationConflictError,
+                field,
+            )
+        }
 
-        assert.deepEqual(columns.questionsById?.['g-1'], { type: 'QuestionGrid', grid: { columnIds: ['c-1'] } })
+        // The reservation is those two paths, not the bags that hold them: their siblings stay
+        // ordinary authored fields.
+        const configured = apply(
+            [
+                { type: 'question.updateField', questionId: 'g-1', field: 'grid.singleRow', value: true },
+                { type: 'question.updateField', questionId: 'g-1', field: 'presentation.headerTabId', value: 't-1' },
+            ],
+            doc,
+        )
+        assert.deepEqual(configured.questionsById?.['g-1'], {
+            type: 'QuestionGrid',
+            grid: { singleRow: true },
+            presentation: { headerTabId: 't-1' },
+        })
+
+        // Grid configuration belongs to a grid: the document schema admits `grid` on no other
+        // type, so the reducer must not be the writer that puts it there.
+        assert.throws(
+            () =>
+                applyOperation(doc, {
+                    type: 'question.updateField',
+                    questionId: 'q-1',
+                    field: 'grid.singleRow',
+                    value: true,
+                }),
+            OperationConflictError,
+        )
+    })
+
+    it('refuses to write a question\'s type, so a grid cannot be flipped out from under its columns', () => {
+        // `type` is the discriminant the document schema branches on: only a `QuestionGrid` may
+        // carry `grid`. Flipping a grid that owns columns leaves a `columnIds` no reader accepts,
+        // and the columns it names are then owned by nobody — nor do they cascade with the
+        // delete, which collects owned columns only from a question still typed as a grid.
+        const doc = apply([
+            { type: 'question.create', questionId: 'g-1', questionType: 'QuestionGrid' },
+            { type: 'gridColumn.create', questionId: 'g-1', columnQuestionId: 'c-1', questionType: 'TextShort' },
+            { type: 'question.create', questionId: 'q-1', questionType: 'TextShort' },
+        ])
+
+        // Refused wherever it is aimed, and on any path below it: `question.create` is the only
+        // op that types a question, so there is no such thing as a legal type write here.
+        for (const [questionId, field] of [
+            ['g-1', 'type'],
+            ['g-1', 'type.name'],
+            ['c-1', 'type'],
+            ['q-1', 'type'],
+        ] as const) {
+            assert.throws(
+                () => applyOperation(doc, { type: 'question.updateField', questionId, field, value: 'TextShort' }),
+                OperationConflictError,
+                `${questionId} ${field}`,
+            )
+        }
+
+        // Only `type` itself: a field that merely starts with the same letters is ordinary.
+        const typed = applyOperation(doc, { type: 'question.updateField', questionId: 'g-1', field: 'typeHint', value: 'table' })
+        assert.equal(typed.questionsById?.['g-1']?.['typeHint'], 'table')
+        assert.equal(typed.questionsById?.['g-1']?.type, 'QuestionGrid')
     })
 
     it('drops a deleted question from every grid\'s column list', () => {
         const doc = apply([
             { type: 'question.create', questionId: 'g-1', questionType: 'QuestionGrid' },
-            { type: 'question.create', questionId: 'c-1', questionType: 'TextShort' },
-            { type: 'question.create', questionId: 'c-2', questionType: 'DateField' },
-            { type: 'question.updateField', questionId: 'g-1', field: 'grid.columnIds', value: ['c-1', 'c-2'] },
+            { type: 'gridColumn.create', questionId: 'g-1', columnQuestionId: 'c-1', questionType: 'TextShort' },
+            { type: 'gridColumn.create', questionId: 'g-1', columnQuestionId: 'c-2', questionType: 'DateField' },
         ])
 
         const deleted = applyOperation(doc, { type: 'question.delete', questionId: 'c-1' })
 
         assert.deepEqual(deleted.questionsById?.['g-1']?.grid?.columnIds, ['c-2'])
+        assert.equal(deleted.questionsById?.['c-1'], undefined)
     })
 
     it('drops the grid config key when its last field goes with a deleted column', () => {
         const doc = apply([
             { type: 'question.create', questionId: 'g-1', questionType: 'QuestionGrid' },
-            { type: 'question.create', questionId: 'c-1', questionType: 'TextShort' },
-            { type: 'question.updateField', questionId: 'g-1', field: 'grid.columnIds', value: ['c-1'] },
+            { type: 'gridColumn.create', questionId: 'g-1', columnQuestionId: 'c-1', questionType: 'TextShort' },
         ])
 
         const deleted = applyOperation(doc, { type: 'question.delete', questionId: 'c-1' })
 
         // DOC-LAW-2: no `grid: {}` left behind — that would hash differently from never configured.
         assert.deepEqual(deleted.questionsById?.['g-1'], { type: 'QuestionGrid' })
+    })
+
+    it('takes a deleted grid\'s columns and predefined rows with it', () => {
+        const doc = apply([
+            { type: 'question.create', questionId: 'q-keep', questionType: 'TextShort' },
+            { type: 'question.create', questionId: 'g-1', questionType: 'QuestionGrid' },
+            { type: 'gridColumn.create', questionId: 'g-1', columnQuestionId: 'c-1', questionType: 'RadioButtons' },
+            { type: 'gridColumn.create', questionId: 'g-1', columnQuestionId: 'c-2', questionType: 'TextShort' },
+            // A column carries authored state of its own: it must cascade the same way a
+            // top-level question's does, or the delete trades orphan questions for orphan rules.
+            { type: 'alternative.create', questionId: 'c-1', alternativeId: 'a-1', label: 'Ja' },
+            { type: 'visibilityRule.set', ruleId: 'vr-1', questionId: 'c-1', condition: { sourceQuestionId: 'q-keep' } },
+            { type: 'mappingNode.create', nodeId: 'n-1', entityId: 'Actor' },
+            {
+                type: 'mappingBinding.create',
+                bindingId: 'b-1',
+                nodeId: 'n-1',
+                fieldId: 'Navn',
+                target: { kind: 'gridColumn', gridQuestionId: 'g-1', columnQuestionId: 'c-1' },
+            },
+            { type: 'gridRow.create', questionId: 'g-1', rowId: 'r-1' },
+            { type: 'gridRow.create', questionId: 'g-1', rowId: 'r-2', label: 'Andre' },
+            { type: 'gridRow.updateCell', questionId: 'g-1', rowId: 'r-1', columnQuestionId: 'c-2', value: 'one' },
+        ])
+
+        const deleted = applyOperation(doc, { type: 'question.delete', questionId: 'g-1' })
+
+        assert.deepEqual(deleted.questionOrder, ['q-keep'])
+        assert.deepEqual(Object.keys(deleted.questionsById ?? {}), ['q-keep'])
+        // DOC-LAW-2 all the way down: the emptied collections are gone, not stored empty.
+        assert.equal(deleted.gridRowsById, undefined)
+        assert.equal(deleted.gridRowOrderByQuestionId, undefined)
+        assert.equal(deleted.alternativesById, undefined)
+        assert.equal(deleted.alternativeOrderByQuestionId, undefined)
+        assert.equal(deleted.visibilityRulesById, undefined)
+        assert.equal(deleted.mappingBindingsById, undefined)
+        // The shared node survives: it is not the grid's to own.
+        assert.deepEqual(deleted.mappingNodesById, { 'n-1': { entityId: 'Actor' } })
+    })
+
+    it('deletes a grid whose column list is malformed without recursing forever', () => {
+        // Ownership cycles are not authorable, only importable. The cascade must terminate on
+        // them rather than blow the stack — a crash here is a 500 on someone's delete click.
+        const selfOwning = {
+            ...doc0,
+            questionsById: {
+                'g-1': { type: 'QuestionGrid', grid: { columnIds: ['g-1', 'g-2'] } },
+                'g-2': { type: 'QuestionGrid', grid: { columnIds: ['g-1'] } },
+            },
+            questionOrder: ['g-1'],
+        } satisfies QnrTemplateDocument
+
+        const deleted = applyOperation(selfOwning, { type: 'question.delete', questionId: 'g-1' })
+
+        assert.equal(deleted.questionsById, undefined)
+        assert.deepEqual(deleted.questionOrder, [])
     })
 
     it('attaches a mapping root and maintains bindingOrder across create and delete', () => {
