@@ -36,6 +36,8 @@ export interface CreateTadaBrowserClientOptions {
     url: string
     /** Resolves the current JWT. Typically `getCachedJwt` from asma-core-react. */
     getJwt: () => Promise<string | undefined>
+    /** Returns the synchronously cached JWT. Typically `getJwtToken` from auth bindings. */
+    getJwtToken: () => string | undefined
     /** Returns true when the cached JWT is still valid. Typically `isJwtValid` from asma-core-react. */
     isJwtValid: () => boolean
     /** Optional service-specific exchanges injected before fetchExchange. */
@@ -56,6 +58,7 @@ export interface CreateTadaBrowserClientOptions {
 export function createTadaBrowserClient({
     url,
     getJwt,
+    getJwtToken,
     isJwtValid,
     resolveExchanges,
     clientOptions,
@@ -63,7 +66,9 @@ export function createTadaBrowserClient({
     let tadaClient: Client | undefined
 
     const getClient = async () => {
-        tadaClient = await buildClient({ clientOptions })
+        if (!tadaClient) {
+            tadaClient = await buildClient({ clientOptions })
+        }
         return tadaClient
     }
 
@@ -100,9 +105,14 @@ export function createTadaBrowserClient({
         if (!anonymous) {
             _clientOptions.exchanges.unshift(
                 authExchange(async (utils) => {
-                    const token = await getJwt()
+                    let token = await getJwt()
+
                     return {
                         addAuthToOperation(operation) {
+                            if (!token) {
+                                return operation
+                            }
+
                             return utils.appendHeaders(operation, {
                                 Authorization: `Bearer ${token}`,
                             })
@@ -111,10 +121,12 @@ export function createTadaBrowserClient({
                             return error.response.status === 401
                         },
                         async refreshAuth() {
-                            tadaClient = await buildClient({ clientOptions: opts?.clientOptions })
+                            token = await getJwt()
                         },
                         willAuthError() {
-                            return !isJwtValid()
+                            const tokenChanged = token !== getJwtToken()
+                            const tokenInvalid = !isJwtValid()
+                            return tokenChanged || tokenInvalid
                         },
                     }
                 }),

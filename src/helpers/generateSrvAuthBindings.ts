@@ -38,6 +38,17 @@ export async function getCachedJwtInternal() {
     }
     return getCachedJwt()
 }
+
+export function getJwtTokenInternal(): string | undefined {
+    const getJwtToken = realWindow.__ASMA__SHELL__?.auth_bindings?.getJwtToken
+
+    if (!getJwtToken) {
+        throw new Error(
+            'getJwtToken is not defined! please make sure that generateSrvAuthBindings is called before getJwtToken',
+        )
+    }
+    return getJwtToken()
+}
 export async function checkForRegisteredSubdomainInternal() {
     const checkForRegisteredSubdomain = realWindow.__ASMA__SHELL__?.auth_bindings?.checkForRegisteredSubdomain
 
