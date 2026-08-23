@@ -186,6 +186,9 @@ const OPTIONAL_COLLECTIONS = [
     'narrativeRuleOrderByQuestionId',
     'qnrRulesById',
     'qnrRuleOrderByQuestionId',
+    'prefillRulesById',
+    'prefillRuleOrderByQuestionId',
+    'highlightRuleSettingsByQuestionId',
     'dataMappingsById',
     'mappingNodesById',
     'mappingBindingsById',
@@ -501,6 +504,17 @@ const deleteQuestion = (doc: QnrTemplateDocument, questionId: QuestionId): QnrTe
     if (qnrRulesById) {
         qnrRulesById = qnrRuleIds.reduce((acc, id) => omitKey(acc, id), qnrRulesById)
     }
+    // Prefill rules are keyed by their TARGET question — the one that gets filled — so deleting a
+    // question takes the rules that fill IT, exactly as the four families above take their owner's.
+    // A rule on a SURVIVING question that names this one as its `sourceQuestionId` is deliberately
+    // KEPT and left dangling, for the reason stated above: dropping a surviving question's authored
+    // rule is data loss, and a dangling reference is for validation to surface, not for the reducer
+    // to silently resolve.
+    const prefillRuleIds = doc.prefillRuleOrderByQuestionId?.[questionId] ?? []
+    let prefillRulesById = doc.prefillRulesById
+    if (prefillRulesById) {
+        prefillRulesById = prefillRuleIds.reduce((acc, id) => omitKey(acc, id), prefillRulesById)
+    }
     const withoutQuestion = patchDocument(doc, {
         questionsById: doc.questionsById && omitKey(doc.questionsById, questionId),
         questionOrder: doc.questionOrder.filter((id) => id !== questionId),
@@ -521,6 +535,13 @@ const deleteQuestion = (doc: QnrTemplateDocument, questionId: QuestionId): QnrTe
         qnrRulesById,
         qnrRuleOrderByQuestionId:
             doc.qnrRuleOrderByQuestionId && omitKey(doc.qnrRuleOrderByQuestionId, questionId),
+        prefillRulesById,
+        prefillRuleOrderByQuestionId:
+            doc.prefillRuleOrderByQuestionId && omitKey(doc.prefillRuleOrderByQuestionId, questionId),
+        // The settings ride with the question they configure; an entry no question reaches is
+        // unreachable state that still changes `document_hash`.
+        highlightRuleSettingsByQuestionId:
+            doc.highlightRuleSettingsByQuestionId && omitKey(doc.highlightRuleSettingsByQuestionId, questionId),
     })
     // A binding pointing at a deleted question is an unresolvable reference the
     // compiler would reject at publication; drop it with its target. A grid column

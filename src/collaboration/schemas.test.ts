@@ -3,6 +3,7 @@ import { describe, it } from 'node:test'
 import { type } from 'arktype'
 
 import { canonicalJson, reduceToMinimalForm } from './canonicalize.js'
+import { findDocLawViolations } from './docLaws.js'
 import { emptyTemplateDocument, type QnrTemplateDocument } from './templateDocument.js'
 import { IMPLEMENTED_ANSWER_OP_TYPES } from './answerOperations.js'
 import { IMPLEMENTED_OP_TYPES } from './operations.js'
@@ -265,6 +266,58 @@ describe('binding-target uniqueness', () => {
             },
         }
         assert.equal(findDuplicateBindingTargets(doc).length, 0)
+    })
+})
+
+describe('prefill and highlight contract (M-067 / M-068)', () => {
+    const withRules = (): QnrTemplateDocument => ({
+        documentId: 'tpl-1',
+        revision: 0,
+        questionOrder: ['q-1', 'q-2'],
+        questionsById: { 'q-1': { type: 'TextShort' }, 'q-2': { type: 'RadioButtons' } },
+        prefillRulesById: { 'pr-1': { sourceQuestionId: 'q-2', sourceParentQuestionId: 'g-1' } },
+        prefillRuleOrderByQuestionId: { 'q-1': ['pr-1'] },
+        highlightRulesById: {
+            'hr-1': {
+                condition: { sourceQuestionId: 'q-2', operator: 'eq', alternativeIds: ['a-1', 'a-2'] },
+                state: 3,
+                highlight: true,
+                showLink: true,
+            },
+        },
+        highlightRuleOrderByQuestionId: { 'q-1': ['hr-1'] },
+        highlightRuleSettingsByQuestionId: { 'q-1': { enabled: true, requiredAll: true } },
+    })
+
+    it('accepts the widened rule shapes and the two new collections', () => {
+        const result = validateTemplateDocument(withRules())
+        assert.ok(result.ok)
+    })
+
+    it('refuses a prefill rule with no source address', () => {
+        const doc = withRules()
+        doc.prefillRulesById = { 'pr-1': {} as never }
+        assert.equal(validateTemplateDocument(doc).ok, false)
+    })
+
+    it('refuses a false in the true-only settings, so absent stays the only "not set"', () => {
+        const doc = withRules()
+        doc.highlightRuleSettingsByQuestionId = { 'q-1': { enabled: false as never } }
+        assert.equal(validateTemplateDocument(doc).ok, false)
+    })
+
+    it('keeps the new shapes inside the document laws', () => {
+        // The schema lint is total over the shape, so this proves alternativeIds is a PRIMITIVE
+        // array — an array of objects here would be a DOC-LAW-1 violation the lint reports.
+        assert.deepEqual(findTemplateSchemaDocLawViolations(), [])
+        assert.deepEqual(findDocLawViolations(withRules()), [])
+    })
+
+    it('survives a reduction round trip unchanged', () => {
+        const doc = withRules()
+        const once = reduceToMinimalForm(doc, { isDefault: templateDocumentIsDefault })
+        assert.equal(canonicalJson(once), canonicalJson(reduceToMinimalForm(once, { isDefault: templateDocumentIsDefault })))
+        assert.equal(canonicalJson(once), canonicalJson(doc))
     })
 })
 
