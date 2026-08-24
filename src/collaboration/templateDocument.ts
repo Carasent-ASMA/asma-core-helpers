@@ -408,6 +408,27 @@ export type QnrQuestionBundle = {
     alternativesById?: Record<AltId, QnrAlternative>
     alternativeOrderByQuestionId?: Record<QuestionId, AltId[]>
     tabsById?: Record<TabId, QnrTab>
+    /**
+     * The carried tabs in authored order — the one order this bundle could not state.
+     *
+     * Every other collection here already pairs its record with an order (`gridRowOrderByQuestionId`,
+     * `alternativeOrderByQuestionId`) or derives one (a column's place is its position in the owning
+     * grid's `grid.columnIds`; actions are a set by design, architecture §2.1). Tabs had neither, and
+     * **key order is not an order contract**: `qnr_question_templates.bundle` is `jsonb`, which
+     * normalizes object keys by length then bytes, so a two-tab bundle authored `t-zulu, t-alfa` reads
+     * back `t-alfa, t-zulu`. Measured on PostgreSQL 17, and the same payload as `json` keeps the
+     * authored order — so this is the column type destroying it, not the client sending it wrong.
+     *
+     * Consequence for the pick: a pick synthesizes one `tab.create` per tab and `tab.create` appends,
+     * so emission order *is* the resulting `tabOrder` in the live template. Without this member the
+     * only choices were to sort by id or to trust key order — both invent an order the author never
+     * chose, and the tab bar is something they look at.
+     *
+     * Optional because a bundle with fewer than two tabs has no order to state; the library's
+     * validator is where "two or more tabs must declare it" belongs, since that is the writer's rule
+     * rather than a property of the shape.
+     */
+    tabOrder?: TabId[]
     actionsById?: Record<ActionId, QnrAction>
 }
 
