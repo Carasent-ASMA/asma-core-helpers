@@ -310,7 +310,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         if (data?.metadata) {
             metadata = {
                 ...data.metadata,
-                features: new Set(data.metadata?.features),
+                features: new Set(data.metadata.features ?? metadata?.features),
                 overviews: data.metadata?.overviews ? data.metadata.overviews : metadata?.overviews,
             }
         }
