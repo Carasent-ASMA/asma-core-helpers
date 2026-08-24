@@ -266,15 +266,83 @@ export const bindingTargetKey = (target: BindingTarget): string =>
         ? `question:${target.questionId}`
         : `gridColumn:${target.gridQuestionId}:${target.columnQuestionId}`
 
+/**
+ * A binding's expected cardinality (§13.1). Closed rather than a loose string because the compiler
+ * branches on it: `0..1`/`1` fill one slot, `0..*`/`1..*` feed a grid's rows, and a typo would compile
+ * into an artifact that is immutable forever.
+ *
+ * `0..1` is the default, so DOC-LAW-2 means it is **never stored** — a binding that takes at most one
+ * value carries no `cardinality` key at all.
+ *
+ * @see asma-modules/_docs/editor/qnrs/cross/2026-07-15-20-38-analysis-qnr-external-data-mapping-options.md:840 — the four values
+ */
+export const BINDING_CARDINALITIES = ['0..1', '1', '0..*', '1..*'] as const
+export type BindingCardinality = (typeof BINDING_CARDINALITIES)[number]
+
+/**
+ * What the runtime does when the source yields **no** value for a binding. `omit` leaves the question
+ * unfilled (the default); `error` makes the absence a prefill failure the author wants surfaced rather
+ * than silently tolerated.
+ */
+export const BINDING_ON_MISSING = ['omit', 'error'] as const
+export type BindingOnMissing = (typeof BINDING_ON_MISSING)[number]
+
+/**
+ * What the runtime does when the source yields **many** values for a binding expecting one. `error` is
+ * the default — an ambiguous prefill is a real defect — and `first` is the deliberate opt-in, which is
+ * why the node's `orderBy` must make "first" deterministic before it means anything.
+ */
+export const BINDING_ON_MANY = ['error', 'first'] as const
+export type BindingOnMany = (typeof BINDING_ON_MANY)[number]
+
+/**
+ * The three binding behaviours and their defaults, in one place because two rules depend on it: the
+ * reducer omits a chosen value that equals its default (DOC-LAW-2 — a key present with its own default
+ * is a second encoding of "not set", and the hash is computed on the minimal form), and every reader
+ * hydrates the absent key back to the same value.
+ *
+ * @see asma-modules/_docs/editor/qnrs/cross/2026-07-15-20-38-analysis-qnr-external-data-mapping-options.md:832 — absent because they equal their defaults
+ */
+/** The binding behaviours a reader sees — total, because the stored document is minimal. */
+export type ResolvedBindingOptions = {
+    cardinality: BindingCardinality
+    onMissing: BindingOnMissing
+    onMany: BindingOnMany
+}
+
+export const BINDING_OPTION_DEFAULTS = {
+    cardinality: '0..1',
+    onMissing: 'omit',
+    onMany: 'error',
+} as const satisfies ResolvedBindingOptions
+
 export type MappingBinding = {
     nodeId: NodeId
     fieldId: string
     target: BindingTarget
-    cardinality?: string
-    onMissing?: string
-    onMany?: string
+    /** Absent means `0..1` (BINDING_OPTION_DEFAULTS) — never stored at its default. */
+    cardinality?: BindingCardinality
+    /** Absent means `omit`. */
+    onMissing?: BindingOnMissing
+    /** Absent means `error`. */
+    onMany?: BindingOnMany
     [key: string]: unknown
 }
+
+/**
+ * Hydrates a stored binding's behaviours to the total set (§2.2a: "the hydrated in-memory binding is
+ * a total object"). One place rather than `?? 'omit'` at each use site — a reader that spelled the
+ * fallback itself would be a second declaration of the default, free to drift from the reducer's.
+ */
+export const resolveBindingOptions = (binding: MappingBinding): ResolvedBindingOptions => ({
+    cardinality: binding.cardinality ?? BINDING_OPTION_DEFAULTS.cardinality,
+    onMissing: binding.onMissing ?? BINDING_OPTION_DEFAULTS.onMissing,
+    onMany: binding.onMany ?? BINDING_OPTION_DEFAULTS.onMany,
+})
+
+/** Whether a binding's cardinality means "many values", i.e. it feeds a grid's rows rather than one slot. */
+export const bindingIsMultiValued = (binding: MappingBinding): boolean =>
+    resolveBindingOptions(binding).cardinality.endsWith('*')
 
 /** Carries no `nodeId` back-pointer: the node already lists it (§2.2a). */
 export type MappingFilter = {

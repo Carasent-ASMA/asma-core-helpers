@@ -6,7 +6,13 @@ import { IMPLEMENTED_ANSWER_OP_TYPES } from './answerOperations.js'
 import { IMPLEMENTED_OP_TYPES } from './operations.js'
 import { QUESTION_TYPES } from './questionTypes.js'
 import type { BindingTarget, QnrTemplateDocument } from './templateDocument.js'
-import { bindingTargetKey } from './templateDocument.js'
+import {
+    BINDING_CARDINALITIES,
+    BINDING_ON_MANY,
+    BINDING_ON_MISSING,
+    BINDING_OPTION_DEFAULTS,
+    bindingTargetKey,
+} from './templateDocument.js'
 
 /**
  * The ArkType schemas for the two hashed documents and both op vocabularies (plan TASK-003),
@@ -200,13 +206,24 @@ const bindingTargetSchema = type.or(
     type({ kind: '"gridColumn"', gridQuestionId: 'string', columnQuestionId: 'string' }),
 )
 
+/**
+ * The three behaviour vocabularies, derived from the single declaration in `templateDocument.ts`
+ * rather than re-spelled — a second list of literals here could drift from the one the reducer and
+ * the UI branch on, and the drift would only show up as a validation refusal in production.
+ */
+const bindingCardinalitySchema = type.enumerated(...BINDING_CARDINALITIES)
+const bindingOnMissingSchema = type.enumerated(...BINDING_ON_MISSING)
+const bindingOnManySchema = type.enumerated(...BINDING_ON_MANY)
+
 const mappingBindingSchema = type({
     nodeId: 'string',
     fieldId: 'string',
     target: bindingTargetSchema,
-    cardinality: 'string?',
-    onMissing: 'string?',
-    onMany: 'string?',
+    // Closed sets, not `string?`: these compile into an immutable artifact, so a typo that validates
+    // here is a wrong prefill nobody can fix in place afterwards.
+    'cardinality?': bindingCardinalitySchema,
+    'onMissing?': bindingOnMissingSchema,
+    'onMany?': bindingOnManySchema,
     ...({ '[string]': 'unknown' } as const),
 })
 
@@ -376,14 +393,23 @@ export const templateOpSchema = type.or(
         nodeId: 'string',
         fieldId: 'string',
         target: bindingTargetSchema,
+        'cardinality?': bindingCardinalitySchema,
+        'onMissing?': bindingOnMissingSchema,
+        'onMany?': bindingOnManySchema,
     }),
     type({
         type: '"mappingBinding.update"',
         bindingId: 'string',
+        // `| null` on the three behaviours only: the op layer is where the absent-vs-cleared
+        // tri-state lives (operations.ts header), so returning a behaviour to its default is
+        // expressible without making "leave it alone" and "reset it" the same patch.
         patch: type({
             nodeId: 'string?',
             fieldId: 'string?',
-            "target?": bindingTargetSchema,
+            'target?': bindingTargetSchema,
+            'cardinality?': bindingCardinalitySchema.or(type.null),
+            'onMissing?': bindingOnMissingSchema.or(type.null),
+            'onMany?': bindingOnManySchema.or(type.null),
         }),
     }),
     type({ type: '"mappingBinding.delete"', bindingId: 'string' }),
@@ -605,8 +631,26 @@ const TEMPLATE_DOCUMENT_DEFAULT_PATHS: readonly string[] = [
     'timestamps', // question.grid (legacy composite `row_timestamps`)
 ]
 
-export const templateDocumentIsDefault: IsDefault = (path, value) =>
-    value === false && TEMPLATE_DOCUMENT_DEFAULT_PATHS.some((name) => path.endsWith(`.${name}`))
+/**
+ * The binding behaviours, whose default is a **value** rather than `false` and whose path must
+ * therefore be matched exactly rather than by suffix.
+ *
+ * Anchored on `mappingBindingsById.<id>.<key>` on purpose: a mapping **node** may also carry a
+ * `cardinality`, and its default is the catalog relation's — not a literal. A suffix rule would
+ * read a node's deliberately-narrowed `cardinality: '0..1'` over a `0..*` relation as an omittable
+ * default and drop the one member that made the node take a single row.
+ */
+const BINDING_OPTION_DEFAULT_PATH = /^mappingBindingsById\.[^.]+\.(cardinality|onMissing|onMany)$/
+
+export const templateDocumentIsDefault: IsDefault = (path, value) => {
+    const option = BINDING_OPTION_DEFAULT_PATH.exec(path)?.[1]
+
+    if (option !== undefined) {
+        return value === BINDING_OPTION_DEFAULTS[option as keyof typeof BINDING_OPTION_DEFAULTS]
+    }
+
+    return value === false && TEMPLATE_DOCUMENT_DEFAULT_PATHS.some((name) => path.endsWith(`.${name}`))
+}
 
 /**
  * The instance-side half of the default lint: every present-and-default field on a stored
