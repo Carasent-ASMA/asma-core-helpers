@@ -1,16 +1,21 @@
 import type { TemplateOp } from './operations.js'
 import type {
+    ActionMetadata,
     BindingCardinality,
+    KnownActionKind,
     BindingOnMany,
     BindingOnMissing,
+    LayoutPlacement,
     MappingBinding,
+    MappingFilter,
     MappingNode,
     QnrDataMapping,
+    QnrAction,
     QnrQuestion,
     QnrTemplateDocument,
     QuestionId,
 } from './templateDocument.js'
-import { BINDING_OPTION_DEFAULTS, bindingTargetKey } from './templateDocument.js'
+import { BINDING_OPTION_DEFAULTS, bindingTargetKey, isKnownActionKind } from './templateDocument.js'
 
 /** The behaviour members, so the write loop cannot silently miss one that `BINDING_OPTION_DEFAULTS` gains. */
 const BINDING_OPTION_KEYS = Object.keys(BINDING_OPTION_DEFAULTS) as ReadonlyArray<keyof typeof BINDING_OPTION_DEFAULTS>
@@ -148,6 +153,313 @@ const writeBindingOptions = (
     return next
 }
 
+/**
+ * Adds, moves or removes ONE member of an ordered primitive id list.
+ *
+ * The member-wise discipline three ops share, and the reason they are ops at all rather than whole-list
+ * writes: JSON Merge Patch replaces an array wholesale, so two authors adding different ids would
+ * produce two patches and the second would silently discard the first with no conflict raised. Editing
+ * the *current* list one member at a time makes both edits survive — the same argument DOC-LAW-1 makes
+ * for keying collections by id.
+ *
+ * `include: true` inserts at `atIndex` (else appends) and **moves** an id already present when an
+ * `atIndex` is supplied; omitting `atIndex` for an id already present is a no-op rather than a
+ * duplicate. `include: false` removes it.
+ */
+const setListMember = (list: readonly string[], id: string, include: boolean, atIndex?: number): string[] => {
+    if (!include) return list.filter((member) => member !== id)
+
+    const without = list.filter((member) => member !== id)
+    if (atIndex === undefined) return list.includes(id) ? [...list] : [...without, id]
+
+    const at = Math.max(0, Math.min(atIndex, without.length))
+    return [...without.slice(0, at), id, ...without.slice(at)]
+}
+
+/** Writes a grid question's presentation back in minimal form, dropping every emptied container. */
+const writeGridPresentation = (
+    doc: QnrTemplateDocument,
+    questionId: QuestionId,
+    question: QnrQuestion,
+    presentation: Record<string, unknown>,
+): QnrTemplateDocument => {
+    const nextQuestion = { ...question }
+    if (Object.keys(presentation).length === 0) delete nextQuestion.presentation
+    else nextQuestion.presentation = presentation
+
+    return { ...doc, questionsById: { ...doc.questionsById, [questionId]: nextQuestion } }
+}
+
+/** Sets or clears one of a grid presentation's ordered id lists, omitting it when emptied (DOC-LAW-2). */
+const writePresentationList = (
+    presentation: Record<string, unknown>,
+    key: 'filterQuestionIds' | 'actionIds',
+    next: readonly string[],
+): Record<string, unknown> => {
+    const copy = { ...presentation }
+    if (next.length === 0) delete copy[key]
+    else copy[key] = [...next]
+    return copy
+}
+
+const presentationListOf = (question: QnrQuestion, key: 'filterQuestionIds' | 'actionIds'): string[] => {
+    const value = (question.presentation ?? {})[key]
+    return Array.isArray(value) ? (value as string[]).filter((member): member is string => typeof member === 'string') : []
+}
+
+/** Every grid presentation that lists `actionId`, so a grid action can have at most one owner. */
+const gridsOwningAction = (doc: QnrTemplateDocument, actionId: string): QuestionId[] =>
+    Object.entries(doc.questionsById ?? {})
+        .filter(([, question]) => presentationListOf(question, 'actionIds').includes(actionId))
+        .map(([questionId]) => questionId)
+
+/**
+ * The action, if it is a KNOWN one — `kind` inside the closed vocabulary.
+ *
+ * A legacy record with an unknown `kind` is not "known but unrecognised": the typed ops refuse it
+ * outright rather than half-applying rules written for a different shape, which is what keeps old
+ * documents replaying byte-identically.
+ */
+/**
+ * Why `field` may not be written as an ordinary tab field edit, or `undefined` if it may.
+ *
+ * `layout.placementsByQuestionId` is reserved for `tab.setLayout`. Unlike the grid's filter list this
+ * one is not even expressible as an `OpValue` — a placement is an object — so the realistic misuse is a
+ * write to an ANCESTOR (`layout`, or the placements map cleared wholesale), which would drop every other
+ * question's placement in one edit. Both directions of overlap are refused; `label` and any other
+ * authored scalar stay ordinary field edits.
+ */
+export const tabFieldPathRefusal = (field: string): string | undefined => {
+    const reserved = 'layout.placementsByQuestionId'
+
+    if (field === reserved || field.startsWith(`${reserved}.`) || reserved.startsWith(`${field}.`)) {
+        return `Field "${field}" writes "${reserved}", which only tab.setLayout may author`
+    }
+
+    return undefined
+}
+
+/** UI edit buffers, in both spellings. Never document content — see `knownActionFieldRefusal`. */
+const ACTION_UI_BUFFERS = ['editableLabel', 'editableType', 'editable_label', 'editable_type'] as const
+
+/** The collections only the typed member-wise ops may author. */
+const ACTION_OWNED_FIELD_PATHS = ['actionIdsByGridQuestionId', 'metadataByQuestionId'] as const
+
+/**
+ * Why `field` may not be written on a KNOWN action, or `undefined` if it may.
+ *
+ * Applies to known kinds only. A legacy record keeps taking any field, including the buffers below,
+ * because that is what makes an already-stored action replay byte-identically (ADR-0008 DEC-006).
+ *
+ * Four refusals:
+ *
+ * - **`kind` is write-once.** It selects which rules apply, so changing it would reinterpret every
+ *   member already stored under the old kind — a `gridAction`'s metadata read as a top-level map.
+ * - **UI edit buffers are not document content.** `editable_label`/`editable_type` are designer-side
+ *   flags legacy happened to persist; authoring them would mint a version for a checkbox nobody
+ *   considers content, and they are not in the typed vocabulary at all.
+ * - **`actionType` belongs to a `gridAction`.** On a top-level action it would be a member no reader
+ *   consults, silently changing `document_hash`.
+ * - **The two keyed collections are reserved** for `action.setGridActionRef` / `action.setMetadata`,
+ *   which edit them one member at a time. A field write can only replace a map wholesale, which is the
+ *   lost-update those ops exist to prevent — and it reaches ancestors too, so `metadataByQuestionId`
+ *   and anything under it are both refused.
+ */
+export const knownActionFieldRefusal = (kind: KnownActionKind, field: string): string | undefined => {
+    if (field === 'kind' || field.startsWith('kind.')) {
+        return 'Field "kind" is write-once on a known action; create a new action instead'
+    }
+
+    if (ACTION_UI_BUFFERS.some((buffer) => field === buffer || field.startsWith(`${buffer}.`))) {
+        return `Field "${field}" is a UI edit buffer, not document content`
+    }
+
+    if ((field === 'actionType' || field.startsWith('actionType.')) && kind !== 'gridAction') {
+        return `Field "actionType" belongs to a gridAction, not a ${kind}`
+    }
+
+    const owned = ACTION_OWNED_FIELD_PATHS.find(
+        (path) => field === path || field.startsWith(`${path}.`) || path.startsWith(`${field}.`),
+    )
+    if (owned !== undefined) {
+        return `Field "${field}" writes "${owned}", which only the typed action operations may author`
+    }
+
+    return undefined
+}
+
+const requireKnownAction = (doc: QnrTemplateDocument, actionId: string, kind: 'topLevelAction' | 'gridAction'): QnrAction => {
+    const action = doc.actionsById?.[actionId]
+    if (!action) throw new OperationConflictError(`Unknown action "${actionId}"`)
+    if (!isKnownActionKind(action.kind)) {
+        throw new OperationConflictError(
+            `Action "${actionId}" is a legacy record (kind "${String(action.kind)}"); the typed operations only author known kinds`,
+        )
+    }
+    if (action.kind !== kind) {
+        throw new OperationConflictError(`Action "${actionId}" is a ${action.kind}, not a ${kind}`)
+    }
+    return action
+}
+
+/**
+ * Canonicalizes one metadata entry, refusing the two shapes DOC-LAW-2 makes ambiguous.
+ *
+ * `{all: true}` is the all-to-all marker and is exclusive with bounds: legacy writes all-to-all as
+ * `from: null, to: null`, and since a document may carry neither a null nor an empty object, "selected
+ * but unbounded" and "not selected" would otherwise be the same absence.
+ */
+const canonicalActionMetadata = (metadata: ActionMetadata): ActionMetadata => {
+    const record = metadata as Record<string, unknown>
+    const hasAll = record['all'] === true
+    const hasFrom = record['from'] !== undefined
+    const hasTo = record['to'] !== undefined
+
+    if (hasAll && (hasFrom || hasTo)) {
+        throw new OperationConflictError('Action metadata "all" is exclusive with "from"/"to"')
+    }
+    if (hasAll) return { all: true }
+    if (!hasFrom && !hasTo) {
+        throw new OperationConflictError('Action metadata must select something: "all", "from" and/or "to"')
+    }
+
+    return {
+        ...(hasFrom ? { from: record['from'] as never } : {}),
+        ...(hasTo ? { to: record['to'] as never } : {}),
+    } as ActionMetadata
+}
+
+/**
+ * Drops every top-level reference to one of a grid's actions.
+ *
+ * A `topLevelAction` entry means "run this GRID's action", so when the grid stops owning the action the
+ * reference stops being expressible at the same moment — leaving it would compile into a button that
+ * runs nothing. Emptied sequences drop their grid key and an emptied map is omitted (DOC-LAW-2).
+ */
+const scrubGridActionRefs = (
+    doc: QnrTemplateDocument,
+    gridQuestionId: QuestionId,
+    gridActionId: string,
+): QnrTemplateDocument => {
+    const actions = Object.entries(doc.actionsById ?? {})
+    if (actions.length === 0) return doc
+
+    let changed = false
+    const nextActions = Object.fromEntries(
+        actions.map(([actionId, action]) => {
+            const byGrid = (action['actionIdsByGridQuestionId'] ?? {}) as Record<string, string[]>
+            const sequence = byGrid[gridQuestionId]
+            if (!Array.isArray(sequence) || !sequence.includes(gridActionId)) return [actionId, action]
+
+            changed = true
+            const remaining = sequence.filter((id) => id !== gridActionId)
+            const nextByGrid = { ...byGrid }
+            if (remaining.length === 0) delete nextByGrid[gridQuestionId]
+            else nextByGrid[gridQuestionId] = remaining
+
+            const nextAction = { ...action }
+            if (Object.keys(nextByGrid).length === 0) delete nextAction['actionIdsByGridQuestionId']
+            else nextAction['actionIdsByGridQuestionId'] = nextByGrid
+            return [actionId, nextAction]
+        }),
+    )
+
+    return changed ? { ...doc, actionsById: nextActions } : doc
+}
+
+/** Drops a deleted question's placement from every tab layout, and every emptied container with it. */
+const scrubTabPlacements = (doc: QnrTemplateDocument, questionId: QuestionId): QnrTemplateDocument => {
+    const tabs = Object.entries(doc.tabsById ?? {})
+    if (tabs.length === 0) return doc
+
+    let changed = false
+    const nextTabs = Object.fromEntries(
+        tabs.map(([tabId, tab]) => {
+            const layout = (tab.layout ?? {}) as Record<string, unknown>
+            const placements = (layout['placementsByQuestionId'] ?? {}) as Record<string, LayoutPlacement>
+            if (placements[questionId] === undefined) return [tabId, tab]
+
+            changed = true
+            const nextPlacements = omitKey(placements, questionId)
+            const nextLayout = { ...layout }
+            if (Object.keys(nextPlacements).length === 0) delete nextLayout['placementsByQuestionId']
+            else nextLayout['placementsByQuestionId'] = nextPlacements
+
+            const nextTab = { ...tab }
+            if (Object.keys(nextLayout).length === 0) delete nextTab.layout
+            else nextTab.layout = nextLayout
+            return [tabId, nextTab]
+        }),
+    )
+
+    return changed ? { ...doc, tabsById: nextTabs } : doc
+}
+
+/** Drops a deleted tab from every grid that named it as its header. */
+const scrubHeaderTabRefs = (doc: QnrTemplateDocument, tabId: string): QnrTemplateDocument => {
+    const questions = Object.entries(doc.questionsById ?? {})
+    let changed = false
+    const nextQuestions = Object.fromEntries(
+        questions.map(([questionId, question]) => {
+            if (question.presentation?.headerTabId !== tabId) return [questionId, question]
+
+            changed = true
+            const presentation = { ...question.presentation }
+            delete presentation.headerTabId
+            const nextQuestion = { ...question }
+            if (Object.keys(presentation).length === 0) delete nextQuestion.presentation
+            else nextQuestion.presentation = presentation
+            return [questionId, nextQuestion]
+        }),
+    )
+
+    return changed ? { ...doc, questionsById: nextQuestions } : doc
+}
+
+/** Drops a deleted action from every grid presentation and every top-level sequence naming it. */
+const scrubActionRefs = (doc: QnrTemplateDocument, actionId: string): QnrTemplateDocument => {
+    let next = doc
+
+    for (const gridQuestionId of gridsOwningAction(doc, actionId)) {
+        const grid = next.questionsById?.[gridQuestionId]
+        if (!grid) continue
+        const presentation = writePresentationList(
+            { ...(grid.presentation ?? {}) },
+            'actionIds',
+            presentationListOf(grid, 'actionIds').filter((id) => id !== actionId),
+        )
+        next = writeGridPresentation(next, gridQuestionId, grid, presentation)
+        next = scrubGridActionRefs(next, gridQuestionId, actionId)
+    }
+
+    // A top-level action can also be deleted while still referenced by nothing of its own; and a grid
+    // action may be referenced under a grid that no longer owns it, so sweep every sequence by value.
+    const actions = Object.entries(next.actionsById ?? {})
+    let changed = false
+    const nextActions = Object.fromEntries(
+        actions.map(([id, action]) => {
+            const byGrid = (action['actionIdsByGridQuestionId'] ?? {}) as Record<string, string[]>
+            const entries = Object.entries(byGrid)
+            if (entries.length === 0) return [id, action]
+
+            const rebuilt = entries
+                .map(([gridId, sequence]) => [gridId, sequence.filter((member) => member !== actionId)] as const)
+                .filter(([, sequence]) => sequence.length > 0)
+            if (rebuilt.length === entries.length && rebuilt.every(([, seq], index) => seq.length === (entries[index]?.[1].length ?? 0))) {
+                return [id, action]
+            }
+
+            changed = true
+            const nextAction = { ...action }
+            if (rebuilt.length === 0) delete nextAction['actionIdsByGridQuestionId']
+            else nextAction['actionIdsByGridQuestionId'] = Object.fromEntries(rebuilt.map(([g, seq]) => [g, [...seq]]))
+            return [id, nextAction]
+        }),
+    )
+
+    return changed ? { ...next, actionsById: nextActions } : next
+}
+
 const omitKey = <V>(record: Record<string, V>, key: string): Record<string, V> => {
     const { [key]: _removed, ...rest } = record
     return rest
@@ -164,7 +476,16 @@ const omitKey = <V>(record: Record<string, V>, key: string): Record<string, V> =
  * owned by nobody, or every other column's placement dropped in one edit. That is precisely
  * the atomicity the grid ops exist to provide, so the paths are reserved for them.
  */
-const GRID_OWNED_FIELD_PATHS = ['grid.columnIds', 'presentation.rowEditor.layoutByQuestionId'] as const
+const GRID_OWNED_FIELD_PATHS = [
+    'grid.columnIds',
+    'presentation.rowEditor.layoutByQuestionId',
+    // Maintained member-wise by `gridColumn.setFilter` / `gridColumn.setAction`. An `OpValue` can carry
+    // a primitive array, so unlike the layout map these two are *expressible* as a field edit — which is
+    // exactly why they must be reserved: a wholesale write is the lost-update the member-wise ops exist
+    // to prevent, and it would land silently.
+    'presentation.filterQuestionIds',
+    'presentation.actionIds',
+] as const
 
 /**
  * The reserved path `field` would write, if any. Both directions count: the path itself, a
@@ -584,8 +905,69 @@ const deleteQuestion = (doc: QnrTemplateDocument, questionId: QuestionId): QnrTe
     })
     // A binding pointing at a deleted question is an unresolvable reference the
     // compiler would reject at publication; drop it with its target. A grid column
-    // list pointing at it is the same class of reference and goes the same way.
-    return dropBindingsForQuestion(dropFromGridColumns(withoutQuestion, questionId), questionId)
+    // list pointing at it is the same class of reference and goes the same way — and so are the
+    // presentation references a column earns: its filter chip, its row-editor placement, its default
+    // width, and its placement inside any tab's positional grid.
+    const withoutRefs = dropBindingsForQuestion(dropFromGridColumns(withoutQuestion, questionId), questionId)
+    return scrubTabPlacements(scrubColumnPresentationRefs(withoutRefs, questionId), questionId)
+}
+
+/**
+ * Drops a deleted column from every grid presentation that referenced it.
+ *
+ * `dropFromGridColumns` removes the ownership entry; these are the three places a column also earns a
+ * reference — the filter selection, its row-editor placement and its authored default width. Left
+ * behind, each is a key naming a question the document no longer has: unreachable state that still
+ * changes `document_hash`, which is what makes it a correctness problem and not tidiness.
+ */
+const scrubColumnPresentationRefs = (doc: QnrTemplateDocument, questionId: QuestionId): QnrTemplateDocument => {
+    const questions = Object.entries(doc.questionsById ?? {})
+    let changed = false
+
+    const nextQuestions = Object.fromEntries(
+        questions.map(([gridQuestionId, question]) => {
+            const presentation = question.presentation
+            if (presentation === undefined) return [gridQuestionId, question]
+
+            let next: Record<string, unknown> = { ...presentation }
+            let touched = false
+
+            const filters = presentationListOf(question, 'filterQuestionIds')
+            if (filters.includes(questionId)) {
+                next = writePresentationList(next, 'filterQuestionIds', filters.filter((id) => id !== questionId))
+                touched = true
+            }
+
+            const rowEditor = next['rowEditor'] as { layoutByQuestionId?: Record<string, unknown> } | undefined
+            if (rowEditor?.layoutByQuestionId?.[questionId] !== undefined) {
+                const layout = omitKey(rowEditor.layoutByQuestionId, questionId)
+                const nextRowEditor: Record<string, unknown> = { ...rowEditor }
+                if (Object.keys(layout).length === 0) delete nextRowEditor['layoutByQuestionId']
+                else nextRowEditor['layoutByQuestionId'] = layout
+                if (Object.keys(nextRowEditor).length === 0) delete next['rowEditor']
+                else next['rowEditor'] = nextRowEditor
+                touched = true
+            }
+
+            const widths = next['defaultColumnWidthsByQuestionId'] as Record<string, number> | undefined
+            if (widths?.[questionId] !== undefined) {
+                const remaining = omitKey(widths, questionId)
+                if (Object.keys(remaining).length === 0) delete next['defaultColumnWidthsByQuestionId']
+                else next['defaultColumnWidthsByQuestionId'] = remaining
+                touched = true
+            }
+
+            if (!touched) return [gridQuestionId, question]
+            changed = true
+
+            const nextQuestion = { ...question }
+            if (Object.keys(next).length === 0) delete nextQuestion.presentation
+            else nextQuestion.presentation = next
+            return [gridQuestionId, nextQuestion]
+        }),
+    )
+
+    return changed ? { ...doc, questionsById: nextQuestions } : doc
 }
 
 export const applyOperation = (document: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument => {
@@ -762,6 +1144,52 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             }
         }
 
+        case 'gridColumn.setFilter': {
+            const gridQuestion = requireGridQuestion(doc, op.questionId)
+            const columnIds = gridQuestion.grid?.columnIds
+            // Only a column this grid owns may offer a filter: a top-level question's filter chip would
+            // have no row context to filter, and the reference would dangle on the grid's delete.
+            if (!doc.questionsById?.[op.columnQuestionId] || !columnIds?.includes(op.columnQuestionId)) {
+                throw new OperationConflictError(
+                    `Question "${op.columnQuestionId}" does not belong to grid "${op.questionId}"`,
+                )
+            }
+
+            const presentation = writePresentationList(
+                { ...(gridQuestion.presentation ?? {}) },
+                'filterQuestionIds',
+                setListMember(presentationListOf(gridQuestion, 'filterQuestionIds'), op.columnQuestionId, op.include, op.atIndex),
+            )
+            return writeGridPresentation(doc, op.questionId, gridQuestion, presentation)
+        }
+
+        case 'gridColumn.setAction': {
+            const gridQuestion = requireGridQuestion(doc, op.questionId)
+            if (op.include) {
+                const action = doc.actionsById?.[op.actionId]
+                if (!action) throw new OperationConflictError(`Unknown action "${op.actionId}"`)
+                // A grid action has at most one owning grid, which is what makes its metadata scope
+                // unambiguous — the same action listed by two grids would have two column vocabularies.
+                const owners = gridsOwningAction(doc, op.actionId).filter((owner) => owner !== op.questionId)
+                if (owners.length > 0) {
+                    throw new OperationConflictError(
+                        `Action "${op.actionId}" is already owned by grid "${owners[0]}"`,
+                    )
+                }
+            }
+
+            const presentation = writePresentationList(
+                { ...(gridQuestion.presentation ?? {}) },
+                'actionIds',
+                setListMember(presentationListOf(gridQuestion, 'actionIds'), op.actionId, op.include, op.atIndex),
+            )
+            const next = writeGridPresentation(doc, op.questionId, gridQuestion, presentation)
+
+            // Removing a grid's action also drops it from every top-level sequence for THAT grid: the
+            // reference means "run this grid's action", so it stops being expressible at the same moment.
+            return op.include ? next : scrubGridActionRefs(next, op.questionId, op.actionId)
+        }
+
         case 'gridRow.create': {
             if (!doc.questionsById?.[op.questionId]) {
                 throw new OperationConflictError(`Unknown question "${op.questionId}"`)
@@ -928,6 +1356,8 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             if (!tab) {
                 throw new OperationConflictError(`Unknown tab "${op.tabId}"`)
             }
+            const refusal = tabFieldPathRefusal(op.field)
+            if (refusal !== undefined) throw new OperationConflictError(refusal)
             return { ...doc, tabsById: { ...doc.tabsById, [op.tabId]: writeField(tab, op.field, op.value) } }
         }
 
@@ -938,13 +1368,39 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             return { ...doc, tabOrder: moveInOrder(doc.tabOrder, op.tabId, op.toIndex) }
         }
 
+        case 'tab.setLayout': {
+            if (!doc.tabsById?.[op.tabId]) throw new OperationConflictError(`Unknown tab "${op.tabId}"`)
+            if (!doc.questionsById?.[op.questionId]) {
+                throw new OperationConflictError(`Unknown question "${op.questionId}"`)
+            }
+
+            const tab = doc.tabsById[op.tabId] ?? {}
+            const layout = { ...((tab.layout ?? {}) as Record<string, unknown>) }
+            const placements = { ...((layout['placementsByQuestionId'] ?? {}) as Record<string, LayoutPlacement>) }
+
+            // One whole placement, written or removed as a unit — never a row without its cell.
+            if (op.placement === null) delete placements[op.questionId]
+            else placements[op.questionId] = op.placement
+
+            if (Object.keys(placements).length === 0) delete layout['placementsByQuestionId']
+            else layout['placementsByQuestionId'] = placements
+
+            const nextTab = { ...tab }
+            if (Object.keys(layout).length === 0) delete nextTab.layout
+            else nextTab.layout = layout
+
+            return { ...doc, tabsById: { ...doc.tabsById, [op.tabId]: nextTab } }
+        }
+
         case 'tab.delete': {
             if (!doc.tabsById?.[op.tabId]) {
                 throw new OperationConflictError(`Unknown tab "${op.tabId}"`)
             }
-            return patchDocument(doc, {
-                tabsById: doc.tabsById && omitKey(doc.tabsById, op.tabId),
-                tabOrder: (doc.tabOrder ?? []).filter((id) => id !== op.tabId),
+            // A grid naming a deleted tab as its header would point at nothing; scrub before removing.
+            const scrubbed = scrubHeaderTabRefs(doc, op.tabId)
+            return patchDocument(scrubbed, {
+                tabsById: scrubbed.tabsById && omitKey(scrubbed.tabsById, op.tabId),
+                tabOrder: (scrubbed.tabOrder ?? []).filter((id) => id !== op.tabId),
             })
         }
 
@@ -966,15 +1422,104 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             if (!action) {
                 throw new OperationConflictError(`Unknown action "${op.actionId}"`)
             }
+            // The gate applies to KNOWN kinds only. An unknown-kind record keeps taking any field —
+            // including the UI buffers legacy persisted — so a stored action replays byte-identically.
+            if (isKnownActionKind(action.kind)) {
+                const refusal = knownActionFieldRefusal(action.kind, op.field)
+                if (refusal !== undefined) throw new OperationConflictError(refusal)
+            }
             return { ...doc, actionsById: { ...doc.actionsById, [op.actionId]: writeField(action, op.field, op.value) } }
+        }
+
+        case 'action.createTyped': {
+            if (doc.actionsById?.[op.actionId]) {
+                throw new OperationConflictError(`Action "${op.actionId}" already exists`)
+            }
+            if (op.actionType !== undefined && op.kind !== 'gridAction') {
+                throw new OperationConflictError(`"actionType" belongs to a gridAction, not a ${op.kind}`)
+            }
+
+            // Minimal form: kind plus only what was authored. No empty label, no empty collections.
+            return {
+                ...doc,
+                actionsById: {
+                    ...(doc.actionsById ?? {}),
+                    [op.actionId]: {
+                        kind: op.kind,
+                        ...(op.label === undefined ? {} : { label: op.label }),
+                        ...(op.actionType === undefined ? {} : { actionType: op.actionType }),
+                    },
+                },
+            }
+        }
+
+        case 'action.setGridActionRef': {
+            const action = requireKnownAction(doc, op.actionId, 'topLevelAction')
+            const grid = doc.questionsById?.[op.gridQuestionId]
+            if (!grid || grid.type !== 'QuestionGrid') {
+                throw new OperationConflictError(`"${op.gridQuestionId}" is not a QuestionGrid`)
+            }
+            if (op.include) {
+                // The referenced action must be a grid action THIS grid owns: a top-level button runs
+                // one of that grid's actions, so a reference to an unowned one would compile to nothing.
+                requireKnownAction(doc, op.gridActionId, 'gridAction')
+                if (!presentationListOf(grid, 'actionIds').includes(op.gridActionId)) {
+                    throw new OperationConflictError(
+                        `Action "${op.gridActionId}" is not owned by grid "${op.gridQuestionId}"`,
+                    )
+                }
+            }
+
+            const byGrid = { ...((action['actionIdsByGridQuestionId'] ?? {}) as Record<string, string[]>) }
+            const next = setListMember(byGrid[op.gridQuestionId] ?? [], op.gridActionId, op.include, op.atIndex)
+            if (next.length === 0) delete byGrid[op.gridQuestionId]
+            else byGrid[op.gridQuestionId] = next
+
+            const nextAction = { ...action }
+            if (Object.keys(byGrid).length === 0) delete nextAction['actionIdsByGridQuestionId']
+            else nextAction['actionIdsByGridQuestionId'] = byGrid
+
+            return { ...doc, actionsById: { ...doc.actionsById, [op.actionId]: nextAction } }
+        }
+
+        case 'action.setMetadata': {
+            const action = requireKnownAction(doc, op.actionId, 'gridAction')
+            const owners = gridsOwningAction(doc, op.actionId)
+            const owner = owners[0]
+            if (owner === undefined) {
+                throw new OperationConflictError(
+                    `Action "${op.actionId}" is owned by no grid, so its metadata has no column vocabulary`,
+                )
+            }
+            if (op.metadata !== null) {
+                // A metadata key is a COLUMN of the owning grid, not an arbitrary question: the action
+                // copies or updates values within its own rows.
+                const columnIds = doc.questionsById?.[owner]?.grid?.columnIds ?? []
+                if (!columnIds.includes(op.questionId)) {
+                    throw new OperationConflictError(
+                        `Question "${op.questionId}" is not a column of grid "${owner}"`,
+                    )
+                }
+            }
+
+            const byQuestion = { ...((action['metadataByQuestionId'] ?? {}) as Record<string, ActionMetadata>) }
+            if (op.metadata === null) delete byQuestion[op.questionId]
+            else byQuestion[op.questionId] = canonicalActionMetadata(op.metadata)
+
+            const nextAction = { ...action }
+            if (Object.keys(byQuestion).length === 0) delete nextAction['metadataByQuestionId']
+            else nextAction['metadataByQuestionId'] = byQuestion
+
+            return { ...doc, actionsById: { ...doc.actionsById, [op.actionId]: nextAction } }
         }
 
         case 'action.delete': {
             if (!doc.actionsById?.[op.actionId]) {
                 throw new OperationConflictError(`Unknown action "${op.actionId}"`)
             }
-            return patchDocument(doc, {
-                actionsById: doc.actionsById && omitKey(doc.actionsById, op.actionId),
+            const scrubbed = scrubActionRefs(doc, op.actionId)
+            return patchDocument(scrubbed, {
+                actionsById: scrubbed.actionsById && omitKey(scrubbed.actionsById, op.actionId),
             })
         }
 
@@ -1190,6 +1735,41 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             }
             const filterOrder = node.filterOrder ?? []
             const filter = writeField({ fieldId: op.fieldId, operator: op.operator }, 'value', op.value ?? null)
+            return {
+                ...doc,
+                mappingFiltersById: { ...(doc.mappingFiltersById ?? {}), [op.filterId]: filter },
+                mappingNodesById: {
+                    ...doc.mappingNodesById,
+                    [op.nodeId]: {
+                        ...node,
+                        filterOrder: filterOrder.includes(op.filterId) ? filterOrder : [...filterOrder, op.filterId],
+                    },
+                },
+            }
+        }
+
+        case 'mappingFilter.setTyped': {
+            const node = doc.mappingNodesById?.[op.nodeId]
+            if (!node) throw new OperationConflictError(`Unknown mapping node "${op.nodeId}"`)
+
+            // REPLACED, not patched: switching `eq` -> `in` must not leave the old `value` beside the
+            // new `values`, which a merge would. A filter carries its own operator's members and no
+            // others, so one operator is always readable from the record alone.
+            const filter: MappingFilter =
+                op.operator === 'eq'
+                    ? { fieldId: op.fieldId, operator: 'eq', value: op.value }
+                    : op.operator === 'in'
+                      ? { fieldId: op.fieldId, operator: 'in', values: [...op.values] }
+                      : op.operator === 'isNull'
+                        ? { fieldId: op.fieldId, operator: 'isNull', value: op.value }
+                        : {
+                              fieldId: op.fieldId,
+                              operator: 'range',
+                              ...('from' in op && op.from !== undefined ? { from: op.from } : {}),
+                              ...('to' in op && op.to !== undefined ? { to: op.to } : {}),
+                          }
+
+            const filterOrder = node.filterOrder ?? []
             return {
                 ...doc,
                 mappingFiltersById: { ...(doc.mappingFiltersById ?? {}), [op.filterId]: filter },

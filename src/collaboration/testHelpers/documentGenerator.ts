@@ -211,7 +211,7 @@ const nextOp = (random: () => number, pools: IdPools): TemplateOp => {
 
 /** Operations added by ASMA-7676, kept in a dedicated mix so every seeded run exercises them. */
 const nextAddedContractOp = (random: () => number, pools: IdPools): TemplateOp => {
-    const choice = Math.floor(random() * 9)
+    const choice = Math.floor(random() * 16)
     const columnQuestionId = pickOrFallback(random, pools.columns, 'c-ghost')
     const ownerQuestionId = pools.columnOwnerById[columnQuestionId] ?? pickOrFallback(random, pools.grids, 'g-ghost')
     const questionId = idOrNew(random, pools.questions, NEW_QUESTION_ID)
@@ -264,6 +264,76 @@ const nextAddedContractOp = (random: () => number, pools: IdPools): TemplateOp =
             return { type: 'qnrRule.delete', ruleId: pickOrFallback(random, pools.qnrRules, 'qr-ghost') }
         case 7:
             return { type: 'question.move', questionId: columnQuestionId, toIndex: Math.floor(random() * 5) }
+        // ── ASMA-7683 additive ops. Generated alongside the released vocabulary so the property run
+        // exercises them against the same invariants (DOC-law, ownership, hash stability) rather than
+        // only in their own hand-written cases.
+        case 8:
+            return {
+                type: 'gridColumn.setFilter',
+                questionId: ownerQuestionId,
+                columnQuestionId,
+                include: maybe(random, 0.7),
+                ...(maybe(random, 0.5) ? { atIndex: Math.floor(random() * 3) } : {}),
+            }
+        case 9:
+            return {
+                type: 'gridColumn.setAction',
+                questionId: pickOrFallback(random, pools.grids, 'g-ghost'),
+                actionId: pickOrFallback(random, pools.actions, 'x-ghost'),
+                include: maybe(random, 0.7),
+                ...(maybe(random, 0.5) ? { atIndex: Math.floor(random() * 3) } : {}),
+            }
+        case 10:
+            return {
+                type: 'tab.setLayout',
+                tabId: pickOrFallback(random, pools.tabs, 't-ghost'),
+                questionId: pickOrFallback(random, pools.questions, 'q-ghost'),
+                placement: maybe(random, 0.25)
+                    ? null
+                    : { row: Math.floor(random() * 3), cell: Math.floor(random() * 4) },
+            }
+        case 11:
+            return {
+                type: 'mappingFilter.setTyped',
+                filterId: NEW_FILTER_ID(pools.filters.length),
+                nodeId: pickOrFallback(random, pools.nodes, 'n-ghost'),
+                fieldId: `fld-${Math.floor(random() * 4)}`,
+                operator: 'eq',
+                value: `v-${Math.floor(random() * 3)}`,
+            }
+        case 12:
+            return {
+                type: 'mappingFilter.setTyped',
+                filterId: pickOrFallback(random, pools.filters, NEW_FILTER_ID(pools.filters.length)),
+                nodeId: pickOrFallback(random, pools.nodes, 'n-ghost'),
+                fieldId: `fld-${Math.floor(random() * 4)}`,
+                operator: 'in',
+                values: [`v-${Math.floor(random() * 3)}`, Math.floor(random() * 9)],
+            }
+        case 13:
+            return {
+                type: 'mappingFilter.setTyped',
+                filterId: pickOrFallback(random, pools.filters, NEW_FILTER_ID(pools.filters.length)),
+                nodeId: pickOrFallback(random, pools.nodes, 'n-ghost'),
+                fieldId: `fld-${Math.floor(random() * 4)}`,
+                operator: 'range',
+                from: Math.floor(random() * 5),
+                ...(maybe(random, 0.5) ? { to: 5 + Math.floor(random() * 5) } : {}),
+            }
+        case 14:
+            return {
+                type: 'action.createTyped',
+                actionId: NEW_ACTION_ID(pools.actions.length),
+                kind: maybe(random, 0.5) ? 'topLevelAction' : 'gridAction',
+                ...(maybe(random, 0.6) ? { label: `Handling ${Math.floor(random() * 5)}` } : {}),
+            }
+        case 15:
+            return {
+                type: 'action.setMetadata',
+                actionId: pickOrFallback(random, pools.actions, 'x-ghost'),
+                questionId: columnQuestionId,
+                metadata: maybe(random, 0.3) ? null : maybe(random, 0.5) ? { all: true } : { from: 'a', to: 'b' },
+            }
         default:
             return {
                 type: 'gridColumn.setLayout',
@@ -277,6 +347,12 @@ const nextAddedContractOp = (random: () => number, pools: IdPools): TemplateOp =
 const updatePools = (op: TemplateOp, ok: boolean, pools: IdPools): void => {
     if (!ok) return
     switch (op.type) {
+        case 'mappingFilter.setTyped':
+            if (!pools.filters.includes(op.filterId)) pools.filters.push(op.filterId)
+            return
+        case 'action.createTyped':
+            pools.actions.push(op.actionId)
+            return
         case 'question.create':
             pools.questions.push(op.questionId)
             if (op.questionType === 'QuestionGrid') pools.grids.push(op.questionId)

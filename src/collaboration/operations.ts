@@ -1,5 +1,7 @@
 import type {
     ActionId,
+    ActionMetadata,
+    ActionType,
     AltId,
     BindingCardinality,
     BindingId,
@@ -10,11 +12,13 @@ import type {
     FilterId,
     HighlightRuleId,
     LayoutPlacement,
+    MappingFilterPayload,
     MappingId,
     NarrativeRuleId,
     NodeId,
     QuestionId,
     QnrRuleId,
+    KnownActionKind,
     RowId,
     RuleCondition,
     TabId,
@@ -73,6 +77,32 @@ export type TemplateOp =
           columnQuestionId: QuestionId
           placement: LayoutPlacement | null
       }
+    /**
+     * Adds, moves or removes one column in the grid's filter selection (M-054).
+     *
+     * Member-wise rather than a whole-list write, which is the difference that makes concurrent
+     * authoring work: two authors adding different filters produce two edits to the *current* list, so
+     * both survive. A `filterQuestionIds` array written wholesale would have the second overwrite the
+     * first with no conflict raised — the same reason DOC-LAW-1 keys collections by id.
+     *
+     * `include: true` inserts (at `atIndex`, else appends) and **moves** an id already present when
+     * `atIndex` is given; `include: false` removes it. An emptied list is omitted, per DOC-LAW-2.
+     */
+    | {
+          type: 'gridColumn.setFilter'
+          questionId: QuestionId
+          columnQuestionId: QuestionId
+          include: boolean
+          atIndex?: number
+      }
+    /** The same member-wise semantics for the grid's owned action ids (M-055). Ids only, never bodies. */
+    | {
+          type: 'gridColumn.setAction'
+          questionId: QuestionId
+          actionId: ActionId
+          include: boolean
+          atIndex?: number
+      }
     // Authoring-side grid rows are the template's *predefined* rows; instance-added rows
     // are answer ops (answerOperations.ts). `gridRow.move` is anchor-relative (OQ-V2-24).
     | { type: 'gridRow.create'; questionId: QuestionId; rowId: RowId; label?: string; atIndex?: number }
@@ -97,10 +127,56 @@ export type TemplateOp =
     | { type: 'tab.create'; tabId: TabId; label?: string; atIndex?: number }
     | { type: 'tab.updateField'; tabId: TabId; field: string; value: OpValue }
     | { type: 'tab.move'; tabId: TabId; toIndex: number }
+    /**
+     * Writes one question's placement inside a tab's positional grid atomically (M-051).
+     *
+     * `{row, cell, keepCellSize}` moves as one value, which `tab.updateField` cannot express — an
+     * `OpValue` is a scalar or a primitive array — so two dotted updates would be the alternative, and
+     * a client that landed one and lost the other would leave a row/cell hybrid the author never
+     * authored. `placement: null` clears the entry. Concurrent moves of *different* questions both
+     * survive; concurrent moves of the *same* question are last-writer-wins on a whole placement.
+     */
+    | { type: 'tab.setLayout'; tabId: TabId; questionId: QuestionId; placement: LayoutPlacement | null }
     | { type: 'tab.delete'; tabId: TabId }
     // Actions are a set, not an ordered collection (architecture §2.1: `actionsById`, no order array).
     | { type: 'action.create'; actionId: ActionId; kind?: string }
     | { type: 'action.updateField'; actionId: ActionId; field: string; value: OpValue }
+    /**
+     * Creates a **known** action in minimal form, discriminated by kind.
+     *
+     * Separate from `action.create` (which stays as released, accepting any `kind` string) because the
+     * typed path is closed: it cannot mint a UI edit buffer, and it cannot create a kind the reducer
+     * has no rules for. Kind is write-once — `action.updateField` refuses to change it.
+     */
+    | {
+          type: 'action.createTyped'
+          actionId: ActionId
+          kind: KnownActionKind
+          label?: string
+          /** `gridAction` only; a valid draft may omit it, and publication is where that is refused. */
+          actionType?: ActionType
+      }
+    /**
+     * Adds, moves or removes one grid-action id inside a top-level action's per-grid sequence (M-052).
+     *
+     * `topLevelAction`-only, member-wise for the same concurrency reason as the grid lists. An emptied
+     * sequence drops its grid key, and an emptied map is omitted (DOC-LAW-2).
+     */
+    | {
+          type: 'action.setGridActionRef'
+          actionId: ActionId
+          gridQuestionId: QuestionId
+          gridActionId: ActionId
+          include: boolean
+          atIndex?: number
+      }
+    /**
+     * Writes or clears one column's metadata on a grid action (M-055).
+     *
+     * `gridAction`-only. `null` removes the entry; a payload is written canonically, so `{all: true}`
+     * stays exclusive with `from`/`to` and an empty object never reaches the document.
+     */
+    | { type: 'action.setMetadata'; actionId: ActionId; questionId: QuestionId; metadata: ActionMetadata | null }
     | { type: 'action.delete'; actionId: ActionId }
     // One entry per mapping root (§2.2a): the root node must exist first (structure pass),
     // the mapping attaches it to a source (mapping pass). Delete cascades the whole tree.
@@ -162,6 +238,15 @@ export type TemplateOp =
           operator: string
           value?: DocScalar
       }
+    /**
+     * Sets a filter to one **closed** operator and exactly that operator's payload.
+     *
+     * Additive beside `mappingFilter.set`, which stays byte-for-byte as released so stored `contains`
+     * filters keep replaying. The reducer REPLACES the record rather than patching it, so switching
+     * `eq` → `in` cannot leave a stale `value` next to the new `values`; a filter therefore always
+     * carries the members of its own operator and no others.
+     */
+    | ({ type: 'mappingFilter.setTyped'; filterId: FilterId; nodeId: NodeId; fieldId: string } & MappingFilterPayload)
     | { type: 'mappingFilter.delete'; filterId: FilterId }
     | { type: 'visibilityRule.set'; ruleId: VisibilityRuleId; questionId: QuestionId; condition: RuleCondition }
     | { type: 'visibilityRule.delete'; ruleId: VisibilityRuleId }
@@ -198,6 +283,8 @@ const OP_TYPE_COVERAGE: Record<TemplateOpType, true> = {
     'gridColumn.create': true,
     'gridColumn.move': true,
     'gridColumn.setLayout': true,
+    'gridColumn.setFilter': true,
+    'gridColumn.setAction': true,
     'gridRow.create': true,
     'gridRow.move': true,
     'gridRow.delete': true,
@@ -209,9 +296,13 @@ const OP_TYPE_COVERAGE: Record<TemplateOpType, true> = {
     'tab.create': true,
     'tab.updateField': true,
     'tab.move': true,
+    'tab.setLayout': true,
     'tab.delete': true,
     'action.create': true,
     'action.updateField': true,
+    'action.createTyped': true,
+    'action.setGridActionRef': true,
+    'action.setMetadata': true,
     'action.delete': true,
     'dataMapping.create': true,
     'dataMapping.delete': true,
@@ -222,6 +313,7 @@ const OP_TYPE_COVERAGE: Record<TemplateOpType, true> = {
     'mappingBinding.update': true,
     'mappingBinding.delete': true,
     'mappingFilter.set': true,
+    'mappingFilter.setTyped': true,
     'mappingFilter.delete': true,
     'visibilityRule.set': true,
     'visibilityRule.delete': true,
