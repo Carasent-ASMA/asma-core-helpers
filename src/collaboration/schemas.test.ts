@@ -422,3 +422,114 @@ describe('schema ↔ vocabulary parity', () => {
         assert.equal(out instanceof type.errors, false)
     })
 })
+
+
+/**
+ * The binding behaviours at the two validation layers (TASK-304 AC-6).
+ *
+ * The document schema and the op schema disagree on `null` **on purpose** — the op layer is the only
+ * place the absent-vs-cleared tri-state exists — so both halves are asserted rather than assumed.
+ */
+describe('mappingBinding behaviour schemas', () => {
+    const createOp = (options: Record<string, unknown>) => ({
+        type: 'mappingBinding.create',
+        bindingId: 'b-1',
+        nodeId: 'n-1',
+        fieldId: 'Navn',
+        target: { kind: 'question', questionId: 'q-1' },
+        ...options,
+    })
+
+    const documentWith = (binding: Record<string, unknown>): QnrTemplateDocument =>
+        ({
+            ...emptyTemplateDocument('tpl-1'),
+            questionsById: { 'q-1': { type: 'TextShort' } },
+            questionOrder: ['q-1'],
+            mappingNodesById: { 'n-1': { entityId: 'Actor' } },
+            mappingBindingsById: { 'b-1': binding },
+        }) as unknown as QnrTemplateDocument
+
+    it('accepts every declared behaviour value on the create op', () => {
+        for (const cardinality of ['0..1', '1', '0..*', '1..*']) {
+            assert.equal(templateOpSchema(createOp({ cardinality })) instanceof type.errors, false, cardinality)
+        }
+        for (const onMissing of ['omit', 'error']) {
+            assert.equal(templateOpSchema(createOp({ onMissing })) instanceof type.errors, false, onMissing)
+        }
+        for (const onMany of ['error', 'first']) {
+            assert.equal(templateOpSchema(createOp({ onMany })) instanceof type.errors, false, onMany)
+        }
+    })
+
+    it('refuses a behaviour value outside the closed set', () => {
+        // The whole reason these are not `string?`: this op compiles into an immutable artifact.
+        assert.ok(templateOpSchema(createOp({ cardinality: '0..2' })) instanceof type.errors)
+        assert.ok(templateOpSchema(createOp({ onMissing: 'ignore' })) instanceof type.errors)
+        assert.ok(templateOpSchema(createOp({ onMany: 'last' })) instanceof type.errors)
+    })
+
+    it('refuses a behaviour value outside the closed set on a STORED binding too', () => {
+        // The op schema guards the wire; this one guards the document. Both are needed: an import or a
+        // replay writes a document without passing an op through, and a loose document position would
+        // let a value the compiler cannot branch on reach an immutable artifact.
+        for (const option of [{ cardinality: '0..2' }, { onMissing: 'ignore' }, { onMany: 'last' }]) {
+            const result = validateTemplateDocument(
+                documentWith({
+                    nodeId: 'n-1',
+                    fieldId: 'Navn',
+                    target: { kind: 'question', questionId: 'q-1' },
+                    ...option,
+                }),
+            )
+
+            assert.equal(result.ok, false, `${JSON.stringify(option)} must not validate`)
+        }
+    })
+
+    it('admits null in an update patch and refuses it in the document', () => {
+        const patched = templateOpSchema({
+            type: 'mappingBinding.update',
+            bindingId: 'b-1',
+            patch: { cardinality: null, onMissing: null, onMany: null },
+        })
+        assert.equal(patched instanceof type.errors, false)
+
+        assert.ok(
+            validateTemplateDocument(documentWith({
+                nodeId: 'n-1',
+                fieldId: 'Navn',
+                target: { kind: 'question', questionId: 'q-1' },
+                onMany: null,
+            })).ok === false,
+        )
+    })
+
+    it('counts a stored behaviour at its default as a DOC-LAW-2 violation', () => {
+        const violations = findDocLawDefaultViolations(
+            documentWith({
+                nodeId: 'n-1',
+                fieldId: 'Navn',
+                target: { kind: 'question', questionId: 'q-1' },
+                cardinality: '0..1',
+            }),
+        )
+
+        assert.deepEqual(
+            violations.map((violation) => violation.path),
+            ['mappingBindingsById.b-1.cardinality'],
+        )
+    })
+
+    it('never reads a mapping NODE cardinality as an omittable default', () => {
+        // A node's default cardinality is the catalog relation's, not a literal — so a node that
+        // narrows a `0..*` relation to a single row stores `0..1` meaningfully. A suffix-matched
+        // default rule would drop exactly that member and silently widen the traversal.
+        assert.equal(templateDocumentIsDefault('mappingNodesById.n-1.cardinality', '0..1'), false)
+        assert.equal(templateDocumentIsDefault('mappingBindingsById.b-1.cardinality', '0..1'), true)
+
+        // And a non-default value on a binding is never omittable either.
+        assert.equal(templateDocumentIsDefault('mappingBindingsById.b-1.cardinality', '0..*'), false)
+        assert.equal(templateDocumentIsDefault('mappingBindingsById.b-1.onMissing', 'omit'), true)
+        assert.equal(templateDocumentIsDefault('mappingBindingsById.b-1.onMany', 'error'), true)
+    })
+})

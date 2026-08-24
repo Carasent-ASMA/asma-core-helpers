@@ -1,12 +1,19 @@
 import type { TemplateOp } from './operations.js'
 import type {
+    BindingCardinality,
+    BindingOnMany,
+    BindingOnMissing,
+    MappingBinding,
     MappingNode,
     QnrDataMapping,
     QnrQuestion,
     QnrTemplateDocument,
     QuestionId,
 } from './templateDocument.js'
-import { bindingTargetKey } from './templateDocument.js'
+import { BINDING_OPTION_DEFAULTS, bindingTargetKey } from './templateDocument.js'
+
+/** The behaviour members, so the write loop cannot silently miss one that `BINDING_OPTION_DEFAULTS` gains. */
+const BINDING_OPTION_KEYS = Object.keys(BINDING_OPTION_DEFAULTS) as ReadonlyArray<keyof typeof BINDING_OPTION_DEFAULTS>
 
 /**
  * The authoring reducer. Pure: takes a document and an op, returns a new document with
@@ -107,6 +114,38 @@ const moveInOrder = (order: readonly string[], id: string, toIndex: number): str
     const without = order.filter((entry) => entry !== id)
     const at = Math.max(0, Math.min(toIndex, without.length))
     return [...without.slice(0, at), id, ...without.slice(at)]
+}
+
+/**
+ * Writes a binding's three behaviours in canonical minimal form.
+ *
+ * Three cases, and the middle one is the reason this is a function rather than a spread:
+ * `undefined` leaves the stored value alone (the member was not part of this edit), an explicit
+ * `null` unsets it, and **a value equal to the default unsets it too** — DOC-LAW-2 forbids a key
+ * present with its own default, so an author choosing `onMany: 'error'` and an author never touching
+ * it must produce byte-identical documents. If they did not, the same binding would carry two
+ * `document_hash` values depending on which control the author clicked, minting a spurious version
+ * and reading as divergence against the imported original.
+ *
+ * @see asma-modules/_docs/editor/qnrs/cross/2026-07-12-20-20-architecture-qnr-v2-model-collaboration-sync.md:195 — DOC-LAW-2
+ */
+const writeBindingOptions = (
+    binding: MappingBinding,
+    options: {
+        cardinality?: BindingCardinality | null
+        onMissing?: BindingOnMissing | null
+        onMany?: BindingOnMany | null
+    },
+): MappingBinding => {
+    let next = binding
+
+    for (const key of BINDING_OPTION_KEYS) {
+        const chosen = options[key]
+        if (chosen === undefined) continue
+        next = writeField(next, key, chosen === BINDING_OPTION_DEFAULTS[key] ? null : chosen)
+    }
+
+    return next
 }
 
 const omitKey = <V>(record: Record<string, V>, key: string): Record<string, V> => {
@@ -1072,7 +1111,10 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
                 ...doc,
                 mappingBindingsById: {
                     ...(doc.mappingBindingsById ?? {}),
-                    [op.bindingId]: { nodeId: op.nodeId, fieldId: op.fieldId, target: op.target },
+                    [op.bindingId]: writeBindingOptions(
+                        { nodeId: op.nodeId, fieldId: op.fieldId, target: op.target },
+                        op,
+                    ),
                 },
             }
             // The owning mapping root's `bindingOrder` lists the new binding — when the tree is
@@ -1114,11 +1156,21 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
                     )
                 }
             }
+            // The behaviours go through `writeBindingOptions` rather than the spread: a spread would
+            // store `cardinality: '0..1'` verbatim (a key present with its own default — DOC-LAW-2) and
+            // would write `null` for an unset, which the document may never carry.
+            const {
+                cardinality: _cardinality,
+                onMissing: _onMissing,
+                onMany: _onMany,
+                ...structural
+            } = op.patch
+
             return {
                 ...doc,
                 mappingBindingsById: {
                     ...doc.mappingBindingsById,
-                    [op.bindingId]: { ...binding, ...op.patch },
+                    [op.bindingId]: writeBindingOptions({ ...binding, ...structural }, op.patch),
                 },
             }
         }

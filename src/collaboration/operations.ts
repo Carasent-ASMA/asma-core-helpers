@@ -1,7 +1,10 @@
 import type {
     ActionId,
     AltId,
+    BindingCardinality,
     BindingId,
+    BindingOnMany,
+    BindingOnMissing,
     BindingTarget,
     DocScalar,
     FilterId,
@@ -116,17 +119,39 @@ export type TemplateOp =
           }
       }
     | { type: 'mappingNode.delete'; nodeId: NodeId }
+    /**
+     * The three behaviours are optional here and **omitted from the document when they equal their
+     * default** (DOC-LAW-2, `BINDING_OPTION_DEFAULTS`): the op carries what the author chose, the
+     * document stores only what differs. Authoring them is the point — a binding whose behaviour
+     * could not be stated would leave the compiler to guess what happens when the source yields
+     * nothing or yields many.
+     */
     | {
           type: 'mappingBinding.create'
           bindingId: BindingId
           nodeId: NodeId
           fieldId: string
           target: BindingTarget
+          cardinality?: BindingCardinality
+          onMissing?: BindingOnMissing
+          onMany?: BindingOnMany
       }
+    /**
+     * `null` on a behaviour is the explicit unset — the author returned it to the default, which the
+     * document encodes as absence. Without the tri-state "back to default" would be unexpressible:
+     * omitting the member from the patch means "leave it alone", which is a different edit.
+     */
     | {
           type: 'mappingBinding.update'
           bindingId: BindingId
-          patch: { nodeId?: NodeId; fieldId?: string; target?: BindingTarget }
+          patch: {
+              nodeId?: NodeId
+              fieldId?: string
+              target?: BindingTarget
+              cardinality?: BindingCardinality | null
+              onMissing?: BindingOnMissing | null
+              onMany?: BindingOnMany | null
+          }
       }
     | { type: 'mappingBinding.delete'; bindingId: BindingId }
     | {

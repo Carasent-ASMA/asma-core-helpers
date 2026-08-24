@@ -7,8 +7,18 @@ import {
     UnknownOperationError,
     applyOperation,
 } from './applyOperation.js'
+import { canonicalJson, reduceToMinimalForm } from './canonicalize.js'
 import type { TemplateOp } from './operations.js'
-import { emptyTemplateDocument, type QnrTemplateDocument } from './templateDocument.js'
+import { templateDocumentIsDefault } from './schemas.js'
+import {
+    BINDING_CARDINALITIES,
+    BINDING_OPTION_DEFAULTS,
+    bindingIsMultiValued,
+    emptyTemplateDocument,
+    resolveBindingOptions,
+    type MappingBinding,
+    type QnrTemplateDocument,
+} from './templateDocument.js'
 
 /**
  * Guards the invariants a consumer would notice if a publish broke them. The exhaustive
@@ -989,5 +999,148 @@ describe('applyOperation', () => {
         const replayed = applyOperation(deleted, { type: 'dataMapping.delete', mappingId: 'm-1' })
         assert.equal(replayed.dataMappingsById, undefined)
         assert.equal(replayed.revision, deleted.revision + 1)
+    })
+})
+
+
+/**
+ * The binding behaviours — `cardinality` / `onMissing` / `onMany` (§2.2a, TASK-304 AC-6).
+ *
+ * Two rules meet on these three members and pull in opposite directions, which is what the suite is
+ * really about. The author must be able to state them **explicitly**, because the compiler branches on
+ * them and an artifact is immutable once minted; and DOC-LAW-2 says the *document* may never carry a
+ * key at its own default, because the hash is computed on the minimal form. So "explicitly chosen" and
+ * "stored" are deliberately not the same thing: choosing the default writes nothing.
+ *
+ * @see asma-modules/_docs/editor/qnrs/cross/2026-07-15-20-38-analysis-qnr-external-data-mapping-options.md:832
+ */
+describe('mappingBinding behaviours', () => {
+    const bound = apply([
+        { type: 'question.create', questionId: 'q-1', questionType: 'TextShort' },
+        { type: 'mappingNode.create', nodeId: 'n-1', entityId: 'Actor' },
+    ])
+
+    const create = (options: Partial<Pick<MappingBinding, 'cardinality' | 'onMissing' | 'onMany'>> = {}) =>
+        applyOperation(bound, {
+            type: 'mappingBinding.create',
+            bindingId: 'b-1',
+            nodeId: 'n-1',
+            fieldId: 'Navn',
+            target: { kind: 'question', questionId: 'q-1' },
+            ...options,
+        })
+
+    const binding = (doc: QnrTemplateDocument) => doc.mappingBindingsById?.['b-1']
+
+    it('stores a behaviour the author narrowed away from its default', () => {
+        const doc = create({ cardinality: '0..*', onMissing: 'error', onMany: 'first' })
+
+        assert.deepEqual(binding(doc), {
+            nodeId: 'n-1',
+            fieldId: 'Navn',
+            target: { kind: 'question', questionId: 'q-1' },
+            cardinality: '0..*',
+            onMissing: 'error',
+            onMany: 'first',
+        })
+    })
+
+    it('omits each behaviour the author explicitly set to its own default (DOC-LAW-2)', () => {
+        // One at a time, so a reducer that special-cased only `cardinality` cannot pass.
+        for (const [key, value] of Object.entries(BINDING_OPTION_DEFAULTS)) {
+            const doc = create({ [key]: value })
+
+            assert.deepEqual(
+                binding(doc),
+                { nodeId: 'n-1', fieldId: 'Navn', target: { kind: 'question', questionId: 'q-1' } },
+                `${key}: '${value}' is the default and must not be stored`,
+            )
+        }
+    })
+
+    it('makes an explicitly-defaulted binding byte-identical to an untouched one', () => {
+        // The consequence that matters: `document_hash` decides whether a version is minted and
+        // whether a re-import diverged. Two authors reaching the same binding through different
+        // clicks must not produce two hashes.
+        const untouched = canonicalJson(reduceToMinimalForm(create(), { isDefault: templateDocumentIsDefault }))
+        const spelledOut = canonicalJson(
+            reduceToMinimalForm(create({ cardinality: '0..1', onMissing: 'omit', onMany: 'error' }), {
+                isDefault: templateDocumentIsDefault,
+            }),
+        )
+
+        assert.equal(spelledOut, untouched)
+    })
+
+    it('sets, replaces and unsets a behaviour through update', () => {
+        const set = applyOperation(create(), {
+            type: 'mappingBinding.update',
+            bindingId: 'b-1',
+            patch: { onMany: 'first' },
+        })
+        assert.equal(binding(set)?.onMany, 'first')
+
+        const replaced = applyOperation(set, {
+            type: 'mappingBinding.update',
+            bindingId: 'b-1',
+            patch: { onMany: 'error' },
+        })
+        // 'error' IS the default, so replacing back to it removes the key rather than storing it.
+        assert.equal('onMany' in (binding(replaced) ?? {}), false)
+
+        const unset = applyOperation(set, {
+            type: 'mappingBinding.update',
+            bindingId: 'b-1',
+            patch: { onMany: null },
+        })
+        assert.equal('onMany' in (binding(unset) ?? {}), false)
+    })
+
+    it('leaves a behaviour alone when the patch does not name it', () => {
+        const doc = create({ cardinality: '1..*', onMissing: 'error' })
+
+        const patched = applyOperation(doc, {
+            type: 'mappingBinding.update',
+            bindingId: 'b-1',
+            patch: { fieldId: 'Adresse' },
+        })
+
+        assert.equal(binding(patched)?.fieldId, 'Adresse')
+        assert.equal(binding(patched)?.cardinality, '1..*')
+        assert.equal(binding(patched)?.onMissing, 'error')
+    })
+
+    it('never writes an explicit null into the document', () => {
+        const doc = applyOperation(create({ onMissing: 'error' }), {
+            type: 'mappingBinding.update',
+            bindingId: 'b-1',
+            patch: { onMissing: null, cardinality: null, onMany: null },
+        })
+
+        assert.equal(canonicalJson(binding(doc)).includes('null'), false)
+    })
+
+    it('hydrates absent behaviours to the defaults every reader must agree on', () => {
+        assert.deepEqual(resolveBindingOptions(binding(create()) as MappingBinding), BINDING_OPTION_DEFAULTS)
+
+        assert.deepEqual(resolveBindingOptions(binding(create({ onMany: 'first' })) as MappingBinding), {
+            ...BINDING_OPTION_DEFAULTS,
+            onMany: 'first',
+        })
+    })
+
+    it('reads exactly the starred cardinalities as multi-valued', () => {
+        const multi = BINDING_CARDINALITIES.filter((cardinality) =>
+            bindingIsMultiValued({
+                nodeId: 'n-1',
+                fieldId: 'Navn',
+                target: { kind: 'question', questionId: 'q-1' },
+                cardinality,
+            }),
+        )
+
+        assert.deepEqual(multi, ['0..*', '1..*'])
+        // And the absent case resolves through the default, which is single-valued.
+        assert.equal(bindingIsMultiValued(binding(create()) as MappingBinding), false)
     })
 })
