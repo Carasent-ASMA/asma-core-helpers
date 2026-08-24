@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { email, name, pattern, phoneNr, pnr, required } from './rules.js'
+import { email, hasDigit, httpUrl, name, nameChars, pattern, phoneNr, pnr, required } from './rules.js'
 
 describe('required', () => {
     it('rejects empty, whitespace, null, undefined', () => {
@@ -38,6 +38,86 @@ describe('name', () => {
         assert.equal(name('john'), false)
         assert.equal(name(''), false)
     })
+
+    it('accepts the real names it has to accept', () => {
+        for (const real of [
+            'Bo Henki Steinsland-Tønnessen',
+            'Bjørn Emil Gloppen Jørgensen',
+            'Bjørge Øfstaas',
+            'Kenneth Jul-Larsen',
+            'Gun Jorunn Haughom Sørheim',
+            'Lone Mjørnaren Darum Jr.',
+            'Martine Mosengen Sr.',
+            'Tommy André Pedersen',
+            'Tuva Elisabeth Næs Andersen',
+            'Willian Garthner II ',
+            'Porsgrunn commune IKT',
+            'Bargan, Constantin',
+        ]) {
+            assert.equal(name(real), true, real)
+        }
+    })
+
+    it('accepts every dash an editor may have substituted for the typed hyphen', () => {
+        assert.equal(name('Anne-Marie Hansen'), true)
+        assert.equal(name('Anne\u2013Marie Hansen'), true)
+        assert.equal(name('Anne\u2014Marie Hansen'), true)
+    })
+
+    it('accepts both apostrophes — editors substitute the typographic one silently', () => {
+        assert.equal(name("O'Brien"), true)
+        assert.equal(name('O\u2019Brien'), true)
+        assert.equal(name("Lars D'Angelo Næss"), true)
+    })
+
+    it('treats Norwegian letters as ordinary letters', () => {
+        assert.equal(name('Æse Ørn Ådne'), true)
+        assert.equal(name('Øystein'), true)
+    })
+
+    it('rejects digits anywhere, not just as the first character', () => {
+        assert.equal(name('Ivan123'), false)
+        assert.equal(name('123'), false)
+        assert.equal(name('Ivan 123'), false)
+        assert.equal(name('Willian Garthner 2'), false)
+    })
+
+    it('rejects a lower-case opening and punctuation the set does not cover', () => {
+        assert.equal(name('kenneth Jul-Larsen'), false)
+        assert.equal(name('Foo;Bar'), false)
+        assert.equal(name('Foo@Bar'), false)
+    })
+})
+
+describe('nameChars', () => {
+    it('accepts every character a name is built from', () => {
+        assert.equal(nameChars('Bargan, Constantin'), true)
+        assert.equal(nameChars("Lone Mjørnaren Darum Jr. O'Brien"), true)
+        assert.equal(nameChars('vasilii'), true) // case is not its business
+    })
+
+    it('rejects anything else, which is what lets the field name the real problem', () => {
+        assert.equal(nameChars('Vasilii&'), false)
+        assert.equal(nameChars('Foo;Bar'), false)
+        assert.equal(nameChars('Foo@Bar'), false)
+        assert.equal(nameChars('Ivan123'), false)
+    })
+
+    it('agrees with nameRegex about every character it allows', () => {
+        for (const char of ["-", ".", ",", "'", "\u2019"]) {
+            assert.equal(nameChars(`Aa${char}bb`), true, char)
+            assert.equal(name(`Aa${char}bb`), true, char)
+        }
+    })
+})
+
+describe('hasDigit', () => {
+    it('separates "there is a number in here" from every other name failure', () => {
+        assert.equal(hasDigit('Ivan123'), true)
+        assert.equal(hasDigit('123'), true)
+        assert.equal(hasDigit('ivan'), false)
+        assert.equal(hasDigit('Ann-Kristin'), false)
+    })
 })
 
 describe('phoneNr', () => {
@@ -68,5 +148,30 @@ describe('pnr', () => {
         assert.equal(pnr(''), false)
         assert.equal(pnr('123'), false)
         assert.equal(pnr('00000000000'), false)
+    })
+})
+
+describe('httpUrl', () => {
+    it('accepts ordinary web addresses', () => {
+        assert.equal(httpUrl('https://example.com'), true)
+        assert.equal(httpUrl('http://example.com'), true)
+        assert.equal(httpUrl('https://dok.adcuris.no/ad-voca/uO5TQY5Z2K271Ycumsj5'), true)
+        assert.equal(httpUrl('  https://example.com  '), true)
+    })
+
+    it('accepts ports, fragments, internationalised hosts and full path/query syntax', () => {
+        assert.equal(httpUrl('https://example.com:8080'), true)
+        assert.equal(httpUrl('https://example.com/page#section'), true)
+        assert.equal(httpUrl('https://bxrum.no'.replace('x', '\u00e6')), true)
+        assert.equal(httpUrl('https://example.com/a+b,c~d'), true)
+        assert.equal(httpUrl('https://x.no/a?b=c&d=e'), true)
+    })
+
+    it('rejects non-web schemes and scheme-less input', () => {
+        assert.equal(httpUrl('mailto:a@b.c'), false)
+        assert.equal(httpUrl('foo:bar'), false)
+        assert.equal(httpUrl('javascript:alert(1)'), false)
+        assert.equal(httpUrl('example.com'), false)
+        assert.equal(httpUrl(''), false)
     })
 })

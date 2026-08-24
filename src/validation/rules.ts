@@ -3,7 +3,22 @@ import { getValidNorwegianPersonalNumber } from '../helpers/validateNorwegianPer
 /** Copied from directory/asma-app-directory ActorToUpsertValidator regex helpers — keep pilot behavior identical. */
 export const phoneNrRegex = /^\+?\d{6,13}$/
 export const emailRegex = /^[\w.-]+@([\w-]+\.)+[\w-]{2,4}$/
-export const nameRegex = /^\s*\p{Lu}[\p{L}0-9-]*(\s+\p{L}[\p{L}0-9-]*)*\s*$/u
+const NAME_PUNCTUATION = ".,'\u2019\u2013\u2014-"
+
+export const nameRegex = new RegExp(
+    `^\\s*\\p{Lu}[\\p{L}${NAME_PUNCTUATION}]*(\\s+\\p{L}[\\p{L}${NAME_PUNCTUATION}]*)*\\s*$`,
+    'u',
+)
+
+export const nameCharsRegex = new RegExp(`^[\\p{L}\\s${NAME_PUNCTUATION}]*$`, 'u')
+
+export function hasDigit(value: string): boolean {
+    return /\d/.test(value)
+}
+
+export function nameChars(value: string): boolean {
+    return nameCharsRegex.test(value)
+}
 
 export function required(value: unknown): boolean {
     if (value == null) return false
@@ -29,4 +44,13 @@ export function pattern(value: string, regex: RegExp): boolean {
 
 export function pnr(value: string): boolean {
     return getValidNorwegianPersonalNumber(value) != null
+}
+
+export function httpUrl(value: string): boolean {
+    try {
+        const { protocol } = new URL(value.trim())
+        return protocol === 'http:' || protocol === 'https:'
+    } catch {
+        return false
+    }
 }
