@@ -531,6 +531,64 @@ describe('applyOperation', () => {
         assert.equal(withoutEither.qnrRuleOrderByQuestionId, undefined)
     })
 
+    it('drops the prefill rules that fill a deleted question, and its highlight settings', () => {
+        // Prefill rules are keyed by the TARGET question, so the parallel to the four rule families
+        // is "the rules that fill the deleted question go with it" (M-068).
+        const doc: QnrTemplateDocument = {
+            documentId: 'tpl-1',
+            revision: 0,
+            questionOrder: ['q-1', 'q-2'],
+            questionsById: { 'q-1': { type: 'TextShort' }, 'q-2': { type: 'TextShort' } },
+            prefillRulesById: { 'pr-1': { sourceQuestionId: 'q-2' } },
+            prefillRuleOrderByQuestionId: { 'q-1': ['pr-1'] },
+            highlightRuleSettingsByQuestionId: { 'q-1': { enabled: true, requiredAll: true } },
+        }
+
+        const deleted = applyOperation(doc, { type: 'question.delete', questionId: 'q-1' })
+
+        assert.equal(deleted.prefillRulesById, undefined)
+        assert.equal(deleted.prefillRuleOrderByQuestionId, undefined)
+        assert.equal(deleted.highlightRuleSettingsByQuestionId, undefined)
+    })
+
+    it('keeps a prefill rule that merely SOURCES from the deleted question, dangling', () => {
+        // Same rule as the visibility case below: the surviving question q-1 authored this prefill,
+        // and dropping it because its source vanished would be silent data loss. The dangling
+        // `sourceQuestionId` is for validation to report.
+        const doc: QnrTemplateDocument = {
+            documentId: 'tpl-1',
+            revision: 0,
+            questionOrder: ['q-1', 'q-2'],
+            questionsById: { 'q-1': { type: 'TextShort' }, 'q-2': { type: 'TextShort' } },
+            prefillRulesById: { 'pr-1': { sourceQuestionId: 'q-2' } },
+            prefillRuleOrderByQuestionId: { 'q-1': ['pr-1'] },
+        }
+
+        const deleted = applyOperation(doc, { type: 'question.delete', questionId: 'q-2' })
+
+        assert.deepEqual(deleted.prefillRuleOrderByQuestionId, { 'q-1': ['pr-1'] })
+        assert.equal(deleted.prefillRulesById?.['pr-1']?.sourceQuestionId, 'q-2')
+    })
+
+    it('keeps the highlight settings of a question whose rules are stored but disabled', () => {
+        // `toggleNarrative` flips have_narrative without clearing conditional[], so "stored but off"
+        // is a real state: the rules stay and the settings entry simply carries no `enabled`.
+        const doc: QnrTemplateDocument = {
+            documentId: 'tpl-1',
+            revision: 0,
+            questionOrder: ['q-1', 'q-2'],
+            questionsById: { 'q-1': { type: 'TextShort' }, 'q-2': { type: 'TextShort' } },
+            highlightRulesById: { 'hr-1': { condition: { sourceQuestionId: 'q-2' }, state: 2 } },
+            highlightRuleOrderByQuestionId: { 'q-1': ['hr-1'] },
+            highlightRuleSettingsByQuestionId: { 'q-1': { requiredAll: true } },
+        }
+
+        const deleted = applyOperation(doc, { type: 'question.delete', questionId: 'q-2' })
+
+        assert.deepEqual(deleted.highlightRuleSettingsByQuestionId, { 'q-1': { requiredAll: true } })
+        assert.equal(deleted.highlightRulesById?.['hr-1']?.state, 2)
+    })
+
     it('keeps another question\'s rule that references the deleted question, for validation to surface', () => {
         // Dropping the surviving question's authored rule silently would be data loss; the
         // dangling sourceQuestionId is a validation finding, not a reducer decision.

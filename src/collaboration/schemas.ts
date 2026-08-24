@@ -55,6 +55,8 @@ const recordOf = <T extends Type>(value: T): { '[string]': T } => ({ '[string]':
 const ruleConditionSchema = type({
     sourceQuestionId: 'string',
     alternativeId: 'string?',
+    /** M-067: the legacy conditional matches a SET of alternatives, which the singular id cannot carry. */
+    alternativeIds: 'string[]?',
     operator: 'string?',
     "value?": docScalar,
     ...({ '[string]': 'unknown' } as const),
@@ -67,7 +69,17 @@ const visibilityRuleSchema = type({
 
 const highlightRuleSchema = type({
     condition: ruleConditionSchema,
+    /** M-067 authored outputs. `is_highlighted`/`highlight_state` stay runtime and are absent by design. */
+    state: 'number?',
+    highlight: 'boolean?',
+    showLink: 'boolean?',
     ...({ '[string]': 'unknown' } as const),
+})
+
+/** M-067 per-question narrative settings. `true`-only: DOC-LAW-2 makes `false` and absent the same. */
+const highlightRuleSettingsSchema = type({
+    enabled: 'true?',
+    requiredAll: 'true?',
 })
 
 const narrativeRuleSchema = type({
@@ -79,6 +91,16 @@ const qnrRuleSchema = type({
     condition: ruleConditionSchema,
     templateFamilyId: 'string',
     '+': 'reject',
+})
+
+/**
+ * M-068 answer prefill. No `condition`: the rule propagates a value rather than evaluating an
+ * operator, which is exactly why it is not a `visibilityRule`.
+ */
+const prefillRuleSchema = type({
+    sourceQuestionId: 'string',
+    sourceParentQuestionId: 'string?',
+    ...({ '[string]': 'unknown' } as const),
 })
 
 const questionGridConfigSchema = type({
@@ -247,6 +269,9 @@ export const qnrTemplateDocumentSchema = type({
     narrativeRuleOrderByQuestionId: 'Record<string, string[]>?',
     "qnrRulesById?": recordOf(qnrRuleSchema),
     qnrRuleOrderByQuestionId: 'Record<string, string[]>?',
+    "prefillRulesById?": recordOf(prefillRuleSchema),
+    prefillRuleOrderByQuestionId: 'Record<string, string[]>?',
+    "highlightRuleSettingsByQuestionId?": recordOf(highlightRuleSettingsSchema),
     "dataMappingsById?": recordOf(dataMappingSchema),
     "mappingNodesById?": recordOf(mappingNodeSchema),
     "mappingBindingsById?": recordOf(mappingBindingSchema),

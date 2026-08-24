@@ -27,6 +27,7 @@ export type VisibilityRuleId = string
 export type HighlightRuleId = string
 export type NarrativeRuleId = string
 export type QnrRuleId = string
+export type PrefillRuleId = string
 
 /** A scalar a document may carry. Deliberately not `any`: DOC-LAW-2 bans `null`. */
 export type DocScalar = string | number | boolean
@@ -175,18 +176,71 @@ export type QnrAction = { kind?: string; [key: string]: unknown }
 export type RuleCondition = {
     sourceQuestionId: QuestionId
     alternativeId?: AltId
+    /**
+     * The legacy conditional matches the source answer against a **set** of alternatives
+     * (`condition.alternatives[]`), which the singular `alternativeId` cannot express (M-067). A
+     * primitive id array rather than a keyed collection because identity lives in the values and a
+     * member carrying nothing else reduces to `{}` under DOC-LAW-2 — the same reasoning that made
+     * `normalizeAlternativeRefs` emit a primitive array.
+     */
+    alternativeIds?: AltId[]
     operator?: string
     value?: DocScalar
     [key: string]: unknown
 }
 
 export type VisibilityRule = { condition: RuleCondition; [key: string]: unknown }
-export type HighlightRule = { condition: RuleCondition; [key: string]: unknown }
+/**
+ * A highlight conditional (M-067). The three widened members are the authored outputs legacy stores
+ * on each rule: `state` is the highlight severity `setHighlightState` applies when the condition
+ * matches, `highlight` routes a highlighting rule from a plain conditional, and `showLink` is the
+ * per-rule link toggle. `is_highlighted`/`highlight_state` are deliberately absent — they are
+ * instance-computed runtime state, not authored content.
+ */
+export type HighlightRule = {
+    condition: RuleCondition
+    state?: number
+    highlight?: boolean
+    showLink?: boolean
+    [key: string]: unknown
+}
+
+/**
+ * Per-question narrative settings (M-067), a separate collection rather than fields denormalized
+ * onto every rule: they are per-question, and `enabled` must survive on a question whose rules are
+ * stored but switched off — legacy's `toggleNarrative` flips `have_narrative` **without** clearing
+ * `conditional[]`, so "disabled but not cleared" is a real stored state.
+ *
+ * Both members are `true`-only: DOC-LAW-2 makes `false` and absent the same thing, so writing
+ * `false` would be a second encoding of "not set" and would change `document_hash`.
+ */
+export type HighlightRuleSettings = { enabled?: true; requiredAll?: true }
 export type NarrativeRule = { condition: RuleCondition; [key: string]: unknown }
 export type QnrRule = {
     condition: RuleCondition
     /** A `qnr_templates.id` family reference; pinned versions are intentionally unrepresentable. */
     templateFamilyId: string
+}
+
+/**
+ * An answer-prefill rule (M-068): when the source question has an answer and this rule's target is
+ * still empty, the target is filled from it.
+ *
+ * **Not a visibility rule**, which is the whole reason it is its own collection: legacy
+ * `dependent_questions` propagates a *value*, so mapping it onto `visibilityRules` would make v2
+ * *hide* a question legacy merely *prefilled*. Carries no `condition` for the same reason — there is
+ * no operator to evaluate, only a source address.
+ *
+ * The address is two-level because a source inside a grid needs its enclosing grid to be resolvable:
+ * `sourceParentQuestionId` is that grid, absent for a top-level source.
+ *
+ * Evaluation (fill once, never overwrite an existing answer) is runtime behaviour owned by
+ * ASMA-7935; the document only preserves the authored rule.
+ */
+export type PrefillRule = {
+    sourceQuestionId: QuestionId
+    sourceParentQuestionId?: QuestionId
+    [key: string]: unknown
 }
 
 /** One traversal step. Many questions off one entity share a single node (§2.2a). */
@@ -261,6 +315,11 @@ export type QnrTemplateDocument = {
     narrativeRuleOrderByQuestionId?: Record<QuestionId, NarrativeRuleId[]>
     qnrRulesById?: Record<QnrRuleId, QnrRule>
     qnrRuleOrderByQuestionId?: Record<QuestionId, QnrRuleId[]>
+    /** Keyed by the **target** question — the one that gets filled (M-068). */
+    prefillRulesById?: Record<PrefillRuleId, PrefillRule>
+    prefillRuleOrderByQuestionId?: Record<QuestionId, PrefillRuleId[]>
+    /** Only for a question that actually sets one of them; an all-default entry is omitted. */
+    highlightRuleSettingsByQuestionId?: Record<QuestionId, HighlightRuleSettings>
     dataMappingsById?: Record<MappingId, QnrDataMapping>
     mappingNodesById?: Record<NodeId, MappingNode>
     mappingBindingsById?: Record<BindingId, MappingBinding>
