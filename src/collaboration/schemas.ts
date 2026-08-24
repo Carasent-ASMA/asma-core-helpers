@@ -7,10 +7,12 @@ import { IMPLEMENTED_OP_TYPES } from './operations.js'
 import { QUESTION_TYPES } from './questionTypes.js'
 import type { BindingTarget, QnrTemplateDocument } from './templateDocument.js'
 import {
+    ACTION_TYPES,
     BINDING_CARDINALITIES,
     BINDING_ON_MANY,
     BINDING_ON_MISSING,
     BINDING_OPTION_DEFAULTS,
+    MAPPING_FILTER_OPERATORS,
     bindingTargetKey,
 } from './templateDocument.js'
 
@@ -136,6 +138,10 @@ const questionGridPresentationSchema = type({
     headerTabId: 'string?',
     "rowEditor?": questionGridRowEditorSchema,
     defaultColumnWidthsByQuestionId: 'Record<string, number>?',
+    // Primitive id arrays, which DOC-LAW-1 allows: the per-entry filter configuration legacy kept in
+    // `filter_ui.questions[]` belongs on the column question, so the grid owns only the selection.
+    filterQuestionIds: 'string[]?',
+    actionIds: 'string[]?',
     ...({ '[string]': 'unknown' } as const),
 })
 
@@ -183,13 +189,46 @@ const qnrGridRowSchema = type({
     ...({ '[string]': 'unknown' } as const),
 })
 
-const qnrTabSchema = type({
-    label: 'string?',
+const qnrTabLayoutSchema = type({
+    "placementsByQuestionId?": recordOf(layoutPlacementSchema),
     ...({ '[string]': 'unknown' } as const),
 })
 
+const qnrTabSchema = type({
+    label: 'string?',
+    "layout?": qnrTabLayoutSchema,
+    ...({ '[string]': 'unknown' } as const),
+})
+
+/**
+ * One metadata entry. `all: true` is the canonical all-to-all marker and is exclusive with the bounds —
+ * a bare `{}` is refused, because DOC-LAW-2 would make "selected but unbounded" and "not selected" the
+ * same absence.
+ */
+const actionMetadataSchema = type.or(
+    // Every arm declares the OTHER arms' members `never`. Omitting them would not be enough: an
+    // ArkType object admits undeclared keys, so `{all: true, from: 'a'}` would satisfy the bounded arm
+    // and the exclusivity rule would exist only in the reducer.
+    type({ from: docScalar, to: docScalar, "all?": 'never' }),
+    type({ from: docScalar, "to?": 'never', "all?": 'never' }),
+    type({ "from?": 'never', to: docScalar, "all?": 'never' }),
+    type({ all: 'true', "from?": 'never', "to?": 'never' }),
+)
+
+/**
+ * The action record stays BROAD: `kind` is an optional string and the bag is open, because released
+ * documents carry unknown kinds and accidental UI buffers that must remain readable (ADR-0008 DEC-006).
+ *
+ * The typed members are declared so a KNOWN action's shape is validated where it is present — an
+ * ordered primitive id array per grid, and canonical metadata per column — without making any of it
+ * required. Narrowing `kind` here is exactly what the freeze forbids.
+ */
 const qnrActionSchema = type({
     kind: 'string?',
+    label: 'string?',
+    "actionType?": type.enumerated(...ACTION_TYPES),
+    actionIdsByGridQuestionId: 'Record<string, string[]>?',
+    "metadataByQuestionId?": recordOf(actionMetadataSchema),
     ...({ '[string]': 'unknown' } as const),
 })
 
@@ -227,10 +266,18 @@ const mappingBindingSchema = type({
     ...({ '[string]': 'unknown' } as const),
 })
 
+/**
+ * The stored filter. `operator` stays `string` — released, and documents carry operators outside the
+ * closed set (`contains`) that must remain readable. `values`/`from`/`to` are the additive payload
+ * members the typed operator arms write.
+ */
 const mappingFilterSchema = type({
     fieldId: 'string',
     operator: 'string',
     "value?": docScalar,
+    "values?": '(string | number | boolean)[]',
+    "from?": docScalar,
+    "to?": docScalar,
 })
 
 const dataMappingSchema = type({
@@ -340,6 +387,20 @@ export const templateOpSchema = type.or(
         columnQuestionId: 'string',
         placement: type.or(layoutPlacementSchema, type('null')),
     }),
+    type({
+        type: '"gridColumn.setFilter"',
+        questionId: 'string',
+        columnQuestionId: 'string',
+        include: 'boolean',
+        atIndex: 'number?',
+    }),
+    type({
+        type: '"gridColumn.setAction"',
+        questionId: 'string',
+        actionId: 'string',
+        include: 'boolean',
+        atIndex: 'number?',
+    }),
     type({ type: '"gridRow.create"', questionId: 'string', rowId: 'string', label: 'string?', atIndex: 'number?' }),
     type({ type: '"gridRow.move"', questionId: 'string', rowId: 'string', afterRowId: 'string | null' }),
     type({ type: '"gridRow.delete"', questionId: 'string', rowId: 'string' }),
@@ -363,9 +424,60 @@ export const templateOpSchema = type.or(
     type({ type: '"tab.create"', tabId: 'string', label: 'string?', atIndex: 'number?' }),
     type({ type: '"tab.updateField"', tabId: 'string', field: 'string', value: opValue }),
     type({ type: '"tab.move"', tabId: 'string', toIndex: 'number' }),
+    type({
+        type: '"tab.setLayout"',
+        tabId: 'string',
+        questionId: 'string',
+        placement: type.or(layoutPlacementSchema, type('null')),
+    }),
     type({ type: '"tab.delete"', tabId: 'string' }),
     type({ type: '"action.create"', actionId: 'string', kind: 'string?' }),
     type({ type: '"action.updateField"', actionId: 'string', field: 'string', value: opValue }),
+    /**
+     * Two arms, discriminated on `kind`. A single arm with an optional `actionType` admitted
+     * `{kind: 'topLevelAction', actionType: 'COPY'}` and left the reducer as the only thing that
+     * noticed — a runtime refusal for something the wire can close.
+     *
+     * `actionType?: never` on the top-level arm rather than omission: an ArkType object admits
+     * undeclared keys, so leaving it out would let it through. Same reason the UI buffers are spelled
+     * out as `never` on both arms.
+     */
+    type({
+        type: '"action.createTyped"',
+        actionId: 'string',
+        kind: '"topLevelAction"',
+        label: 'string?',
+        "actionType?": 'never',
+        "editableLabel?": 'never',
+        "editableType?": 'never',
+        "editable_label?": 'never',
+        "editable_type?": 'never',
+    }),
+    type({
+        type: '"action.createTyped"',
+        actionId: 'string',
+        kind: '"gridAction"',
+        label: 'string?',
+        "actionType?": type.enumerated(...ACTION_TYPES),
+        "editableLabel?": 'never',
+        "editableType?": 'never',
+        "editable_label?": 'never',
+        "editable_type?": 'never',
+    }),
+    type({
+        type: '"action.setGridActionRef"',
+        actionId: 'string',
+        gridQuestionId: 'string',
+        gridActionId: 'string',
+        include: 'boolean',
+        atIndex: 'number?',
+    }),
+    type({
+        type: '"action.setMetadata"',
+        actionId: 'string',
+        questionId: 'string',
+        metadata: type.or(actionMetadataSchema, type('null')),
+    }),
     type({ type: '"action.delete"', actionId: 'string' }),
     type({ type: '"dataMapping.create"', mappingId: 'string', sourceId: 'string', rootNodeId: 'string' }),
     type({ type: '"dataMapping.delete"', mappingId: 'string' }),
@@ -421,6 +533,67 @@ export const templateOpSchema = type.or(
         operator: 'string',
         value: docScalar,
     }),
+    /**
+     * Operator-discriminated, so the payload cannot disagree with the operator: `eq` takes a value,
+     * `in` a NON-EMPTY list, `range` at least one bound and no value, `isNull` a boolean. Each arm
+     * declares the other operators' members `never`, which is what refuses a mixed record carrying a
+     * stale `value` beside new `values`.
+     */
+    type({
+        type: '"mappingFilter.setTyped"',
+        filterId: 'string',
+        nodeId: 'string',
+        fieldId: 'string',
+        operator: '"eq"',
+        value: docScalar,
+        "values?": 'never',
+        "from?": 'never',
+        "to?": 'never',
+    }),
+    type({
+        type: '"mappingFilter.setTyped"',
+        filterId: 'string',
+        nodeId: 'string',
+        fieldId: 'string',
+        operator: '"in"',
+        values: '(string | number | boolean)[] > 0',
+        "value?": 'never',
+        "from?": 'never',
+        "to?": 'never',
+    }),
+    type({
+        type: '"mappingFilter.setTyped"',
+        filterId: 'string',
+        nodeId: 'string',
+        fieldId: 'string',
+        operator: '"range"',
+        from: docScalar,
+        "to?": docScalar,
+        "value?": 'never',
+        "values?": 'never',
+    }),
+    type({
+        type: '"mappingFilter.setTyped"',
+        filterId: 'string',
+        nodeId: 'string',
+        fieldId: 'string',
+        operator: '"range"',
+        "from?": 'never',
+        to: docScalar,
+        "value?": 'never',
+        "values?": 'never',
+    }),
+    type({
+        type: '"mappingFilter.setTyped"',
+        filterId: 'string',
+        nodeId: 'string',
+        fieldId: 'string',
+        operator: '"isNull"',
+        value: 'boolean',
+        "values?": 'never',
+        "from?": 'never',
+        "to?": 'never',
+    }),
     type({ type: '"mappingFilter.delete"', filterId: 'string' }),
     type({ type: '"visibilityRule.set"', ruleId: 'string', questionId: 'string', condition: ruleConditionSchema }),
     type({ type: '"visibilityRule.delete"', ruleId: 'string' }),
@@ -461,12 +634,23 @@ type JsonSchemaLike = {
     properties?: { type?: { const?: unknown } }
 }
 
+/**
+ * The distinct op names a schema validates.
+ *
+ * **Deduplicated**, because one op type may legitimately span several union arms: an
+ * operator-discriminated payload (`mappingFilter.setTyped`) is one op with five mutually exclusive
+ * shapes, which is exactly how the payload is prevented from disagreeing with its operator. The parity
+ * property is "the schema covers exactly these op TYPES", so counting arms instead of types would make
+ * a correctly-modelled discriminated op look like a vocabulary mismatch.
+ */
 const opTypeNames = (schema: Type): string[] => {
     const json = schema.toJsonSchema() as unknown as JsonSchemaLike
     const members = json.anyOf ?? [json]
-    return members
+    const names = members
         .map((member) => member.properties?.type?.const)
         .filter((value): value is string => typeof value === 'string')
+
+    return [...new Set(names)]
 }
 
 /**
@@ -641,6 +825,12 @@ const TEMPLATE_DOCUMENT_DEFAULT_PATHS: readonly string[] = [
  * default and drop the one member that made the node take a single row.
  */
 const BINDING_OPTION_DEFAULT_PATH = /^mappingBindingsById\.[^.]+\.(cardinality|onMissing|onMany)$/
+
+/**
+ * The closed operator set, re-exported through the schema module so a consumer validating a filter and a
+ * consumer authoring one read the same list. Declared once in `templateDocument.ts`.
+ */
+export const SCHEMA_MAPPING_FILTER_OPERATORS: readonly string[] = MAPPING_FILTER_OPERATORS
 
 export const templateDocumentIsDefault: IsDefault = (path, value) => {
     const option = BINDING_OPTION_DEFAULT_PATH.exec(path)?.[1]

@@ -133,6 +133,22 @@ export type QuestionGridPresentation = {
     rowEditor?: QuestionGridRowEditor
     /** OQ-V2-25: authored defaults; per-user widths are preference state outside both documents. */
     defaultColumnWidthsByQuestionId?: Record<QuestionId, number>
+    /**
+     * Which of this grid's columns offer a filter control, in authored order (M-054).
+     *
+     * Legacy stores `filter_ui.questions[]` as an array of objects; DOC-LAW-1 forbids that, and the
+     * per-entry flags it carried (`is_multi`, the date-interval bounds) are the *control's* configuration
+     * rather than the grid's, so they belong on the column question. What the grid owns is the
+     * selection and its order — a primitive id array, maintained one member at a time by
+     * `gridColumn.setFilter` so two authors adding different filters concurrently both survive.
+     */
+    filterQuestionIds?: QuestionId[]
+    /**
+     * The grid-owned actions, in authored order (M-055) — **ids only, never bodies**. The action
+     * records live in `actionsById`; duplicating them here would give one action two homes that could
+     * disagree, which is the reason the field map routes grid actions into the root collection.
+     */
+    actionIds?: ActionId[]
     [key: string]: unknown
 }
 
@@ -165,8 +181,91 @@ export type QnrGridRow = {
     [key: string]: unknown
 }
 
-export type QnrTab = { label?: string; [key: string]: unknown }
+/** A tab's positional grid: one placement per question it displays, keyed rather than positional. */
+export type QnrTabLayout = {
+    placementsByQuestionId?: Record<QuestionId, LayoutPlacement>
+    [key: string]: unknown
+}
+
+/**
+ * A header tab (M-051).
+ *
+ * `layout` is the typed successor to legacy `tab_editor.rows[].columns{}`, which is an array of rows
+ * each holding an object of columns. DOC-LAW-1 rules that out for the reason it exists: two authors
+ * moving different questions produce two whole-array patches, and the second silently discards the
+ * first. Keyed placements make those two edits touch two keys instead.
+ *
+ * The index signature stays: a tab's authored bag is still open (`dependent_question_ids` and friends
+ * arrive from the importer), and narrowing it would make an already-stored tab unreadable.
+ */
+export type QnrTab = { label?: string; layout?: QnrTabLayout; [key: string]: unknown }
+
+/**
+ * The **compatibility** action record: `kind` is an arbitrary optional string and the bag is open.
+ *
+ * Deliberately left broad. It is released, imported documents carry unknown kinds and accidental UI
+ * buffers, and narrowing it would make those unreadable — ADR-0008 DEC-006. The typed vocabulary below
+ * is additive and closed; a record is "known" only when its `kind` is one of `KNOWN_ACTION_KINDS`, and
+ * everything else keeps replaying exactly as before.
+ */
 export type QnrAction = { kind?: string; [key: string]: unknown }
+
+/** The two action kinds the typed path authors (M-052/M-055). Anything else is legacy-readable only. */
+export const KNOWN_ACTION_KINDS = ['topLevelAction', 'gridAction'] as const
+export type KnownActionKind = (typeof KNOWN_ACTION_KINDS)[number]
+
+/** A grid action's effect. Absent is a valid incomplete draft; publication refuses it. */
+export const ACTION_TYPES = ['COPY', 'UPDATE'] as const
+export type ActionType = (typeof ACTION_TYPES)[number]
+
+export const isKnownActionKind = (kind: unknown): kind is KnownActionKind =>
+    typeof kind === 'string' && (KNOWN_ACTION_KINDS as readonly string[]).includes(kind)
+
+/**
+ * What a top-level action does: for one composite/grid question, run an authored sequence of that
+ * grid's existing actions (M-052).
+ *
+ * **Not a recursive action tree.** The legacy shape reads like one (`actions:[{id, question_id,
+ * actions[]}]`), but the inner ids are grid actions that already exist in `actionsById`, so the v2
+ * shape is a map from grid question id to an ordered id array. There is deliberately no
+ * `childActionOrder` and no `questionId` member on an action.
+ */
+export type KnownTopLevelAction = {
+    kind: 'topLevelAction'
+    label?: string
+    actionIdsByGridQuestionId?: Record<QuestionId, ActionId[]>
+}
+
+/**
+ * One metadata entry of a grid action: which values it copies or updates between.
+ *
+ * `{ all: true }` is the canonical all-to-all marker and exists because DOC-LAW-2 would otherwise
+ * erase the fact: legacy encodes all-to-all as `from: null, to: null`, and a document may carry
+ * neither null nor an empty object, so "selected, unbounded" and "not selected at all" would become
+ * the same absence. It is exclusive with `from`/`to`, and a bare `{}` is invalid for the same reason.
+ */
+/**
+ * Every arm excludes the others' members with `?: never`, so the union is closed at COMPILE time and
+ * not only in the reducer. Without the exclusions `{all: true, from: 'a'}` structurally satisfies the
+ * from-only arm — TypeScript admits extra properties on a non-fresh object — and the exclusivity rule
+ * would exist in three places (reducer, schema) but not in the type consumers actually program against.
+ */
+export type ActionMetadata =
+    | { from: DocScalar; to: DocScalar; all?: never }
+    | { from: DocScalar; to?: never; all?: never }
+    | { from?: never; to: DocScalar; all?: never }
+    | { all: true; from?: never; to?: never }
+
+/** A grid-owned action (M-055): its effect, and the per-column values it applies to. */
+export type KnownGridAction = {
+    kind: 'gridAction'
+    label?: string
+    actionType?: ActionType
+    metadataByQuestionId?: Record<QuestionId, ActionMetadata>
+}
+
+/** The closed typed vocabulary. A stored `QnrAction` is one of these only when its `kind` says so. */
+export type KnownAction = KnownTopLevelAction | KnownGridAction
 
 /**
  * A typed conditional (OQ-V2-17/architecture §2.2(4)): question visibility/highlight
@@ -345,10 +444,47 @@ export const bindingIsMultiValued = (binding: MappingBinding): boolean =>
     resolveBindingOptions(binding).cardinality.endsWith('*')
 
 /** Carries no `nodeId` back-pointer: the node already lists it (§2.2a). */
+/** The operators the typed path authors and the compiler branches on (engine contract ENG-MD-005). */
+export const MAPPING_FILTER_OPERATORS = ['eq', 'in', 'range', 'isNull'] as const
+export type MappingFilterOperator = (typeof MAPPING_FILTER_OPERATORS)[number]
+
+export const isKnownMappingFilterOperator = (operator: unknown): operator is MappingFilterOperator =>
+    typeof operator === 'string' && (MAPPING_FILTER_OPERATORS as readonly string[]).includes(operator)
+
+/**
+ * The payload each known operator carries — one member set per operator, nothing shared.
+ *
+ * `range` takes at least one bound because a range with neither is not a filter; `in` takes a
+ * non-empty list for the same reason. Both are enforced by the schema rather than left to the reducer,
+ * so an unusable filter cannot reach a compiled artifact.
+ */
+export type MappingFilterPayload =
+    | { operator: 'eq'; value: DocScalar }
+    | { operator: 'in'; values: DocScalar[] }
+    | { operator: 'range'; from: DocScalar; to?: DocScalar }
+    | { operator: 'range'; to: DocScalar }
+    | { operator: 'isNull'; value: boolean }
+
+/**
+ * A node filter. Carries no `nodeId` back-pointer: the node already lists it (§2.2a).
+ *
+ * **`operator` stays a loose `string`, and that is deliberate.** It is released, and stored documents
+ * carry operators outside the closed set (`contains` among them) that must remain readable and
+ * replayable — ADR-0008 DEC-006. The closed vocabulary arrives as `MAPPING_FILTER_OPERATORS` plus the
+ * additive `mappingFilter.setTyped`, which is the only path that can write a payload; publication is
+ * where an unknown operator becomes a refusal.
+ *
+ * `values`/`from`/`to` are additive members for the `in` and `range` payloads. A filter carries only
+ * the members of its own operator: `setTyped` rewrites the record rather than patching it, so
+ * switching operator cannot leave a stale `value` behind.
+ */
 export type MappingFilter = {
     fieldId: string
     operator: string
     value?: DocScalar
+    values?: DocScalar[]
+    from?: DocScalar
+    to?: DocScalar
 }
 
 /**
@@ -430,6 +566,36 @@ export type QnrQuestionBundle = {
      */
     tabOrder?: TabId[]
     actionsById?: Record<ActionId, QnrAction>
+    /**
+     * The mapping-graph fragment its questions are bound through — the same four normalized
+     * collections the document root carries, scoped to this root question's subtree.
+     *
+     * **Why a bundle carries mapping at all.** Mapping is one root-level graph, not per-question state
+     * (OQ-V2-28 ✅, §2.2a), so a bundle that copied only questions would lose every binding the moment
+     * it was picked: the pick splices this fragment into the family document's root graph precisely so
+     * a picked question does not arrive unmapped. The pre-DDL guardrails state it as part of what the
+     * column stores — "plus its mapping-graph fragment (the nodes, bindings, and filters its questions
+     * are bound through)".
+     *
+     * The same records and the same laws as the document, deliberately: `dataMappingsById` keyed by
+     * mapping id with a primitive `bindingOrder`, nodes keyed by node id with a primitive `filterOrder`,
+     * every default omitted. **No new document shape** — a pick replays ordinary authoring ops under
+     * fresh ids (`mappingNode.create`, then filters via `mappingFilter.set` or the typed
+     * `mappingFilter.setTyped`, then `mappingBinding.create`, and `dataMapping.create` last so the
+     * reducer adopts its bindings in the authored order), so anything expressible in a document is
+     * expressible in a bundle and nothing else is.
+     *
+     * All four are optional and independently so: a bundle for an unmapped question carries none of
+     * them, and a fragment mid-authoring may carry nodes with no bindings yet. Completeness is a
+     * publication question (G-25), never a condition of storing or picking one.
+     *
+     * @see asma-modules/_docs/editor/qnrs/cross/2026-07-13-23-25-architecture-qnr-v2-db-design-pre-ddl-guardrails.md:187
+     * @see asma-modules/_docs/editor/qnrs/cross/2026-07-13-23-25-architecture-qnr-v2-db-design-pre-ddl-guardrails.md:587 — OQ-V2-28
+     */
+    dataMappingsById?: Record<MappingId, QnrDataMapping>
+    mappingNodesById?: Record<NodeId, MappingNode>
+    mappingBindingsById?: Record<BindingId, MappingBinding>
+    mappingFiltersById?: Record<FilterId, MappingFilter>
 }
 
 /**
