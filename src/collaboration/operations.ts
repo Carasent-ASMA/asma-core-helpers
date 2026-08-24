@@ -18,7 +18,6 @@ import type {
     NodeId,
     QuestionId,
     QnrRuleId,
-    KnownActionKind,
     RowId,
     RuleCondition,
     TabId,
@@ -148,12 +147,18 @@ export type TemplateOp =
      * typed path is closed: it cannot mint a UI edit buffer, and it cannot create a kind the reducer
      * has no rules for. Kind is write-once — `action.updateField` refuses to change it.
      */
+    /**
+     * Two closed arms, not one arm with an optional member: `actionType` is a `gridAction` concept, and a
+     * single arm would type-check `{kind: 'topLevelAction', actionType: 'COPY'}` — leaving the reducer as
+     * the only thing that noticed, which is a runtime refusal for something the compiler can prevent.
+     */
+    | { type: 'action.createTyped'; actionId: ActionId; kind: 'topLevelAction'; label?: string; actionType?: never }
     | {
           type: 'action.createTyped'
           actionId: ActionId
-          kind: KnownActionKind
+          kind: 'gridAction'
           label?: string
-          /** `gridAction` only; a valid draft may omit it, and publication is where that is refused. */
+          /** A valid draft may omit it; publication is where that is refused. */
           actionType?: ActionType
       }
     /**

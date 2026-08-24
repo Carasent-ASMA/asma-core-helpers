@@ -244,11 +244,17 @@ export type KnownTopLevelAction = {
  * neither null nor an empty object, so "selected, unbounded" and "not selected at all" would become
  * the same absence. It is exclusive with `from`/`to`, and a bare `{}` is invalid for the same reason.
  */
+/**
+ * Every arm excludes the others' members with `?: never`, so the union is closed at COMPILE time and
+ * not only in the reducer. Without the exclusions `{all: true, from: 'a'}` structurally satisfies the
+ * from-only arm — TypeScript admits extra properties on a non-fresh object — and the exclusivity rule
+ * would exist in three places (reducer, schema) but not in the type consumers actually program against.
+ */
 export type ActionMetadata =
-    | { from: DocScalar; to: DocScalar }
-    | { from: DocScalar }
-    | { to: DocScalar }
-    | { all: true }
+    | { from: DocScalar; to: DocScalar; all?: never }
+    | { from: DocScalar; to?: never; all?: never }
+    | { from?: never; to: DocScalar; all?: never }
+    | { all: true; from?: never; to?: never }
 
 /** A grid-owned action (M-055): its effect, and the per-column values it applies to. */
 export type KnownGridAction = {

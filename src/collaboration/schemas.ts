@@ -12,7 +12,6 @@ import {
     BINDING_ON_MANY,
     BINDING_ON_MISSING,
     BINDING_OPTION_DEFAULTS,
-    KNOWN_ACTION_KINDS,
     MAPPING_FILTER_OPERATORS,
     bindingTargetKey,
 } from './templateDocument.js'
@@ -434,14 +433,32 @@ export const templateOpSchema = type.or(
     type({ type: '"tab.delete"', tabId: 'string' }),
     type({ type: '"action.create"', actionId: 'string', kind: 'string?' }),
     type({ type: '"action.updateField"', actionId: 'string', field: 'string', value: opValue }),
+    /**
+     * Two arms, discriminated on `kind`. A single arm with an optional `actionType` admitted
+     * `{kind: 'topLevelAction', actionType: 'COPY'}` and left the reducer as the only thing that
+     * noticed — a runtime refusal for something the wire can close.
+     *
+     * `actionType?: never` on the top-level arm rather than omission: an ArkType object admits
+     * undeclared keys, so leaving it out would let it through. Same reason the UI buffers are spelled
+     * out as `never` on both arms.
+     */
     type({
         type: '"action.createTyped"',
         actionId: 'string',
-        kind: type.enumerated(...KNOWN_ACTION_KINDS),
+        kind: '"topLevelAction"',
+        label: 'string?',
+        "actionType?": 'never',
+        "editableLabel?": 'never',
+        "editableType?": 'never',
+        "editable_label?": 'never',
+        "editable_type?": 'never',
+    }),
+    type({
+        type: '"action.createTyped"',
+        actionId: 'string',
+        kind: '"gridAction"',
         label: 'string?',
         "actionType?": type.enumerated(...ACTION_TYPES),
-        // The typed path cannot mint a UI edit buffer. Declared `never` rather than merely omitted,
-        // because an ArkType object admits undeclared keys — omission would let one through.
         "editableLabel?": 'never',
         "editableType?": 'never',
         "editable_label?": 'never',

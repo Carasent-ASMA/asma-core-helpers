@@ -15,7 +15,20 @@ import type {
     QnrTemplateDocument,
     QuestionId,
 } from './templateDocument.js'
-import { BINDING_OPTION_DEFAULTS, bindingTargetKey, isKnownActionKind } from './templateDocument.js'
+import {
+    ACTION_TYPES,
+    BINDING_OPTION_DEFAULTS,
+    MAPPING_FILTER_OPERATORS,
+    bindingTargetKey,
+    isKnownActionKind,
+} from './templateDocument.js'
+
+/** Runtime narrowing for the two closed vocabularies the reducer must re-check on replay. */
+const isActionType = (value: unknown): value is (typeof ACTION_TYPES)[number] =>
+    typeof value === 'string' && (ACTION_TYPES as readonly string[]).includes(value)
+
+const isDocScalarValue = (value: unknown): value is string | number | boolean =>
+    typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'
 
 /** The behaviour members, so the write loop cannot silently miss one that `BINDING_OPTION_DEFAULTS` gains. */
 const BINDING_OPTION_KEYS = Object.keys(BINDING_OPTION_DEFAULTS) as ReadonlyArray<keyof typeof BINDING_OPTION_DEFAULTS>
@@ -239,50 +252,156 @@ export const tabFieldPathRefusal = (field: string): string | undefined => {
     return undefined
 }
 
-/** UI edit buffers, in both spellings. Never document content — see `knownActionFieldRefusal`. */
+/**
+ * Validates a `mappingFilter.setTyped` payload in the REDUCER, not only at the wire.
+ *
+ * The wire schema is the primary gate, but it is not the only path into this reducer: bunjs replays a
+ * stored `collab_ops` log without re-validating each op, so an op written by an older or bypassed
+ * client arrives here unchecked. Before this, that path accepted an empty `in`, a `range` with no
+ * bound, a non-boolean `isNull`, and — worst — an UNKNOWN operator, which fell through the
+ * `eq`/`in`/`isNull` tests into the `range` branch and was silently stored as a boundless range.
+ * A filter nothing can evaluate then rode into a compiled artifact that is immutable forever.
+ *
+ * Mirrors the wire schema exactly: closed operator, that operator's members present and correctly
+ * typed, and no member belonging to another operator.
+ */
+const assertTypedFilterPayload = (op: {
+    operator: string
+    value?: unknown
+    values?: unknown
+    from?: unknown
+    to?: unknown
+}): void => {
+    if (!(MAPPING_FILTER_OPERATORS as readonly string[]).includes(op.operator)) {
+        throw new OperationConflictError(
+            `"${op.operator}" is not a typed filter operator (${MAPPING_FILTER_OPERATORS.join(' | ')}); use mappingFilter.set for a legacy operator`,
+        )
+    }
+
+    // Stale members first: a payload carrying another operator's members is ambiguous whatever else is
+    // right about it, and the canonical replace would silently drop them rather than refuse.
+    const present = (['value', 'values', 'from', 'to'] as const).filter((member) => op[member] !== undefined)
+    const allowed: Record<string, readonly string[]> = {
+        eq: ['value'],
+        in: ['values'],
+        range: ['from', 'to'],
+        isNull: ['value'],
+    }
+    const stale = present.filter((member) => !(allowed[op.operator] ?? []).includes(member))
+    if (stale.length > 0) {
+        throw new OperationConflictError(`Operator "${op.operator}" does not carry ${stale.join(', ')}`)
+    }
+
+    if (op.operator === 'eq') {
+        if (!isDocScalarValue(op.value)) throw new OperationConflictError('Operator "eq" requires a scalar value')
+        return
+    }
+
+    if (op.operator === 'isNull') {
+        if (typeof op.value !== 'boolean') {
+            throw new OperationConflictError('Operator "isNull" requires a boolean value')
+        }
+        return
+    }
+
+    if (op.operator === 'in') {
+        if (!Array.isArray(op.values) || op.values.length === 0) {
+            throw new OperationConflictError('Operator "in" requires a non-empty list')
+        }
+        if (!op.values.every(isDocScalarValue)) {
+            throw new OperationConflictError('Operator "in" requires every member to be a scalar')
+        }
+        return
+    }
+
+    // range: at least one bound, and every bound present must be a scalar.
+    if (op.from === undefined && op.to === undefined) {
+        throw new OperationConflictError('Operator "range" requires at least one of "from"/"to"')
+    }
+    for (const bound of ['from', 'to'] as const) {
+        if (op[bound] !== undefined && !isDocScalarValue(op[bound])) {
+            throw new OperationConflictError(`Operator "range" requires "${bound}" to be a scalar`)
+        }
+    }
+}
+
+/** UI edit buffers, in both spellings. Rejected on known kinds by the whitelist below. */
 const ACTION_UI_BUFFERS = ['editableLabel', 'editableType', 'editable_label', 'editable_type'] as const
 
-/** The collections only the typed member-wise ops may author. */
+/**
+ * The ONLY fields `action.updateField` may write on a KNOWN action: `label` on either kind, and
+ * `actionType` on a `gridAction`.
+ *
+ * **A whitelist, not a blacklist, and that is the repair.** The first version enumerated what was
+ * forbidden — `kind`, the UI buffers, the two keyed collections — which meant `arbitraryField` and every
+ * other unlisted name sailed through and persisted. A known action's shape is closed by definition, so
+ * the safe default is refusal: anything not named here is not part of the typed vocabulary, and
+ * admitting it would turn a typed record back into the broad legacy bag the closed kinds exist to
+ * replace. `QnrAction` stays open for LEGACY records precisely so this can be strict.
+ *
+ * The listed names still carry their own reasons for being writable or not:
+ *
+ * - **`kind` is write-once.** It selects which rules apply, so changing it reinterprets every member
+ *   already stored under the old kind.
+ * - **UI edit buffers are not document content** (`editable_label`/`editable_type`), so authoring them
+ *   would mint a version for a designer-side checkbox.
+ * - **The two keyed collections are reserved** for `action.setGridActionRef` / `action.setMetadata`,
+ *   which edit them one member at a time; a field write replaces a map wholesale.
+ */
+const KNOWN_ACTION_WRITABLE_FIELDS: Readonly<Record<KnownActionKind, readonly string[]>> = {
+    topLevelAction: ['label'],
+    gridAction: ['label', 'actionType'],
+}
+
+/** The collections only the typed member-wise ops may author — named for the refusal message. */
 const ACTION_OWNED_FIELD_PATHS = ['actionIdsByGridQuestionId', 'metadataByQuestionId'] as const
 
 /**
  * Why `field` may not be written on a KNOWN action, or `undefined` if it may.
  *
- * Applies to known kinds only. A legacy record keeps taking any field, including the buffers below,
- * because that is what makes an already-stored action replay byte-identically (ADR-0008 DEC-006).
- *
- * Four refusals:
- *
- * - **`kind` is write-once.** It selects which rules apply, so changing it would reinterpret every
- *   member already stored under the old kind — a `gridAction`'s metadata read as a top-level map.
- * - **UI edit buffers are not document content.** `editable_label`/`editable_type` are designer-side
- *   flags legacy happened to persist; authoring them would mint a version for a checkbox nobody
- *   considers content, and they are not in the typed vocabulary at all.
- * - **`actionType` belongs to a `gridAction`.** On a top-level action it would be a member no reader
- *   consults, silently changing `document_hash`.
- * - **The two keyed collections are reserved** for `action.setGridActionRef` / `action.setMetadata`,
- *   which edit them one member at a time. A field write can only replace a map wholesale, which is the
- *   lost-update those ops exist to prevent — and it reaches ancestors too, so `metadataByQuestionId`
- *   and anything under it are both refused.
+ * Applies to known kinds only: a legacy record keeps taking any field, buffers included, because that
+ * is what makes an already-stored action replay byte-identically (ADR-0008 DEC-006).
  */
 export const knownActionFieldRefusal = (kind: KnownActionKind, field: string): string | undefined => {
+    const writable = KNOWN_ACTION_WRITABLE_FIELDS[kind]
+    if (writable.includes(field)) return undefined
+
+    // The specific messages first, so the reason a caller reads names their actual mistake rather than
+    // "not writable" for a field that is writable on the other kind, or reserved for a dedicated op.
     if (field === 'kind' || field.startsWith('kind.')) {
         return 'Field "kind" is write-once on a known action; create a new action instead'
     }
-
     if (ACTION_UI_BUFFERS.some((buffer) => field === buffer || field.startsWith(`${buffer}.`))) {
         return `Field "${field}" is a UI edit buffer, not document content`
     }
-
-    if ((field === 'actionType' || field.startsWith('actionType.')) && kind !== 'gridAction') {
+    if (field === 'actionType' || field.startsWith('actionType.')) {
         return `Field "actionType" belongs to a gridAction, not a ${kind}`
     }
-
     const owned = ACTION_OWNED_FIELD_PATHS.find(
         (path) => field === path || field.startsWith(`${path}.`) || path.startsWith(`${field}.`),
     )
     if (owned !== undefined) {
         return `Field "${field}" writes "${owned}", which only the typed action operations may author`
+    }
+
+    return `Field "${field}" is not part of the ${kind} vocabulary (writable: ${writable.join(', ')})`
+}
+
+/**
+ * Why `value` may not be written to a permitted known-action field, or `undefined` if it may.
+ *
+ * The whitelist alone would still let `actionType: 'DELETE'` or a numeric `label` through, turning a
+ * typed record into a malformed one that every downstream reader has to re-check. `null` is the explicit
+ * unset the op layer carries, so it is legal for both.
+ */
+export const knownActionValueRefusal = (field: string, value: unknown): string | undefined => {
+    if (value === null) return undefined
+
+    if (field === 'label' && typeof value !== 'string') {
+        return `Field "label" takes a string, not ${typeof value}`
+    }
+    if (field === 'actionType' && !isActionType(value)) {
+        return `"${String(value)}" is not a valid actionType (${ACTION_TYPES.join(' | ')})`
     }
 
     return undefined
@@ -1166,8 +1285,11 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
         case 'gridColumn.setAction': {
             const gridQuestion = requireGridQuestion(doc, op.questionId)
             if (op.include) {
-                const action = doc.actionsById?.[op.actionId]
-                if (!action) throw new OperationConflictError(`Unknown action "${op.actionId}"`)
+                // A grid may only own a KNOWN gridAction. A `topLevelAction` here would be owned by the
+                // very grid it is supposed to drive, and an unknown legacy record has no `actionType`
+                // vocabulary at all — either way the reference compiles into nothing. `include: false`
+                // deliberately skips this so a malformed or legacy reference can still be scrubbed.
+                requireKnownAction(doc, op.actionId, 'gridAction')
                 // A grid action has at most one owning grid, which is what makes its metadata scope
                 // unambiguous — the same action listed by two grids would have two column vocabularies.
                 const owners = gridsOwningAction(doc, op.actionId).filter((owner) => owner !== op.questionId)
@@ -1425,7 +1547,8 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             // The gate applies to KNOWN kinds only. An unknown-kind record keeps taking any field —
             // including the UI buffers legacy persisted — so a stored action replays byte-identically.
             if (isKnownActionKind(action.kind)) {
-                const refusal = knownActionFieldRefusal(action.kind, op.field)
+                const refusal =
+                    knownActionFieldRefusal(action.kind, op.field) ?? knownActionValueRefusal(op.field, op.value)
                 if (refusal !== undefined) throw new OperationConflictError(refusal)
             }
             return { ...doc, actionsById: { ...doc.actionsById, [op.actionId]: writeField(action, op.field, op.value) } }
@@ -1435,8 +1558,15 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             if (doc.actionsById?.[op.actionId]) {
                 throw new OperationConflictError(`Action "${op.actionId}" already exists`)
             }
-            if (op.actionType !== undefined && op.kind !== 'gridAction') {
+            // The op union now makes `{kind: 'topLevelAction', actionType}` unrepresentable, so this is
+            // the replay/bypass boundary rather than the primary defence: an op read back from
+            // `collab_ops` was never re-checked against the wire schema.
+            const authoredActionType = (op as { actionType?: unknown }).actionType
+            if (authoredActionType !== undefined && op.kind !== 'gridAction') {
                 throw new OperationConflictError(`"actionType" belongs to a gridAction, not a ${op.kind}`)
+            }
+            if (authoredActionType !== undefined && !isActionType(authoredActionType)) {
+                throw new OperationConflictError(`"${String(authoredActionType)}" is not a valid actionType`)
             }
 
             // Minimal form: kind plus only what was authored. No empty label, no empty collections.
@@ -1484,23 +1614,37 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
 
         case 'action.setMetadata': {
             const action = requireKnownAction(doc, op.actionId, 'gridAction')
-            const owners = gridsOwningAction(doc, op.actionId)
-            const owner = owners[0]
-            if (owner === undefined) {
-                throw new OperationConflictError(
-                    `Action "${op.actionId}" is owned by no grid, so its metadata has no column vocabulary`,
-                )
-            }
+
             if (op.metadata !== null) {
+                // EXACTLY one owner, never "the first one found". An imported document can list one grid
+                // action under two grids, and resolving the column vocabulary from `owners[0]` made the
+                // same write accepted or refused purely by `questionsById` insertion order — two
+                // documents with identical content and different key order disagreeing is precisely
+                // what DOC-LAW-1 exists to prevent, so the ambiguity is reported instead of resolved.
+                const owners = gridsOwningAction(doc, op.actionId)
+                if (owners.length === 0) {
+                    throw new OperationConflictError(
+                        `Action "${op.actionId}" is owned by no grid, so its metadata has no column vocabulary`,
+                    )
+                }
+                if (owners.length > 1) {
+                    throw new OperationConflictError(
+                        `Action "${op.actionId}" is owned by ${owners.length} grids (${[...owners].sort().join(', ')}); its metadata scope is ambiguous`,
+                    )
+                }
+
                 // A metadata key is a COLUMN of the owning grid, not an arbitrary question: the action
                 // copies or updates values within its own rows.
-                const columnIds = doc.questionsById?.[owner]?.grid?.columnIds ?? []
+                const columnIds = doc.questionsById?.[owners[0] as string]?.grid?.columnIds ?? []
                 if (!columnIds.includes(op.questionId)) {
                     throw new OperationConflictError(
-                        `Question "${op.questionId}" is not a column of grid "${owner}"`,
+                        `Question "${op.questionId}" is not a column of grid "${owners[0]}"`,
                     )
                 }
             }
+            // `metadata: null` needs no owner: removal is how a malformed or orphaned record gets
+            // repaired, and requiring an owner would make exactly the documents that need fixing
+            // unfixable.
 
             const byQuestion = { ...((action['metadataByQuestionId'] ?? {}) as Record<string, ActionMetadata>) }
             if (op.metadata === null) delete byQuestion[op.questionId]
@@ -1749,6 +1893,7 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
         }
 
         case 'mappingFilter.setTyped': {
+            assertTypedFilterPayload(op)
             const node = doc.mappingNodesById?.[op.nodeId]
             if (!node) throw new OperationConflictError(`Unknown mapping node "${op.nodeId}"`)
 
@@ -1762,7 +1907,9 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
                       ? { fieldId: op.fieldId, operator: 'in', values: [...op.values] }
                       : op.operator === 'isNull'
                         ? { fieldId: op.fieldId, operator: 'isNull', value: op.value }
-                        : {
+                        : // `range` by elimination is safe ONLY because the validator above closed the
+                          // operator set first; before it did, an unknown operator landed here.
+                          {
                               fieldId: op.fieldId,
                               operator: 'range',
                               ...('from' in op && op.from !== undefined ? { from: op.from } : {}),
