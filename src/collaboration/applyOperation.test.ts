@@ -7,8 +7,18 @@ import {
     UnknownOperationError,
     applyOperation,
 } from './applyOperation.js'
+import { canonicalJson, reduceToMinimalForm } from './canonicalize.js'
 import type { TemplateOp } from './operations.js'
-import { emptyTemplateDocument } from './templateDocument.js'
+import { templateDocumentIsDefault } from './schemas.js'
+import {
+    BINDING_CARDINALITIES,
+    BINDING_OPTION_DEFAULTS,
+    bindingIsMultiValued,
+    emptyTemplateDocument,
+    resolveBindingOptions,
+    type MappingBinding,
+    type QnrTemplateDocument,
+} from './templateDocument.js'
 
 /**
  * Guards the invariants a consumer would notice if a publish broke them. The exhaustive
@@ -57,6 +67,199 @@ describe('applyOperation', () => {
         const moved = applyOperation(threeQuestions, { type: 'question.move', questionId: 'q-2', toIndex: 0 })
 
         assert.deepEqual(moved.questionOrder, ['q-2', 'q-3', 'q-1'])
+    })
+
+    it('creates an ordered grid-owned column without adding it to the top-level order', () => {
+        const grid = apply([{ type: 'question.create', questionId: 'g-1', questionType: 'QuestionGrid' }])
+
+        const withColumns = apply(
+            [
+                {
+                    type: 'gridColumn.create',
+                    questionId: 'g-1',
+                    columnQuestionId: 'c-1',
+                    questionType: 'TextShort',
+                },
+                {
+                    type: 'gridColumn.create',
+                    questionId: 'g-1',
+                    columnQuestionId: 'c-2',
+                    questionType: 'DateField',
+                    atIndex: 0,
+                },
+            ],
+            grid,
+        )
+
+        assert.deepEqual(withColumns.questionOrder, ['g-1'])
+        assert.deepEqual(withColumns.questionsById?.['g-1']?.grid?.columnIds, ['c-2', 'c-1'])
+        assert.deepEqual(withColumns.questionsById?.['c-1'], { type: 'TextShort' })
+        assert.deepEqual(withColumns.questionsById?.['c-2'], { type: 'DateField' })
+    })
+
+    it('refuses every grid-column operation through a non-grid question', () => {
+        const ordinary = apply([{ type: 'question.create', questionId: 'q-1', questionType: 'TextShort' }])
+
+        assert.throws(
+            () =>
+                applyOperation(ordinary, {
+                    type: 'gridColumn.create',
+                    questionId: 'q-1',
+                    columnQuestionId: 'c-1',
+                    questionType: 'TextShort',
+                }),
+            OperationConflictError,
+        )
+
+        const malformed = {
+            ...ordinary,
+            questionsById: {
+                'q-1': { type: 'TextShort', grid: { columnIds: ['c-1'] } },
+                'c-1': { type: 'TextShort' },
+            },
+        } satisfies QnrTemplateDocument
+
+        assert.throws(
+            () =>
+                applyOperation(malformed, {
+                    type: 'gridColumn.move',
+                    questionId: 'q-1',
+                    columnQuestionId: 'c-1',
+                    toIndex: 0,
+                }),
+            OperationConflictError,
+        )
+        assert.throws(
+            () =>
+                applyOperation(malformed, {
+                    type: 'gridColumn.setLayout',
+                    questionId: 'q-1',
+                    columnQuestionId: 'c-1',
+                    placement: { row: 0, cell: 0 },
+                }),
+            OperationConflictError,
+        )
+    })
+
+    it('moves a column only inside its grid and refuses to inject it into the top-level order', () => {
+        const withColumns = apply([
+            { type: 'question.create', questionId: 'g-1', questionType: 'QuestionGrid' },
+            {
+                type: 'gridColumn.create',
+                questionId: 'g-1',
+                columnQuestionId: 'c-1',
+                questionType: 'TextShort',
+            },
+            {
+                type: 'gridColumn.create',
+                questionId: 'g-1',
+                columnQuestionId: 'c-2',
+                questionType: 'DateField',
+            },
+        ])
+
+        const moved = applyOperation(withColumns, {
+            type: 'gridColumn.move',
+            questionId: 'g-1',
+            columnQuestionId: 'c-1',
+            toIndex: 1,
+        })
+
+        assert.deepEqual(moved.questionsById?.['g-1']?.grid?.columnIds, ['c-2', 'c-1'])
+        assert.deepEqual(moved.questionOrder, ['g-1'])
+        assert.throws(
+            () => applyOperation(moved, { type: 'question.move', questionId: 'c-1', toIndex: 0 }),
+            OperationConflictError,
+        )
+    })
+
+    it('sets and clears a grid column layout as one atomic placement', () => {
+        const withColumn = apply([
+            { type: 'question.create', questionId: 'g-1', questionType: 'QuestionGrid' },
+            {
+                type: 'gridColumn.create',
+                questionId: 'g-1',
+                columnQuestionId: 'c-1',
+                questionType: 'TextShort',
+            },
+        ])
+
+        const placed = applyOperation(withColumn, {
+            type: 'gridColumn.setLayout',
+            questionId: 'g-1',
+            columnQuestionId: 'c-1',
+            placement: { row: 2, cell: 1, keepCellSize: true },
+        })
+
+        assert.deepEqual(placed.questionsById?.['g-1']?.presentation?.rowEditor, {
+            layoutByQuestionId: { 'c-1': { row: 2, cell: 1, keepCellSize: true } },
+        })
+
+        const cleared = applyOperation(placed, {
+            type: 'gridColumn.setLayout',
+            questionId: 'g-1',
+            columnQuestionId: 'c-1',
+            placement: null,
+        })
+
+        assert.equal(cleared.questionsById?.['g-1']?.presentation, undefined)
+    })
+
+    it('deletes a column from grid cells and every convention-named presentation map', () => {
+        const withColumns = apply([
+            { type: 'question.create', questionId: 'g-1', questionType: 'QuestionGrid' },
+            {
+                type: 'gridColumn.create',
+                questionId: 'g-1',
+                columnQuestionId: 'c-1',
+                questionType: 'TextShort',
+            },
+            {
+                type: 'gridColumn.create',
+                questionId: 'g-1',
+                columnQuestionId: 'c-2',
+                questionType: 'TextShort',
+            },
+            { type: 'gridRow.create', questionId: 'g-1', rowId: 'r-1' },
+            { type: 'gridRow.updateCell', questionId: 'g-1', rowId: 'r-1', columnQuestionId: 'c-1', value: 'one' },
+            { type: 'gridRow.updateCell', questionId: 'g-1', rowId: 'r-1', columnQuestionId: 'c-2', value: 'two' },
+        ])
+        const authored = {
+            ...withColumns,
+            questionsById: {
+                ...withColumns.questionsById,
+                'g-1': {
+                    ...withColumns.questionsById?.['g-1'],
+                    presentation: {
+                        rowEditor: {
+                            layoutByQuestionId: {
+                                'c-1': { row: 0, cell: 0 },
+                                'c-2': { row: 0, cell: 1 },
+                            },
+                        },
+                        defaultColumnWidthsByQuestionId: { 'c-1': 120, 'c-2': 160 },
+                        soloByQuestionId: { 'c-1': 'remove-the-empty-map' },
+                        toolbar: {
+                            labelsByQuestionId: { 'c-1': 'First', 'c-2': 'Second' },
+                            theme: 'compact',
+                        },
+                    },
+                },
+            },
+        }
+
+        const deleted = applyOperation(authored, { type: 'question.delete', questionId: 'c-1' })
+        const presentation = deleted.questionsById?.['g-1']?.presentation
+
+        assert.deepEqual(deleted.questionsById?.['g-1']?.grid?.columnIds, ['c-2'])
+        assert.deepEqual(deleted.gridRowsById?.['r-1']?.cells, { 'c-2': 'two' })
+        assert.deepEqual(presentation?.rowEditor?.layoutByQuestionId, { 'c-2': { row: 0, cell: 1 } })
+        assert.deepEqual(presentation?.defaultColumnWidthsByQuestionId, { 'c-2': 160 })
+        assert.equal(presentation?.soloByQuestionId, undefined)
+        assert.deepEqual(presentation?.toolbar, {
+            labelsByQuestionId: { 'c-2': 'Second' },
+            theme: 'compact',
+        })
     })
 
     it('drops the bindings that targeted a deleted question, keeping the shared node', () => {
@@ -282,6 +485,14 @@ describe('applyOperation', () => {
             { type: 'question.create', questionId: 'q-2', questionType: 'TextShort' },
             { type: 'visibilityRule.set', ruleId: 'vr-1', questionId: 'q-1', condition: { sourceQuestionId: 'q-2', value: 'x' } },
             { type: 'highlightRule.set', ruleId: 'hr-1', questionId: 'q-1', condition: { sourceQuestionId: 'q-2', value: 'y' } },
+            { type: 'narrativeRule.set', ruleId: 'nr-1', questionId: 'q-1', condition: { sourceQuestionId: 'q-2' } },
+            {
+                type: 'qnrRule.set',
+                ruleId: 'qr-1',
+                questionId: 'q-1',
+                condition: { sourceQuestionId: 'q-1' },
+                templateFamilyId: 'family-1',
+            },
         ])
 
         const deleted = applyOperation(doc, { type: 'question.delete', questionId: 'q-1' })
@@ -290,6 +501,102 @@ describe('applyOperation', () => {
         assert.equal(deleted.visibilityRuleOrderByQuestionId, undefined)
         assert.equal(deleted.highlightRulesById, undefined)
         assert.equal(deleted.highlightRuleOrderByQuestionId, undefined)
+        assert.equal(deleted.narrativeRulesById, undefined)
+        assert.equal(deleted.narrativeRuleOrderByQuestionId, undefined)
+        assert.equal(deleted.qnrRulesById, undefined)
+        assert.equal(deleted.qnrRuleOrderByQuestionId, undefined)
+    })
+
+    it('stores narrative and qnr rules in root collections with per-question primitive order', () => {
+        const doc = apply([
+            { type: 'question.create', questionId: 'q-1', questionType: 'TextShort' },
+            { type: 'question.create', questionId: 'q-2', questionType: 'TextShort' },
+            { type: 'narrativeRule.set', ruleId: 'nr-1', questionId: 'q-1', condition: { sourceQuestionId: 'q-2' } },
+            {
+                type: 'qnrRule.set',
+                ruleId: 'qr-1',
+                questionId: 'q-1',
+                condition: { sourceQuestionId: 'q-1', value: 'yes' },
+                templateFamilyId: 'family-1',
+            },
+        ])
+
+        assert.deepEqual(doc.narrativeRulesById, {
+            'nr-1': { condition: { sourceQuestionId: 'q-2' } },
+        })
+        assert.deepEqual(doc.narrativeRuleOrderByQuestionId, { 'q-1': ['nr-1'] })
+        assert.deepEqual(doc.qnrRulesById, {
+            'qr-1': {
+                condition: { sourceQuestionId: 'q-1', value: 'yes' },
+                templateFamilyId: 'family-1',
+            },
+        })
+        assert.deepEqual(doc.qnrRuleOrderByQuestionId, { 'q-1': ['qr-1'] })
+
+        const withoutNarrative = applyOperation(doc, { type: 'narrativeRule.delete', ruleId: 'nr-1' })
+        const withoutEither = applyOperation(withoutNarrative, { type: 'qnrRule.delete', ruleId: 'qr-1' })
+        assert.equal(withoutEither.narrativeRulesById, undefined)
+        assert.equal(withoutEither.narrativeRuleOrderByQuestionId, undefined)
+        assert.equal(withoutEither.qnrRulesById, undefined)
+        assert.equal(withoutEither.qnrRuleOrderByQuestionId, undefined)
+    })
+
+    it('drops the prefill rules that fill a deleted question, and its highlight settings', () => {
+        // Prefill rules are keyed by the TARGET question, so the parallel to the four rule families
+        // is "the rules that fill the deleted question go with it" (M-068).
+        const doc: QnrTemplateDocument = {
+            documentId: 'tpl-1',
+            revision: 0,
+            questionOrder: ['q-1', 'q-2'],
+            questionsById: { 'q-1': { type: 'TextShort' }, 'q-2': { type: 'TextShort' } },
+            prefillRulesById: { 'pr-1': { sourceQuestionId: 'q-2' } },
+            prefillRuleOrderByQuestionId: { 'q-1': ['pr-1'] },
+            highlightRuleSettingsByQuestionId: { 'q-1': { enabled: true, requiredAll: true } },
+        }
+
+        const deleted = applyOperation(doc, { type: 'question.delete', questionId: 'q-1' })
+
+        assert.equal(deleted.prefillRulesById, undefined)
+        assert.equal(deleted.prefillRuleOrderByQuestionId, undefined)
+        assert.equal(deleted.highlightRuleSettingsByQuestionId, undefined)
+    })
+
+    it('keeps a prefill rule that merely SOURCES from the deleted question, dangling', () => {
+        // Same rule as the visibility case below: the surviving question q-1 authored this prefill,
+        // and dropping it because its source vanished would be silent data loss. The dangling
+        // `sourceQuestionId` is for validation to report.
+        const doc: QnrTemplateDocument = {
+            documentId: 'tpl-1',
+            revision: 0,
+            questionOrder: ['q-1', 'q-2'],
+            questionsById: { 'q-1': { type: 'TextShort' }, 'q-2': { type: 'TextShort' } },
+            prefillRulesById: { 'pr-1': { sourceQuestionId: 'q-2' } },
+            prefillRuleOrderByQuestionId: { 'q-1': ['pr-1'] },
+        }
+
+        const deleted = applyOperation(doc, { type: 'question.delete', questionId: 'q-2' })
+
+        assert.deepEqual(deleted.prefillRuleOrderByQuestionId, { 'q-1': ['pr-1'] })
+        assert.equal(deleted.prefillRulesById?.['pr-1']?.sourceQuestionId, 'q-2')
+    })
+
+    it('keeps the highlight settings of a question whose rules are stored but disabled', () => {
+        // `toggleNarrative` flips have_narrative without clearing conditional[], so "stored but off"
+        // is a real state: the rules stay and the settings entry simply carries no `enabled`.
+        const doc: QnrTemplateDocument = {
+            documentId: 'tpl-1',
+            revision: 0,
+            questionOrder: ['q-1', 'q-2'],
+            questionsById: { 'q-1': { type: 'TextShort' }, 'q-2': { type: 'TextShort' } },
+            highlightRulesById: { 'hr-1': { condition: { sourceQuestionId: 'q-2' }, state: 2 } },
+            highlightRuleOrderByQuestionId: { 'q-1': ['hr-1'] },
+            highlightRuleSettingsByQuestionId: { 'q-1': { requiredAll: true } },
+        }
+
+        const deleted = applyOperation(doc, { type: 'question.delete', questionId: 'q-2' })
+
+        assert.deepEqual(deleted.highlightRuleSettingsByQuestionId, { 'q-1': { requiredAll: true } })
+        assert.equal(deleted.highlightRulesById?.['hr-1']?.state, 2)
     })
 
     it('keeps another question\'s rule that references the deleted question, for validation to surface', () => {
@@ -432,43 +739,171 @@ describe('applyOperation', () => {
         )
     })
 
-    it('writes a grid column list as a primitive id array', () => {
-        // `grid.columnIds` is a DOC-LAW-1 order array, so the op value carries the whole
-        // array — never member-wise edits by position.
+    it('reserves the column list and the row-editor layout for the grid-column operations', () => {
+        // Ownership (`grid.columnIds`) and one-placement-per-column layout are what the atomic
+        // grid ops exist to write. `question.updateField` carries a scalar or a whole primitive
+        // array, so reaching either path through it could only write the map wholesale — columns
+        // left owned by nobody, or every other column's placement dropped in one edit.
         const doc = apply([
             { type: 'question.create', questionId: 'g-1', questionType: 'QuestionGrid' },
-            { type: 'question.create', questionId: 'c-1', questionType: 'TextShort' },
+            { type: 'question.create', questionId: 'q-1', questionType: 'TextShort' },
         ])
 
-        const columns = applyOperation(doc, { type: 'question.updateField', questionId: 'g-1', field: 'grid.columnIds', value: ['c-1'] })
+        for (const field of [
+            'grid',
+            'grid.columnIds',
+            'grid.columnIds.0',
+            'presentation.rowEditor',
+            'presentation.rowEditor.layoutByQuestionId',
+            'presentation.rowEditor.layoutByQuestionId.c-1.row',
+        ]) {
+            assert.throws(
+                () => applyOperation(doc, { type: 'question.updateField', questionId: 'g-1', field, value: 'c-1' }),
+                OperationConflictError,
+                field,
+            )
+        }
 
-        assert.deepEqual(columns.questionsById?.['g-1'], { type: 'QuestionGrid', grid: { columnIds: ['c-1'] } })
+        // The reservation is those two paths, not the bags that hold them: their siblings stay
+        // ordinary authored fields.
+        const configured = apply(
+            [
+                { type: 'question.updateField', questionId: 'g-1', field: 'grid.singleRow', value: true },
+                { type: 'question.updateField', questionId: 'g-1', field: 'presentation.headerTabId', value: 't-1' },
+            ],
+            doc,
+        )
+        assert.deepEqual(configured.questionsById?.['g-1'], {
+            type: 'QuestionGrid',
+            grid: { singleRow: true },
+            presentation: { headerTabId: 't-1' },
+        })
+
+        // Grid configuration belongs to a grid: the document schema admits `grid` on no other
+        // type, so the reducer must not be the writer that puts it there.
+        assert.throws(
+            () =>
+                applyOperation(doc, {
+                    type: 'question.updateField',
+                    questionId: 'q-1',
+                    field: 'grid.singleRow',
+                    value: true,
+                }),
+            OperationConflictError,
+        )
+    })
+
+    it('refuses to write a question\'s type, so a grid cannot be flipped out from under its columns', () => {
+        // `type` is the discriminant the document schema branches on: only a `QuestionGrid` may
+        // carry `grid`. Flipping a grid that owns columns leaves a `columnIds` no reader accepts,
+        // and the columns it names are then owned by nobody — nor do they cascade with the
+        // delete, which collects owned columns only from a question still typed as a grid.
+        const doc = apply([
+            { type: 'question.create', questionId: 'g-1', questionType: 'QuestionGrid' },
+            { type: 'gridColumn.create', questionId: 'g-1', columnQuestionId: 'c-1', questionType: 'TextShort' },
+            { type: 'question.create', questionId: 'q-1', questionType: 'TextShort' },
+        ])
+
+        // Refused wherever it is aimed, and on any path below it: `question.create` is the only
+        // op that types a question, so there is no such thing as a legal type write here.
+        for (const [questionId, field] of [
+            ['g-1', 'type'],
+            ['g-1', 'type.name'],
+            ['c-1', 'type'],
+            ['q-1', 'type'],
+        ] as const) {
+            assert.throws(
+                () => applyOperation(doc, { type: 'question.updateField', questionId, field, value: 'TextShort' }),
+                OperationConflictError,
+                `${questionId} ${field}`,
+            )
+        }
+
+        // Only `type` itself: a field that merely starts with the same letters is ordinary.
+        const typed = applyOperation(doc, { type: 'question.updateField', questionId: 'g-1', field: 'typeHint', value: 'table' })
+        assert.equal(typed.questionsById?.['g-1']?.['typeHint'], 'table')
+        assert.equal(typed.questionsById?.['g-1']?.type, 'QuestionGrid')
     })
 
     it('drops a deleted question from every grid\'s column list', () => {
         const doc = apply([
             { type: 'question.create', questionId: 'g-1', questionType: 'QuestionGrid' },
-            { type: 'question.create', questionId: 'c-1', questionType: 'TextShort' },
-            { type: 'question.create', questionId: 'c-2', questionType: 'DateField' },
-            { type: 'question.updateField', questionId: 'g-1', field: 'grid.columnIds', value: ['c-1', 'c-2'] },
+            { type: 'gridColumn.create', questionId: 'g-1', columnQuestionId: 'c-1', questionType: 'TextShort' },
+            { type: 'gridColumn.create', questionId: 'g-1', columnQuestionId: 'c-2', questionType: 'DateField' },
         ])
 
         const deleted = applyOperation(doc, { type: 'question.delete', questionId: 'c-1' })
 
         assert.deepEqual(deleted.questionsById?.['g-1']?.grid?.columnIds, ['c-2'])
+        assert.equal(deleted.questionsById?.['c-1'], undefined)
     })
 
     it('drops the grid config key when its last field goes with a deleted column', () => {
         const doc = apply([
             { type: 'question.create', questionId: 'g-1', questionType: 'QuestionGrid' },
-            { type: 'question.create', questionId: 'c-1', questionType: 'TextShort' },
-            { type: 'question.updateField', questionId: 'g-1', field: 'grid.columnIds', value: ['c-1'] },
+            { type: 'gridColumn.create', questionId: 'g-1', columnQuestionId: 'c-1', questionType: 'TextShort' },
         ])
 
         const deleted = applyOperation(doc, { type: 'question.delete', questionId: 'c-1' })
 
         // DOC-LAW-2: no `grid: {}` left behind — that would hash differently from never configured.
         assert.deepEqual(deleted.questionsById?.['g-1'], { type: 'QuestionGrid' })
+    })
+
+    it('takes a deleted grid\'s columns and predefined rows with it', () => {
+        const doc = apply([
+            { type: 'question.create', questionId: 'q-keep', questionType: 'TextShort' },
+            { type: 'question.create', questionId: 'g-1', questionType: 'QuestionGrid' },
+            { type: 'gridColumn.create', questionId: 'g-1', columnQuestionId: 'c-1', questionType: 'RadioButtons' },
+            { type: 'gridColumn.create', questionId: 'g-1', columnQuestionId: 'c-2', questionType: 'TextShort' },
+            // A column carries authored state of its own: it must cascade the same way a
+            // top-level question's does, or the delete trades orphan questions for orphan rules.
+            { type: 'alternative.create', questionId: 'c-1', alternativeId: 'a-1', label: 'Ja' },
+            { type: 'visibilityRule.set', ruleId: 'vr-1', questionId: 'c-1', condition: { sourceQuestionId: 'q-keep' } },
+            { type: 'mappingNode.create', nodeId: 'n-1', entityId: 'Actor' },
+            {
+                type: 'mappingBinding.create',
+                bindingId: 'b-1',
+                nodeId: 'n-1',
+                fieldId: 'Navn',
+                target: { kind: 'gridColumn', gridQuestionId: 'g-1', columnQuestionId: 'c-1' },
+            },
+            { type: 'gridRow.create', questionId: 'g-1', rowId: 'r-1' },
+            { type: 'gridRow.create', questionId: 'g-1', rowId: 'r-2', label: 'Andre' },
+            { type: 'gridRow.updateCell', questionId: 'g-1', rowId: 'r-1', columnQuestionId: 'c-2', value: 'one' },
+        ])
+
+        const deleted = applyOperation(doc, { type: 'question.delete', questionId: 'g-1' })
+
+        assert.deepEqual(deleted.questionOrder, ['q-keep'])
+        assert.deepEqual(Object.keys(deleted.questionsById ?? {}), ['q-keep'])
+        // DOC-LAW-2 all the way down: the emptied collections are gone, not stored empty.
+        assert.equal(deleted.gridRowsById, undefined)
+        assert.equal(deleted.gridRowOrderByQuestionId, undefined)
+        assert.equal(deleted.alternativesById, undefined)
+        assert.equal(deleted.alternativeOrderByQuestionId, undefined)
+        assert.equal(deleted.visibilityRulesById, undefined)
+        assert.equal(deleted.mappingBindingsById, undefined)
+        // The shared node survives: it is not the grid's to own.
+        assert.deepEqual(deleted.mappingNodesById, { 'n-1': { entityId: 'Actor' } })
+    })
+
+    it('deletes a grid whose column list is malformed without recursing forever', () => {
+        // Ownership cycles are not authorable, only importable. The cascade must terminate on
+        // them rather than blow the stack — a crash here is a 500 on someone's delete click.
+        const selfOwning = {
+            ...doc0,
+            questionsById: {
+                'g-1': { type: 'QuestionGrid', grid: { columnIds: ['g-1', 'g-2'] } },
+                'g-2': { type: 'QuestionGrid', grid: { columnIds: ['g-1'] } },
+            },
+            questionOrder: ['g-1'],
+        } satisfies QnrTemplateDocument
+
+        const deleted = applyOperation(selfOwning, { type: 'question.delete', questionId: 'g-1' })
+
+        assert.equal(deleted.questionsById, undefined)
+        assert.deepEqual(deleted.questionOrder, [])
     })
 
     it('attaches a mapping root and maintains bindingOrder across create and delete', () => {
@@ -564,5 +999,148 @@ describe('applyOperation', () => {
         const replayed = applyOperation(deleted, { type: 'dataMapping.delete', mappingId: 'm-1' })
         assert.equal(replayed.dataMappingsById, undefined)
         assert.equal(replayed.revision, deleted.revision + 1)
+    })
+})
+
+
+/**
+ * The binding behaviours — `cardinality` / `onMissing` / `onMany` (§2.2a, TASK-304 AC-6).
+ *
+ * Two rules meet on these three members and pull in opposite directions, which is what the suite is
+ * really about. The author must be able to state them **explicitly**, because the compiler branches on
+ * them and an artifact is immutable once minted; and DOC-LAW-2 says the *document* may never carry a
+ * key at its own default, because the hash is computed on the minimal form. So "explicitly chosen" and
+ * "stored" are deliberately not the same thing: choosing the default writes nothing.
+ *
+ * @see asma-modules/_docs/editor/qnrs/cross/2026-07-15-20-38-analysis-qnr-external-data-mapping-options.md:832
+ */
+describe('mappingBinding behaviours', () => {
+    const bound = apply([
+        { type: 'question.create', questionId: 'q-1', questionType: 'TextShort' },
+        { type: 'mappingNode.create', nodeId: 'n-1', entityId: 'Actor' },
+    ])
+
+    const create = (options: Partial<Pick<MappingBinding, 'cardinality' | 'onMissing' | 'onMany'>> = {}) =>
+        applyOperation(bound, {
+            type: 'mappingBinding.create',
+            bindingId: 'b-1',
+            nodeId: 'n-1',
+            fieldId: 'Navn',
+            target: { kind: 'question', questionId: 'q-1' },
+            ...options,
+        })
+
+    const binding = (doc: QnrTemplateDocument) => doc.mappingBindingsById?.['b-1']
+
+    it('stores a behaviour the author narrowed away from its default', () => {
+        const doc = create({ cardinality: '0..*', onMissing: 'error', onMany: 'first' })
+
+        assert.deepEqual(binding(doc), {
+            nodeId: 'n-1',
+            fieldId: 'Navn',
+            target: { kind: 'question', questionId: 'q-1' },
+            cardinality: '0..*',
+            onMissing: 'error',
+            onMany: 'first',
+        })
+    })
+
+    it('omits each behaviour the author explicitly set to its own default (DOC-LAW-2)', () => {
+        // One at a time, so a reducer that special-cased only `cardinality` cannot pass.
+        for (const [key, value] of Object.entries(BINDING_OPTION_DEFAULTS)) {
+            const doc = create({ [key]: value })
+
+            assert.deepEqual(
+                binding(doc),
+                { nodeId: 'n-1', fieldId: 'Navn', target: { kind: 'question', questionId: 'q-1' } },
+                `${key}: '${value}' is the default and must not be stored`,
+            )
+        }
+    })
+
+    it('makes an explicitly-defaulted binding byte-identical to an untouched one', () => {
+        // The consequence that matters: `document_hash` decides whether a version is minted and
+        // whether a re-import diverged. Two authors reaching the same binding through different
+        // clicks must not produce two hashes.
+        const untouched = canonicalJson(reduceToMinimalForm(create(), { isDefault: templateDocumentIsDefault }))
+        const spelledOut = canonicalJson(
+            reduceToMinimalForm(create({ cardinality: '0..1', onMissing: 'omit', onMany: 'error' }), {
+                isDefault: templateDocumentIsDefault,
+            }),
+        )
+
+        assert.equal(spelledOut, untouched)
+    })
+
+    it('sets, replaces and unsets a behaviour through update', () => {
+        const set = applyOperation(create(), {
+            type: 'mappingBinding.update',
+            bindingId: 'b-1',
+            patch: { onMany: 'first' },
+        })
+        assert.equal(binding(set)?.onMany, 'first')
+
+        const replaced = applyOperation(set, {
+            type: 'mappingBinding.update',
+            bindingId: 'b-1',
+            patch: { onMany: 'error' },
+        })
+        // 'error' IS the default, so replacing back to it removes the key rather than storing it.
+        assert.equal('onMany' in (binding(replaced) ?? {}), false)
+
+        const unset = applyOperation(set, {
+            type: 'mappingBinding.update',
+            bindingId: 'b-1',
+            patch: { onMany: null },
+        })
+        assert.equal('onMany' in (binding(unset) ?? {}), false)
+    })
+
+    it('leaves a behaviour alone when the patch does not name it', () => {
+        const doc = create({ cardinality: '1..*', onMissing: 'error' })
+
+        const patched = applyOperation(doc, {
+            type: 'mappingBinding.update',
+            bindingId: 'b-1',
+            patch: { fieldId: 'Adresse' },
+        })
+
+        assert.equal(binding(patched)?.fieldId, 'Adresse')
+        assert.equal(binding(patched)?.cardinality, '1..*')
+        assert.equal(binding(patched)?.onMissing, 'error')
+    })
+
+    it('never writes an explicit null into the document', () => {
+        const doc = applyOperation(create({ onMissing: 'error' }), {
+            type: 'mappingBinding.update',
+            bindingId: 'b-1',
+            patch: { onMissing: null, cardinality: null, onMany: null },
+        })
+
+        assert.equal(canonicalJson(binding(doc)).includes('null'), false)
+    })
+
+    it('hydrates absent behaviours to the defaults every reader must agree on', () => {
+        assert.deepEqual(resolveBindingOptions(binding(create()) as MappingBinding), BINDING_OPTION_DEFAULTS)
+
+        assert.deepEqual(resolveBindingOptions(binding(create({ onMany: 'first' })) as MappingBinding), {
+            ...BINDING_OPTION_DEFAULTS,
+            onMany: 'first',
+        })
+    })
+
+    it('reads exactly the starred cardinalities as multi-valued', () => {
+        const multi = BINDING_CARDINALITIES.filter((cardinality) =>
+            bindingIsMultiValued({
+                nodeId: 'n-1',
+                fieldId: 'Navn',
+                target: { kind: 'question', questionId: 'q-1' },
+                cardinality,
+            }),
+        )
+
+        assert.deepEqual(multi, ['0..*', '1..*'])
+        // And the absent case resolves through the default, which is single-valued.
+        assert.equal(bindingIsMultiValued(binding(create()) as MappingBinding), false)
     })
 })

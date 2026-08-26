@@ -15,7 +15,12 @@
  */
 import { createTadaBrowserClient, type ResolveExchanges } from './createTadaBrowserClient.js'
 import { EnvConfigsFnInternal, type IEnvironmentUrlsGenQLOnly } from './generateEnvConfigsBindings.js'
-import { getCachedJwtInternal, getSrvUrlsInternal, isJwtValidInternal } from './generateSrvAuthBindings.js'
+import {
+    getCachedJwtInternal,
+    getJwtTokenInternal,
+    getSrvUrlsInternal,
+    isJwtValidInternal,
+} from './generateSrvAuthBindings.js'
 
 /**
  * Resolves the GraphQL base URL for a service from EnvConfigs, preferring the
@@ -65,6 +70,7 @@ export function initTadaBrowserClient({
     return createTadaBrowserClient({
         url: `${resolveSrvUrl(service)}${path}`,
         getJwt: getCachedJwtInternal,
+        getJwtToken: getJwtTokenInternal,
         isJwtValid: isJwtValidInternal,
         resolveExchanges,
     })
