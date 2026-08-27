@@ -695,3 +695,57 @@ describe('reserved unresolved-evidence ids', () => {
         assert.equal(isLegacyUnresolvedId(binding(doc, 'b-u')?.fieldId), true)
     })
 })
+
+// ───────── survivor closure: the override wire boundary and the array guard ─────────
+
+describe('the setLegacyOverride op schema is closed at the wire', () => {
+    const op = (legacyOverride: unknown) =>
+        templateOpSchema({ type: 'mappingBinding.setLegacyOverride', bindingId: 'b-1', legacyOverride })
+
+    it('refuses an undeclared member on every arm of the union', () => {
+        // ArkType admits undeclared keys unless told otherwise, and the union has three arms — so
+        // `'+': 'reject'` has to be on each. Dropping it from the `planId` arm alone let
+        // `{planId, actorType}` through, which is the exact member the freeze names as forbidden.
+        for (const value of [
+            { planId: 'Actor.Navn', actorType: 'mappable' },
+            { kind: 'connector', actorType: 'mappable' },
+            { mappingRule: 'rule-7', actorType: 'mappable' },
+            { planId: 'Actor.Navn', customerId: 'c-1' },
+            { planId: 'Actor.Navn', credentials: 'secret' },
+            { mapping_rule: 'rule-7' },
+        ]) {
+            assert.ok(op(value) instanceof type.errors, `${JSON.stringify(value)} must not validate`)
+        }
+    })
+
+    it('refuses the empty record, an empty string, a wrong scalar and a nested object', () => {
+        for (const value of [{}, { planId: '' }, { planId: 1 }, { planId: { nested: 'x' } }, [], 'Actor.Navn']) {
+            assert.ok(op(value) instanceof type.errors, `${JSON.stringify(value)} must not validate`)
+        }
+    })
+
+    it('accepts each legal arm and the null clear', () => {
+        for (const value of [
+            { planId: 'Actor.Navn' },
+            { kind: 'connector' },
+            { mappingRule: 'rule-7' },
+            { planId: 'Actor.Navn', kind: 'connector', mappingRule: 'rule-7' },
+            null,
+        ]) {
+            assert.ok(!(op(value) instanceof type.errors), `${JSON.stringify(value)} must validate`)
+        }
+    })
+})
+
+describe('the parser array guard is load-bearing', () => {
+    it('refuses an array carrying a whitelisted own-property', () => {
+        // `typeof [] === 'object'`, so without the `Array.isArray` check an array reaches the member
+        // loop. A plain array is still malformed via its numeric keys — but an array with a `planId`
+        // own-property has exactly the entries of a legal record, and would be classified `known`.
+        const arrayWithMember = Object.assign([], { planId: 'Actor.Navn' })
+        assert.equal(parseLegacyBindingOverride(arrayWithMember).status, 'malformed')
+        // The plain cases stay malformed too, so the guard is additive rather than the only check.
+        assert.equal(parseLegacyBindingOverride([]).status, 'malformed')
+        assert.equal(parseLegacyBindingOverride(['Actor.Navn']).status, 'malformed')
+    })
+})

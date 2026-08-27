@@ -1464,3 +1464,149 @@ describe('the AC-9 released bags are not narrowed', () => {
         assert.equal(canonicalJson(alternative(doc, 'ea-1')), '{"expressionTargets":["tg-1"],"label":"Formel","value":"<target_deadbeef>"}')
     })
 })
+
+// ───────── survivor closure: cases the first mutation pass reached for the wrong reason ─────────
+
+/**
+ * Eight seeded mutants survived the first pass, and every one exposed a fixture that passed for a
+ * reason other than the one it claimed. They are collected here because each needs a *specific* input
+ * the happy-path fixtures do not produce — a flags bag that exists but is off, a Chart that is a legal
+ * target except for its type, a payload that reaches the reducer without passing the schema.
+ */
+describe('the target gate refuses for the stated reason, not an incidental one', () => {
+    /** The `ac9` fixture's unflagged target has no `flags` bag at all, so the bag guard caught it and
+     *  the `is_expression === true` check was never the thing doing the work. */
+    const withFlagBags = () =>
+        apply(
+            [
+                { type: 'question.create', questionId: 'tg-false', questionType: 'RadioButtons' },
+                { type: 'question.updateField', questionId: 'tg-false', field: 'flags.is_expression', value: false },
+                { type: 'question.create', questionId: 'tg-other', questionType: 'RadioButtons' },
+                { type: 'question.updateField', questionId: 'tg-other', field: 'flags.small_size', value: true },
+                // A Chart that would otherwise qualify: the flag IS on, so only the type excludes it.
+                { type: 'question.updateField', questionId: 'ch-2', field: 'flags.is_expression', value: true },
+            ],
+            ac9(),
+        )
+
+    it('refuses a target whose flag is present but not true', () => {
+        // `flags.is_expression: false` and a flags bag with unrelated members are both "flag off" —
+        // and both must be refused by the value check rather than by the bag being absent.
+        for (const questionId of ['tg-false', 'tg-other']) {
+            throwsConflict(
+                () => apply([{ type: 'alternative.setExpressionFormula', questionId: 'ex-1', alternativeId: 'ea-1', value: '0', expressionTargets: [questionId] }], withFlagBags()),
+                `"${questionId}" has a flags bag but no true is_expression`,
+            )
+        }
+    })
+
+    it('refuses a Chart target even when its is_expression flag is on', () => {
+        // A chart scoring a chart is the cycle legacy never allowed, so the TYPE must exclude it
+        // independently of the flag.
+        throwsConflict(
+            () => apply([{ type: 'alternative.setExpressionFormula', questionId: 'ex-1', alternativeId: 'ea-1', value: '0', expressionTargets: ['ch-2'] }], withFlagBags()),
+            'a flagged Chart is still not a target',
+        )
+        const legend = apply([{ type: 'chartLegend.create', questionId: 'ch-1', legendId: 'lg-1', label: 'Fysisk' }], withFlagBags())
+        throwsConflict(
+            () => apply([{ type: 'alternative.setChartLegend', questionId: 'ch-1', alternativeId: 'ca-1', chartLegend: { id: 'lg-1', questionIdMap: 'ch-2' } }], legend),
+            'a flagged Chart is still not an assignment target',
+        )
+    })
+})
+
+describe('the Chart assignment label is derived even on a replayed op', () => {
+    it('ignores a label that reached the reducer without passing the schema', () => {
+        // The reducer is reachable without the validator: bunjs replays a stored `collab_ops` log
+        // directly. So the schema refusing a client label is not sufficient — the reducer must derive it
+        // regardless, or one legend id ends up carrying two labels and therefore two document hashes.
+        const base = apply([{ type: 'chartLegend.create', questionId: 'ch-1', legendId: 'lg-1', label: 'Fysisk' }], ac9())
+        const replayed = {
+            type: 'alternative.setChartLegend',
+            questionId: 'ch-1',
+            alternativeId: 'ca-1',
+            chartLegend: { id: 'lg-1', questionIdMap: 'tg-1', label: 'Noe klienten fant på' },
+        } as unknown as TemplateOp
+
+        const doc = apply([replayed], base)
+        assert.deepEqual(alternative(doc, 'ca-1')?.['chartLegend'], {
+            id: 'lg-1',
+            questionIdMap: 'tg-1',
+            label: 'Fysisk',
+        })
+    })
+})
+
+describe('alternative.delete rewrites only its own owner formula', () => {
+    it('does nothing when the owning question has no base formula, even if another question does', () => {
+        // The owner is looked up by id. Scanning for "the first question with a base" would rewrite a
+        // formula belonging to someone else — invisible while the owner happens to be found first.
+        const base = apply(
+            [
+                { type: 'question.create', questionId: 'ex-2', questionType: 'ExpressionQuestion' },
+                { type: 'question.updateField', questionId: 'ex-2', field: 'expression.base', value: makeExpressionAlternativeToken('ea-1') },
+                { type: 'alternative.create', questionId: 'ex-2', alternativeId: 'ea-2', label: 'To' },
+            ],
+            ac9(),
+        )
+        // `ex-1` owns `ea-1` and carries NO base; `ex-2` carries a base citing `ea-1`.
+        assert.equal('expression' in (base.questionsById?.['ex-1'] ?? {}), false)
+
+        const doc = apply([{ type: 'alternative.delete', questionId: 'ex-1', alternativeId: 'ea-1' }], base)
+        assert.equal(
+            (doc.questionsById?.['ex-2']?.['expression'] as Record<string, unknown>)['base'],
+            '<exp_65612d31>',
+        )
+        assert.equal('expression' in (doc.questionsById?.['ex-1'] ?? {}), false)
+    })
+})
+
+describe('the alternative token recognizer enforces the same exact grammar as the target one', () => {
+    it('refuses uppercase, odd-length, empty and claimant spellings', () => {
+        for (const value of [
+            '<exp_65612D31>',   // uppercase
+            '<exp_6561231>',    // odd length
+            '<exp_>',           // empty body
+            '<exp_65G1>',       // non-hex
+            '<exp_6561',        // unterminated
+            'x<exp_6561>',      // prefix claimant
+            '<exp_6561>x',      // suffix claimant
+            '<target_6561>',    // the other token space
+        ]) {
+            assert.equal(isExpressionAlternativeToken(value), false, value)
+        }
+        assert.equal(isExpressionAlternativeToken(makeExpressionAlternativeToken('ea-1')), true)
+    })
+})
+
+describe('the tab document members are typed, not admitted by the open index', () => {
+    it('refuses an array of objects and a non-string member for both lists', () => {
+        // The tab bag keeps its open `[string]: unknown` index, so leaving these members untyped would
+        // silently admit exactly the array-of-objects shape DOC-LAW-1 exists to prevent.
+        for (const [member, value] of [
+            ['questionIds', [{ questionId: 'q-1' }]],
+            ['questionIds', [1, 2]],
+            ['rowCountQuestionIds', [{ questionId: 'g-1' }]],
+            ['rowCountQuestionIds', 'g-1'],
+        ] as const) {
+            const doc = {
+                documentId: 'tpl-schema',
+                revision: 0,
+                questionOrder: [],
+                tabsById: { 't-1': { label: 'Fane', [member]: value } },
+            }
+            const validated = validateTemplateDocument(doc as never)
+            assert.equal(validated.ok, false, `${member} = ${JSON.stringify(value)} must not validate`)
+        }
+    })
+
+    it('still validates the legal primitive-id arrays and an unrelated open member', () => {
+        const validated = validateTemplateDocument({
+            documentId: 'tpl-schema',
+            revision: 0,
+            questionOrder: [],
+            tabsById: { 't-1': { label: 'Fane', questionIds: ['q-1'], rowCountQuestionIds: ['g-1'], legacyBag: { a: 1 } } },
+        } as never)
+        assert.ok(validated.ok, validated.ok ? '' : validated.summary)
+    })
+})
