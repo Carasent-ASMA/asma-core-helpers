@@ -1,4 +1,5 @@
 import type { TemplateOp } from '../operations.js'
+import { makeExpressionTargetToken } from '../templateDocument.js'
 import { mulberry32, pick } from './seededRandom.js'
 
 /**
@@ -16,13 +17,17 @@ import { mulberry32, pick } from './seededRandom.js'
 
 export const DOCUMENT_ID = 'tpl-prop'
 
-const QUESTION_TYPES_FOR_PROP = ['TextShort', 'DateField', 'RadioButtons', 'CheckBoxes', 'LinearScale', 'QuestionGrid'] as const
+// `Chart` and `ExpressionQuestion` are here so the AC-9 operations can reach a SUCCESS path: every one
+// of them requires an owner of one of those exact types, so a run without them would only ever exercise
+// refusals and a broken reducer would look fine.
+const QUESTION_TYPES_FOR_PROP = ['TextShort', 'DateField', 'RadioButtons', 'CheckBoxes', 'LinearScale', 'QuestionGrid', 'Chart', 'ExpressionQuestion'] as const
 
 const NEW_QUESTION_ID = (n: number): string => `q-${n}`
 const NEW_ROW_ID = (n: number): string => `r-${n}`
 const NEW_ALT_ID = (n: number): string => `a-${n}`
 const NEW_TAB_ID = (n: number): string => `t-${n}`
 const NEW_ACTION_ID = (n: number): string => `x-${n}`
+const NEW_LEGEND_ID = (n: number): string => `lg-${n}`
 const NEW_NODE_ID = (n: number): string => `n-${n}`
 const NEW_BINDING_ID = (n: number): string => `b-${n}`
 const NEW_FILTER_ID = (n: number): string => `f-${n}`
@@ -38,11 +43,35 @@ type IdPools = {
     columnOwnerById: Record<string, string>
     gridRows: string[]
     alternatives: string[]
+    /**
+     * Which question each alternative hangs off.
+     *
+     * Needed because the Chart and Expression operations require an alternative owned by that exact
+     * question: picking from the flat `alternatives` pool made every generated assignment a
+     * wrong-owner refusal, so the reducer's success path was never reached at all.
+     */
+    alternativeOwnerById: Record<string, string>
     tabs: string[]
     actions: string[]
     nodes: string[]
     bindings: string[]
     filters: string[]
+    charts: string[]
+    /**
+     * Charts whose `chart.type` is already `radar`.
+     *
+     * Tracked because the AC-9 Chart chain is five deep — create a Chart, set radar, create a legend,
+     * create an alternative on that Chart, flag a target — and each step gates the next. Choosing
+     * uniformly at each step made the whole chain vanishingly rare, so the reducer's success paths were
+     * never reached and the property run proved nothing about them.
+     */
+    radarCharts: string[]
+    expressionQuestions: string[]
+    /** Chart legend ids, and the Chart each belongs to — an assignment must cite its owner's legend. */
+    chartLegends: string[]
+    chartLegendOwnerById: Record<string, string>
+    /** Questions carrying `flags.is_expression`, i.e. the ones legal as a formula/assignment target. */
+    expressionTargets: string[]
     visibilityRules: string[]
     highlightRules: string[]
     narrativeRules: string[]
@@ -56,11 +85,18 @@ const emptyPools = (): IdPools => ({
     columnOwnerById: {},
     gridRows: [],
     alternatives: [],
+    alternativeOwnerById: {},
     tabs: [],
     actions: [],
     nodes: [],
     bindings: [],
     filters: [],
+    charts: [],
+    radarCharts: [],
+    expressionQuestions: [],
+    chartLegends: [],
+    chartLegendOwnerById: {},
+    expressionTargets: [],
     visibilityRules: [],
     highlightRules: [],
     narrativeRules: [],
@@ -89,6 +125,12 @@ const fieldValue = (field: 'label' | 'required' | 'scale.from' | 'grid.singleRow
 }
 
 const maybe = (random: () => number, probability: number): boolean => random() < probability
+
+/** An alternative the given question actually owns, or a ghost id so the refusal path is reached. */
+const ownedAlternative = (random: () => number, pools: IdPools, ownerId: string): string => {
+    const owned = pools.alternatives.filter((id) => pools.alternativeOwnerById[id] === ownerId)
+    return owned.length > 0 ? pick(random, owned) : 'a-ghost'
+}
 
 export type GeneratedSequence = {
     ops: TemplateOp[]
@@ -211,7 +253,7 @@ const nextOp = (random: () => number, pools: IdPools): TemplateOp => {
 
 /** Operations added by ASMA-7676, kept in a dedicated mix so every seeded run exercises them. */
 const nextAddedContractOp = (random: () => number, pools: IdPools): TemplateOp => {
-    const choice = Math.floor(random() * 16)
+    const choice = Math.floor(random() * 25)
     const columnQuestionId = pickOrFallback(random, pools.columns, 'c-ghost')
     const ownerQuestionId = pools.columnOwnerById[columnQuestionId] ?? pickOrFallback(random, pools.grids, 'g-ghost')
     const questionId = idOrNew(random, pools.questions, NEW_QUESTION_ID)
@@ -334,6 +376,128 @@ const nextAddedContractOp = (random: () => number, pools: IdPools): TemplateOp =
                 questionId: columnQuestionId,
                 metadata: maybe(random, 0.3) ? null : maybe(random, 0.5) ? { all: true } : { from: 'a', to: 'b' },
             }
+        // ── ASMA-7683 combined post-v0.31 repair: tab membership, legacy override, AC-9. ──
+        case 16:
+            return {
+                type: 'tab.setQuestion',
+                tabId: pickOrFallback(random, pools.tabs, 't-ghost'),
+                questionId: pickOrFallback(random, pools.questions, 'q-ghost'),
+                include: maybe(random, 0.7),
+                ...(maybe(random, 0.5) ? { atIndex: Math.floor(random() * 3) } : {}),
+            }
+        case 17:
+            return {
+                type: 'tab.setRowCountQuestion',
+                tabId: pickOrFallback(random, pools.tabs, 't-ghost'),
+                // Grids reach the success path; any question reaches the not-a-grid refusal.
+                questionId: maybe(random, 0.6)
+                    ? pickOrFallback(random, pools.grids, 'g-ghost')
+                    : pickOrFallback(random, pools.questions, 'q-ghost'),
+                include: maybe(random, 0.7),
+                ...(maybe(random, 0.5) ? { atIndex: Math.floor(random() * 3) } : {}),
+            }
+        case 18:
+            return {
+                type: 'mappingBinding.setLegacyOverride',
+                bindingId: pickOrFallback(random, pools.bindings, 'b-ghost'),
+                legacyOverride: maybe(random, 0.3)
+                    ? null
+                    : maybe(random, 0.5)
+                      ? { planId: `Actor.Felt${Math.floor(random() * 4)}` }
+                      : { kind: 'connector', mappingRule: `rule-${Math.floor(random() * 3)}` },
+            }
+        // Enabling writes: the AC-9 operations require `chart.type: 'radar'` and
+        // `flags.is_expression: true`, so a run that never sets them could only ever refuse.
+        case 19: {
+            // Advances the Chart chain by one step rather than re-rolling a step already taken. Each
+            // step gates the next, so choosing uniformly among them left the far end (a legend that
+            // exists long enough to be deleted) effectively unreachable in a seeded run.
+            const pending = pools.charts.filter((id) => !pools.radarCharts.includes(id))
+            if (pending.length > 0) {
+                return {
+                    type: 'question.updateField',
+                    questionId: pick(random, pending),
+                    // A `pie` occasionally, so the not-radar refusal is reached too.
+                    field: 'chart.type',
+                    value: maybe(random, 0.85) ? 'radar' : 'pie',
+                }
+            }
+            return {
+                type: 'chartLegend.create',
+                questionId: pickOrFallback(random, pools.radarCharts, 'q-ghost'),
+                legendId: NEW_LEGEND_ID(pools.chartLegends.length),
+                label: `Legend ${pools.chartLegends.length}`,
+                ...(maybe(random, 0.4) ? { atIndex: Math.floor(random() * 3) } : {}),
+            }
+        }
+        case 20:
+            return {
+                type: 'question.updateField',
+                questionId: pickOrFallback(random, pools.questions, 'q-ghost'),
+                field: 'flags.is_expression',
+                value: true,
+            }
+        case 21:
+            return {
+                type: 'chartLegend.create',
+                // Radar charts reach the success path; a plain Chart reaches the not-radar refusal.
+                questionId: maybe(random, 0.8)
+                    ? pickOrFallback(random, pools.radarCharts, 'q-ghost')
+                    : pickOrFallback(random, pools.charts, 'q-ghost'),
+                legendId: NEW_LEGEND_ID(pools.chartLegends.length),
+                label: `Legend ${pools.chartLegends.length}`,
+                ...(maybe(random, 0.4) ? { atIndex: Math.floor(random() * 3) } : {}),
+            }
+        case 22: {
+            const chartId = maybe(random, 0.85)
+                ? pickOrFallback(random, pools.radarCharts, 'q-ghost')
+                : pickOrFallback(random, pools.charts, 'q-ghost')
+            // Scoped to this Chart's OWN legends. Picking from the global pool made almost every
+            // generated delete a wrong-owner refusal, so the cascade was never exercised.
+            const ownLegends = pools.chartLegends.filter((id) => pools.chartLegendOwnerById[id] === chartId)
+            if (maybe(random, 0.3)) {
+                return {
+                    type: 'chartLegend.delete',
+                    questionId: chartId,
+                    legendId: ownLegends.length > 0 ? pick(random, ownLegends) : 'lg-ghost',
+                }
+            }
+            // An assignment needs the Chart, an alternative that Chart owns, one of ITS legends, and a
+            // flagged target. Anything less is a refusal, so all four are lined up here on purpose.
+            return {
+                type: 'alternative.setChartLegend',
+                questionId: chartId,
+                alternativeId: ownedAlternative(random, pools, chartId),
+                chartLegend: maybe(random, 0.25)
+                    ? null
+                    : {
+                          id: ownLegends.length > 0 ? pick(random, ownLegends) : 'lg-ghost',
+                          questionIdMap: pickOrFallback(random, pools.expressionTargets, 'q-ghost'),
+                      },
+            }
+        }
+        case 23: {
+            const targets = pools.expressionTargets.slice(0, 1 + Math.floor(random() * 2))
+            const expressionQuestionId = pickOrFallback(random, pools.expressionQuestions, 'q-ghost')
+            return {
+                type: 'alternative.setExpressionFormula',
+                questionId: expressionQuestionId,
+                alternativeId: ownedAlternative(random, pools, expressionQuestionId),
+                value: targets.map((id) => makeExpressionTargetToken(id)).join(' + ') || '0',
+                expressionTargets: targets,
+            }
+        }
+        // Alternatives on a Chart / ExpressionQuestion owner, which the general mix creates only by
+        // accident — without them the two operations above can only ever refuse.
+        case 24:
+            return {
+                type: 'alternative.create',
+                questionId: maybe(random, 0.5)
+                    ? pickOrFallback(random, pools.radarCharts, 'q-ghost')
+                    : pickOrFallback(random, pools.expressionQuestions, 'q-ghost'),
+                alternativeId: NEW_ALT_ID(pools.alternatives.length),
+                label: 'Alt',
+            }
         default:
             return {
                 type: 'gridColumn.setLayout',
@@ -356,11 +520,23 @@ const updatePools = (op: TemplateOp, ok: boolean, pools: IdPools): void => {
         case 'question.create':
             pools.questions.push(op.questionId)
             if (op.questionType === 'QuestionGrid') pools.grids.push(op.questionId)
+            if (op.questionType === 'Chart') pools.charts.push(op.questionId)
+            if (op.questionType === 'ExpressionQuestion') pools.expressionQuestions.push(op.questionId)
             break
         case 'question.delete':
             pools.questions = pools.questions.filter((id) => id !== op.questionId)
             pools.grids = pools.grids.filter((id) => id !== op.questionId)
             pools.columns = pools.columns.filter((id) => id !== op.questionId)
+            pools.charts = pools.charts.filter((id) => id !== op.questionId)
+            pools.radarCharts = pools.radarCharts.filter((id) => id !== op.questionId)
+            pools.expressionQuestions = pools.expressionQuestions.filter((id) => id !== op.questionId)
+            pools.expressionTargets = pools.expressionTargets.filter((id) => id !== op.questionId)
+            // A deleted Chart takes its legends out of the pool with it, or a later assignment would
+            // cite a legend whose owner no longer exists and could never reach a success path.
+            pools.chartLegends = pools.chartLegends.filter((id) => pools.chartLegendOwnerById[id] !== op.questionId)
+            for (const [legendId, owner] of Object.entries(pools.chartLegendOwnerById)) {
+                if (owner === op.questionId) delete pools.chartLegendOwnerById[legendId]
+            }
             delete pools.columnOwnerById[op.questionId]
             break
         case 'gridColumn.create':
@@ -373,9 +549,32 @@ const updatePools = (op: TemplateOp, ok: boolean, pools: IdPools): void => {
             break
         case 'alternative.create':
             pools.alternatives.push(op.alternativeId)
+            pools.alternativeOwnerById[op.alternativeId] = op.questionId
+            break
+        case 'alternative.delete':
+            pools.alternatives = pools.alternatives.filter((id) => id !== op.alternativeId)
+            delete pools.alternativeOwnerById[op.alternativeId]
             break
         case 'tab.create':
             pools.tabs.push(op.tabId)
+            break
+        case 'question.updateField':
+            // Track the enabling writes, so a later target/legend choice can reach a success path.
+            if (op.field === 'flags.is_expression' && op.value === true && !pools.expressionTargets.includes(op.questionId)) {
+                pools.expressionTargets.push(op.questionId)
+            }
+            if (op.field === 'chart.type') {
+                pools.radarCharts = pools.radarCharts.filter((id) => id !== op.questionId)
+                if (op.value === 'radar') pools.radarCharts.push(op.questionId)
+            }
+            break
+        case 'chartLegend.create':
+            pools.chartLegends.push(op.legendId)
+            pools.chartLegendOwnerById[op.legendId] = op.questionId
+            break
+        case 'chartLegend.delete':
+            pools.chartLegends = pools.chartLegends.filter((id) => id !== op.legendId)
+            delete pools.chartLegendOwnerById[op.legendId]
             break
         case 'action.create':
             pools.actions.push(op.actionId)

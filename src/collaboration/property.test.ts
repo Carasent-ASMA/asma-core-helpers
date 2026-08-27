@@ -111,6 +111,55 @@ describe('DOC-LAW invariants under random op sequences', () => {
     }
 })
 
+/**
+ * The seven operations added by the combined post-v0.31 repair must be *exercised*, not merely
+ * listed in the generator.
+ *
+ * A generated-name check alone is the mutation this guards against: point a generator case at an id
+ * pool that is always empty and every application refuses, so the reducer's success path is never run
+ * and a broken one still passes a green property suite. Requiring at least one accepted application of
+ * each name — and at least one refusal, so the guards are reached too — is what makes the property run
+ * evidence rather than decoration.
+ */
+describe('the combined repair operations are reached by the property run', () => {
+    const NEW_OP_TYPES = [
+        'tab.setQuestion',
+        'tab.setRowCountQuestion',
+        'mappingBinding.setLegacyOverride',
+        'alternative.setExpressionFormula',
+        'alternative.setChartLegend',
+        'chartLegend.create',
+        'chartLegend.delete',
+    ] as const
+
+    it('applies each new operation successfully and refuses each at least once', () => {
+        const accepted = new Map<string, number>()
+        const refused = new Map<string, number>()
+
+        // More seeds than the invariant suite uses: each op needs its own preconditions to line up
+        // (a radar Chart, a flagged target, an existing legend), which no single short run reaches.
+        for (const seed of [4, 7, 13, 99, 101, 202, 303, 404]) {
+            const { generated } = runSequence(seed, 400)
+            generated.ops.forEach((op, index) => {
+                if (!(NEW_OP_TYPES as readonly string[]).includes(op.type)) return
+                const bucket = generated.outcomes[index] === true ? accepted : refused
+                bucket.set(op.type, (bucket.get(op.type) ?? 0) + 1)
+            })
+        }
+
+        assert.deepEqual(
+            NEW_OP_TYPES.filter((type) => (accepted.get(type) ?? 0) === 0),
+            [],
+            `never applied successfully: ${JSON.stringify([...accepted])}`,
+        )
+        assert.deepEqual(
+            NEW_OP_TYPES.filter((type) => (refused.get(type) ?? 0) === 0),
+            [],
+            `never refused: ${JSON.stringify([...refused])}`,
+        )
+    })
+})
+
 describe('canonicalization stability', () => {
     const labelDoc = (label: string) => ({
         documentId: 'tpl-nfc',

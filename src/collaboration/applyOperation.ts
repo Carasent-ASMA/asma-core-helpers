@@ -1,7 +1,9 @@
 import type { TemplateOp } from './operations.js'
 import type {
     ActionMetadata,
+    AlternativeChartLegend,
     BindingCardinality,
+    ChartLegend,
     KnownActionKind,
     BindingOnMany,
     BindingOnMissing,
@@ -9,9 +11,11 @@ import type {
     MappingBinding,
     MappingFilter,
     MappingNode,
+    QnrAlternative,
     QnrDataMapping,
     QnrAction,
     QnrQuestion,
+    QnrTab,
     QnrTemplateDocument,
     QuestionId,
 } from './templateDocument.js'
@@ -21,6 +25,9 @@ import {
     MAPPING_FILTER_OPERATORS,
     bindingTargetKey,
     isKnownActionKind,
+    makeExpressionAlternativeToken,
+    makeExpressionTargetToken,
+    parseLegacyBindingOverride,
 } from './templateDocument.js'
 
 /** Runtime narrowing for the two closed vocabularies the reducer must re-check on replay. */
@@ -242,14 +249,70 @@ const gridsOwningAction = (doc: QnrTemplateDocument, actionId: string): Question
  * question's placement in one edit. Both directions of overlap are refused; `label` and any other
  * authored scalar stay ordinary field edits.
  */
-export const tabFieldPathRefusal = (field: string): string | undefined => {
-    const reserved = 'layout.placementsByQuestionId'
+/**
+ * The tab-owned collections `tab.updateField` may not write, and the operation that owns each.
+ *
+ * All three are maintained one member at a time. A whole-snapshot write through `updateField` would
+ * reintroduce exactly the lost update the member-wise operations exist to prevent: two authors editing
+ * different members would produce two full-collection patches and the second would discard the first.
+ */
+const TAB_OWNED_FIELD_PATHS = [
+    ['layout.placementsByQuestionId', 'tab.setLayout'],
+    ['questionIds', 'tab.setQuestion'],
+    ['rowCountQuestionIds', 'tab.setRowCountQuestion'],
+] as const
 
-    if (field === reserved || field.startsWith(`${reserved}.`) || reserved.startsWith(`${field}.`)) {
-        return `Field "${field}" writes "${reserved}", which only tab.setLayout may author`
+/**
+ * The reserved path `field` would write, if any.
+ *
+ * Both directions count, as they do for the grid-owned paths: the path itself, a path *below* it
+ * (`questionIds.0`), and an *ancestor* whose write would carry the reserved collection with it
+ * (`layout`). Checking only exact equality would leave `layout` and `questionIds.0` open, which is a
+ * whole-snapshot overwrite by another spelling.
+ */
+export const tabFieldPathRefusal = (field: string): string | undefined => {
+    for (const [reserved, owner] of TAB_OWNED_FIELD_PATHS) {
+        if (field === reserved || field.startsWith(`${reserved}.`) || reserved.startsWith(`${field}.`)) {
+            return `Field "${field}" writes "${reserved}", which only ${owner} may author`
+        }
     }
 
     return undefined
+}
+
+/** One tab-owned primitive id list, defensively filtered: the tab bag is open and may hold anything. */
+const tabListOf = (tab: QnrTab, key: 'questionIds' | 'rowCountQuestionIds'): string[] => {
+    const value = tab[key]
+    return Array.isArray(value) ? value.filter((member): member is string => typeof member === 'string') : []
+}
+
+/** Writes one tab-owned list back, omitting it when empty — DOC-LAW-2 admits no stored `[]`. */
+const writeTabList = (
+    tab: Record<string, unknown>,
+    key: 'questionIds' | 'rowCountQuestionIds',
+    next: readonly string[],
+): Record<string, unknown> => {
+    const copy = { ...tab }
+    if (next.length === 0) delete copy[key]
+    else copy[key] = [...next]
+    return copy
+}
+
+/** Drops a question from a tab's layout, pruning the emptied placements map and layout object. */
+const withoutTabPlacement = (tab: Record<string, unknown>, questionId: QuestionId): Record<string, unknown> => {
+    const layout = (tab['layout'] ?? {}) as Record<string, unknown>
+    const placements = (layout['placementsByQuestionId'] ?? {}) as Record<string, LayoutPlacement>
+    if (placements[questionId] === undefined) return tab
+
+    const nextPlacements = omitKey(placements, questionId)
+    const nextLayout = { ...layout }
+    if (Object.keys(nextPlacements).length === 0) delete nextLayout['placementsByQuestionId']
+    else nextLayout['placementsByQuestionId'] = nextPlacements
+
+    const next = { ...tab }
+    if (Object.keys(nextLayout).length === 0) delete next['layout']
+    else next['layout'] = nextLayout
+    return next
 }
 
 /**
@@ -487,31 +550,198 @@ const scrubGridActionRefs = (
 }
 
 /** Drops a deleted question's placement from every tab layout, and every emptied container with it. */
-const scrubTabPlacements = (doc: QnrTemplateDocument, questionId: QuestionId): QnrTemplateDocument => {
+const scrubTabQuestionRefs = (doc: QnrTemplateDocument, questionId: QuestionId): QnrTemplateDocument => {
     const tabs = Object.entries(doc.tabsById ?? {})
     if (tabs.length === 0) return doc
 
     let changed = false
     const nextTabs = Object.fromEntries(
         tabs.map(([tabId, tab]) => {
+            const members = tabListOf(tab, 'questionIds')
+            const counted = tabListOf(tab, 'rowCountQuestionIds')
             const layout = (tab.layout ?? {}) as Record<string, unknown>
             const placements = (layout['placementsByQuestionId'] ?? {}) as Record<string, LayoutPlacement>
-            if (placements[questionId] === undefined) return [tabId, tab]
+
+            const inMembers = members.includes(questionId)
+            const inCounted = counted.includes(questionId)
+            const inLayout = placements[questionId] !== undefined
+            if (!inMembers && !inCounted && !inLayout) return [tabId, tab]
 
             changed = true
-            const nextPlacements = omitKey(placements, questionId)
-            const nextLayout = { ...layout }
-            if (Object.keys(nextPlacements).length === 0) delete nextLayout['placementsByQuestionId']
-            else nextLayout['placementsByQuestionId'] = nextPlacements
-
-            const nextTab = { ...tab }
-            if (Object.keys(nextLayout).length === 0) delete nextTab.layout
-            else nextTab.layout = nextLayout
-            return [tabId, nextTab]
+            let next: Record<string, unknown> = { ...tab }
+            if (inMembers) next = writeTabList(next, 'questionIds', members.filter((id) => id !== questionId))
+            if (inCounted) {
+                next = writeTabList(next, 'rowCountQuestionIds', counted.filter((id) => id !== questionId))
+            }
+            if (inLayout) next = withoutTabPlacement(next, questionId)
+            return [tabId, next as QnrTab]
         }),
     )
 
     return changed ? { ...doc, tabsById: nextTabs } : doc
+}
+
+/**
+ * The question types that may be an Expression/Chart target: they carry alternatives to score, plus
+ * `LinearScale`, whose numeric range legacy also admits.
+ *
+ * `Chart` is excluded even though it carries alternatives — a chart scoring a chart is the cycle legacy
+ * never allowed. Derived from the shared type register rather than a local literal list so a new
+ * question type cannot quietly become targetable.
+ */
+const EXPRESSION_TARGET_TYPES = ['BooleanQuestion', 'CheckBoxes', 'Dropdown', 'Emoticons', 'LinearScale', 'RadioButtons'] as const
+
+/**
+ * Whether one question may be cited as an Expression target or a Chart assignment target.
+ *
+ * `flags.is_expression` must be explicitly `true`. The flags bag is open, so a merely *present* flag is
+ * not enough: a question carrying `is_expression: 'no'` or an imported non-boolean would otherwise pass.
+ */
+const isExpressionTarget = (question: QnrQuestion | undefined): boolean => {
+    if (!question) return false
+    if (!(EXPRESSION_TARGET_TYPES as readonly string[]).includes(question.type)) return false
+    const flags = question['flags']
+    if (typeof flags !== 'object' || flags === null || Array.isArray(flags)) return false
+    return (flags as Record<string, unknown>)['is_expression'] === true
+}
+
+/** A question of the required type, or a refusal naming what was wrong. */
+const requireQuestionOfType = (doc: QnrTemplateDocument, questionId: QuestionId, type: string): QnrQuestion => {
+    const question = doc.questionsById?.[questionId]
+    if (!question) throw new OperationConflictError(`Unknown question "${questionId}"`)
+    if (question.type !== type) {
+        throw new OperationConflictError(`Question "${questionId}" is not a ${type}`)
+    }
+    return question
+}
+
+/** Refuses unless the alternative is in that exact question's order — ownership, not mere existence. */
+const requireOwnedAlternative = (
+    doc: QnrTemplateDocument,
+    questionId: QuestionId,
+    alternativeId: string,
+): QnrAlternative => {
+    if (!doc.alternativeOrderByQuestionId?.[questionId]?.includes(alternativeId)) {
+        throw new OperationConflictError(
+            `Alternative "${alternativeId}" does not belong to question "${questionId}"`,
+        )
+    }
+    return doc.alternativesById?.[alternativeId] ?? {}
+}
+
+/** One Chart question's legend record and order, defensively read out of the open `chart` bag. */
+const chartOf = (question: QnrQuestion): { chart: Record<string, unknown>; legendsById: Record<string, ChartLegend>; order: string[] } => {
+    const chart = (question['chart'] ?? {}) as Record<string, unknown>
+    const legendsById = (chart['legendsById'] ?? {}) as Record<string, ChartLegend>
+    const rawOrder = chart['legendsOrder']
+    const order = Array.isArray(rawOrder) ? rawOrder.filter((id): id is string => typeof id === 'string') : []
+    return { chart, legendsById, order }
+}
+
+/** Writes a Chart bag back onto its question, pruning emptied containers without deleting the question. */
+const writeChart = (
+    doc: QnrTemplateDocument,
+    questionId: QuestionId,
+    question: QnrQuestion,
+    chart: Record<string, unknown>,
+): QnrTemplateDocument => {
+    const next: Record<string, unknown> = { ...question }
+    if (Object.keys(chart).length === 0) delete next['chart']
+    else next['chart'] = chart
+    return { ...doc, questionsById: { ...doc.questionsById, [questionId]: next as QnrQuestion } }
+}
+
+/**
+ * Removes one alternative's exact canonical `<exp_...>` token from its owning question's base formula.
+ *
+ * Scoped to the owner and to the canonical spelling on purpose: a substring scan would corrupt author
+ * text, and rewriting another question's formula would be an edit no operation asked for.
+ */
+const withoutExpressionAlternativeToken = (
+    doc: QnrTemplateDocument,
+    questionId: QuestionId,
+    alternativeId: string,
+): QnrTemplateDocument => {
+    const question = doc.questionsById?.[questionId]
+    const expression = question?.['expression']
+    if (typeof expression !== 'object' || expression === null || Array.isArray(expression)) return doc
+
+    const base = (expression as Record<string, unknown>)['base']
+    const token = makeExpressionAlternativeToken(alternativeId)
+    if (typeof base !== 'string' || !base.includes(token)) return doc
+
+    const nextBase = base.split(token).join('')
+    const nextExpression = { ...(expression as Record<string, unknown>) }
+    if (nextBase === '') delete nextExpression['base']
+    else nextExpression['base'] = nextBase
+
+    const nextQuestion: Record<string, unknown> = { ...question }
+    if (Object.keys(nextExpression).length === 0) delete nextQuestion['expression']
+    else nextQuestion['expression'] = nextExpression
+
+    return {
+        ...doc,
+        questionsById: { ...doc.questionsById, [questionId]: nextQuestion as QnrQuestion },
+    }
+}
+
+/** One question's canonical `expressionTargets` list, defensively filtered — the bag is open. */
+const expressionTargetsOf = (alternative: QnrAlternative): string[] => {
+    const value = alternative['expressionTargets']
+    return Array.isArray(value) ? value.filter((member): member is string => typeof member === 'string') : []
+}
+
+/**
+ * Drops a deleted question from every canonical Expression target list and Chart assignment.
+ *
+ * Three edits on one alternative, all keyed on the **exact canonical** form:
+ *   - the id leaves `expressionTargets`;
+ *   - its canonical `<target_...>` token in `value` becomes `0`, so the formula still parses as
+ *     arithmetic instead of carrying a reference to a question that no longer exists;
+ *   - a `chartLegend` whose `questionIdMap` cites it is cleared whole.
+ *
+ * **Exact token replacement, never substring matching.** A legacy formula holds truncated
+ * last-eight-character tokens and arbitrary author text; scanning for a fragment would rewrite text
+ * this reducer has no claim on. Only the full canonical token is replaced, which is why it is generated
+ * here from the same constructor the authoring path uses rather than pattern-matched.
+ */
+const scrubExpressionAndChartRefs = (doc: QnrTemplateDocument, questionId: QuestionId): QnrTemplateDocument => {
+    const alternatives = Object.entries(doc.alternativesById ?? {})
+    if (alternatives.length === 0) return doc
+
+    const token = makeExpressionTargetToken(questionId)
+    let changed = false
+
+    const nextAlternatives = Object.fromEntries(
+        alternatives.map(([alternativeId, alternative]) => {
+            const targets = expressionTargetsOf(alternative)
+            const hasTarget = targets.includes(questionId)
+            const formula = alternative['value']
+            const hasToken = typeof formula === 'string' && formula.includes(token)
+            const assignment = alternative['chartLegend']
+            const hasAssignment =
+                typeof assignment === 'object' &&
+                assignment !== null &&
+                !Array.isArray(assignment) &&
+                (assignment as Record<string, unknown>)['questionIdMap'] === questionId
+
+            if (!hasTarget && !hasToken && !hasAssignment) return [alternativeId, alternative]
+
+            changed = true
+            const next: Record<string, unknown> = { ...alternative }
+            if (hasTarget) {
+                const remaining = targets.filter((id) => id !== questionId)
+                if (remaining.length === 0) delete next['expressionTargets']
+                else next['expressionTargets'] = remaining
+            }
+            // `split`/`join` replaces every occurrence: one formula may cite the same target twice.
+            if (hasToken) next['value'] = (formula as string).split(token).join('0')
+            if (hasAssignment) delete next['chartLegend']
+            return [alternativeId, next as QnrAlternative]
+        }),
+    )
+
+    return changed ? { ...doc, alternativesById: nextAlternatives } : doc
 }
 
 /** Drops a deleted tab from every grid that named it as its header. */
@@ -1028,7 +1258,10 @@ const deleteQuestion = (doc: QnrTemplateDocument, questionId: QuestionId): QnrTe
     // presentation references a column earns: its filter chip, its row-editor placement, its default
     // width, and its placement inside any tab's positional grid.
     const withoutRefs = dropBindingsForQuestion(dropFromGridColumns(withoutQuestion, questionId), questionId)
-    return scrubTabPlacements(scrubColumnPresentationRefs(withoutRefs, questionId), questionId)
+    return scrubExpressionAndChartRefs(
+        scrubTabQuestionRefs(scrubColumnPresentationRefs(withoutRefs, questionId), questionId),
+        questionId,
+    )
 }
 
 /**
@@ -1452,7 +1685,7 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
                 )
             }
             const remaining = order.filter((id) => id !== op.alternativeId)
-            return patchDocument(doc, {
+            const withoutAlternative = patchDocument(doc, {
                 alternativesById: doc.alternativesById && omitKey(doc.alternativesById, op.alternativeId),
                 alternativeOrderByQuestionId: setOrRemoveOrder(
                     doc.alternativeOrderByQuestionId,
@@ -1460,6 +1693,175 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
                     remaining,
                 ),
             })
+            // An ExpressionQuestion's `expression.base` cites its alternatives by canonical token. The
+            // token must go with the alternative, and only from THIS question's formula: another
+            // question's text is not this operation's to rewrite, and a legacy truncated token is not
+            // canonical so it is deliberately left alone for publication to report.
+            return withoutExpressionAlternativeToken(withoutAlternative, op.questionId, op.alternativeId)
+        }
+
+        case 'alternative.setExpressionFormula': {
+            requireQuestionOfType(doc, op.questionId, 'ExpressionQuestion')
+            const alternative = requireOwnedAlternative(doc, op.questionId, op.alternativeId)
+
+            // Duplicates first: the list is an ordered set, and a repeated target would make one
+            // question contribute twice to a formula that names it once.
+            const seen = new Set<string>()
+            for (const targetId of op.expressionTargets) {
+                if (seen.has(targetId)) {
+                    throw new OperationConflictError(`Expression target "${targetId}" is listed twice`)
+                }
+                seen.add(targetId)
+                if (!doc.questionsById?.[targetId]) {
+                    throw new OperationConflictError(`Unknown question "${targetId}"`)
+                }
+                if (!isExpressionTarget(doc.questionsById[targetId])) {
+                    throw new OperationConflictError(
+                        `Question "${targetId}" is not a selectable or LinearScale question with flags.is_expression`,
+                    )
+                }
+            }
+
+            // Formula text and target list land together. The two are NOT cross-checked: a partially
+            // typed formula must save, so a token with no target and a target with no token are both
+            // legal drafts that publication reports rather than the reducer refusing.
+            const next: Record<string, unknown> = { ...alternative, value: op.value }
+            if (op.expressionTargets.length === 0) delete next['expressionTargets']
+            else next['expressionTargets'] = [...op.expressionTargets]
+
+            return {
+                ...doc,
+                alternativesById: { ...doc.alternativesById, [op.alternativeId]: next as QnrAlternative },
+            }
+        }
+
+        case 'alternative.setChartLegend': {
+            const question = requireQuestionOfType(doc, op.questionId, 'Chart')
+            const alternative = requireOwnedAlternative(doc, op.questionId, op.alternativeId)
+
+            if (op.chartLegend === null) {
+                // Clearing needs no valid stored value: that is what makes it able to repair an imported
+                // dangling or non-radar assignment.
+                if (alternative['chartLegend'] === undefined) return doc
+                const cleared: Record<string, unknown> = { ...alternative }
+                delete cleared['chartLegend']
+                return {
+                    ...doc,
+                    alternativesById: { ...doc.alternativesById, [op.alternativeId]: cleared as QnrAlternative },
+                }
+            }
+
+            // Authoring a new assignment requires the canonical subtype; a stored `pie` or unknown type
+            // stays readable and clearable but never becomes writable through the typed path.
+            const { legendsById } = chartOf(question)
+            if (question['chart'] === undefined || (question['chart'] as Record<string, unknown>)['type'] !== 'radar') {
+                throw new OperationConflictError(`Question "${op.questionId}" is not a radar chart`)
+            }
+            const legend = legendsById[op.chartLegend.id]
+            if (!legend) {
+                throw new OperationConflictError(
+                    `Unknown chart legend "${op.chartLegend.id}" on question "${op.questionId}"`,
+                )
+            }
+            const target = doc.questionsById?.[op.chartLegend.questionIdMap]
+            if (!target) {
+                throw new OperationConflictError(`Unknown question "${op.chartLegend.questionIdMap}"`)
+            }
+            if (!isExpressionTarget(target)) {
+                throw new OperationConflictError(
+                    `Question "${op.chartLegend.questionIdMap}" is not a selectable or LinearScale question with flags.is_expression`,
+                )
+            }
+
+            // One write of the whole value, with `label` derived here rather than taken from the client:
+            // a client label would let one legend id carry two labels, i.e. two hashes for one state.
+            const assignment: AlternativeChartLegend = {
+                id: op.chartLegend.id,
+                questionIdMap: op.chartLegend.questionIdMap,
+                label: legend.label,
+            }
+            return {
+                ...doc,
+                alternativesById: {
+                    ...doc.alternativesById,
+                    [op.alternativeId]: { ...alternative, chartLegend: assignment } as QnrAlternative,
+                },
+            }
+        }
+
+        case 'chartLegend.create': {
+            const question = requireQuestionOfType(doc, op.questionId, 'Chart')
+            if (op.legendId === '') throw new OperationConflictError('A chart legend id may not be empty')
+            if (op.label === '') throw new OperationConflictError('A chart legend label may not be empty')
+
+            const { chart, legendsById, order } = chartOf(question)
+            // Creation is the one Chart operation that requires the canonical subtype: deletion and
+            // clearing must stay available to repair imported `pie`/unknown content.
+            if (chart['type'] !== 'radar') {
+                throw new OperationConflictError(`Question "${op.questionId}" is not a radar chart`)
+            }
+            if (legendsById[op.legendId] !== undefined) {
+                throw new OperationConflictError(`Chart legend "${op.legendId}" already exists`)
+            }
+            // Legacy compares labels by exact equality, and two legends with one label are
+            // indistinguishable in the radar the author is looking at.
+            if (Object.values(legendsById).some((existing) => existing.label === op.label)) {
+                throw new OperationConflictError(`Chart legend label "${op.label}" is already used`)
+            }
+
+            // Record and order in one write: a record with no order entry is unreachable state that
+            // still moves the hash, and an order entry with no record dangles.
+            const nextChart: Record<string, unknown> = {
+                ...chart,
+                legendsById: { ...legendsById, [op.legendId]: { id: op.legendId, label: op.label } },
+                legendsOrder: insertAt(order, op.legendId, op.atIndex),
+            }
+            return writeChart(doc, op.questionId, question, nextChart)
+        }
+
+        case 'chartLegend.delete': {
+            const question = requireQuestionOfType(doc, op.questionId, 'Chart')
+            const { chart, legendsById, order } = chartOf(question)
+            if (legendsById[op.legendId] === undefined) {
+                throw new OperationConflictError(
+                    `Unknown chart legend "${op.legendId}" on question "${op.questionId}"`,
+                )
+            }
+
+            const remainingLegends = omitKey(legendsById, op.legendId)
+            const remainingOrder = order.filter((id) => id !== op.legendId)
+            const nextChart: Record<string, unknown> = { ...chart }
+            if (Object.keys(remainingLegends).length === 0) delete nextChart['legendsById']
+            else nextChart['legendsById'] = remainingLegends
+            if (remainingOrder.length === 0) delete nextChart['legendsOrder']
+            else nextChart['legendsOrder'] = remainingOrder
+
+            const withoutLegend = writeChart(doc, op.questionId, question, nextChart)
+
+            // The cascade matches the legacy effect: a legend that disappears stops appearing on
+            // alternatives. Scoped to THIS Chart's own alternatives — an identical legend id on another
+            // question is a different legend, and imported ids do collide across questions.
+            const ownedAlternativeIds = withoutLegend.alternativeOrderByQuestionId?.[op.questionId] ?? []
+            let alternativesById = withoutLegend.alternativesById
+            let changed = false
+            for (const alternativeId of ownedAlternativeIds) {
+                const alternative = alternativesById?.[alternativeId]
+                const assignment = alternative?.['chartLegend']
+                if (
+                    typeof assignment !== 'object' ||
+                    assignment === null ||
+                    Array.isArray(assignment) ||
+                    (assignment as Record<string, unknown>)['id'] !== op.legendId
+                ) {
+                    continue
+                }
+                const cleared: Record<string, unknown> = { ...alternative }
+                delete cleared['chartLegend']
+                alternativesById = { ...alternativesById, [alternativeId]: cleared as QnrAlternative }
+                changed = true
+            }
+
+            return changed && alternativesById ? { ...withoutLegend, alternativesById } : withoutLegend
         }
 
         case 'tab.create': {
@@ -1512,6 +1914,62 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             else nextTab.layout = layout
 
             return { ...doc, tabsById: { ...doc.tabsById, [op.tabId]: nextTab } }
+        }
+
+        case 'tab.setQuestion': {
+            const tab = doc.tabsById?.[op.tabId]
+            if (!tab) throw new OperationConflictError(`Unknown tab "${op.tabId}"`)
+            // Only inclusion needs a live question. Exclusion stays available with no question at all so
+            // an imported document naming a question it never had can be repaired.
+            if (op.include && !doc.questionsById?.[op.questionId]) {
+                throw new OperationConflictError(`Unknown question "${op.questionId}"`)
+            }
+
+            let next: Record<string, unknown> = writeTabList(
+                { ...tab },
+                'questionIds',
+                setListMember(tabListOf(tab, 'questionIds'), op.questionId, op.include, op.atIndex),
+            )
+            // Dropping membership drops what membership entitled the question to. A counted row or a
+            // placement for a question the tab no longer shows is a reference to nothing, and it still
+            // changes `document_hash`.
+            if (!op.include) {
+                next = writeTabList(
+                    next,
+                    'rowCountQuestionIds',
+                    tabListOf(tab, 'rowCountQuestionIds').filter((id) => id !== op.questionId),
+                )
+                next = withoutTabPlacement(next, op.questionId)
+            }
+
+            return { ...doc, tabsById: { ...doc.tabsById, [op.tabId]: next as QnrTab } }
+        }
+
+        case 'tab.setRowCountQuestion': {
+            const tab = doc.tabsById?.[op.tabId]
+            if (!tab) throw new OperationConflictError(`Unknown tab "${op.tabId}"`)
+
+            if (op.include) {
+                const question = doc.questionsById?.[op.questionId]
+                if (!question) throw new OperationConflictError(`Unknown question "${op.questionId}"`)
+                // Only a grid has rows to count, and only a member of this tab contributes to its count.
+                if (question.type !== 'QuestionGrid') {
+                    throw new OperationConflictError(`Question "${op.questionId}" is not a question grid`)
+                }
+                if (!tabListOf(tab, 'questionIds').includes(op.questionId)) {
+                    throw new OperationConflictError(
+                        `Question "${op.questionId}" is not a member of tab "${op.tabId}"`,
+                    )
+                }
+            }
+
+            // Membership and layout are untouched: this operation owns exactly one list.
+            const next = writeTabList(
+                { ...tab },
+                'rowCountQuestionIds',
+                setListMember(tabListOf(tab, 'rowCountQuestionIds'), op.questionId, op.include, op.atIndex),
+            )
+            return { ...doc, tabsById: { ...doc.tabsById, [op.tabId]: next as QnrTab } }
         }
 
         case 'tab.delete': {
@@ -1861,6 +2319,31 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
                     ...doc.mappingBindingsById,
                     [op.bindingId]: writeBindingOptions({ ...binding, ...structural }, op.patch),
                 },
+            }
+        }
+
+        case 'mappingBinding.setLegacyOverride': {
+            const binding = doc.mappingBindingsById?.[op.bindingId]
+            if (!binding) {
+                throw new OperationConflictError(`Unknown mapping binding "${op.bindingId}"`)
+            }
+            // Re-validated on replay, not only at the schema boundary: a log replays through here with
+            // no validator in front of it, and a malformed value must not become canonical by replay.
+            if (op.legacyOverride !== null && parseLegacyBindingOverride(op.legacyOverride).status !== 'known') {
+                throw new OperationConflictError(
+                    `Operation mappingBinding.setLegacyOverride carries a value that is not a canonical legacy override`,
+                )
+            }
+
+            // Member-only: every other member is carried over untouched, so no node, field, target,
+            // behaviour option or mapping `bindingOrder` can move when an exception is set or cleared.
+            const next: Record<string, unknown> = { ...binding }
+            if (op.legacyOverride === null) delete next['legacyOverride']
+            else next['legacyOverride'] = op.legacyOverride
+
+            return {
+                ...doc,
+                mappingBindingsById: { ...doc.mappingBindingsById, [op.bindingId]: next as MappingBinding },
             }
         }
 
