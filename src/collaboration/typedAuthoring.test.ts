@@ -1543,7 +1543,13 @@ describe('alternative.delete rewrites only its own owner formula', () => {
         // formula belonging to someone else — invisible while the owner happens to be found first.
         const base = apply(
             [
+                // A distinguishing member on the owner. Without it the two ExpressionQuestions are
+                // structurally identical once the base is stripped — and because the helper writes its
+                // result back to the OWNER's key, reading the wrong question produced a document equal
+                // to the right one. That is exactly how this mutant survived the first pass.
+                { type: 'question.updateField', questionId: 'ex-1', field: 'label', value: 'Eier' },
                 { type: 'question.create', questionId: 'ex-2', questionType: 'ExpressionQuestion' },
+                { type: 'question.updateField', questionId: 'ex-2', field: 'label', value: 'Annen' },
                 { type: 'question.updateField', questionId: 'ex-2', field: 'expression.base', value: makeExpressionAlternativeToken('ea-1') },
                 { type: 'alternative.create', questionId: 'ex-2', alternativeId: 'ea-2', label: 'To' },
             ],
@@ -1557,7 +1563,9 @@ describe('alternative.delete rewrites only its own owner formula', () => {
             (doc.questionsById?.['ex-2']?.['expression'] as Record<string, unknown>)['base'],
             '<exp_65612d31>',
         )
-        assert.equal('expression' in (doc.questionsById?.['ex-1'] ?? {}), false)
+        // The owner is untouched ENTIRELY — not merely still base-less.
+        assert.deepEqual(doc.questionsById?.['ex-1'], { type: 'ExpressionQuestion', label: 'Eier' })
+        assert.equal(doc.questionsById?.['ex-2']?.label, 'Annen')
     })
 })
 
