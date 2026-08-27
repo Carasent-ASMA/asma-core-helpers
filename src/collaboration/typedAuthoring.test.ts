@@ -6,6 +6,7 @@ import { canonicalJson, reduceToMinimalForm } from './canonicalize.js'
 import { findDocLawViolations } from './docLaws.js'
 import type { TemplateOp } from './operations.js'
 import { templateDocumentIsDefault, templateOpSchema, validateTemplateDocument } from './schemas.js'
+import { QUESTION_TYPES, type QuestionType } from './questionTypes.js'
 import {
     emptyTemplateDocument,
     isExpressionAlternativeToken,
@@ -808,6 +809,30 @@ describe('the counted-grid subset', () => {
         throwsConflict(
             () => apply([{ type: 'tab.setRowCountQuestion', tabId: 'ghost', questionId: 'g-1', include: true }], withMembers()),
             'a missing tab must be refused',
+        )
+    })
+
+    it('refuses a DANGLING member id, so the existence check is what does the work', () => {
+        // The `'ghost'` case above is *also* a nonmember, so the membership check refuses it and the
+        // existence check is never exercised — the same "passes for the wrong reason" shape as the
+        // A11/A12/A39 gaps. Here the id IS a member, so membership passes and only the existence guard
+        // can refuse.
+        //
+        // The document is built by hand on purpose: no legal sequence of ops can put a dangling id in
+        // `questionIds` (`tab.setQuestion include:true` requires a live question). This is the imported
+        // malformed state the freeze says must stay repairable, so it is reachable in production.
+        const imported: QnrTemplateDocument = {
+            ...withMembers(),
+            tabsById: { 't-1': { label: 'Første', questionIds: ['ghost-grid'] } },
+        }
+
+        throwsConflict(
+            () => apply([{ type: 'tab.setRowCountQuestion', tabId: 't-1', questionId: 'ghost-grid', include: true }], imported),
+            'a dangling member id must still be refused as a missing question',
+        )
+        // And the repair path stays open on that same document, which is why the state is worth having.
+        assert.doesNotThrow(() =>
+            apply([{ type: 'tab.setRowCountQuestion', tabId: 't-1', questionId: 'ghost-grid', include: false }], imported),
         )
     })
 
@@ -1616,5 +1641,92 @@ describe('the tab document members are typed, not admitted by the open index', (
             tabsById: { 't-1': { label: 'Fane', questionIds: ['q-1'], rowCountQuestionIds: ['g-1'], legacyBag: { a: 1 } } },
         } as never)
         assert.ok(validated.ok, validated.ok ? '' : validated.summary)
+    })
+})
+
+// ───────── the admissible target vocabulary, pinned exhaustively in both directions ─────────
+
+/**
+ * `EXPRESSION_TARGET_TYPES` is a hand-maintained opt-in literal, and the type system can only check
+ * that its members *are* question types — never that they are the *right* ones.
+ *
+ * That gap was measured: dropping four of the six admissible types, widening the list with a scalar
+ * `TextShort`, or widening it with `ExpressionQuestion` all left the suite green. Dropping a type
+ * silently refuses a legitimate authored target forever; widening makes a non-selectable question a
+ * legal score target, which is the "non-selectable target" the frozen matrix names.
+ *
+ * So the vocabulary is pinned here, exhaustively over the whole shared register: every admissible type
+ * must be ACCEPTED and every other type in `QUESTION_TYPES` must be REFUSED. Enumerating the
+ * complement rather than a hand-picked sample is deliberate — adding a question type to the shared
+ * register then forces a decision here instead of silently defaulting either way.
+ */
+describe('the Expression/Chart target vocabulary', () => {
+    const ADMISSIBLE: readonly QuestionType[] = [
+        'BooleanQuestion',
+        'CheckBoxes',
+        'Dropdown',
+        'Emoticons',
+        'LinearScale',
+        'RadioButtons',
+    ]
+    const REFUSED = QUESTION_TYPES.filter((type) => !ADMISSIBLE.includes(type))
+
+    /** One flagged question of `type`, so `flags.is_expression` can never be the reason for a refusal. */
+    const withTarget = (type: QuestionType) =>
+        apply(
+            [
+                { type: 'question.create', questionId: 'target', questionType: type },
+                { type: 'question.updateField', questionId: 'target', field: 'flags.is_expression', value: true },
+            ],
+            ac9(),
+        )
+
+    const setFormula: TemplateOp = {
+        type: 'alternative.setExpressionFormula',
+        questionId: 'ex-1',
+        alternativeId: 'ea-1',
+        value: '0',
+        expressionTargets: ['target'],
+    }
+
+    it('admits exactly the six selectable-or-LinearScale types', () => {
+        // This direction catches a DROPPED member: the refusal-only tests cannot.
+        for (const type of ADMISSIBLE) {
+            assert.doesNotThrow(() => apply([setFormula], withTarget(type)), `${type} must be admitted as a target`)
+        }
+    })
+
+    it('refuses every other type in the shared register', () => {
+        // Each is created WITH the flag on, so only the type list can be doing the refusing.
+        assert.ok(REFUSED.length > 0, 'the complement must be non-empty or this test is vacuous')
+        for (const type of REFUSED) {
+            throwsConflict(() => apply([setFormula], withTarget(type)), `${type} must be refused as a target`)
+        }
+    })
+
+    it('applies the same vocabulary to a Chart assignment target', () => {
+        // One gate, two operations: a type legal for a formula must be legal for an assignment and
+        // vice-versa, or the two paths would drift into two different vocabularies.
+        const assignment = (): TemplateOp => ({
+            type: 'alternative.setChartLegend',
+            questionId: 'ch-1',
+            alternativeId: 'ca-1',
+            chartLegend: { id: 'lg-1', questionIdMap: 'target' },
+        })
+        const withLegend = (type: QuestionType) =>
+            apply([{ type: 'chartLegend.create', questionId: 'ch-1', legendId: 'lg-1', label: 'Fysisk' }], withTarget(type))
+
+        for (const type of ADMISSIBLE) {
+            assert.doesNotThrow(() => apply([assignment()], withLegend(type)), `${type} must be an assignment target`)
+        }
+        for (const type of REFUSED) {
+            throwsConflict(() => apply([assignment()], withLegend(type)), `${type} must not be an assignment target`)
+        }
+    })
+
+    it('covers the whole register, so a new question type cannot slip past undecided', () => {
+        assert.equal(ADMISSIBLE.length + REFUSED.length, QUESTION_TYPES.length)
+        // Every admissible type is a real member of the shared register, not a typo.
+        for (const type of ADMISSIBLE) assert.ok(QUESTION_TYPES.includes(type), `${type} is not a QuestionType`)
     })
 })

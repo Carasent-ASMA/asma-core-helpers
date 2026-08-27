@@ -19,6 +19,7 @@ import type {
     QnrTemplateDocument,
     QuestionId,
 } from './templateDocument.js'
+import type { QuestionType } from './questionTypes.js'
 import {
     ACTION_TYPES,
     BINDING_OPTION_DEFAULTS,
@@ -586,10 +587,26 @@ const scrubTabQuestionRefs = (doc: QnrTemplateDocument, questionId: QuestionId):
  * `LinearScale`, whose numeric range legacy also admits.
  *
  * `Chart` is excluded even though it carries alternatives — a chart scoring a chart is the cycle legacy
- * never allowed. Derived from the shared type register rather than a local literal list so a new
- * question type cannot quietly become targetable.
+ * never allowed.
+ *
+ * **A deliberately explicit opt-in literal, not derived from anything.** There is no selectable-type
+ * register in `questionTypes.ts` to derive it from, and inventing one would make targetability a
+ * side-effect of how a type is classified elsewhere. Adding a question type must be a decision taken
+ * here, in this list.
+ *
+ * `satisfies readonly QuestionType[]` is what stops that literal from rotting: a typo'd or removed
+ * question type fails `ts:check` instead of becoming silently dead code that refuses a legitimate
+ * target forever. The membership itself — which six types, and no others — is pinned in both directions
+ * by a table-driven test, because the type system cannot tell a deliberate list from a wrong one.
  */
-const EXPRESSION_TARGET_TYPES = ['BooleanQuestion', 'CheckBoxes', 'Dropdown', 'Emoticons', 'LinearScale', 'RadioButtons'] as const
+const EXPRESSION_TARGET_TYPES = [
+    'BooleanQuestion',
+    'CheckBoxes',
+    'Dropdown',
+    'Emoticons',
+    'LinearScale',
+    'RadioButtons',
+] as const satisfies readonly QuestionType[]
 
 /**
  * Whether one question may be cited as an Expression target or a Chart assignment target.

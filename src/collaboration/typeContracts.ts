@@ -1,5 +1,10 @@
 import type { TemplateOp } from './operations.js'
-import type { ActionMetadata, AlternativeChartLegend, LegacyBindingOverride } from './templateDocument.js'
+import type {
+    ActionMetadata,
+    AlternativeChartLegend,
+    LegacyBindingOverride,
+    MappingBinding,
+} from './templateDocument.js'
 
 /**
  * Compile-time assertions that the closed unions stay closed.
@@ -124,4 +129,34 @@ export type SetExpressionFormulaRequiresTargets = Assert<
         { type: 'alternative.setExpressionFormula'; questionId: string; alternativeId: string; value: string },
         TemplateOp
     >
+>
+
+// ─── the released document member stays `unknown` on read ───
+/**
+ * `MappingBinding.legacyOverride` must NOT be narrowed to the closed canonical union.
+ *
+ * Nothing else can catch this. Narrowing it is a type-only change, so every runtime gate stays green:
+ * the open `[key: string]: unknown` index keeps the narrowed member assignable, the reducer writes
+ * through a `Record<string, unknown>` cast, and `parseLegacyBindingOverride` takes `unknown`, so no call
+ * site objects. `ts:check`, `pnpm test` and `pnpm test:package` all pass with the member narrowed.
+ *
+ * The consequence is consumer-visible and is exactly what ADR-0008 DEC-006 forbids: with the member
+ * narrowed, a consumer may write `binding.legacyOverride?.planId` with no compile error against a
+ * document carrying an arbitrary historical value. History would *appear* canonical, and BunJS
+ * publication would lose its reason to call the parser at all.
+ *
+ * Asserting the member REFUSES the canonical union is the pin: `unknown` is not assignable to
+ * `LegacyBindingOverride | undefined`, so this holds at head and fails the moment the member is
+ * narrowed to it.
+ */
+export type LegacyOverrideMemberStaysUnknown = Assert<
+    Refuses<MappingBinding['legacyOverride'], LegacyBindingOverride | undefined>
+>
+
+/**
+ * The other half, so the assertion above cannot pass by the member having become something unrelated:
+ * a canonical value must still be assignable *into* the member.
+ */
+export type LegacyOverrideMemberAcceptsCanonical = Assert<
+    Refuses<LegacyBindingOverride, MappingBinding['legacyOverride']> extends false ? true : false
 >
