@@ -129,6 +129,44 @@ const layoutPlacementSchema = type({
     keepCellSize: 'boolean?',
 })
 
+/**
+ * The closed legacy mapping exception, validated only where a NEW producer writes one.
+ *
+ * `'+': 'reject'` is load-bearing: ArkType admits undeclared keys by default, so without it
+ * `{planId: 'x', actorType: 'y'}` would validate and the forbidden member would reach the reducer.
+ *
+ * `string > 0` on each member refuses the empty string, which DOC-LAW-2 treats as a second encoding of
+ * absent.
+ *
+ * Three arms mirroring `LegacyBindingOverride`, each making a different member required, rather than one
+ * arm plus a `narrow` predicate. A custom predicate cannot be represented in JSON Schema, so
+ * `toJsonSchema()` — which the package parity test runs over the whole op union — throws on it. The
+ * union expresses the same at-least-one rule declaratively and stays convertible.
+ *
+ * The stored document member stays `unknown` — see `mappingBindingSchema`, deliberately unchanged.
+ */
+const legacyBindingOverrideSchema = type({
+    planId: 'string > 0',
+    'kind?': 'string > 0',
+    'mappingRule?': 'string > 0',
+    '+': 'reject',
+})
+    .or({ 'planId?': 'string > 0', kind: 'string > 0', 'mappingRule?': 'string > 0', '+': 'reject' })
+    .or({ 'planId?': 'string > 0', 'kind?': 'string > 0', mappingRule: 'string > 0', '+': 'reject' })
+
+/**
+ * A Chart legend selection: the legend and its target, and deliberately no `label`.
+ *
+ * `'+': 'reject'` is what makes "no label" enforceable rather than advisory — the reducer derives the
+ * label from the owning legend, and a client-supplied one would let a single legend id carry two
+ * labels, i.e. two document hashes for one authored state.
+ */
+const alternativeChartLegendSelectionSchema = type({
+    id: 'string > 0',
+    questionIdMap: 'string > 0',
+    '+': 'reject',
+})
+
 const questionGridRowEditorSchema = type({
     "layoutByQuestionId?": recordOf(layoutPlacementSchema),
     ...({ '[string]': 'unknown' } as const),
@@ -197,6 +235,10 @@ const qnrTabLayoutSchema = type({
 const qnrTabSchema = type({
     label: 'string?',
     "layout?": qnrTabLayoutSchema,
+    // Typed as primitive id arrays rather than left to the open index: an accidental `unknown` would
+    // admit an array of objects, which is the DOC-LAW-1 shape these members exist to avoid.
+    questionIds: 'string[]?',
+    rowCountQuestionIds: 'string[]?',
     ...({ '[string]': 'unknown' } as const),
 })
 
@@ -421,6 +463,27 @@ export const templateOpSchema = type.or(
     }),
     type({ type: '"alternative.move"', questionId: 'string', alternativeId: 'string', toIndex: 'number' }),
     type({ type: '"alternative.delete"', questionId: 'string', alternativeId: 'string' }),
+    type({
+        type: '"alternative.setExpressionFormula"',
+        questionId: 'string',
+        alternativeId: 'string',
+        value: 'string',
+        expressionTargets: 'string[]',
+    }),
+    type({
+        type: '"alternative.setChartLegend"',
+        questionId: 'string',
+        alternativeId: 'string',
+        chartLegend: type.or(alternativeChartLegendSelectionSchema, type('null')),
+    }),
+    type({
+        type: '"chartLegend.create"',
+        questionId: 'string',
+        legendId: 'string',
+        label: 'string',
+        atIndex: 'number?',
+    }),
+    type({ type: '"chartLegend.delete"', questionId: 'string', legendId: 'string' }),
     type({ type: '"tab.create"', tabId: 'string', label: 'string?', atIndex: 'number?' }),
     type({ type: '"tab.updateField"', tabId: 'string', field: 'string', value: opValue }),
     type({ type: '"tab.move"', tabId: 'string', toIndex: 'number' }),
@@ -429,6 +492,20 @@ export const templateOpSchema = type.or(
         tabId: 'string',
         questionId: 'string',
         placement: type.or(layoutPlacementSchema, type('null')),
+    }),
+    type({
+        type: '"tab.setQuestion"',
+        tabId: 'string',
+        questionId: 'string',
+        include: 'boolean',
+        atIndex: 'number?',
+    }),
+    type({
+        type: '"tab.setRowCountQuestion"',
+        tabId: 'string',
+        questionId: 'string',
+        include: 'boolean',
+        atIndex: 'number?',
     }),
     type({ type: '"tab.delete"', tabId: 'string' }),
     type({ type: '"action.create"', actionId: 'string', kind: 'string?' }),
@@ -523,6 +600,11 @@ export const templateOpSchema = type.or(
             'onMissing?': bindingOnMissingSchema.or(type.null),
             'onMany?': bindingOnManySchema.or(type.null),
         }),
+    }),
+    type({
+        type: '"mappingBinding.setLegacyOverride"',
+        bindingId: 'string',
+        legacyOverride: type.or(legacyBindingOverrideSchema, type('null')),
     }),
     type({ type: '"mappingBinding.delete"', bindingId: 'string' }),
     type({

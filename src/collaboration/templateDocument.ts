@@ -173,6 +173,79 @@ export type QnrQuestion = {
 
 export type QnrAlternative = { label?: string; value?: DocScalar; [key: string]: unknown }
 
+/**
+ * One legend of a radar `Chart` question (AC-9).
+ *
+ * A keyed record plus an order array on the question rather than an array of objects, for the DOC-LAW-1
+ * reason: two authors adding legends concurrently otherwise produce two whole-array writes and the
+ * second discards the first.
+ */
+export type ChartLegend = { id: string; label: string }
+
+/**
+ * A Chart alternative's stored binding of one expression-enabled target question to one legend.
+ *
+ * `label` is carried even though it duplicates `chart.legendsById[id].label`, and the reducer — never
+ * the client — derives it. A client-supplied label would let one legend id carry two labels across two
+ * alternatives, which is two `document_hash` values for one authored state.
+ */
+export type AlternativeChartLegend = { id: string; questionIdMap: QuestionId; label: string }
+
+/**
+ * What an author actually chooses: the legend and the target. Deliberately label-free.
+ *
+ * Separate from {@link AlternativeChartLegend} so the operation payload cannot carry a label at all —
+ * a type that merely documented "label is ignored here" would still admit one, and the reducer would be
+ * trusting a client value it is supposed to derive.
+ *
+ * `label?: never` is what makes that a COMPILE-time refusal rather than only a runtime one, the same
+ * device the `ActionMetadata` arms use: object assignability is structural and excess properties are
+ * only rejected on a fresh literal, so `{id, questionIdMap, label}` would otherwise satisfy this type
+ * and the exclusion would exist in the schema alone.
+ */
+export type AlternativeChartLegendSelection = { id: string; questionIdMap: QuestionId; label?: never }
+
+/** UTF-8 bytes of a complete id as lowercase hex. `TextEncoder` is global in browsers and in Node. */
+const idToLowercaseHex = (id: string): string =>
+    Array.from(new TextEncoder().encode(id))
+        .map((byte) => byte.toString(16).padStart(2, '0'))
+        .join('')
+
+/**
+ * The canonical `<target_...>` token naming a question inside an Expression formula.
+ *
+ * **Injective, unlike legacy.** Legacy tokenized the *last eight characters* of an id, so two questions
+ * whose ids share a suffix produced the same token and a formula silently referenced the wrong one —
+ * which is guaranteed rather than unlucky for a bundle pick, where fresh ids are minted from one map.
+ * Encoding the complete id as UTF-8 hex makes distinct ids distinct tokens, including ids differing
+ * only before their last eight characters, and round-trips non-ASCII ids at the byte level.
+ *
+ * Hex rather than the raw id because the delimiters must stay unambiguous: an id containing `>` or `_`
+ * would otherwise terminate or split its own token.
+ */
+export const makeExpressionTargetToken = (questionId: QuestionId): string =>
+    `<target_${idToLowercaseHex(questionId)}>`
+
+/** The canonical `<exp_...>` token naming an alternative inside `question.expression.base`. */
+export const makeExpressionAlternativeToken = (alternativeId: AltId): string =>
+    `<exp_${idToLowercaseHex(alternativeId)}>`
+
+/**
+ * Anchored recognizers for the canonical grammar.
+ *
+ * `(?:[0-9a-f]{2})+` requires at least one whole byte and rejects an odd-length body, so an empty
+ * token, a truncated byte, an uppercase or non-hex digit, a prefix/suffix claimant, and legacy's
+ * last-eight-character spelling are all non-canonical. Recognition only — shared deliberately exposes
+ * no decoder: reversing a token would invite callers to *interpret* formulas, which is BunJS import and
+ * publication work, not contract work.
+ */
+const EXPRESSION_TARGET_TOKEN_PATTERN = /^<target_(?:[0-9a-f]{2})+>$/
+const EXPRESSION_ALTERNATIVE_TOKEN_PATTERN = /^<exp_(?:[0-9a-f]{2})+>$/
+
+export const isExpressionTargetToken = (value: string): boolean => EXPRESSION_TARGET_TOKEN_PATTERN.test(value)
+export const isExpressionAlternativeToken = (value: string): boolean =>
+    EXPRESSION_ALTERNATIVE_TOKEN_PATTERN.test(value)
+
 /** An authored predefined grid row; cells are keyed by column question id. */
 export type QnrGridRow = {
     label?: string
@@ -198,7 +271,40 @@ export type QnrTabLayout = {
  * The index signature stays: a tab's authored bag is still open (`dependent_question_ids` and friends
  * arrive from the importer), and narrowing it would make an already-stored tab unreadable.
  */
-export type QnrTab = { label?: string; layout?: QnrTabLayout; [key: string]: unknown }
+export type QnrTab = {
+    label?: string
+    layout?: QnrTabLayout
+    /**
+     * Authored tab membership: which questions this tab shows, in the author's order (M-050, freeze §3a).
+     *
+     * The legacy spelling is `dependent_question_ids`, and post-release importer scrutiny corrected the
+     * field inventory's reading of it: the legacy model and viewer use it as **membership**, not as a
+     * conditional visibility rule. Importing it as a rule would have made v2 *hide* a question legacy
+     * merely *listed*, which is why this is its own member and not a `VisibilityRule`.
+     *
+     * **Not derivable from `layout`.** A committed fixture carries a counted composite member with no
+     * positional placement, so membership is strictly wider than the placement key set. Deriving one
+     * from the other would silently drop that member.
+     *
+     * A primitive id array, so DOC-LAW-1 is satisfied by identity living in the values, and maintained
+     * one member at a time by `tab.setQuestion` — two authors adding different questions concurrently
+     * both survive, where a whole-array write would discard the first. Absent when the tab has no
+     * members; never stored as `[]`.
+     */
+    questionIds?: QuestionId[]
+    /**
+     * The `QuestionGrid` members whose visible row counts contribute to this tab's count (freeze §3a).
+     *
+     * Legacy spells it `count_question_rows`. The v2 name states the direction — "questions whose rows
+     * count" — rather than preserving the legacy grammatical ambiguity about what counts what.
+     *
+     * A strict subset of `questionIds` by rule rather than by type: `tab.setRowCountQuestion` admits
+     * only a `QuestionGrid` already in `questionIds`, while exclusion stays available with no live
+     * question at all so an imported dangling reference can be repaired.
+     */
+    rowCountQuestionIds?: QuestionId[]
+    [key: string]: unknown
+}
 
 /**
  * The **compatibility** action record: `kind` is an arbitrary optional string and the bag is open.
@@ -425,8 +531,139 @@ export type MappingBinding = {
     onMissing?: BindingOnMissing
     /** Absent means `error`. */
     onMany?: BindingOnMany
+    /**
+     * The legacy mapping exception, deliberately typed `unknown` and NOT `LegacyBindingOverride`.
+     *
+     * Declared for discoverability only — the open index already admits it, so this narrows nothing.
+     * It stays `unknown` because the member is released and stored documents carry arbitrary values
+     * that must remain readable and replayable (ADR-0008 DEC-006). {@link parseLegacyBindingOverride}
+     * is the recognizer, and `mappingBinding.setLegacyOverride` is the only writer of a canonical value.
+     */
+    legacyOverride?: unknown
     [key: string]: unknown
 }
+
+/**
+ * The per-binding legacy mapping exception (OQ-V2-40, freeze §1a).
+ *
+ * Stored only when graph/structure derivation differs from what legacy actually authored, so the
+ * observed authoring survives the port instead of being replaced by our derivation of it.
+ *
+ * **At least one member is mandatory at compile time**, which is what the three arms buy: a bare `{}`
+ * would be an exception that records nothing, and under DOC-LAW-2 it is also a second encoding of
+ * "absent". Each arm makes a different member required, so the union is exactly "one or more of the
+ * three" without admitting the empty record — a single optional-everything type could not say that.
+ *
+ * `mappingRule` translates to and from the observed `mapping_rule` only at the legacy import/projection
+ * boundary; no snake_case duplicate is stored here.
+ */
+export type LegacyBindingOverride =
+    | { planId: string; kind?: string; mappingRule?: string }
+    | { planId?: string; kind: string; mappingRule?: string }
+    | { planId?: string; kind?: string; mappingRule: string }
+
+/**
+ * Reading a stored `legacyOverride` has three outcomes, and collapsing any two of them loses
+ * information a caller acts on.
+ *
+ * `absent` is "no exception recorded", `known` is a canonical value safe to project, and `malformed` is
+ * a historical or hand-written value that must stay readable but must never be treated as canonical.
+ * A boolean guard would merge the last two, so BunJS publication could not tell "nothing to refuse"
+ * from "refuse this", and the bundle picker could not report it unrepresentable rather than dropping it.
+ */
+export type LegacyBindingOverrideParseResult =
+    | { status: 'absent' }
+    | { status: 'known'; value: LegacyBindingOverride }
+    | { status: 'malformed' }
+
+/** The three members a canonical override may carry. Anything else makes the value malformed. */
+const LEGACY_OVERRIDE_KEYS = ['planId', 'kind', 'mappingRule'] as const
+
+/**
+ * The one total reader over the released broad member.
+ *
+ * `MappingBinding.legacyOverride` stays `unknown` on read (ADR-0008 DEC-006): the member is released,
+ * stored documents carry arbitrary values, and narrowing the document type would make those unreadable.
+ * So recognition lives in a parser rather than in the type, and this is the only place that decides what
+ * canonical means — a caller spelling the check itself would be a second declaration free to drift.
+ *
+ * Refuses, as malformed rather than known: unknown keys, `null`, arrays, nested objects, empty strings,
+ * non-string scalars, the empty record, and every member outside the closed three (`actorType`,
+ * provider/profile, subject/entity/runtime ids, credentials).
+ */
+export const parseLegacyBindingOverride = (value: unknown): LegacyBindingOverrideParseResult => {
+    if (value === undefined) return { status: 'absent' }
+
+    // `typeof null === 'object'`, and an array is an object too — both are malformed, not absent.
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) return { status: 'malformed' }
+
+    const entries = Object.entries(value as Record<string, unknown>)
+    if (entries.length === 0) return { status: 'malformed' }
+
+    for (const [key, member] of entries) {
+        if (!(LEGACY_OVERRIDE_KEYS as readonly string[]).includes(key)) return { status: 'malformed' }
+        if (typeof member !== 'string' || member === '') return { status: 'malformed' }
+    }
+
+    return { status: 'known', value: value as LegacyBindingOverride }
+}
+
+/**
+ * Which half of a mapping graph an unresolved-evidence placeholder stands in for.
+ *
+ * Two kinds rather than one opaque sentinel because a node's `entityId` and a binding's `fieldId` are
+ * different address spaces: the same evidence must not produce one string that could satisfy both, or a
+ * field placeholder could be accepted where an entity was required.
+ */
+export type LegacyUnresolvedIdKind = 'entity' | 'field'
+
+/**
+ * The reserved prefix for an observed connector mapping that resolves to no stable curated id.
+ *
+ * The graph's shape is retained with a deterministic placeholder rather than dropping the binding,
+ * because `MappingNode.entityId` and `MappingBinding.fieldId` are required members: without a
+ * placeholder the only options were inventing a catalog identity or losing the observed evidence.
+ *
+ * The `:` separator is deliberate. The engine's `MachineIdSchema` is `^[A-Za-z0-9_.-]+$`, which forbids
+ * a colon, so a valid curated id can never collide with one of these and no activation rule changes.
+ */
+export const LEGACY_UNRESOLVED_ID_PREFIX = 'legacy-unresolved:'
+
+/** Exactly `legacy-unresolved:<entity|field>:<64 lowercase hex>`. Anchored: no prefix/suffix claimant. */
+const LEGACY_UNRESOLVED_ID_PATTERN = /^legacy-unresolved:(entity|field):[0-9a-f]{64}$/
+
+/**
+ * Builds the placeholder from a caller-supplied SHA-256 digest.
+ *
+ * The caller supplies the digest, not the raw evidence: shared does not hash legacy data or decide what
+ * the evidence is, so BunJS owns the material and shared owns only the canonical spelling. The factory
+ * still refuses a digest that is not 64 lowercase hex characters, because a placeholder that fails
+ * `isLegacyUnresolvedId` would be quarantined as a malformed claimant by the very consumers meant to
+ * recognize it.
+ *
+ * Deterministic and kind-disjoint: the same digest yields the same value on every call, and the entity
+ * and field forms of one digest are different strings.
+ */
+export const makeLegacyUnresolvedId = (kind: LegacyUnresolvedIdKind, sha256Hex: string): string => {
+    if (!/^[0-9a-f]{64}$/.test(sha256Hex)) {
+        throw new Error(
+            `makeLegacyUnresolvedId: "${sha256Hex}" is not a 64-character lowercase SHA-256 hex digest`,
+        )
+    }
+    return `${LEGACY_UNRESOLVED_ID_PREFIX}${kind}:${sha256Hex}`
+}
+
+/**
+ * Exact recognition of a canonical placeholder.
+ *
+ * Distinguishes a canonical sentinel from a **prefix claimant** — a string that starts with the reserved
+ * prefix but is not canonical (wrong discriminator, short/uppercase/non-hex digest, prefix only). That
+ * distinction is the whole point: consumers quarantine everything starting with the prefix, and this
+ * predicate is what splits the quarantined set into `unresolved-legacy-mapping` and
+ * `malformed-legacy-unresolved-id`. Neither class may reach an engine.
+ */
+export const isLegacyUnresolvedId = (value: unknown): boolean =>
+    typeof value === 'string' && LEGACY_UNRESOLVED_ID_PATTERN.test(value)
 
 /**
  * Hydrates a stored binding's behaviours to the total set (§2.2a: "the hydrated in-memory binding is

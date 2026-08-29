@@ -3,6 +3,7 @@ import type {
     ActionMetadata,
     ActionType,
     AltId,
+    AlternativeChartLegendSelection,
     BindingCardinality,
     BindingId,
     BindingOnMany,
@@ -12,6 +13,7 @@ import type {
     FilterId,
     HighlightRuleId,
     LayoutPlacement,
+    LegacyBindingOverride,
     MappingFilterPayload,
     MappingId,
     NarrativeRuleId,
@@ -123,6 +125,61 @@ export type TemplateOp =
     | { type: 'alternative.updateField'; questionId: QuestionId; alternativeId: AltId; field: string; value: OpValue }
     | { type: 'alternative.move'; questionId: QuestionId; alternativeId: AltId; toIndex: number }
     | { type: 'alternative.delete'; questionId: QuestionId; alternativeId: AltId }
+    /**
+     * Writes an Expression alternative's formula text and its ordered target list as one value (AC-9).
+     *
+     * One operation rather than two `alternative.updateField` writes: the formula and the targets it
+     * cites are one authored decision, and a client that landed the text but lost the list would leave a
+     * formula referencing questions the document does not record as targets.
+     *
+     * On an `ExpressionQuestion` the formula genuinely lives in the alternative's `value` — the usual
+     * "an alternative's value is read-only code" rule does not hold for this type, because that is where
+     * legacy's formula editor writes.
+     *
+     * Deliberately draft-permissive: the text and the list need not agree while editing, so a
+     * half-typed formula saves. Publication and preview own the mismatch finding; the reducer must not
+     * erase or repair a partial formula the author is still writing.
+     */
+    | {
+          type: 'alternative.setExpressionFormula'
+          questionId: QuestionId
+          alternativeId: AltId
+          value: string
+          expressionTargets: QuestionId[]
+      }
+    /**
+     * Creates one radar Chart legend, inserting its keyed record and its order entry atomically (AC-9).
+     *
+     * Atomic because a legend present in `legendsById` but absent from `legendsOrder` is unreachable
+     * state that still moves `document_hash`, and the reverse dangles. `atIndex` exists so a bundle pick
+     * can restore authored order losslessly; the app appends, because legacy exposes no reorder control.
+     */
+    | { type: 'chartLegend.create'; questionId: QuestionId; legendId: string; label: string; atIndex?: number }
+    /**
+     * Removes one Chart legend, its order entry, and every assignment on that Chart's own alternatives.
+     *
+     * The cascade matches the legacy effect — a legend that disappears stops appearing on alternatives —
+     * and stops at ownership: an identically-named legend id on another question is left alone, which
+     * matters because imported ids can collide across questions.
+     */
+    | { type: 'chartLegend.delete'; questionId: QuestionId; legendId: string }
+    /**
+     * Binds one Chart alternative to one legend and one expression-enabled target, or clears it (AC-9).
+     *
+     * The payload carries no `label`: the reducer copies it from the owning legend. Accepting one would
+     * let a client give a single legend id two labels, i.e. two hashes for one authored state.
+     *
+     * A whole object rather than three field writes, for the same reason `tab.setLayout` is atomic —
+     * separate id/target/label writes can interleave into a hybrid no author ever selected. `null`
+     * clears whatever is stored, including an imported dangling or non-radar assignment, so the
+     * operation stays usable for repair.
+     */
+    | {
+          type: 'alternative.setChartLegend'
+          questionId: QuestionId
+          alternativeId: AltId
+          chartLegend: AlternativeChartLegendSelection | null
+      }
     | { type: 'tab.create'; tabId: TabId; label?: string; atIndex?: number }
     | { type: 'tab.updateField'; tabId: TabId; field: string; value: OpValue }
     | { type: 'tab.move'; tabId: TabId; toIndex: number }
@@ -136,6 +193,25 @@ export type TemplateOp =
      * survive; concurrent moves of the *same* question are last-writer-wins on a whole placement.
      */
     | { type: 'tab.setLayout'; tabId: TabId; questionId: QuestionId; placement: LayoutPlacement | null }
+    /**
+     * Adds, moves or removes one question in a tab's authored membership (freeze §3a).
+     *
+     * Member-wise for the reason `gridColumn.setFilter` is: `tab.updateField` would write the whole
+     * `questionIds` array, so two authors adding different questions would produce two whole-array
+     * patches and the second would silently discard the first. `include:false` also removes the id from
+     * `rowCountQuestionIds` and from `layout.placementsByQuestionId`, because a count or a placement for
+     * a non-member is a reference to something the tab no longer shows.
+     */
+    | { type: 'tab.setQuestion'; tabId: TabId; questionId: QuestionId; include: boolean; atIndex?: number }
+    /**
+     * Adds, moves or removes one `QuestionGrid` in the subset whose rows contribute to a tab's count.
+     *
+     * `include:true` requires an existing `QuestionGrid` already in that tab's `questionIds` — a count
+     * over a non-member, or over a question with no rows, is not a state an author can mean.
+     * `include:false` requires neither, so an imported document whose count names a missing or
+     * wrong-typed question stays repairable.
+     */
+    | { type: 'tab.setRowCountQuestion'; tabId: TabId; questionId: QuestionId; include: boolean; atIndex?: number }
     | { type: 'tab.delete'; tabId: TabId }
     // Actions are a set, not an ordered collection (architecture §2.1: `actionsById`, no order array).
     | { type: 'action.create'; actionId: ActionId; kind?: string }
@@ -235,6 +311,18 @@ export type TemplateOp =
           }
       }
     | { type: 'mappingBinding.delete'; bindingId: BindingId }
+    /**
+     * Sets or clears one binding's legacy mapping exception (OQ-V2-40, freeze §1a).
+     *
+     * Accepts only the closed {@link LegacyBindingOverride} or `null`, while the stored member stays
+     * `unknown` on read: new producers may write nothing but canonical, and historical arbitrary values
+     * keep replaying byte-for-byte through the untouched `create`/`update` arms.
+     *
+     * Member-only by construction — it cannot reach `nodeId`, `fieldId`, `target`, the behaviour options
+     * or any mapping's `bindingOrder`, so repairing an exception can never disturb the graph. `null`
+     * removes the member and leaves no empty object behind.
+     */
+    | { type: 'mappingBinding.setLegacyOverride'; bindingId: BindingId; legacyOverride: LegacyBindingOverride | null }
     | {
           type: 'mappingFilter.set'
           filterId: FilterId
@@ -298,10 +386,16 @@ const OP_TYPE_COVERAGE: Record<TemplateOpType, true> = {
     'alternative.updateField': true,
     'alternative.move': true,
     'alternative.delete': true,
+    'alternative.setExpressionFormula': true,
+    'alternative.setChartLegend': true,
+    'chartLegend.create': true,
+    'chartLegend.delete': true,
     'tab.create': true,
     'tab.updateField': true,
     'tab.move': true,
     'tab.setLayout': true,
+    'tab.setQuestion': true,
+    'tab.setRowCountQuestion': true,
     'tab.delete': true,
     'action.create': true,
     'action.updateField': true,
@@ -317,6 +411,7 @@ const OP_TYPE_COVERAGE: Record<TemplateOpType, true> = {
     'mappingBinding.create': true,
     'mappingBinding.update': true,
     'mappingBinding.delete': true,
+    'mappingBinding.setLegacyOverride': true,
     'mappingFilter.set': true,
     'mappingFilter.setTyped': true,
     'mappingFilter.delete': true,
