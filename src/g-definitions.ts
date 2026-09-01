@@ -143,6 +143,17 @@ declare global {
             isLogged?: () => boolean
             logoutUser?: () => void
             //logoutMfes?: (() => void)[]
+            /**
+             * Feature flags the currently-running shell declares support for. Widgets read this to
+             * detect an old, already-deployed shell that can't recognise a capability yet (per-tenant
+             * shell/widget versions are pinned independently, so a widget can run under a shell older
+             * than itself) — absence of a key means "not supported," never a hard error.
+             */
+            capabilities?: {
+                /** Shell registers `<section>/*` wildcard routes, so a widget may put its selected
+                 *  tab in the URL path (`createSectionPath`/`useSectionTab`). */
+                sectionRoutePaths?: boolean
+            }
         }
 
         _env_cloud?: Record<'adopus' | 'adcuris', Record<string, string>>
@@ -168,6 +179,24 @@ export const history = getHistory()
 export const subscribeToHistory = (listener: () => void) => {
     const unsubscribe = history.listen(listener)
     return unsubscribe
+}
+
+export type ShellCapability = keyof NonNullable<NonNullable<Window['__ASMA__SHELL__']>['capabilities']>
+
+/** `false` for a shell that predates the capability (never declared it) — never throws, never guesses. */
+export const hasShellCapability = (capability: ShellCapability): boolean =>
+    !!realWindow.__ASMA__SHELL__?.capabilities?.[capability]
+
+/** Called once by the shell on boot. Merges so multiple declarations (or a widget's own defaulting
+ *  during local dev without a shell) never clobber capabilities set elsewhere. */
+export const declareShellCapability = (capability: ShellCapability): void => {
+    realWindow.__ASMA__SHELL__ = {
+        ...realWindow.__ASMA__SHELL__,
+        capabilities: {
+            ...realWindow.__ASMA__SHELL__?.capabilities,
+            [capability]: true,
+        },
+    }
 }
 
 export { type History, createBrowserHistory }
