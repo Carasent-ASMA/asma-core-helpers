@@ -29,6 +29,9 @@ importers:
       idb-keyval:
         specifier: ^6.2.1
         version: 6.2.1
+      libphonenumber-js:
+        specifier: ^1.13.12
+        version: 1.13.12
       mobx:
         specifier: ^6.12.3
         version: 6.12.3
@@ -484,6 +487,9 @@ packages:
     resolution: {integrity: sha512-Tl9h9c+sG3ShzTHKuR3LAIblnnh+Mgxnm2Ul7yu9cu260Z27LEbO3V6Zw4YZFP59/2rlD42pt/llYsQCkkCFzw==}
     hasBin: true
 
+  libphonenumber-js@1.13.12:
+    resolution: {integrity: sha512-uLVeV1c9OTk6qkdqnj+mpMD+ZdnZ0szVyWu58HwMmpwkHA1gCEkyjd3veZQXDnuw9KEwSRjcc9B1pS9XKIN1fA==}
+
   mobx-state-tree@7.0.2:
     resolution: {integrity: sha512-Qmqgo2Ho1/JRTquo0EWw0ZA/k4wTUNPMIBg98ALGN1V/0Gupic7dg4GDYUhNbiLsYHpp48VgpaCDpDIKV+jNkQ==}
     peerDependencies:
@@ -831,6 +837,8 @@ snapshots:
       lefthook-openbsd-x64: 2.1.1
       lefthook-windows-arm64: 2.1.1
       lefthook-windows-x64: 2.1.1
+
+  libphonenumber-js@1.13.12: {}
 
   mobx-state-tree@7.0.2(mobx@6.12.3)(typescript@7.0.2):
     dependencies:
