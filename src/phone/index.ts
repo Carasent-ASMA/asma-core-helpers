@@ -25,12 +25,14 @@ export {
     formatPhoneForDisplay,
     isValidPhone,
     isValidPhoneValue,
+    parsePhoneNr,
     parsePhoneValue,
     phoneTelHref,
     PHONE_MAX_DIGITS,
     PHONE_MIN_DIGITS,
     toE164,
     type ParsedPhone,
+    type PhoneNrParse,
 } from './phoneNumber.js'
 
 export { phoneExample } from './phoneExample.js'

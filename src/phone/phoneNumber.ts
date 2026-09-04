@@ -6,7 +6,12 @@
  * link and is produced by `phoneTelHref`, never written to a field.
  */
 
-import { AsYouType, isValidPhoneNumber, parsePhoneNumberFromString } from 'libphonenumber-js'
+import {
+    AsYouType,
+    isValidPhoneNumber,
+    parsePhoneNumberFromString,
+    parsePhoneNumberWithError,
+} from 'libphonenumber-js'
 
 import { DEFAULT_PHONE_COUNTRY, findCountryByDialCode, getPhoneDialCode } from './phoneCountries.js'
 import type { PhoneCountry } from './phoneCountries.js'
@@ -22,6 +27,38 @@ export interface ParsedPhone {
 }
 
 const digitsOnly = (value: string): string => value.replace(/\D/g, '')
+
+export type PhoneNrParse =
+    | { ok: true; e164: string; country: PhoneCountry | undefined; callingCode: string }
+    | { ok: false; reason: 'EMPTY' | 'INVALID'; input: string }
+
+/**
+ * Canonicalise a value of unknown shape into E.164 — the one function every writer and
+ * the backfill share, so runtime and migration agree byte for byte.
+ *
+ * `defaultRegion` is required rather than defaulted on purpose. Guessing a region at
+ * *read* time, repeatedly and implicitly, is what left the fleet with several
+ * `+47`-assuming normalizers that disagree; the region is an explicit input applied
+ * once, where a value enters the system, and only when the input carries no `+`.
+ *
+ * Returns a result rather than throwing or coercing: a value that is not a real number
+ * under that region — junk like `'12345678'`, or a Swedish national number stored bare
+ * in a Norwegian tenant — is unrecoverable by any algorithm and must be reported to a
+ * human, never rewritten into something plausible.
+ */
+export function parsePhoneNr(input: string | null | undefined, defaultRegion: PhoneCountry): PhoneNrParse {
+    const text = (input ?? '').trim()
+    if (text.length === 0) return { ok: false, reason: 'EMPTY', input: text }
+
+    try {
+        const parsed = parsePhoneNumberWithError(text, defaultRegion)
+        if (!parsed.isValid()) return { ok: false, reason: 'INVALID', input: text }
+
+        return { ok: true, e164: parsed.number, country: parsed.country, callingCode: parsed.countryCallingCode }
+    } catch {
+        return { ok: false, reason: 'INVALID', input: text }
+    }
+}
 
 /**
  * Split a stored value into the country and the national number the field edits.
@@ -68,14 +105,23 @@ export function parsePhoneValue(
 /**
  * Compose the stored value from the country and whatever the user typed.
  *
- * Deliberately does not validate — an in-progress number must still round-trip
- * through the store so the field can show it back. Use `isValidPhone` for the gate.
- * Returns `''` for an empty national part so an untouched field stores nothing
- * rather than a bare `'+47'`.
+ * Two branches, and the split is the point. Once the input is a real number for the
+ * country, the stored value is the library's own E.164 rendering, which drops what a
+ * plain `+dialCode + digits` concatenation would double: a trunk prefix (`0701234567`
+ * for SE), a redundant country code (`4748012345` for NO) or an IDD prefix
+ * (`004748012345`). Concatenating those produced `+460701234567` and `+474748012345`.
+ *
+ * Until then it falls back to concatenation, because an in-progress number must still
+ * round-trip through the store for the field to show it back — so this deliberately
+ * does not reject anything. Use `isValidPhone` for the save gate. Returns `''` for an
+ * empty national part so an untouched field stores nothing rather than a bare `'+47'`.
  */
 export function toE164(nationalInput: string, iso2: PhoneCountry): string {
     const digits = digitsOnly(nationalInput)
     if (digits.length === 0) return ''
+
+    const parsed = parsePhoneNumberFromString(digits, iso2)
+    if (parsed?.isValid() === true) return parsed.number
 
     return `+${getPhoneDialCode(iso2)}${digits}`
 }

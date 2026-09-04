@@ -6,10 +6,62 @@ import {
     formatPhoneForDisplay,
     isValidPhone,
     isValidPhoneValue,
+    parsePhoneNr,
     parsePhoneValue,
     phoneTelHref,
     toE164,
 } from './phoneNumber.js'
+import type { PhoneCountry } from './phoneCountries.js'
+
+describe('parsePhoneNr', () => {
+    // The canonicalisation contract every writer and the backfill share. Each row is a
+    // shape found in, or reachable into, `customer_user.phone_nr` today.
+    const contract: readonly [string, PhoneCountry, string | 'INVALID'][] = [
+        ['45456565', 'NO', '+4745456565'],
+        ['4745456565', 'NO', '+4745456565'],
+        ['004745456565', 'NO', '+4745456565'],
+        ['+47 454 56 565', 'NO', '+4745456565'],
+        ['47123456', 'NO', '+4747123456'],
+        ['+37379094538', 'NO', '+37379094538'],
+        ['0701234567', 'NO', 'INVALID'],
+        ['0701234567', 'SE', '+46701234567'],
+        ['12345', 'NO', 'INVALID'],
+    ]
+
+    for (const [input, region, expected] of contract) {
+        it(`canonicalises ${input} under ${region} to ${expected}`, () => {
+            const result = parsePhoneNr(input, region)
+
+            if (expected === 'INVALID') {
+                assert.deepEqual(result, { ok: false, reason: 'INVALID', input: input.trim() })
+                return
+            }
+
+            assert.equal(result.ok, true)
+            assert.equal(result.ok && result.e164, expected)
+        })
+    }
+
+    it('reports the country and calling code the value resolved to', () => {
+        const result = parsePhoneNr('45456565', 'NO')
+
+        assert.deepEqual(result, { ok: true, e164: '+4745456565', country: 'NO', callingCode: '47' })
+    })
+
+    it('separates an empty value from an invalid one so a report can tell them apart', () => {
+        for (const value of ['', '   ', null, undefined]) {
+            assert.deepEqual(parsePhoneNr(value, 'NO'), { ok: false, reason: 'EMPTY', input: '' })
+        }
+    })
+
+    it('reports rather than rewrites a number that is not real for the region', () => {
+        // `12345678` and `00000000` passed the pre-ticket digit-count rules and are in the
+        // data; no algorithm can recover an intended number from them.
+        for (const junk of ['12345678', '00000000', '11111111']) {
+            assert.deepEqual(parsePhoneNr(junk, 'NO'), { ok: false, reason: 'INVALID', input: junk })
+        }
+    })
+})
 
 describe('parsePhoneValue', () => {
     it('splits a stored E.164 value into country and national number', () => {
@@ -61,6 +113,25 @@ describe('toE164', () => {
 
     it('does not validate — an in-progress number must still round-trip', () => {
         assert.equal(toE164('4', 'NO'), '+474')
+    })
+
+    it('does not double a country code the input already carries', () => {
+        // Concatenation stored `+474748012345` and `+47004748012345`, both unusable.
+        assert.equal(toE164('4748012345', 'NO'), '+4748012345')
+        assert.equal(toE164('004748012345', 'NO'), '+4748012345')
+        assert.equal(toE164('4781234567', 'NO'), '+4781234567')
+    })
+
+    it('drops the trunk prefix countries write their national numbers with', () => {
+        // SE/GB/DE national form carries a leading 0 that is not part of the E.164 number,
+        // so concatenation stored `+460701234567` for a number people write as 070-123 45 67.
+        assert.equal(toE164('0701234567', 'SE'), '+46701234567')
+        assert.equal(toE164('07911123456', 'GB'), '+447911123456')
+        assert.equal(toE164('015112345678', 'DE'), '+4915112345678')
+    })
+
+    it('keeps a genuine national number that merely starts with the dial code', () => {
+        assert.equal(toE164('47123456', 'NO'), '+4747123456')
     })
 
     it('round-trips through parsePhoneValue', () => {
