@@ -30,6 +30,10 @@
         "./validation": {
             "types": "./lib/validation/index.d.ts",
             "default": "./lib/validation/index.js"
+        },
+        "./phone": {
+            "types": "./lib/phone/index.d.ts",
+            "default": "./lib/phone/index.js"
         }
     },
     "scripts": {
@@ -62,6 +66,7 @@
         "asma-event-bus": "^0.7.27",
         "buffer": "^6.0.3",
         "idb-keyval": "^6.2.1",
+        "libphonenumber-js": "^1.13.12",
         "mobx": "^6.12.3",
         "mobx-state-tree": "^7.0.2",
         "wonka": "^6.3.4"
