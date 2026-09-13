@@ -34,22 +34,47 @@ export type IEnvironmentUrlsGenQLOnly = SRVKeys<IEnvironmentUrls>
 
 //type IKeyEnvironmentUrlsWs = `${IKeyEnvironmentUrls}_WS`
 
-const EnvConfigsFnInstanceId = uuid4()
-
 /**
  *
  *  For internal use only (inside asma-helpers)
  */
 
 export function EnvConfigsFnInternal() {
-    const EnvConfigsFn = realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__?.EnvConfigsFnReg[EnvConfigsFnInstanceId]
+    const reg = realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__?.EnvConfigsFnReg
 
-    if (!EnvConfigsFn) {
+    if (!reg || Object.keys(reg).length === 0) {
         throw new Error(
             'EnvConfigsFn is not defined! please make sure that generateEnvConfigsBindings is called before EnvConfigsFn',
         )
     }
-    return EnvConfigsFn() as {
+
+    // Several apps can share this module instance (kernel-external builds register every
+    // app's EnvConfigsFn under its own key). Merge them so every service any registered
+    // app needs stays resolvable regardless of mount order: union of all keys, first
+    // registration wins on conflict (the host app mounts first and keeps its own values).
+    const merged: Record<string, unknown> = {}
+
+    for (const key of Object.keys(reg)) {
+        const fn = reg[key]
+
+        if (!fn) {
+            continue
+        }
+
+        const config = fn()
+
+        if (!config || typeof config !== 'object') {
+            continue
+        }
+
+        for (const [configKey, value] of Object.entries(config)) {
+            if (!(configKey in merged)) {
+                merged[configKey] = value
+            }
+        }
+    }
+
+    return merged as unknown as {
         CACHE_VERSION: string
         SRV_AUTH?: string
         CDN_ASMA_BASE_URL?: string
@@ -126,7 +151,13 @@ export function generateEnvConfigsBindings<
         fetchConfigsReg: {},
     }
 
-    realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__.EnvConfigsFnReg[EnvConfigsFnInstanceId] = EnvConfigsFn
+    // Key by a per-call id (NOT a module-level id): on a shared module instance every
+    // app's generateEnvConfigsBindings() call must register its own EnvConfigsFn instead
+    // of overwriting the previous app's (last-write-wins), which made services that only
+    // one app requires (e.g. SRV_PROXY) disappear for everyone else.
+    const envConfigsFnInstanceId = uuid4()
+
+    realWindow.__GENERATE_ENV_CONFIGS_BINDINGS__.EnvConfigsFnReg[envConfigsFnInstanceId] = EnvConfigsFn
 
     return { EnvConfigsFn }
 }
