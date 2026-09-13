@@ -15,7 +15,31 @@ pnpm add asma-core-helpers
 ```typescript
 import { history, isAdcuris, getParamByName } from 'asma-core-helpers/lib'
 import { ActorTypes, ActivityStatuses } from 'asma-core-helpers'
+import { parsePhoneNr, toE164, isValidPhone } from 'asma-core-helpers/phone'
 ```
+
+### The `phone` subpath
+
+Phone numbers live behind their own entry point and are **never** re-exported from the
+root barrel. The subpath carries `libphonenumber-js` and its metadata, so exporting it
+from the barrel would put that weight into every consumer that only wanted an enum.
+
+```typescript
+import { parsePhoneNr, toE164, isValidPhone, phoneTelHref } from 'asma-core-helpers/phone'
+
+// One canonicaliser for every writer and the backfill, so runtime and migration agree.
+// The region is an explicit input, applied where a value enters the system and only
+// when the input carries no `+` — never an implicit `+47` prefix.
+const parsed = parsePhoneNr('45456565', 'NO')
+// → { ok: true, e164: '+4745456565', country: 'NO', callingCode: '47' }
+
+// A value that is not a real number under that region is reported, never rewritten
+// into something plausible.
+parsePhoneNr('12345678', 'NO') // → { ok: false, reason: 'INVALID', input: '12345678' }
+```
+
+The stored form is bare E.164 (`+4748012345`). The `tel:` scheme belongs to the render of
+a click-to-call link and is produced by `phoneTelHref`, never written to a field.
 
 ## Features
 
@@ -25,6 +49,7 @@ import { ActorTypes, ActivityStatuses } from 'asma-core-helpers'
 -   **Type definitions**: Shared TypeScript types and enums
 -   **State management**: MST (MobX State Tree) helpers
 -   **Data utilities**: Validation, formatting, and transformation helpers
+-   **Phone numbers** (`/phone`): country-aware parsing, validation and E.164 canonicalisation
 
 ## Development
 
