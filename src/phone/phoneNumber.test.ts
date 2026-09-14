@@ -65,33 +65,34 @@ describe('parsePhoneNr', () => {
 
 describe('parsePhoneValue', () => {
     it('splits a stored E.164 value into country and national number', () => {
-        assert.deepEqual(parsePhoneValue('+4748012345'), { iso2: 'NO', national: '48012345' })
-        assert.deepEqual(parsePhoneValue('+12015550123', 'NO'), { iso2: 'US', national: '2015550123' })
+        assert.deepEqual(parsePhoneValue('+4748012345'), { iso2: 'NO', country: 'NO', national: '48012345' })
+        assert.deepEqual(parsePhoneValue('+12015550123', 'NO'), { iso2: 'US', country: 'US', national: '2015550123' })
     })
 
     it('reads a pre-ASMA-7485 bare national number as the fallback country', () => {
-        // Every record written before this ticket is 8 bare digits with no country.
-        assert.deepEqual(parsePhoneValue('48012345', 'NO'), { iso2: 'NO', national: '48012345' })
-        assert.deepEqual(parsePhoneValue('48012345', 'SE'), { iso2: 'SE', national: '48012345' })
+        // Every record written before this ticket is 8 bare digits with no country. The fallback is
+        // what the field edits with; `country` says whether the numbering plan actually confirms it.
+        assert.deepEqual(parsePhoneValue('48012345', 'NO'), { iso2: 'NO', country: 'NO', national: '48012345' })
+        assert.deepEqual(parsePhoneValue('48012345', 'SE'), { iso2: 'SE', country: 'SE', national: '48012345' })
     })
 
     it('keeps the caller country while a matching number is still being typed', () => {
-        assert.deepEqual(parsePhoneValue('+47', 'NO'), { iso2: 'NO', national: '' })
-        assert.deepEqual(parsePhoneValue('+4748', 'NO'), { iso2: 'NO', national: '48' })
+        assert.deepEqual(parsePhoneValue('+47', 'NO'), { iso2: 'NO', country: 'NO', national: '' })
+        assert.deepEqual(parsePhoneValue('+4748', 'NO'), { iso2: 'NO', country: 'NO', national: '48' })
     })
 
     it('switches country when the typed prefix belongs to another one', () => {
-        assert.deepEqual(parsePhoneValue('+46701', 'NO'), { iso2: 'SE', national: '701' })
+        assert.deepEqual(parsePhoneValue('+46701', 'NO'), { iso2: 'SE', country: 'SE', national: '701' })
     })
 
     it('treats empty, whitespace and nullish values as an empty number', () => {
         for (const value of ['', '   ', null, undefined]) {
-            assert.deepEqual(parsePhoneValue(value, 'NO'), { iso2: 'NO', national: '' })
+            assert.deepEqual(parsePhoneValue(value, 'NO'), { iso2: 'NO', country: undefined, national: '' })
         }
     })
 
     it('falls back to the given country for an unknown calling code', () => {
-        assert.deepEqual(parsePhoneValue('+9991234', 'NO'), { iso2: 'NO', national: '9991234' })
+        assert.deepEqual(parsePhoneValue('+9991234', 'NO'), { iso2: 'NO', country: undefined, national: '9991234' })
     })
 })
 
@@ -136,7 +137,7 @@ describe('toE164', () => {
 
     it('round-trips through parsePhoneValue', () => {
         const parsed = parsePhoneValue(toE164('48012345', 'NO'))
-        assert.deepEqual(parsed, { iso2: 'NO', national: '48012345' })
+        assert.deepEqual(parsed, { iso2: 'NO', country: 'NO', national: '48012345' })
     })
 })
 
@@ -238,5 +239,174 @@ describe('phoneTelHref', () => {
     it('returns an empty string when there is nothing to dial', () => {
         assert.equal(phoneTelHref(''), '')
         assert.equal(phoneTelHref(null), '')
+    })
+})
+
+/**
+ * Phase 7 invariants (plan §2, TASK-030). These are the properties the production corpus is run
+ * against; the cases here are the shape classes measured on 2026-09-14, so a regression shows up
+ * in CI rather than only in a corpus run someone has to remember to do.
+ *
+ * No real number appears here (CON-008). Fixtures are the ticket's example and libphonenumber's.
+ */
+describe('REQ-007 — the two parsers agree (TEST-009)', () => {
+    const REGION: PhoneCountry = 'NO'
+
+    // One value per measured shape class, plus the shapes that only exist in the ambiguous tail.
+    const corpus = [
+        '45456565',
+        '48012345',
+        '+4745456565',
+        '4745456565',
+        '004745456565',
+        '+47 454 56 565',
+        '+46701234567',
+        '+37379094538',
+        '37376002949',
+        '0701234567',
+        '12345678',
+        '00000000',
+        '123',
+        'ana@example.com',
+        '',
+    ]
+
+    for (const value of corpus) {
+        it(`agrees on ${value === '' ? '(empty)' : value}`, () => {
+            const loose = parsePhoneValue(value, REGION)
+            const strict = parsePhoneNr(value, REGION)
+
+            if (strict.ok) {
+                assert.equal(loose.country, strict.country)
+                return
+            }
+
+            // The failure this guards: reporting the fallback as though the value named it. A
+            // therapist would see a Norwegian flag on a foreign number and "correct" it into
+            // somebody else's valid Norwegian one.
+            assert.notEqual(
+                loose.country,
+                REGION,
+                `parsePhoneValue claimed ${REGION} for a value parsePhoneNr rejects: ${value}`,
+            )
+        })
+    }
+
+    it('still offers a country to edit with even when it does not know one', () => {
+        // `iso2` and `country` answer different questions, and the field needs both.
+        const parsed = parsePhoneValue('37376002949', 'NO')
+
+        assert.equal(parsed.iso2, 'NO')
+        assert.equal(parsed.country, undefined)
+    })
+})
+
+describe('REQ-007 — idempotence (TEST-010)', () => {
+    const shapes: [string, PhoneCountry][] = [
+        ['45456565', 'NO'],
+        ['+4745456565', 'NO'],
+        ['4745456565', 'NO'],
+        ['004745456565', 'NO'],
+        ['+47 454 56 565', 'NO'],
+        ['0701234567', 'SE'],
+        ['+46701234567', 'SE'],
+        ['2015550123', 'US'],
+    ]
+
+    for (const [value, region] of shapes) {
+        it(`normalising ${value} twice changes nothing the second time`, () => {
+            const once = toE164(parsePhoneValue(value, region).national, region)
+            const twice = toE164(parsePhoneValue(once, region).national, region)
+
+            // A failure here means the Adopus sync rewrites the same row forever (RISK-001).
+            assert.equal(twice, once)
+        })
+    }
+
+    it('is idempotent through parsePhoneNr as well', () => {
+        const first = parsePhoneNr('004745456565', 'NO')
+        assert.equal(first.ok, true)
+
+        const second = parsePhoneNr(first.ok ? first.e164 : '', 'NO')
+        assert.equal(second.ok && second.e164, first.ok && first.e164)
+    })
+})
+
+describe('REQ-007 — no value gains validity (TEST-011)', () => {
+    it('does not turn a Swedish national number into a Norwegian one', () => {
+        // `0701234567` is a real Swedish mobile written nationally. Under NO it is nothing, and it
+        // must stay nothing: the plus-less branch has no way to learn the country, and guessing
+        // would silently hand the SMS to whoever owns the Norwegian number it invents.
+        assert.equal(parsePhoneNr('0701234567', 'NO').ok, false)
+        assert.equal(isValidPhone('0701234567', 'NO'), false)
+    })
+
+    it('does not resolve a plus-less Moldovan number to Norway', () => {
+        // Measured 2026-09-14: `parsePhoneNumberWithError('37376002949', 'NO')` yields
+        // `+4737376002949` with `isValid() === false` — not Moldova. The INVALID verdict is what
+        // stops that string being stored as a Norwegian number.
+        const parsed = parsePhoneNr('37376002949', 'NO')
+
+        assert.equal(parsed.ok, false)
+        assert.equal(parsed.ok === false && parsed.reason, 'INVALID')
+    })
+
+    it('keeps junk invalid rather than prefixing it', () => {
+        for (const junk of ['12345678', '00000000', '123', 'ana@example.com']) {
+            assert.equal(parsePhoneNr(junk, 'NO').ok, false, junk)
+        }
+    })
+})
+
+describe('REQ-007 — one case per measured shape class (TEST-012)', () => {
+    // The classes and their production counts, measured 2026-09-14 (plan §0.2).
+    const classes: [string, string, string | 'INVALID'][] = [
+        ['bare 8 digits · 90,190 rows', '45456565', '+4745456565'],
+        ['already E.164 +47 · 1,730 rows', '+4745456565', '+4745456565'],
+        ['47 + 8, no plus · 268 rows', '4745456565', '+4745456565'],
+        ['contains separators · 127 rows', '+47 454 56 565', '+4745456565'],
+        ['E.164, not Norway · 25 rows', '+37379094538', '+37379094538'],
+        ['1–7 digits · 16 rows', '123456', 'INVALID'],
+        ['0047 + 8 · 9 rows', '004745456565', '+4745456565'],
+        ['9+ digits, no plus · 9 rows', '37376002949', 'INVALID'],
+        ['leading zero national · 4 rows', '0745456565', 'INVALID'],
+        ['contains @ · 26 rows', 'ana@example.com', 'INVALID'],
+    ]
+
+    for (const [label, value, expected] of classes) {
+        it(label, () => {
+            const parsed = parsePhoneNr(value, 'NO')
+
+            if (expected === 'INVALID') {
+                assert.equal(parsed.ok, false, `${value} should not parse`)
+                return
+            }
+
+            assert.equal(parsed.ok && parsed.e164, expected)
+        })
+    }
+})
+
+describe('REQ-007 — the shared-plan collision is known, not solved (TEST-013)', () => {
+    it('reads the same digits as two different valid numbers depending on the region', () => {
+        // `20123456` is a valid Norwegian landline and a valid Danish mobile. Nothing in the digits
+        // distinguishes them, so the region must come from an explicit selection wherever a foreign
+        // number is possible — never from a default. This test documents the limit; it does not
+        // pretend the limit is gone.
+        const asNorwegian = parsePhoneNr('20123456', 'NO')
+        const asDanish = parsePhoneNr('20123456', 'DK')
+
+        assert.equal(asNorwegian.ok, true)
+        assert.equal(asNorwegian.ok && asNorwegian.e164, '+4720123456')
+
+        assert.equal(asDanish.ok, true)
+        assert.equal(asDanish.ok && asDanish.e164, '+4520123456')
+    })
+
+    it('is why a default region may never stand in for a user choice', () => {
+        // The same string, stored bare, is unrecoverable: both readings are valid numbers owned by
+        // different people. `parsePhoneValue` must therefore not claim a country for it.
+        assert.equal(parsePhoneValue('20123456', 'NO').country, 'NO')
+        assert.equal(parsePhoneValue('20123456', 'DK').country, 'DK')
     })
 })

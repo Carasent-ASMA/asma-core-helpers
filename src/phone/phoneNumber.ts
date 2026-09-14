@@ -21,7 +21,21 @@ export const PHONE_MIN_DIGITS = 4
 export const PHONE_MAX_DIGITS = 15
 
 export interface ParsedPhone {
+    /**
+     * The country to *edit* with. Always set, because a field needs a selection even for a value
+     * that carries no country of its own — in that case this is `fallbackIso2`.
+     */
     iso2: PhoneCountry
+    /**
+     * The country the value actually *resolves to*, or `undefined` when nothing in the value
+     * says. Mirrors `parsePhoneNr(...).country`, and the two must agree: REQ-007.
+     *
+     * Read this, not `iso2`, before showing a user what country their stored number belongs to.
+     * `iso2` answers "which selection do I put in the picker"; `country` answers "do I actually
+     * know". Conflating them is what would let a therapist see a Norwegian flag on a foreign
+     * number and "correct" it into somebody else's valid Norwegian one.
+     */
+    country: PhoneCountry | undefined
     /** National significant number, digits only — no dial code, no separators. */
     national: string
 }
@@ -63,6 +77,12 @@ export function parsePhoneNr(input: string | null | undefined, defaultRegion: Ph
 /**
  * Split a stored value into the country and the national number the field edits.
  *
+ * `country` is what the **value** says, and `undefined` when it says nothing recognisable. A
+ * leading `+` is evidence: `'+4748'` resolves to `NO` while still being typed, because the dial
+ * code names the country even though the number is incomplete. A value with no `+` carries no
+ * such evidence, so the fallback is reported as the country only when the numbering plan confirms
+ * it — otherwise `country` is `undefined` and `iso2` is merely the selection to edit with.
+ *
  * Three shapes reach this function:
  *   - E.164 (`'+4748012345'`) — the format this ticket introduces;
  *   - a bare national number (`'48012345'`) — every record written before it, which
@@ -75,15 +95,23 @@ export function parsePhoneValue(
     fallbackIso2: PhoneCountry = DEFAULT_PHONE_COUNTRY,
 ): ParsedPhone {
     const trimmed = (value ?? '').trim()
-    if (trimmed.length === 0) return { iso2: fallbackIso2, national: '' }
+    if (trimmed.length === 0) return { iso2: fallbackIso2, country: undefined, national: '' }
 
     if (!trimmed.startsWith('+')) {
-        return { iso2: fallbackIso2, national: digitsOnly(trimmed) }
+        // No `+`, so the value itself names no country. The fallback is only *confirmed* when the
+        // digits are a real number under it; otherwise the country stays unknown and the caller
+        // must not present the fallback as fact. `libphonenumber-js` cannot recover a foreign
+        // calling code from a plus-less string — `'37376002949'` under `NO` yields `+4737376002949`
+        // with `isValid() === false`, not Moldova — so guessing here is always a guess.
+        const national = digitsOnly(trimmed)
+        const confirmed = isValidPhone(national, fallbackIso2)
+
+        return { iso2: fallbackIso2, country: confirmed ? fallbackIso2 : undefined, national }
     }
 
     const parsed = parsePhoneNumberFromString(trimmed)
     if (parsed?.country !== undefined) {
-        return { iso2: parsed.country, national: parsed.nationalNumber }
+        return { iso2: parsed.country, country: parsed.country, national: parsed.nationalNumber }
     }
 
     const digits = digitsOnly(trimmed)
@@ -93,13 +121,13 @@ export function parsePhoneValue(
     // to another country sharing the prefix.
     const fallbackDialCode = getPhoneDialCode(fallbackIso2)
     if (digits.startsWith(fallbackDialCode)) {
-        return { iso2: fallbackIso2, national: digits.slice(fallbackDialCode.length) }
+        return { iso2: fallbackIso2, country: fallbackIso2, national: digits.slice(fallbackDialCode.length) }
     }
 
     const iso2 = findCountryByDialCode(digits)
-    if (iso2 === undefined) return { iso2: fallbackIso2, national: digits }
+    if (iso2 === undefined) return { iso2: fallbackIso2, country: undefined, national: digits }
 
-    return { iso2, national: digits.slice(getPhoneDialCode(iso2).length) }
+    return { iso2, country: iso2, national: digits.slice(getPhoneDialCode(iso2).length) }
 }
 
 /**
