@@ -266,12 +266,25 @@ describe('phoneTelHref', () => {
         assert.equal(phoneTelHref(null), '')
     })
 
-    it('offers no link for a value that is not a real number', () => {
-        // `tel:+470701234567` was offered here — a number nobody owns, which a phone dials silently.
-        assert.equal(phoneTelHref('0701234567', 'NO'), '')
-        assert.equal(phoneTelHref('37376002949', 'NO'), '')
-        assert.equal(phoneTelHref('12345678', 'NO'), '')
+    it('still dials a value it cannot resolve, using the digits as stored', () => {
+        // These stay reachable on purpose — a therapist has to be able to ring them — but the link
+        // carries what the column holds, not a country composed for it. `tel:+470701234567` was
+        // offered here: a Swedish mobile with a Norwegian code welded on, a different subscriber.
+        assert.equal(phoneTelHref('0701234567', 'NO'), 'tel:0701234567')
+        assert.equal(phoneTelHref('37376002949', 'NO'), 'tel:37376002949')
+        assert.equal(phoneTelHref('12345678', 'NO'), 'tel:12345678')
+    })
+
+    it('keeps a stored `+` and never invents one', () => {
+        // Invalid under NO, but the value names its own code, so the link repeats it verbatim.
+        assert.equal(phoneTelHref('+4712345678', 'NO'), 'tel:+4712345678')
+        assert.equal(phoneTelHref('47 01 23 45 67', 'NO'), 'tel:4701234567')
+    })
+
+    it('offers no link when the value holds no number at all', () => {
         assert.equal(phoneTelHref('ana@example.com', 'NO'), '')
+        assert.equal(phoneTelHref('ukjent', 'NO'), '')
+        assert.equal(phoneTelHref('123', 'NO'), '')
     })
 
     it('still dials a legacy bare number that is valid for the fallback country', () => {

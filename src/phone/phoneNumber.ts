@@ -228,17 +228,30 @@ export function formatPhoneForDisplay(
 
 /**
  * `tel:` URI for a click-to-call link — the single place the scheme is added (ASMA-7485).
- * Returns `''` when there is nothing dialable, so callers can skip rendering the link.
+ * Returns `''` only when the value holds no number at all, so callers can skip the link.
  *
- * "Nothing dialable" includes a value that is not valid for its country, not only an empty one:
- * `'0701234567'` under `NO` composed `tel:+470701234567`, a number nobody owns. A dead link is
- * worse than no link — it invites a call that cannot connect, and on a phone it silently dials.
+ * A number we can confirm is dialled in its canonical E.164 form. Anything else is still
+ * dialable — a therapist has to be able to ring the 13 production rows whose country is not
+ * derivable — but it is linked **exactly as stored**, so the dialer opens pre-filled with the
+ * digits a human would have read off the field and typed.
+ *
+ * What it must never link is a number we composed. `'0701234567'` under `NO` used to yield
+ * `tel:+470701234567`: a Swedish mobile with a Norwegian code welded on, which is a different
+ * subscriber, reads as authoritative, and on a phone dials without asking. `tel:0701234567` is
+ * the honest version of the same link — it may not connect from a Norwegian handset either, but
+ * it hands the therapist the real digits to complete rather than a confident wrong number.
  */
 export function phoneTelHref(
     value: string | null | undefined,
     fallbackIso2: PhoneCountry = DEFAULT_PHONE_COUNTRY,
 ): string {
     const { iso2, national } = parsePhoneValue(value, fallbackIso2)
+    if (isValidPhone(national, iso2)) return `tel:${toE164(national, iso2)}`
 
-    return isValidPhone(national, iso2) ? `tel:${toE164(national, iso2)}` : ''
+    const trimmed = (value ?? '').trim()
+    const digits = digitsOnly(trimmed)
+    if (digits.length < PHONE_MIN_DIGITS) return ''
+
+    // The leading `+` is kept when the stored value carried one, and never added when it did not.
+    return `tel:${trimmed.startsWith('+') ? '+' : ''}${digits}`
 }
