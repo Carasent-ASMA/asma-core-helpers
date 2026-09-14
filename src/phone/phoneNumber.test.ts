@@ -179,6 +179,16 @@ describe('isValidPhone', () => {
         assert.equal(isValidPhone('00000000', 'NO'), false)
     })
 
+    it('accepts a short number where the plan is genuinely short', () => {
+        // The same rule in the accepting direction, which the case above does not cover: six digits
+        // is not a number in Norway and is one in the Faroes and Greenland — both reachable from
+        // the picker, and both plausible for a Nordic customer. Raising PHONE_MIN_DIGITS to the
+        // Norwegian length would read as a tidy-up and would silently lock those subscribers out.
+        assert.equal(isValidPhone('211234', 'FO'), true)
+        assert.equal(isValidPhone('221234', 'GL'), true)
+        assert.equal(isValidPhone('123456', 'NO'), false)
+    })
+
     it('rejects numbers outside the E.164 length bounds', () => {
         assert.equal(isValidPhone('123', 'NO'), false)
         assert.equal(isValidPhone('1234567890123456', 'NO'), false)
