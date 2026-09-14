@@ -41,6 +41,15 @@ parsePhoneNr('12345678', 'NO') // → { ok: false, reason: 'INVALID', input: '12
 The stored form is bare E.164 (`+4748012345`). The `tel:` scheme belongs to the render of
 a click-to-call link and is produced by `phoneTelHref`, never written to a field.
 
+The read-only helpers refuse the same values the parser does, so nothing is invented at the
+last moment either. `'0701234567'` is a Swedish mobile written nationally, and under `NO` it
+is not a number:
+
+```typescript
+formatPhoneForDisplay('0701234567', 'NO') // → '0701234567', shown as stored, not '+47 0701234567'
+phoneTelHref('0701234567', 'NO') // → '', so the caller renders text instead of a dead link
+```
+
 ## Features
 
 -   **Environment utilities**: Environment detection, URL helpers, domain utilities

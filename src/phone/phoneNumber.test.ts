@@ -224,6 +224,21 @@ describe('formatPhoneForDisplay', () => {
         assert.equal(formatPhoneForDisplay(''), '')
         assert.equal(formatPhoneForDisplay(null), '')
     })
+
+    it('shows a value it cannot resolve exactly as stored, inventing no country', () => {
+        // The 13 rows measured 2026-09-14 whose country is not derivable, plus the junk classes.
+        // `'+47 0701234567'` is what this used to render for the first of them: the fallback region
+        // presented as fact, on digits that are not Norwegian (invariant 7).
+        assert.equal(formatPhoneForDisplay('0701234567', 'NO'), '0701234567')
+        assert.equal(formatPhoneForDisplay('37376002949', 'NO'), '37376002949')
+        assert.equal(formatPhoneForDisplay('12345678', 'NO'), '12345678')
+        assert.equal(formatPhoneForDisplay('ana@example.com', 'NO'), 'ana@example.com')
+    })
+
+    it('resolves the same digits once the country is known', () => {
+        // The same number, stored after a therapist picked Sweden. Nothing was guessed here.
+        assert.equal(formatPhoneForDisplay('+46701234567'), '+46 70 123 45 67')
+    })
 })
 
 describe('phoneTelHref', () => {
@@ -239,6 +254,18 @@ describe('phoneTelHref', () => {
     it('returns an empty string when there is nothing to dial', () => {
         assert.equal(phoneTelHref(''), '')
         assert.equal(phoneTelHref(null), '')
+    })
+
+    it('offers no link for a value that is not a real number', () => {
+        // `tel:+470701234567` was offered here — a number nobody owns, which a phone dials silently.
+        assert.equal(phoneTelHref('0701234567', 'NO'), '')
+        assert.equal(phoneTelHref('37376002949', 'NO'), '')
+        assert.equal(phoneTelHref('12345678', 'NO'), '')
+        assert.equal(phoneTelHref('ana@example.com', 'NO'), '')
+    })
+
+    it('still dials a legacy bare number that is valid for the fallback country', () => {
+        assert.equal(phoneTelHref('48012345', 'NO'), 'tel:+4748012345')
     })
 })
 

@@ -201,7 +201,17 @@ export function isValidPhoneValue(
 
 /**
  * Human-readable international form for read-only views, e.g. `'+47 48 01 23 45'`.
- * Falls back to the raw value so an unparseable legacy record still renders.
+ * Falls back to the stored value, byte for byte, for anything that is not a real number.
+ *
+ * The fallback covers the 13 production rows whose country cannot be derived — a plus-less
+ * `'0701234567'` is a Swedish mobile written nationally, and under the `NO` fallback it is not a
+ * number at all. Formatting it anyway produced `'+47 0701234567'`: a country the value never named,
+ * attached to digits that are not Norwegian. That is invariant 7 ("junk is refused, not
+ * transformed — none of them acquires a `+47` prefix") broken in the render rather than in the
+ * column, and it reads to a therapist as a number the system understood.
+ *
+ * Validity, not parseability, is the test. `parsePhoneNumberFromString` returns an object for
+ * `'+470701234567'` too, so the old `?? trimmed` fallback could never fire.
  */
 export function formatPhoneForDisplay(
     value: string | null | undefined,
@@ -213,19 +223,22 @@ export function formatPhoneForDisplay(
     const { iso2, national } = parsePhoneValue(trimmed, fallbackIso2)
     const parsed = parsePhoneNumberFromString(toE164(national, iso2))
 
-    return parsed?.formatInternational() ?? trimmed
+    return parsed?.isValid() === true ? parsed.formatInternational() : trimmed
 }
 
 /**
  * `tel:` URI for a click-to-call link — the single place the scheme is added (ASMA-7485).
- * Returns `''` when there is nothing to dial, so callers can skip rendering the link.
+ * Returns `''` when there is nothing dialable, so callers can skip rendering the link.
+ *
+ * "Nothing dialable" includes a value that is not valid for its country, not only an empty one:
+ * `'0701234567'` under `NO` composed `tel:+470701234567`, a number nobody owns. A dead link is
+ * worse than no link — it invites a call that cannot connect, and on a phone it silently dials.
  */
 export function phoneTelHref(
     value: string | null | undefined,
     fallbackIso2: PhoneCountry = DEFAULT_PHONE_COUNTRY,
 ): string {
     const { iso2, national } = parsePhoneValue(value, fallbackIso2)
-    const e164 = toE164(national, iso2)
 
-    return e164.length === 0 ? '' : `tel:${e164}`
+    return isValidPhone(national, iso2) ? `tel:${toE164(national, iso2)}` : ''
 }
