@@ -21,7 +21,21 @@ export const PHONE_MIN_DIGITS = 4
 export const PHONE_MAX_DIGITS = 15
 
 export interface ParsedPhone {
+    /**
+     * The country to *edit* with. Always set, because a field needs a selection even for a value
+     * that carries no country of its own — in that case this is `fallbackIso2`.
+     */
     iso2: PhoneCountry
+    /**
+     * The country the value actually *resolves to*, or `undefined` when nothing in the value
+     * says. Mirrors `parsePhoneNr(...).country`, and the two must agree: REQ-007.
+     *
+     * Read this, not `iso2`, before showing a user what country their stored number belongs to.
+     * `iso2` answers "which selection do I put in the picker"; `country` answers "do I actually
+     * know". Conflating them is what would let a therapist see a Norwegian flag on a foreign
+     * number and "correct" it into somebody else's valid Norwegian one.
+     */
+    country: PhoneCountry | undefined
     /** National significant number, digits only — no dial code, no separators. */
     national: string
 }
@@ -63,6 +77,12 @@ export function parsePhoneNr(input: string | null | undefined, defaultRegion: Ph
 /**
  * Split a stored value into the country and the national number the field edits.
  *
+ * `country` is what the **value** says, and `undefined` when it says nothing recognisable. A
+ * leading `+` is evidence: `'+4748'` resolves to `NO` while still being typed, because the dial
+ * code names the country even though the number is incomplete. A value with no `+` carries no
+ * such evidence, so the fallback is reported as the country only when the numbering plan confirms
+ * it — otherwise `country` is `undefined` and `iso2` is merely the selection to edit with.
+ *
  * Three shapes reach this function:
  *   - E.164 (`'+4748012345'`) — the format this ticket introduces;
  *   - a bare national number (`'48012345'`) — every record written before it, which
@@ -75,15 +95,23 @@ export function parsePhoneValue(
     fallbackIso2: PhoneCountry = DEFAULT_PHONE_COUNTRY,
 ): ParsedPhone {
     const trimmed = (value ?? '').trim()
-    if (trimmed.length === 0) return { iso2: fallbackIso2, national: '' }
+    if (trimmed.length === 0) return { iso2: fallbackIso2, country: undefined, national: '' }
 
     if (!trimmed.startsWith('+')) {
-        return { iso2: fallbackIso2, national: digitsOnly(trimmed) }
+        // No `+`, so the value itself names no country. The fallback is only *confirmed* when the
+        // digits are a real number under it; otherwise the country stays unknown and the caller
+        // must not present the fallback as fact. `libphonenumber-js` cannot recover a foreign
+        // calling code from a plus-less string — `'37376002949'` under `NO` yields `+4737376002949`
+        // with `isValid() === false`, not Moldova — so guessing here is always a guess.
+        const national = digitsOnly(trimmed)
+        const confirmed = isValidPhone(national, fallbackIso2)
+
+        return { iso2: fallbackIso2, country: confirmed ? fallbackIso2 : undefined, national }
     }
 
     const parsed = parsePhoneNumberFromString(trimmed)
     if (parsed?.country !== undefined) {
-        return { iso2: parsed.country, national: parsed.nationalNumber }
+        return { iso2: parsed.country, country: parsed.country, national: parsed.nationalNumber }
     }
 
     const digits = digitsOnly(trimmed)
@@ -93,13 +121,13 @@ export function parsePhoneValue(
     // to another country sharing the prefix.
     const fallbackDialCode = getPhoneDialCode(fallbackIso2)
     if (digits.startsWith(fallbackDialCode)) {
-        return { iso2: fallbackIso2, national: digits.slice(fallbackDialCode.length) }
+        return { iso2: fallbackIso2, country: fallbackIso2, national: digits.slice(fallbackDialCode.length) }
     }
 
     const iso2 = findCountryByDialCode(digits)
-    if (iso2 === undefined) return { iso2: fallbackIso2, national: digits }
+    if (iso2 === undefined) return { iso2: fallbackIso2, country: undefined, national: digits }
 
-    return { iso2, national: digits.slice(getPhoneDialCode(iso2).length) }
+    return { iso2, country: iso2, national: digits.slice(getPhoneDialCode(iso2).length) }
 }
 
 /**
@@ -173,7 +201,17 @@ export function isValidPhoneValue(
 
 /**
  * Human-readable international form for read-only views, e.g. `'+47 48 01 23 45'`.
- * Falls back to the raw value so an unparseable legacy record still renders.
+ * Falls back to the stored value, byte for byte, for anything that is not a real number.
+ *
+ * The fallback covers the 13 production rows whose country cannot be derived — a plus-less
+ * `'0701234567'` is a Swedish mobile written nationally, and under the `NO` fallback it is not a
+ * number at all. Formatting it anyway produced `'+47 0701234567'`: a country the value never named,
+ * attached to digits that are not Norwegian. That is invariant 7 ("junk is refused, not
+ * transformed — none of them acquires a `+47` prefix") broken in the render rather than in the
+ * column, and it reads to a therapist as a number the system understood.
+ *
+ * Validity, not parseability, is the test. `parsePhoneNumberFromString` returns an object for
+ * `'+470701234567'` too, so the old `?? trimmed` fallback could never fire.
  */
 export function formatPhoneForDisplay(
     value: string | null | undefined,
@@ -185,19 +223,35 @@ export function formatPhoneForDisplay(
     const { iso2, national } = parsePhoneValue(trimmed, fallbackIso2)
     const parsed = parsePhoneNumberFromString(toE164(national, iso2))
 
-    return parsed?.formatInternational() ?? trimmed
+    return parsed?.isValid() === true ? parsed.formatInternational() : trimmed
 }
 
 /**
  * `tel:` URI for a click-to-call link — the single place the scheme is added (ASMA-7485).
- * Returns `''` when there is nothing to dial, so callers can skip rendering the link.
+ * Returns `''` only when the value holds no number at all, so callers can skip the link.
+ *
+ * A number we can confirm is dialled in its canonical E.164 form. Anything else is still
+ * dialable — a therapist has to be able to ring the 13 production rows whose country is not
+ * derivable — but it is linked **exactly as stored**, so the dialer opens pre-filled with the
+ * digits a human would have read off the field and typed.
+ *
+ * What it must never link is a number we composed. `'0701234567'` under `NO` used to yield
+ * `tel:+470701234567`: a Swedish mobile with a Norwegian code welded on, which is a different
+ * subscriber, reads as authoritative, and on a phone dials without asking. `tel:0701234567` is
+ * the honest version of the same link — it may not connect from a Norwegian handset either, but
+ * it hands the therapist the real digits to complete rather than a confident wrong number.
  */
 export function phoneTelHref(
     value: string | null | undefined,
     fallbackIso2: PhoneCountry = DEFAULT_PHONE_COUNTRY,
 ): string {
     const { iso2, national } = parsePhoneValue(value, fallbackIso2)
-    const e164 = toE164(national, iso2)
+    if (isValidPhone(national, iso2)) return `tel:${toE164(national, iso2)}`
 
-    return e164.length === 0 ? '' : `tel:${e164}`
+    const trimmed = (value ?? '').trim()
+    const digits = digitsOnly(trimmed)
+    if (digits.length < PHONE_MIN_DIGITS) return ''
+
+    // The leading `+` is kept when the stored value carried one, and never added when it did not.
+    return `tel:${trimmed.startsWith('+') ? '+' : ''}${digits}`
 }
