@@ -1,4 +1,4 @@
-import type { ITherapistOrSuperUserJwtClaims } from 'asma-types'
+import type { AdvocaTabBarMetadata, ITherapistOrSuperUserJwtClaims } from 'asma-types'
 type IOpenreplay = {
     enable: boolean
     block: boolean
@@ -98,4 +98,11 @@ export type ICheckSigninOptions<IFeaturesArr extends string> = Pick<
     }
     of_max_connections?: number
     of_connections_per_user?: number
+    /**
+     * Ad Voca mobile TabBar configuration (ASMA-8221 / TB-16a). Optional on purpose: a missing
+     * `tabbar` means a legacy/incompatible producer and the consumer keeps legacy navigation.
+     * A compatible producer always sends it — `destinationIds: null` is "no customer config"
+     * (computed promotion), `[]` is an explicit Home+Menu-only choice.
+     */
+    tabbar?: AdvocaTabBarMetadata
 }
