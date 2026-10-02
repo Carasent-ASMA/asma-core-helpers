@@ -175,8 +175,20 @@ const assertClosedPayload = (op: object, allowed: readonly string[]): void => {
     }
 }
 
-/** Canonical loci are document-absolute; the reducer writes into `meta` itself. */
-const metaRelativePath = (documentPath: string): string => documentPath.slice('meta.'.length)
+/**
+ * Canonical loci are document-absolute; the reducer writes into `meta` itself.
+ *
+ * The guard is not ceremony. A bare `slice(5)` turns a meta-RELATIVE path into silent nonsense
+ * (`settings.refresh_button` becomes `ngs.refresh_button`), which then writes to a path no reader
+ * looks at and clears no alias — a mutation seeded during review survived the suite for exactly this
+ * reason. Failing loudly makes a mis-anchored path a refusal instead of a quiet no-op.
+ */
+const metaRelativePath = (documentPath: string): string => {
+    if (!documentPath.startsWith('meta.')) {
+        throw new OperationConflictError(`"${documentPath}" is not a document-absolute metadata path`)
+    }
+    return documentPath.slice('meta.'.length)
+}
 
 /**
  * Refuses a typed write whose owned ancestor holds something that is not a container.

@@ -542,6 +542,12 @@ const resolveField = <T>(
 
     // The OR strategy folds canonical and aliases together: any spelling asserting `true` wins, and a
     // disagreement is reported rather than resolved by key order.
+    //
+    // `combine` is supplied by the caller rather than carried on the rule, because a combiner on the
+    // rule would have to be typed over every field's value type at once. Every `or` rule in the table
+    // is a boolean settings leaf, which is what makes one `||` combiner sufficient — and that
+    // invariant is asserted in the suite rather than left as a comment, so a future `or` rule on a
+    // non-boolean field is a red test and not a silent fall-through to canonical-first.
     if (rule?.strategy === 'or' && combine !== undefined) {
         const contributors = [
             ...(canonicalValue === undefined ? [] : [{ path: canonicalPath, value: canonicalValue }]),
@@ -833,9 +839,14 @@ export const templateAuthoringIntentsOf = (op: TemplateOp): readonly TemplateAut
     }
 }
 
-/** Every canonical locus known to this surface — the set an open patch key is matched against. */
+/**
+ * Every canonical locus known to this surface — the set an open patch key is matched against.
+ *
+ * Collection loci rather than member loci, deliberately: a collection locus is an ancestor of each of
+ * its `[...]` members, so one entry covers "this patch replaces the whole set" and "this patch touches
+ * member X" at once, which is what makes a whole-set write overlap a concurrent membership edit.
+ */
 const CANONICAL_LOCI: readonly string[] = [
-    'meta',
     ...TEMPLATE_META_FIELDS.map(metaFieldPath),
     ...TEMPLATE_SETTING_FIELDS.map(settingFieldPath),
     ...COMPATIBILITY_COLLECTIONS.map(compatibilityCollectionPath),
@@ -847,13 +858,13 @@ const openPatchIntents = (
 ): readonly TemplateAuthoringIntent[] => {
     const loci = new Set<string>()
     for (const key of Object.keys(patch)) {
+        // An empty key is the reducer's documented no-op (`writeField` returns the record unchanged),
+        // so it is mapped to the patch root and reaches nothing rather than claiming the whole bag.
         const written = key === '' ? root : `${root}.${key}`
         for (const locus of CANONICAL_LOCI) {
-            if (locus !== 'meta' && templateLociOverlap(written, locus)) loci.add(locus)
+            if (templateLociOverlap(written, locus)) loci.add(locus)
         }
         for (const canonicalPath of templateCanonicalPathsForAlias(written)) loci.add(canonicalPath)
-        // An ancestor write that takes a whole set with it overlaps every member, which the
-        // collection locus already expresses: it is an ancestor of each `[...]` member locus.
     }
     return [...loci].map((locus): TemplateAuthoringIntent => ({ locus, kind: 'opaque' }))
 }

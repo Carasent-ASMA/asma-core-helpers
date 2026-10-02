@@ -16,6 +16,7 @@ import {
 import {
     classifyTemplateAuthoringOverlap,
     compatibilityIdPath,
+    TEMPLATE_AUTHORING_ALIASES,
     COMPATIBILITY_COLLECTIONS,
     isTemplateAuthoringDefault,
     readTemplateAuthoringLocus,
@@ -1006,6 +1007,32 @@ describe('the registry is complete and internally consistent', () => {
             TEMPLATE_SETTING_FIELDS.filter((field) => TEMPLATE_SETTING_DEFAULTS[field]),
             ['rendering.refresh_button'],
         )
+    })
+
+    it('uses the conservative OR only on boolean settings leaves', () => {
+        // The reader supplies one `||` combiner, which is sound only while every `or` rule names a
+        // boolean leaf. Without this assertion a future `or` rule on an enum would fall through to
+        // canonical-first in silence — the alias would simply stop being honoured.
+        const orRules = [...TEMPLATE_AUTHORING_ALIASES.entries()].filter(([, rule]) => rule.strategy === 'or')
+        assert.deepEqual(
+            orRules.map(([canonicalPath]) => canonicalPath),
+            ['meta.settings.journal.auto_import', 'meta.settings.journal.requires_activity_id'],
+        )
+        for (const [canonicalPath] of orRules) {
+            assert.ok(
+                TEMPLATE_SETTING_FIELDS.some((field) => settingFieldPath(field) === canonicalPath),
+                `${canonicalPath} uses OR but is not a boolean settings leaf`,
+            )
+        }
+    })
+
+    it('anchors every alias path at the document root', () => {
+        // The reducer slices the `meta.` prefix off these paths to write them; a meta-relative entry
+        // would therefore clear a path no reader looks at, leaving the old value to be read back.
+        for (const [canonicalPath, rule] of TEMPLATE_AUTHORING_ALIASES) {
+            assert.ok(canonicalPath.startsWith('meta.'), canonicalPath)
+            for (const aliasPath of rule.aliasPaths) assert.ok(aliasPath.startsWith('meta.'), aliasPath)
+        }
     })
 
     it('resolves and stores every settings leaf through the schema', () => {
