@@ -1,4 +1,10 @@
 import type { TemplateOp } from '../operations.js'
+import {
+    COMPATIBILITY_COLLECTIONS,
+    TEMPLATE_SETTING_FIELDS,
+    type MetaField,
+    type MetaFieldValue,
+} from '../templateAuthoringMeta.js'
 import { makeExpressionTargetToken } from '../templateDocument.js'
 import { mulberry32, pick } from './seededRandom.js'
 
@@ -166,6 +172,7 @@ export const generateOpSequence = (
 
 const nextOp = (random: () => number, pools: IdPools): TemplateOp => {
     if (maybe(random, 0.22)) return nextAddedContractOp(random, pools)
+    if (maybe(random, 0.1)) return nextMetadataOp(random)
     const roll = random()
 
     if (roll < 0.1) {
@@ -249,6 +256,59 @@ const nextOp = (random: () => number, pools: IdPools): TemplateOp => {
         fieldId: 'Navn',
         target: { kind: 'question', questionId: idOrNew(random, pools.questions, NEW_QUESTION_ID) },
     }
+}
+
+/**
+ * ASMA-8339's four typed metadata/settings ops, in their own mix so every seeded run exercises them.
+ *
+ * Only SUCCESS paths are generated, and deliberately so: the closure of these arms lives in the type
+ * and the wire schema, so from a schema-valid payload against a schema-valid document there is no
+ * reachable reducer refusal — which is the property, not a coverage gap. The refusals (unknown field,
+ * wrong value type, extra payload member, malformed owned container, malformed soft-id set) are each
+ * covered by name in `templateAuthoringMeta.test.ts`, where an invalid payload can be constructed on
+ * purpose.
+ *
+ * The value mix includes each field's own default, so the runs cover the omit-and-prune path as well
+ * as the store path, and the membership ops reuse a small id pool so add/remove of one id and of
+ * different ids both occur.
+ */
+const METADATA_VALUES: { readonly [F in MetaField]: readonly MetaFieldValue[] } = {
+    title: ['Innkomst', ''],
+    description: ['Beskrivelse', ''],
+    visibility: ['hidden', 'visible'],
+    'instancePolicy.requiredAccessLevel': [1, 2, 3, 4],
+    'instancePolicy.invitationRequired': [true, false],
+    'instancePolicy.initiator': ['recipient', 'coordinator'],
+    'instancePolicy.template_update_mode': ['always', 'ask', 'never'],
+}
+
+const METADATA_FIELDS = Object.keys(METADATA_VALUES) as readonly MetaField[]
+const SOFT_IDS = ['c-1', 'c-2', '42'] as const
+
+const nextMetadataOp = (random: () => number): TemplateOp => {
+    const choice = Math.floor(random() * 4)
+    if (choice === 0) {
+        const field = pick(random, METADATA_FIELDS)
+        const values = METADATA_VALUES[field]
+        // `null` is the explicit unset, which must be reachable alongside the spelled-out default.
+        const value = maybe(random, 0.2) ? null : pick(random, values)
+        // The cast is unavoidable here and only here: the op arms correlate `value` with a LITERAL
+        // `field`, and the generator picks the field at runtime, so the compiler cannot pair them. The
+        // table above is what keeps the pairing correct, and `satisfies` on its type pins its keys.
+        return { type: 'template.setMetaFieldTyped', field, value } as TemplateOp
+    }
+    if (choice === 1) {
+        return {
+            type: 'template.setSettingTyped',
+            field: pick(random, TEMPLATE_SETTING_FIELDS),
+            value: maybe(random, 0.2) ? null : maybe(random, 0.5),
+        }
+    }
+    const collection = pick(random, COMPATIBILITY_COLLECTIONS)
+    const id = pick(random, SOFT_IDS)
+    return choice === 2
+        ? { type: 'template.addCompatibilityId', collection, id }
+        : { type: 'template.removeCompatibilityId', collection, id }
 }
 
 /** Operations added by ASMA-7676, kept in a dedicated mix so every seeded run exercises them. */

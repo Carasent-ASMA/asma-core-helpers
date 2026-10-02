@@ -8,9 +8,11 @@ import { findDocLawViolations } from './docLaws.js'
 import {
     findDuplicateBindingTargets,
     findQuestionOwnershipViolations,
+    templateAuthoringIsDefault,
     templateDocumentIsDefault,
     validateTemplateDocument,
 } from './schemas.js'
+import { resolveTemplateAuthoringMeta } from './templateAuthoringMeta.js'
 import { emptyTemplateDocument } from './templateDocument.js'
 import { generateOpSequence, DOCUMENT_ID } from './testHelpers/documentGenerator.js'
 import { mulberry32, shuffleKeys } from './testHelpers/seededRandom.js'
@@ -138,7 +140,12 @@ describe('the combined repair operations are reached by the property run', () =>
 
         // More seeds than the invariant suite uses: each op needs its own preconditions to line up
         // (a radar Chart, a flagged target, an existing legend), which no single short run reaches.
-        for (const seed of [4, 7, 13, 99, 101, 202, 303, 404]) {
+        //
+        // Seeds 8 and 23 joined the list when ASMA-8339 added a metadata branch to the generator: a new
+        // branch shifts every seeded stream, and `alternative.setChartLegend` lost the one run where its
+        // three preconditions happened to coincide. Widening the seed list is the honest repair —
+        // weakening the assertion to "generated" would leave a broken reducer looking fine.
+        for (const seed of [4, 7, 8, 13, 23, 99, 101, 202, 303, 404]) {
             const { generated } = runSequence(seed, 400)
             generated.ops.forEach((op, index) => {
                 if (!(NEW_OP_TYPES as readonly string[]).includes(op.type)) return
@@ -157,6 +164,54 @@ describe('the combined repair operations are reached by the property run', () =>
             [],
             `never refused: ${JSON.stringify([...refused])}`,
         )
+    })
+})
+
+/**
+ * ASMA-8339's four typed metadata/settings arms must be *exercised* by the seeded runs, not merely
+ * listed in the generator.
+ *
+ * Acceptance only, deliberately: from a schema-valid payload against a schema-valid document these
+ * arms have no reachable reducer refusal, because their closure lives in the correlated types and the
+ * wire schema. Asserting a refusal here would therefore need a deliberately invalid op, which belongs
+ * in `templateAuthoringMeta.test.ts` — and would quietly break the generator's own rule that every
+ * generated op is schema-valid.
+ */
+describe('the metadata/settings operations are reached by the property run', () => {
+    const METADATA_OP_TYPES = [
+        'template.setMetaFieldTyped',
+        'template.setSettingTyped',
+        'template.addCompatibilityId',
+        'template.removeCompatibilityId',
+    ] as const
+
+    it('applies each metadata operation successfully across the seeded runs', () => {
+        const accepted = new Map<string, number>()
+
+        for (const seed of [4, 7, 13, 99]) {
+            const { generated } = runSequence(seed, 400)
+            generated.ops.forEach((op, index) => {
+                if (!(METADATA_OP_TYPES as readonly string[]).includes(op.type)) return
+                if (generated.outcomes[index] === true) accepted.set(op.type, (accepted.get(op.type) ?? 0) + 1)
+            })
+        }
+
+        assert.deepEqual(
+            METADATA_OP_TYPES.filter((type) => (accepted.get(type) ?? 0) === 0),
+            [],
+            `never applied successfully: ${JSON.stringify([...accepted])}`,
+        )
+    })
+
+    it('leaves the metadata the runs produced law-clean and readable', () => {
+        for (const seed of [4, 7, 13, 99]) {
+            const { doc } = runSequence(seed, 400)
+            const reduced = reduceToMinimalForm(doc, { isDefault: templateAuthoringIsDefault })
+            assert.deepEqual(findDocLawViolations(reduced), [], `seed ${seed}`)
+            // The total reader must stay total and silent over anything the typed arms can produce:
+            // a finding here would mean the reducer stored something its own reader calls malformed.
+            assert.deepEqual(resolveTemplateAuthoringMeta(doc.meta).findings, [], `seed ${seed}`)
+        }
     })
 })
 

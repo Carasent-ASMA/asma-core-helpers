@@ -40,13 +40,29 @@ export type DocScalar = string | number | boolean
 export type RequiredAccessLevel = 1 | 2 | 3 | 4
 
 /** Who the questionnaire is initiated by (OQ-V2-15 wire vocabulary). */
-export type Initiator = 'coordinator' | 'recipient'
+export const INITIATORS = ['coordinator', 'recipient'] as const
+export type Initiator = (typeof INITIATORS)[number]
 
 /**
  * What happens to in-flight instances when the family publishes a new version
  * (OQ-V2-16, IMM-I5). v1 implements `never`; `always`/`ask` land later.
  */
-export type TemplateUpdateMode = 'never' | 'always' | 'ask'
+export const TEMPLATE_UPDATE_MODES = ['never', 'always', 'ask'] as const
+export type TemplateUpdateMode = (typeof TEMPLATE_UPDATE_MODES)[number]
+
+/**
+ * Whether the family is offered in the pickers that list templates (M-011).
+ *
+ * The legacy `templates.hide` axis and nothing else. Deliberately NOT a dynamic visibility rule, a
+ * Directory audience filter, a Recipient assurance rule, or a retirement flag: legacy `archived` maps
+ * to the family head's `qnr_templates.deactivated_at`, which is operational head state and is never
+ * hashed document metadata. Coupling hiding with retirement here would make a reversible listing
+ * choice look like an irreversible one, and would put a timestamp in a hashed document.
+ *
+ * `visible` is the total reader's default, so a listed family stores no `visibility` key at all.
+ */
+export const TEMPLATE_VISIBILITIES = ['visible', 'hidden'] as const
+export type TemplateVisibility = (typeof TEMPLATE_VISIBILITIES)[number]
 
 /**
  * The typed semantic body of the document (`meta`). Absent means the default, per
@@ -54,26 +70,133 @@ export type TemplateUpdateMode = 'never' | 'always' | 'ask'
  * what differs. Fields still open after the naming freeze (Gate-4) ride the index
  * signature; the decided fields are spelled out so a typo is a compile error.
  */
+/**
+ * The authored settings groups, one group per surface the flags configure.
+ *
+ * Every leaf is a boolean and every group is optional, because DOC-LAW-2 forbids storing an empty
+ * container: a template that configures nothing carries no `settings` key at all. The defaults and
+ * the legacy spellings each leaf accepts are declared once in `templateAuthoringMeta.ts` — this type
+ * states the shape, that registry states the meaning, and `resolveTemplateAuthoringMeta` is the only
+ * reader. Spelling a default at a use site would be a second declaration free to drift from the one
+ * the canonical form prunes against.
+ *
+ * **The index signatures stay.** `template.updateSettings` is a released OPEN arm and the legacy
+ * importer wrote raw flat flags through it, so stored documents carry members outside this
+ * vocabulary. Narrowing any of these bags would make an already-stored document unreadable — ADR-0008
+ * DEC-006 — and the typed operations are closed precisely so the document can stay open.
+ */
+export type QnrTemplateSettings = {
+    /** Journal wiring (M-023/024/025/026/027). */
+    journal?: {
+        /** M-023. Legacy `auto_import`, with `is_auto_importable` as an accepted second spelling. */
+        auto_import?: boolean
+        /** `activityId_required`/`soknadid_required`/`sokndaid_required` unify here (architecture §2.2(7)). */
+        requires_activity_id?: boolean
+        /** M-026, legacy `reg_new_activity`. */
+        register_new_activity?: boolean
+        /** M-027, legacy `user_context_me`. */
+        user_context_me?: boolean
+        [key: string]: unknown
+    }
+    /** PDF handling (M-028/029/030). */
+    pdf?: {
+        import?: boolean
+        generate_for_participant?: boolean
+        send_to_journal?: boolean
+        [key: string]: unknown
+    }
+    /** Presentation of the questionnaire itself (M-031…M-038). */
+    rendering?: {
+        /** M-031, legacy `tab_mode`. */
+        tabs?: boolean
+        continuous?: boolean
+        /** M-033, legacy `multi_step_questionnaire`. */
+        multi_step?: boolean
+        collapse_all?: boolean
+        top_level_actions?: boolean
+        /** M-036 — the one flag whose default is `true`. */
+        refresh_button?: boolean
+        filter_document_reports_on_tab?: boolean
+        /** M-038, legacy `hide_external_key`: hides recipient-identifying columns. */
+        hide_recipient_info?: boolean
+        [key: string]: unknown
+    }
+    /** What may happen to an instance (M-039…M-042). */
+    lifecycle?: {
+        rejectable?: boolean
+        shareable?: boolean
+        allow_multiple?: boolean
+        generate_on_start?: boolean
+        [key: string]: unknown
+    }
+    /** Recipient-side requirements. */
+    recipient?: {
+        /**
+         * M-043. The canonical spelling new producers write.
+         */
+        requires_phone_number?: boolean
+        /**
+         * The RELEASED spelling, retained as a read/replay compatibility member.
+         *
+         * It shipped, so documents and `collab_ops` logs carry it; removing it would make a stored
+         * document unreadable and an old log unreplayable. New producers never write it, and a typed
+         * write to `requires_phone_number` clears it — see the reducer — so a false/default write
+         * cannot leave an old `true` behind for the reader to find.
+         */
+        ask_for_phone_nr?: boolean
+        [key: string]: unknown
+    }
+    /** Highlight-rule exposure (M-044/045). */
+    highlight?: {
+        enabled?: boolean
+        /** M-045, legacy `show_highlight_rule_to_patient`. */
+        show_to_recipient?: boolean
+        [key: string]: unknown
+    }
+    /** Where a completed questionnaire is mirrored (M-047). */
+    distribution?: {
+        mirror_to_advoca?: boolean
+        [key: string]: unknown
+    }
+    [key: string]: unknown
+}
+
+/**
+ * Lossless legacy residue the import preserves and nothing authors.
+ *
+ * Deliberately not an authoring surface: `plan_category` has no asserted default and no v2 meaning
+ * yet, and `flags` holds the law-valid unrecognized flag members an import could neither map nor
+ * justify dropping. Keeping them here — reported as findings, never silently discarded — is what
+ * makes "we did not lose it" checkable, and it is why the typed operations cannot reach this member.
+ */
+export type QnrTemplateLegacyResidue = {
+    /** M-013. The legacy value as stored; no invented default, no general-purpose control. */
+    plan_category?: DocScalar
+    /** Unrecognized legacy flags, preserved verbatim with classified report rows. */
+    flags?: Record<string, unknown>
+    [key: string]: unknown
+}
+
 export type QnrTemplateMeta = {
     title?: string
     description?: string
-    /** Journal-wiring settings (M-007 aliases normalize here). */
-    settings?: {
-        journal?: {
-            /** `activityId_required`/`soknadid_required`/`sokndaid_required` unify here (architecture §2.2(7)). */
-            requires_activity_id?: boolean
-        }
-        /** Recipient-side requirements. */
-        recipient?: {
-            /** Legacy `ask_for_phone_nr`. */
-            ask_for_phone_nr?: boolean
-        }
-    }
+    /** M-011: the legacy `hide` listing axis. Absent means `visible`. */
+    visibility?: TemplateVisibility
+    /** The authored flag groups (M-023…M-047). */
+    settings?: QnrTemplateSettings
     /** Admission policy of the pinned version (OQ-V2-2/15/16). */
     instancePolicy?: {
         requiredAccessLevel?: RequiredAccessLevel
         /** Open level-1 is invitation-free; invitation-protected level-1 sets this. */
         invitationRequired?: boolean
+        /**
+         * M-008. **The canonical producer and import home** for who initiates an instance.
+         *
+         * The field inventory's `doc.meta.initiator` is a location drift: this is where the released
+         * contract and the version-owned admission policy already keep it, so new imports and typed
+         * writes never double-store it. A root `meta.initiator` is read only when this property is
+         * absent, and a typed write clears it.
+         */
         initiator?: Initiator
         template_update_mode?: TemplateUpdateMode
     }
@@ -84,6 +207,8 @@ export type QnrTemplateMeta = {
         consentTemplateIds?: string[]
         smsTemplateIds?: string[]
     }
+    /** Import-preserved compatibility residue; never written by an authoring operation. */
+    legacy?: QnrTemplateLegacyResidue
     [key: string]: unknown
 }
 

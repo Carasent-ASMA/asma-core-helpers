@@ -5,6 +5,11 @@ import { findDocLawViolations, type DocLawViolation } from './docLaws.js'
 import { IMPLEMENTED_ANSWER_OP_TYPES } from './answerOperations.js'
 import { IMPLEMENTED_OP_TYPES } from './operations.js'
 import { QUESTION_TYPES } from './questionTypes.js'
+import {
+    COMPATIBILITY_COLLECTIONS,
+    isTemplateAuthoringDefault,
+    TEMPLATE_SETTING_FIELDS,
+} from './templateAuthoringMeta.js'
 import type { BindingTarget, QnrTemplateDocument } from './templateDocument.js'
 import {
     ACTION_TYPES,
@@ -328,18 +333,70 @@ const dataMappingSchema = type({
     bindingOrder: 'string[]?',
 })
 
+/**
+ * The 23 settings leaves, grouped by the surface they configure.
+ *
+ * Each group keeps an open index signature, and that is not laxity: `template.updateSettings` is a
+ * released OPEN arm and the legacy importer wrote raw flat flags through it, so stored documents carry
+ * members outside this vocabulary. Narrowing a group would make an already-stored document fail
+ * validation — ADR-0008 DEC-006 — while the typed operations stay closed, which is the asymmetry this
+ * surface is built on: open to read and replay, closed to author.
+ */
+const qnrTemplateSettingsSchema = type({
+    "journal?": type({
+        auto_import: 'boolean?',
+        requires_activity_id: 'boolean?',
+        register_new_activity: 'boolean?',
+        user_context_me: 'boolean?',
+        ...({ '[string]': 'unknown' } as const),
+    }),
+    "pdf?": type({
+        import: 'boolean?',
+        generate_for_participant: 'boolean?',
+        send_to_journal: 'boolean?',
+        ...({ '[string]': 'unknown' } as const),
+    }),
+    "rendering?": type({
+        tabs: 'boolean?',
+        continuous: 'boolean?',
+        multi_step: 'boolean?',
+        collapse_all: 'boolean?',
+        top_level_actions: 'boolean?',
+        refresh_button: 'boolean?',
+        filter_document_reports_on_tab: 'boolean?',
+        hide_recipient_info: 'boolean?',
+        ...({ '[string]': 'unknown' } as const),
+    }),
+    "lifecycle?": type({
+        rejectable: 'boolean?',
+        shareable: 'boolean?',
+        allow_multiple: 'boolean?',
+        generate_on_start: 'boolean?',
+        ...({ '[string]': 'unknown' } as const),
+    }),
+    "recipient?": type({
+        requires_phone_number: 'boolean?',
+        /** The released spelling, retained so a stored document and an old log stay valid. */
+        ask_for_phone_nr: 'boolean?',
+        ...({ '[string]': 'unknown' } as const),
+    }),
+    "highlight?": type({
+        enabled: 'boolean?',
+        show_to_recipient: 'boolean?',
+        ...({ '[string]': 'unknown' } as const),
+    }),
+    "distribution?": type({
+        mirror_to_advoca: 'boolean?',
+        ...({ '[string]': 'unknown' } as const),
+    }),
+    ...({ '[string]': 'unknown' } as const),
+})
+
 const qnrTemplateMetaSchema = type({
     title: 'string?',
     description: 'string?',
-    "settings?": type({
-        "journal?": type({
-            requires_activity_id: 'boolean?',
-        }),
-        "recipient?": type({
-            ask_for_phone_nr: 'boolean?',
-        }),
-        ...({ '[string]': 'unknown' } as const),
-    }),
+    "visibility?": '"visible" | "hidden"',
+    "settings?": qnrTemplateSettingsSchema,
     "instancePolicy?": type({
         "requiredAccessLevel?": '1 | 2 | 3 | 4',
         invitationRequired: 'boolean?',
@@ -350,6 +407,12 @@ const qnrTemplateMetaSchema = type({
     "compatibility?": type({
         consentTemplateIds: 'string[]?',
         smsTemplateIds: 'string[]?',
+    }),
+    /** Import-only residue (M-013 and unrecognized flags); no authoring operation reaches it. */
+    "legacy?": type({
+        "plan_category?": docScalar,
+        flags: 'Record<string, unknown>?',
+        ...({ '[string]': 'unknown' } as const),
     }),
     ...({ '[string]': 'unknown' } as const),
 })
@@ -406,6 +469,70 @@ export const qnrAnswerDocumentSchema = type({
 export const templateOpSchema = type.or(
     type({ type: '"template.updateMeta"', patch: `Record<string, ${opValue} | Record<string, unknown>>` }),
     type({ type: '"template.updateSettings"', patch: `Record<string, ${opValue} | Record<string, unknown>>` }),
+    /**
+     * `template.setMetaFieldTyped` — one arm per editable path, so the value cannot disagree with the
+     * field (the same device `mappingFilter.setTyped` uses for its operator-correlated payloads).
+     * `opTypeNames` deduplicates by op name, so these seven arms are one vocabulary member.
+     *
+     * `'+': 'reject'` is load-bearing on every arm: ArkType admits undeclared keys by default, so
+     * without it an `{field, value, patch}` payload would validate and the reducer would be the only
+     * thing that noticed the extra member.
+     */
+    type({ type: '"template.setMetaFieldTyped"', field: '"title"', value: 'string | null', '+': 'reject' }),
+    type({ type: '"template.setMetaFieldTyped"', field: '"description"', value: 'string | null', '+': 'reject' }),
+    type({
+        type: '"template.setMetaFieldTyped"',
+        field: '"visibility"',
+        value: '"visible" | "hidden" | null',
+        '+': 'reject',
+    }),
+    type({
+        type: '"template.setMetaFieldTyped"',
+        field: '"instancePolicy.requiredAccessLevel"',
+        value: '1 | 2 | 3 | 4 | null',
+        '+': 'reject',
+    }),
+    type({
+        type: '"template.setMetaFieldTyped"',
+        field: '"instancePolicy.invitationRequired"',
+        value: 'boolean | null',
+        '+': 'reject',
+    }),
+    type({
+        type: '"template.setMetaFieldTyped"',
+        field: '"instancePolicy.initiator"',
+        value: '"coordinator" | "recipient" | null',
+        '+': 'reject',
+    }),
+    type({
+        type: '"template.setMetaFieldTyped"',
+        field: '"instancePolicy.template_update_mode"',
+        value: '"never" | "always" | "ask" | null',
+        '+': 'reject',
+    }),
+    /** The 23 leaves come from the shared registry, so the wire cannot admit a path the reducer lacks. */
+    type({
+        type: '"template.setSettingTyped"',
+        field: type.enumerated(...TEMPLATE_SETTING_FIELDS),
+        value: 'boolean | null',
+        '+': 'reject',
+    }),
+    /**
+     * Soft ids are nonempty strings — `string > 0` — and deliberately not UUIDs: legacy template ids
+     * are integers, preserved by their lossless decimal spelling.
+     */
+    type({
+        type: '"template.addCompatibilityId"',
+        collection: type.enumerated(...COMPATIBILITY_COLLECTIONS),
+        id: 'string > 0',
+        '+': 'reject',
+    }),
+    type({
+        type: '"template.removeCompatibilityId"',
+        collection: type.enumerated(...COMPATIBILITY_COLLECTIONS),
+        id: 'string > 0',
+        '+': 'reject',
+    }),
     type({
         type: '"question.create"',
         questionId: 'string',
@@ -923,6 +1050,32 @@ export const templateDocumentIsDefault: IsDefault = (path, value) => {
 
     return value === false && TEMPLATE_DOCUMENT_DEFAULT_PATHS.some((name) => path.endsWith(`.${name}`))
 }
+
+/**
+ * The canonical-write predicate: the released rules PLUS the ASMA-8339 metadata/settings registry.
+ *
+ * **Two predicates, not one, and the split is a correctness requirement rather than caution.**
+ * `templateDocumentIsDefault` above is released and is what the stored immutable snapshots were
+ * hashed with; it must stay byte-identical, because three of the paths the new registry declares
+ * (`instancePolicy.requiredAccessLevel` = 4, `initiator` = 'coordinator',
+ * `template_update_mode` = 'never') are released schema members with NO declared default, so an
+ * already-stored document may legitimately carry them spelled out. Adding their defaults to the
+ * released predicate would drop those keys from the canonical bytes of documents that already exist
+ * — changing their `document_hash` and breaking exactly the immutable versions this work must
+ * preserve. The same holds for `meta.title: ''`.
+ *
+ * So: verify a historical snapshot AS STORED with `templateDocumentIsDefault`, and normalize a NEW
+ * write or a NEW canonical import with this one. An imported document and the same content authored
+ * through the typed operations both go through this predicate, which is what makes their hashes
+ * equal.
+ *
+ * The released suffix-matched rows are inherited verbatim rather than re-anchored: re-anchoring them
+ * would change the released canonical form for the paths they already cover. Every row the new
+ * registry adds is matched on its complete document-absolute path, so it cannot prune a
+ * coincidentally-named unknown `title`, `enabled` or `refresh_button` elsewhere in the document.
+ */
+export const templateAuthoringIsDefault: IsDefault = (path, value) =>
+    templateDocumentIsDefault(path, value) || isTemplateAuthoringDefault(path, value)
 
 /**
  * The instance-side half of the default lint: every present-and-default field on a stored
