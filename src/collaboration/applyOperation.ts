@@ -17,9 +17,24 @@ import type {
     QnrQuestion,
     QnrTab,
     QnrTemplateDocument,
+    QnrTemplateMeta,
     QuestionId,
 } from './templateDocument.js'
 import type { QuestionType } from './questionTypes.js'
+import type { JsonValue } from './canonicalize.js'
+import type { CompatibilityCollection } from './templateAuthoringMeta.js'
+import {
+    isCompatibilityCollection,
+    isMetaField,
+    isSettingField,
+    isTemplateAuthoringDefault,
+    metaFieldPath,
+    normalizeCompatibilityId,
+    normalizeCompatibilityIds,
+    parseMetaFieldValue,
+    settingFieldPath,
+    templateAliasPathsOf,
+} from './templateAuthoringMeta.js'
 import {
     ACTION_TYPES,
     BINDING_OPTION_DEFAULTS,
@@ -127,6 +142,142 @@ const writeField = <T extends Record<string, unknown>>(record: T, field: string,
 
     return next as T
 }
+
+// ─────────────── ASMA-8339: the typed metadata/settings write boundary ───────────────
+
+/** A container the reducer may descend into. `null` and an array are neither. */
+const isPlainRecord = (value: unknown): value is Record<string, unknown> => {
+    if (typeof value !== 'object' || value === null) return false
+    const proto = Object.getPrototypeOf(value)
+    return proto === Object.prototype || proto === null
+}
+
+/**
+ * Refuses an operation carrying a payload member outside its closed vocabulary.
+ *
+ * Re-checked in the reducer and not only at the wire schema, for the reason the ASMA-7683 hardening
+ * pass recorded: bunjs replays a stored `collab_ops` log without re-validating each op, so anything
+ * the reducer alone permits is reachable by an op written by an older or bypassed client — and unlike
+ * a rejected request, it lands in a document and then in an immutable artifact.
+ *
+ * Keys holding `undefined` are ignored. They carry nothing, cannot survive JSON transport, and
+ * refusing them would reject an ordinary `{...base, patch: undefined}` spread.
+ */
+const assertClosedPayload = (op: object, allowed: readonly string[]): void => {
+    const carried = Object.entries(op as Record<string, unknown>).filter(([, value]) => value !== undefined)
+    const extra = carried.map(([key]) => key).filter((key) => !allowed.includes(key))
+    if (extra.length > 0) {
+        throw new OperationConflictError(
+            `Operation "${String((op as Record<string, unknown>)['type'])}" carries unrecognized payload member(s): ${extra
+                .map((key) => `"${key}"`)
+                .join(', ')}`,
+        )
+    }
+}
+
+/** Canonical loci are document-absolute; the reducer writes into `meta` itself. */
+const metaRelativePath = (documentPath: string): string => documentPath.slice('meta.'.length)
+
+/**
+ * Refuses a typed write whose owned ancestor holds something that is not a container.
+ *
+ * `writeField` creates intermediate objects, so it would REPLACE an imported scalar or array sitting
+ * at `meta.settings.rendering` — silently destroying residue this contract is required to preserve.
+ * Repairing a malformed owned container is import/publication work, and the released open
+ * `template.updateMeta`/`template.updateSettings` arms remain available to clear it, so refusing here
+ * loses no capability and is the only non-destructive answer.
+ */
+const assertWritableMetaAncestors = (meta: Record<string, unknown>, relativePath: string): void => {
+    const segments = relativePath.split('.')
+    let current: Record<string, unknown> = meta
+    let walked = 'meta'
+    for (const segment of segments.slice(0, -1)) {
+        walked = `${walked}.${segment}`
+        if (!Object.hasOwn(current, segment)) return
+        const child = current[segment]
+        if (child === undefined) return
+        if (!isPlainRecord(child)) {
+            throw new OperationConflictError(
+                `"${walked}" holds ${Array.isArray(child) ? 'an array' : `a ${typeof child}`}, not a container; ` +
+                    `the typed metadata operations refuse to overwrite imported residue`,
+            )
+        }
+        current = child
+    }
+}
+
+/**
+ * Writes one canonical metadata leaf: clears its recognized old spellings, then stores the value or
+ * omits it.
+ *
+ * **Alias clearing happens first and unconditionally, and that ordering is the whole point.** Writing
+ * `recipient.requires_phone_number: false` stores nothing, because `false` is the declared default —
+ * so without the clear a stale `ask_for_phone_nr: true` would still be in the document and the total
+ * reader's alias fallback would read the requirement back ON, silently reversing the author's
+ * explicit "off". Only the field's OWN recognized aliases are touched: every unrelated unknown member
+ * of the same bag is left exactly where the import put it.
+ *
+ * Restoring a default and an explicit `null` are the same write, because DOC-LAW-2 makes absence the
+ * only encoding of "not set" — an author who clicks back to `coordinator` and an author who never
+ * touched the control must produce byte-identical documents, or one authored state would carry two
+ * `document_hash` values.
+ */
+const writeCanonicalMetaLeaf = (
+    meta: Record<string, unknown>,
+    canonicalPath: string,
+    value: JsonValue | null,
+): Record<string, unknown> => {
+    const relative = metaRelativePath(canonicalPath)
+    const aliasPaths = templateAliasPathsOf(canonicalPath).map(metaRelativePath)
+    for (const path of [relative, ...aliasPaths]) assertWritableMetaAncestors(meta, path)
+
+    let next = meta
+    for (const path of aliasPaths) next = writeField(next, path, null)
+
+    const stored = value === null || isTemplateAuthoringDefault(canonicalPath, value) ? null : value
+    return writeField(next, relative, stored)
+}
+
+/**
+ * The stored soft-id set as canonical members, or a refusal.
+ *
+ * Refuses rather than repairs when the collection is not an array, or carries a member that is not a
+ * soft id (an object, `null`, a non-finite number, an empty string). Normalising around such a member
+ * would drop it, which is silent data loss in a hashed document; the total reader reports the same
+ * condition as a `malformed-collection` finding, so an author sees why the control is blocked.
+ */
+const readCompatibilitySet = (meta: Record<string, unknown>, collection: CompatibilityCollection): string[] => {
+    const compatibility = meta['compatibility']
+    if (compatibility === undefined) return []
+    if (!isPlainRecord(compatibility)) {
+        throw new OperationConflictError(`"meta.compatibility" holds a ${typeof compatibility}, not a container`)
+    }
+    const stored = compatibility[collection]
+    if (stored === undefined) return []
+    if (!Array.isArray(stored)) {
+        throw new OperationConflictError(
+            `"meta.compatibility.${collection}" holds a ${typeof stored}, not an array of soft ids`,
+        )
+    }
+    return stored.map((member, index) => {
+        const normalized = normalizeCompatibilityId(member)
+        if (normalized === undefined) {
+            throw new OperationConflictError(
+                `"meta.compatibility.${collection}.${index}" is not a soft id; the typed membership ` +
+                    `operations refuse to normalize a malformed imported set`,
+            )
+        }
+        return normalized
+    })
+}
+
+/** Stores a soft-id set in canonical form, or drops the key when the last member left (DOC-LAW-2). */
+const writeCompatibilitySet = (
+    meta: Record<string, unknown>,
+    collection: CompatibilityCollection,
+    ids: readonly string[],
+): Record<string, unknown> =>
+    writeField(meta, `compatibility.${collection}`, ids.length === 0 ? null : [...ids])
 
 /** Inserts `id` at `index`, clamped into range. Absent index appends. */
 const insertAt = (order: readonly string[], id: string, index?: number): string[] => {
@@ -1367,6 +1518,83 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             if (Object.keys(settings).length === 0) delete meta.settings
             else meta.settings = settings
             return { ...doc, meta }
+        }
+
+        case 'template.setMetaFieldTyped': {
+            assertClosedPayload(op, ['type', 'field', 'value'])
+            // Re-validated on replay: the closed path and its correlated value type live in the
+            // registry, and an op from an older or bypassed client reaches this switch with no
+            // validator in front of it.
+            if (!isMetaField(op.field)) {
+                throw new OperationConflictError(
+                    `"${String(op.field)}" is not an editable template metadata field`,
+                )
+            }
+            if (op.value !== null && parseMetaFieldValue(op.field, op.value) === undefined) {
+                throw new OperationConflictError(
+                    `${JSON.stringify(op.value)} is not a valid value for metadata field "${op.field}"`,
+                )
+            }
+            const meta = writeCanonicalMetaLeaf(
+                { ...(doc.meta ?? {}) },
+                metaFieldPath(op.field),
+                op.value,
+            ) as QnrTemplateMeta
+            return { ...doc, meta }
+        }
+
+        case 'template.setSettingTyped': {
+            assertClosedPayload(op, ['type', 'field', 'value'])
+            if (!isSettingField(op.field)) {
+                throw new OperationConflictError(`"${String(op.field)}" is not a template settings leaf`)
+            }
+            // Explicitly type-checked rather than coerced: a legacy `'false'` string is a MALFORMED
+            // known value, and JavaScript truthiness would read it as the opposite of what it says.
+            if (op.value !== null && typeof op.value !== 'boolean') {
+                throw new OperationConflictError(
+                    `Setting "${op.field}" takes a boolean or null, not ${typeof op.value}`,
+                )
+            }
+            const meta = writeCanonicalMetaLeaf(
+                { ...(doc.meta ?? {}) },
+                settingFieldPath(op.field),
+                op.value,
+            ) as QnrTemplateMeta
+            return { ...doc, meta }
+        }
+
+        case 'template.addCompatibilityId': {
+            assertClosedPayload(op, ['type', 'collection', 'id'])
+            if (!isCompatibilityCollection(op.collection)) {
+                throw new OperationConflictError(`"${String(op.collection)}" is not a compatibility collection`)
+            }
+            const id = normalizeCompatibilityId(op.id)
+            if (id === undefined) {
+                throw new OperationConflictError('template.addCompatibilityId requires a nonempty soft id')
+            }
+            const meta = { ...(doc.meta ?? {}) } as Record<string, unknown>
+            // Adding an id already present yields the identical set: content-idempotent, so no new
+            // canonical bytes and no spurious version.
+            const members = normalizeCompatibilityIds([...readCompatibilitySet(meta, op.collection), id])
+            return { ...doc, meta: writeCompatibilitySet(meta, op.collection, members) as QnrTemplateMeta }
+        }
+
+        case 'template.removeCompatibilityId': {
+            assertClosedPayload(op, ['type', 'collection', 'id'])
+            if (!isCompatibilityCollection(op.collection)) {
+                throw new OperationConflictError(`"${String(op.collection)}" is not a compatibility collection`)
+            }
+            const id = normalizeCompatibilityId(op.id)
+            if (id === undefined) {
+                throw new OperationConflictError('template.removeCompatibilityId requires a nonempty soft id')
+            }
+            const meta = { ...(doc.meta ?? {}) } as Record<string, unknown>
+            // Removing an absent id is a no-op, which is what makes remove/remove of one id converge.
+            const members = readCompatibilitySet(meta, op.collection).filter((member) => member !== id)
+            return {
+                ...doc,
+                meta: writeCompatibilitySet(meta, op.collection, normalizeCompatibilityIds(members)) as QnrTemplateMeta,
+            }
         }
 
         case 'question.create': {

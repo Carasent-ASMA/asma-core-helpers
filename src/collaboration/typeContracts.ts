@@ -1,4 +1,5 @@
 import type { TemplateOp } from './operations.js'
+import type { MetaField, SettingField } from './templateAuthoringMeta.js'
 import type {
     ActionMetadata,
     AlternativeChartLegend,
@@ -159,4 +160,158 @@ export type LegacyOverrideMemberStaysUnknown = Assert<
  */
 export type LegacyOverrideMemberAcceptsCanonical = Assert<
     Refuses<LegacyBindingOverride, MappingBinding['legacyOverride']> extends false ? true : false
+>
+
+// ─── ASMA-8339: the typed metadata/settings arms are closed in path, value and payload ───
+
+/**
+ * An arbitrary path must not type-check.
+ *
+ * This is the assertion that keeps `template.setMetaFieldTyped` from degenerating into the open arm it
+ * sits beside: a `field: string` would admit `meta`, a settings group, the import-only `legacy`
+ * residue and every unknown member of an imported bag, and the reducer would be the only thing
+ * standing between a client and a wholesale metadata overwrite.
+ */
+export type SetMetaFieldRefusesArbitraryPath = Assert<
+    Refuses<{ type: 'template.setMetaFieldTyped'; field: 'legacy.plan_category'; value: 'x' }, TemplateOp>
+>
+
+/** The import-only residue is not an authoring field, which `MetaField` itself must say. */
+export type MetaFieldExcludesLegacyResidue = Assert<Refuses<'legacy.plan_category', MetaField>>
+
+/**
+ * A value from the wrong field must not type-check.
+ *
+ * The correlation is the reason the arms are per-field rather than one `{field; value}` pair: without
+ * it `{field: 'visibility', value: 'coordinator'}` compiles, lands in a document, and reaches an
+ * immutable version before anything notices.
+ */
+export type SetMetaFieldRefusesCrossFieldValue = Assert<
+    Refuses<{ type: 'template.setMetaFieldTyped'; field: 'visibility'; value: 'coordinator' }, TemplateOp>
+>
+export type SetMetaFieldRefusesWrongPrimitive = Assert<
+    Refuses<{ type: 'template.setMetaFieldTyped'; field: 'title'; value: 42 }, TemplateOp>
+>
+export type SetMetaFieldRefusesOutOfRangeAccessLevel = Assert<
+    Refuses<
+        { type: 'template.setMetaFieldTyped'; field: 'instancePolicy.requiredAccessLevel'; value: 5 },
+        TemplateOp
+    >
+>
+
+/** Each legal pair, and the `null` unset, must stay legal or the refusals above prove nothing. */
+export type SetMetaFieldAcceptsLegalPairs = Assert<
+    Refuses<{ type: 'template.setMetaFieldTyped'; field: 'visibility'; value: 'hidden' }, TemplateOp> extends false
+        ? Refuses<
+              { type: 'template.setMetaFieldTyped'; field: 'instancePolicy.initiator'; value: 'recipient' },
+              TemplateOp
+          > extends false
+            ? Refuses<
+                  { type: 'template.setMetaFieldTyped'; field: 'instancePolicy.requiredAccessLevel'; value: 1 },
+                  TemplateOp
+              > extends false
+                ? Refuses<{ type: 'template.setMetaFieldTyped'; field: 'title'; value: null }, TemplateOp> extends false
+                    ? true
+                    : false
+                : false
+            : false
+        : false
+>
+
+/**
+ * A typed arm must not accept the OPEN arm's payload member.
+ *
+ * Without the `patch?: never` exclusions, `{type: 'template.setSettingTyped', field, value, patch}`
+ * is structurally assignable — TypeScript admits extra properties on a non-fresh object — so a client
+ * assembling an op by spreading an old payload would ship a member nothing refuses until the wire
+ * schema's `'+': 'reject'`, and nothing at all on a replayed log.
+ */
+export type SetSettingRefusesOpenArmPayload = Assert<
+    Refuses<
+        {
+            type: 'template.setSettingTyped'
+            field: 'rendering.tabs'
+            value: true
+            patch: Record<string, string>
+        },
+        TemplateOp
+    >
+>
+
+/** A membership payload must not satisfy a leaf arm, or vice versa. */
+export type SetSettingRefusesMembershipPayload = Assert<
+    Refuses<
+        {
+            type: 'template.setSettingTyped'
+            field: 'rendering.tabs'
+            value: true
+            collection: 'consentTemplateIds'
+            id: 'c-1'
+        },
+        TemplateOp
+    >
+>
+export type AddCompatibilityIdRefusesLeafPayload = Assert<
+    Refuses<
+        {
+            type: 'template.addCompatibilityId'
+            collection: 'consentTemplateIds'
+            id: 'c-1'
+            field: 'rendering.tabs'
+            value: true
+        },
+        TemplateOp
+    >
+>
+
+export type SetSettingRefusesUnknownLeaf = Assert<
+    Refuses<{ type: 'template.setSettingTyped'; field: 'rendering.not_a_flag'; value: true }, TemplateOp>
+>
+export type SetSettingRefusesNonBoolean = Assert<
+    Refuses<{ type: 'template.setSettingTyped'; field: 'rendering.tabs'; value: 'true' }, TemplateOp>
+>
+export type SettingFieldExcludesReleasedPhoneSpelling = Assert<Refuses<'recipient.ask_for_phone_nr', SettingField>>
+
+export type AddCompatibilityIdRefusesUnknownCollection = Assert<
+    Refuses<{ type: 'template.addCompatibilityId'; collection: 'journalTemplateIds'; id: 'c-1' }, TemplateOp>
+>
+
+export type CompatibilityMembershipAcceptsLegalShapes = Assert<
+    Refuses<{ type: 'template.addCompatibilityId'; collection: 'consentTemplateIds'; id: '42' }, TemplateOp> extends false
+        ? Refuses<
+              { type: 'template.removeCompatibilityId'; collection: 'smsTemplateIds'; id: 'sms-1' },
+              TemplateOp
+          > extends false
+            ? true
+            : false
+        : false
+>
+
+/**
+ * The two RELEASED open arms must stay open.
+ *
+ * The one assertion here that guards against a plausible well-meant change rather than a mistake:
+ * narrowing `template.updateMeta`/`template.updateSettings` to the new closed vocabulary would look
+ * like tightening and would in fact make every already-stored `collab_ops` log unreplayable and every
+ * immutable version unverifiable, because the legacy importer and the released client wrote arbitrary
+ * dotted patches through exactly these arms.
+ */
+/**
+ * The patches below carry ONLY unrecognized keys, deliberately. A patch that also carried a known key
+ * would still be assignable to an arm narrowed to just that key, so the probe would pass over exactly
+ * the narrowing it exists to catch — verified by seeding `patch: Record<'title', OpValue>` and
+ * watching the weaker form stay green.
+ */
+export type UpdateMetaStaysOpen = Assert<
+    Refuses<
+        { type: 'template.updateMeta'; patch: { 'some.unknown.legacy_flag': true; security_level: 3 } },
+        TemplateOp
+    > extends false
+        ? true
+        : false
+>
+export type UpdateSettingsStaysOpen = Assert<
+    Refuses<{ type: 'template.updateSettings'; patch: { ask_for_phone_nr: true; tab_mode: false } }, TemplateOp> extends false
+        ? true
+        : false
 >

@@ -24,6 +24,7 @@
 
 export * from './questionTypes.js'
 export * from './templateDocument.js'
+export * from './templateAuthoringMeta.js'
 export * from './answerDocument.js'
 export * from './operations.js'
 export * from './answerOperations.js'

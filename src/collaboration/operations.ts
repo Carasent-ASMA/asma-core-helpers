@@ -26,6 +26,11 @@ import type {
     VisibilityRuleId,
 } from './templateDocument.js'
 import type { QuestionType } from './questionTypes.js'
+import type {
+    CompatibilityCollection,
+    SettingField,
+    TemplateMetaFieldWrite,
+} from './templateAuthoringMeta.js'
 
 /**
  * The authoring op vocabulary (architecture §5). `entity.action`, stable-id targets only, append-only —
@@ -51,12 +56,103 @@ import type { QuestionType } from './questionTypes.js'
  */
 export type OpValue = DocScalar | DocScalar[] | null
 
+/**
+ * Makes each correlated metadata field/value pair nullable, one arm at a time.
+ *
+ * Distributive on purpose: `{field: F; value: V} | {field: G; value: W}` must become
+ * `{field: F; value: V | null} | {field: G; value: W | null}`, not the collapsed
+ * `{field: F | G; value: V | W | null}` — the collapsed form is exactly the loose pair this operation
+ * exists to avoid, and it would type-check a value from the wrong field.
+ */
+type MetaFieldUnset<W> = W extends { field: infer F; value: infer V } ? { field: F; value: V | null } : never
+
 export type TemplateOp =
     | { type: 'template.updateMeta'; patch: Record<string, OpValue | Record<string, unknown>> }
     | {
           type: 'template.updateSettings'
           /** Dotted-path patch into `meta.settings` (journal wiring, recipient requirements). */
           patch: Record<string, OpValue | Record<string, unknown>>
+      }
+    /**
+     * Writes ONE metadata leaf, or restores its default (ASMA-8339).
+     *
+     * **Additive beside the two open arms above, which stay exactly as released.** Those arms accept an
+     * arbitrary dotted patch, which is what lets an already-stored `collab_ops` log replay byte-for-byte
+     * and what the legacy importer wrote through; narrowing them now would make old logs unreplayable and
+     * old immutable versions unverifiable (ADR-0008 DEC-006). So the new authoring path is closed and the
+     * old replay path is open, and the authoring app emits only these four arms for this surface.
+     *
+     * Closed in three senses, each of which a loose `{field: string; value: OpValue}` would lose:
+     *
+     * 1. **The path is one of seven**, not an arbitrary dotted path — so no operation can reach `meta`
+     *    wholesale, a settings group, an owner-domain body, the import-only `legacy` residue, or a
+     *    coincidentally-named unknown member.
+     * 2. **The value is correlated with the path** ({@link TemplateMetaFieldWrite}), so
+     *    `{field: 'visibility', value: 7}` is a compile error rather than a runtime refusal.
+     * 3. **No extra payload member is admitted** — `patch`/`collection`/`id` are excluded with `?: never`
+     *    so an open-arm or membership payload cannot structurally satisfy this arm, and the schema adds
+     *    `'+': 'reject'` for the wire.
+     *
+     * `null` restores the default: the leaf is deleted and every ancestor it emptied is pruned, because
+     * DOC-LAW-2 makes absence the only encoding of "not set". Writing a value that EQUALS the default does
+     * the same thing, so an author who clicks back to `coordinator` and an author who never touched the
+     * control produce byte-identical documents.
+     */
+    | ({
+          type: 'template.setMetaFieldTyped'
+          patch?: never
+          collection?: never
+          id?: never
+      } & MetaFieldUnset<TemplateMetaFieldWrite>)
+    /**
+     * Writes ONE settings leaf, or restores its default (ASMA-8339).
+     *
+     * **A leaf operation, deliberately not a group patch.** A form submit may batch every changed leaf
+     * atomically through the existing endpoint, but it must never send a settings group or a hydrated
+     * snapshot: two authors editing different flags of one group would then produce two whole-group
+     * writes and the second would silently discard the first — the same lost update DOC-LAW-1 keys
+     * collections to prevent. Per-leaf writes make those two edits touch two paths instead, so they
+     * commute.
+     *
+     * All 23 leaves are booleans, so the value needs no correlation with the path; `null` restores the
+     * default, as does writing the default itself.
+     */
+    | {
+          type: 'template.setSettingTyped'
+          field: SettingField
+          value: boolean | null
+          patch?: never
+          collection?: never
+          id?: never
+      }
+    /**
+     * Adds one owner-domain soft id to a compatibility set (REQ-013).
+     *
+     * Membership rather than a whole-array write, for the concurrency reason: two authors adding
+     * different consent templates both survive. Different ids therefore commute even inside one
+     * collection, and adding an id already present is content-idempotent — the stored set is unchanged,
+     * so no new hash and no new version.
+     *
+     * Ids are nonempty strings, **not** UUIDs: legacy template ids are integers and are preserved by
+     * their lossless decimal spelling. No owner body is accepted or stored, and no FK lookup is
+     * required — an imported dangling id stays visible instead of being dropped for failing a join.
+     */
+    | {
+          type: 'template.addCompatibilityId'
+          collection: CompatibilityCollection
+          id: string
+          patch?: never
+          field?: never
+          value?: never
+      }
+    /** Removes one soft id. Removing an absent id is a no-op; an emptied set is omitted (DOC-LAW-2). */
+    | {
+          type: 'template.removeCompatibilityId'
+          collection: CompatibilityCollection
+          id: string
+          patch?: never
+          field?: never
+          value?: never
       }
     // `questionType`, not `type`: the envelope already owns `type` for the op name, so the question's
     // own type (which is what lands in the document) needs a distinct key here.
@@ -369,6 +465,10 @@ export type TemplateOpType = TemplateOp['type']
 const OP_TYPE_COVERAGE: Record<TemplateOpType, true> = {
     'template.updateMeta': true,
     'template.updateSettings': true,
+    'template.setMetaFieldTyped': true,
+    'template.setSettingTyped': true,
+    'template.addCompatibilityId': true,
+    'template.removeCompatibilityId': true,
     'question.create': true,
     'question.updateField': true,
     'question.move': true,
