@@ -96,7 +96,7 @@ test('publishes the ASMA-8339 template metadata/settings contract from the colla
         'normalizeCompatibilityId',
         'normalizeCompatibilityIds',
         'templateAliasPathsOf',
-        'templateCanonicalPathsForAlias',
+        'templateCanonicalPathsTouchedByAlias',
         'templateLociOverlap',
         'templateAuthoringIntentsOf',
         'classifyTemplateAuthoringOverlap',

@@ -2,6 +2,9 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { type } from 'arktype'
 
+/** `type.errors` under a name the loops below cannot shadow with their own `type` variable. */
+const type_errors = type.errors
+
 import { applyOperation, OperationConflictError } from './applyOperation.js'
 import { canonicalJson, hashCanonical, reduceToMinimalForm } from './canonicalize.js'
 import { findDocLawViolations } from './docLaws.js'
@@ -599,6 +602,29 @@ describe('compatibility sets are authored one member at a time', () => {
         assert.deepEqual(metaOf(doc)['compatibility'], { smsTemplateIds: ['mål'] })
     })
 
+    it('collapses a STORED decomposed member against a composed typed add', () => {
+        // Separate from the add/add NFC case above, and newly necessary: the strict op-id parser
+        // normalises the PAYLOAD, so only the stored-member path still proves `normalizeCompatibilityId`
+        // normalises. Without it a legacy NFD member and a new NFC one are two set members that
+        // canonicalize to one string — a duplicate inside a set, and two spellings of one hash.
+        const imported = applyAll([
+            { type: 'template.updateMeta', patch: { 'compatibility.smsTemplateIds': ['ma\u030al'] } },
+        ])
+        const touched = applyOperation(imported, {
+            type: 'template.addCompatibilityId',
+            collection: 'smsTemplateIds',
+            id: 'm\u00e5l',
+        })
+        assert.deepEqual(metaOf(touched)['compatibility'], { smsTemplateIds: ['m\u00e5l'] })
+
+        // The reader and the locus lookup agree with the writer about member identity.
+        assert.deepEqual(resolveTemplateAuthoringMeta(imported.meta).compatibility.smsTemplateIds, ['m\u00e5l'])
+        assert.equal(
+            readTemplateAuthoringLocus(imported, compatibilityIdPath('smsTemplateIds', 'm\u00e5l')),
+            'm\u00e5l',
+        )
+    })
+
     it('refuses a malformed stored set rather than normalizing around it', () => {
         assert.match(
             refusal(
@@ -1045,5 +1071,216 @@ describe('the registry is complete and internally consistent', () => {
             const bad = validateTemplateDocument(withMeta({ settings: { [group]: { [leaf]: 'yes' } } }))
             assert.equal(bad.ok, false, `${field} is not typed by the document schema`)
         }
+    })
+})
+
+// ─────────────────── defects reproduced by the independent inspector (PR #47) ───────────────────
+
+/**
+ * One case per defect found reviewing `e64e810`. Each asserts the repaired behaviour on the exact
+ * input the inspector used, so a regression reads as the original report rather than as a new puzzle.
+ */
+describe('inspector defect 1 · an open patch INSIDE a recognized alias overlaps it', () => {
+    const typed: TemplateOp = {
+        type: 'template.setMetaFieldTyped',
+        field: 'instancePolicy.initiator',
+        value: 'recipient',
+    }
+    const openPatch: TemplateOp = { type: 'template.updateMeta', patch: { 'initiator.unresolved': 'keep-me' } }
+
+    it('shows the two orders really do differ, which is why they cannot be disjoint', () => {
+        // Typed-then-open keeps the patched data; open-then-typed DELETES it, because the typed write
+        // clears the whole recognized alias `meta.initiator` before storing its canonical value.
+        const typedFirst = applyAll([typed, openPatch])
+        const openFirst = applyAll([openPatch, typed])
+
+        assert.deepEqual(typedFirst.meta, {
+            instancePolicy: { initiator: 'recipient' },
+            initiator: { unresolved: 'keep-me' },
+        })
+        assert.deepEqual(openFirst.meta, { instancePolicy: { initiator: 'recipient' } })
+        assert.notEqual(canonicalJson(typedFirst.meta), canonicalJson(openFirst.meta))
+    })
+
+    it('classifies them as a conflict in both directions', () => {
+        // Exact-matching the alias table called this disjoint, so the lost update landed with no
+        // marker. Ancestor and descendant of an alias both count, exactly as they do for a canonical
+        // locus.
+        for (const [left, right] of [
+            [typed, openPatch],
+            [openPatch, typed],
+        ] as const) {
+            assert.deepEqual(classifyTemplateAuthoringOverlap(left, right), {
+                status: 'conflict',
+                loci: ['meta.instancePolicy.initiator'],
+            })
+        }
+    })
+
+    it('also catches a patch that writes the alias ANCESTOR', () => {
+        assert.equal(
+            classifyTemplateAuthoringOverlap(typed, {
+                type: 'template.updateSettings',
+                patch: { 'recipient.ask_for_phone_nr.deep': true },
+            }).status,
+            'disjoint',
+            'a path under a DIFFERENT field’s alias must still commute with the initiator',
+        )
+        assert.equal(
+            classifyTemplateAuthoringOverlap(
+                { type: 'template.setSettingTyped', field: 'recipient.requires_phone_number', value: true },
+                { type: 'template.updateSettings', patch: { 'recipient.ask_for_phone_nr.deep': true } },
+            ).status,
+            'conflict',
+        )
+    })
+})
+
+describe('inspector defect 2 · a malformed ancestor is distinguishable from absence', () => {
+    it('reports the blocking path instead of hydrating ordinary defaults in silence', () => {
+        const resolved = resolveTemplateAuthoringMeta(withMeta({ settings: { rendering: 'imported-nonsense' } }).meta)
+
+        const blocked = resolved.findings.filter((finding) => finding.kind === 'malformed-ancestor')
+        // One per unreadable leaf, so a UI can disable exactly the controls that cannot be read.
+        assert.equal(blocked.length, 8)
+        assert.deepEqual([...new Set(blocked.flatMap((finding) => finding.paths))], ['meta.settings.rendering'])
+        assert.deepEqual(
+            [...new Set(blocked.map((finding) => finding.locus))].sort(),
+            TEMPLATE_SETTING_FIELDS.filter((field) => field.startsWith('rendering.')).map(settingFieldPath).sort(),
+        )
+        for (const finding of blocked) assert.match(finding.detail, /holds a string, not a container/)
+
+        // The reader and the reducer agree about which paths are blocked: the write is refused too.
+        assert.match(
+            refusal(
+                { type: 'template.setSettingTyped', field: 'rendering.tabs', value: true },
+                withMeta({ settings: { rendering: 'imported-nonsense' } }),
+            ),
+            /not a container/,
+        )
+    })
+
+    it('does the same for a blocked soft-id collection, and separates it from a malformed leaf', () => {
+        const resolved = resolveTemplateAuthoringMeta(withMeta({ compatibility: 'nonsense', legacy: 7 }).meta)
+
+        // `meta.compatibility` blocks the two collection paths BELOW it — the ancestor case.
+        assert.deepEqual(
+            resolved.findings
+                .filter((finding) => finding.kind === 'malformed-ancestor')
+                .map((finding) => finding.locus)
+                .sort(),
+            ['meta.compatibility.consentTemplateIds', 'meta.compatibility.smsTemplateIds'],
+        )
+        // `meta.legacy` holding a number is the LEAF case: the path resolved, the value is unusable.
+        // Keeping the two kinds apart is what tells a consumer whether anything is reachable below.
+        assert.deepEqual(
+            resolved.findings.filter((finding) => finding.kind === 'malformed-value').map((finding) => finding.locus),
+            ['meta.legacy'],
+        )
+        assert.deepEqual(resolved.compatibility, { consentTemplateIds: [], smsTemplateIds: [] })
+        assert.equal(resolved.legacy, undefined)
+    })
+
+    it('still treats a document with no meta at all as plain absence', () => {
+        // The repair must not turn every field of an empty document into a finding.
+        assert.deepEqual(resolveTemplateAuthoringMeta(undefined).findings, [])
+        assert.deepEqual(resolveTemplateAuthoringMeta({}).findings, [])
+    })
+})
+
+describe('inspector defect 3 · a malformed canonical value is still PRESENT', () => {
+    it('refuses to let an alias re-decide a field the author wrote', () => {
+        const resolved = resolveTemplateAuthoringMeta(
+            withMeta({ settings: { recipient: { requires_phone_number: 'false', ask_for_phone_nr: true } } }).meta,
+        )
+
+        // Treating "unusable" as "absent" is what let the stale `true` win here.
+        assert.equal(resolved.settings['recipient.requires_phone_number'], false)
+        assert.deepEqual(
+            resolved.findings.filter((finding) => finding.locus === settingFieldPath('recipient.requires_phone_number')),
+            [
+                {
+                    kind: 'malformed-value',
+                    locus: 'meta.settings.recipient.requires_phone_number',
+                    paths: ['meta.settings.recipient.requires_phone_number'],
+                    detail: 'stored value "false" is not a valid value for this field',
+                },
+            ],
+        )
+    })
+
+    it('holds for the initiator and the assurance tier too', () => {
+        const resolved = resolveTemplateAuthoringMeta(
+            withMeta({
+                initiator: 'recipient',
+                security_level: 2,
+                instancePolicy: { initiator: 'nobody', requiredAccessLevel: 9 },
+            }).meta,
+        )
+        assert.equal(resolved.instancePolicy.initiator, 'coordinator')
+        assert.equal(resolved.instancePolicy.requiredAccessLevel, 4)
+        assert.equal(resolved.findings.filter((finding) => finding.kind === 'malformed-value').length, 2)
+        assert.equal(resolved.findings.some((finding) => finding.kind === 'legacy-alias-read'), false)
+    })
+
+    it('leaves the alias fallback working when the canonical property is genuinely absent', () => {
+        const resolved = resolveTemplateAuthoringMeta(withMeta({ settings: { ask_for_phone_nr: true } }).meta)
+        assert.equal(resolved.settings['recipient.requires_phone_number'], true)
+    })
+})
+
+describe('inspector defect 4 · a NEW typed membership payload takes a string id', () => {
+    it('refuses a numeric id in the reducer, matching the wire schema', () => {
+        for (const type of ['template.addCompatibilityId', 'template.removeCompatibilityId'] as const) {
+            const op = { type, collection: 'consentTemplateIds', id: 42 } as unknown as TemplateOp
+            assert.ok(templateOpSchema(op) instanceof type_errors, `schema accepted ${type} with a numeric id`)
+            assert.match(refusal(op), /requires a nonempty string soft id, not number/)
+            // A refused op must claim no locus, or it could block a valid concurrent write.
+            assert.deepEqual(templateAuthoringIntentsOf(op), [])
+        }
+    })
+
+    it('still preserves a STORED legacy numeric member losslessly', () => {
+        // Numeric tolerance belongs to old data, not to new payloads: the id is authored as '42'.
+        const imported = applyAll([{ type: 'template.updateMeta', patch: { 'compatibility.consentTemplateIds': [42] } }])
+        assert.equal(resolveTemplateAuthoringMeta(imported.meta).compatibility.consentTemplateIds[0], '42')
+        const touched = applyOperation(imported, {
+            type: 'template.addCompatibilityId',
+            collection: 'consentTemplateIds',
+            id: '7',
+        })
+        assert.deepEqual(metaOf(touched)['compatibility'], { consentTemplateIds: ['42', '7'] })
+    })
+})
+
+describe('inspector defect 5 · an inert patch key contributes no loci', () => {
+    for (const key of ['', '.title'] as const) {
+        it(`treats ${JSON.stringify(key)} as the reducer no-op it is`, () => {
+            const patch = { [key]: 'ignored' }
+            const before = applyAll([{ type: 'template.setSettingTyped', field: 'rendering.tabs', value: true }])
+            const after = applyOperation(before, { type: 'template.updateMeta', patch })
+
+            // The reducer writes nothing for an empty head, so the intent must claim nothing either —
+            // mapping it to the patch root made one inert key conflict with every typed field.
+            assert.equal(canonicalJson({ ...before, revision: 0 }), canonicalJson({ ...after, revision: 0 }))
+            assert.deepEqual(templateAuthoringIntentsOf({ type: 'template.updateMeta', patch }), [])
+            assert.deepEqual(
+                classifyTemplateAuthoringOverlap(
+                    { type: 'template.setMetaFieldTyped', field: 'title', value: 'T' },
+                    { type: 'template.updateMeta', patch },
+                ),
+                { status: 'disjoint' },
+            )
+        })
+    }
+
+    it('still reports a real key in the same patch', () => {
+        assert.equal(
+            classifyTemplateAuthoringOverlap(
+                { type: 'template.setMetaFieldTyped', field: 'title', value: 'T' },
+                { type: 'template.updateMeta', patch: { '': 'ignored', title: 'U' } },
+            ).status,
+            'conflict',
+        )
     })
 })

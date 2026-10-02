@@ -31,6 +31,7 @@ import {
     metaFieldPath,
     normalizeCompatibilityId,
     normalizeCompatibilityIds,
+    parseCompatibilityOperationId,
     parseMetaFieldValue,
     settingFieldPath,
     templateAliasPathsOf,
@@ -1580,9 +1581,14 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             if (!isCompatibilityCollection(op.collection)) {
                 throw new OperationConflictError(`"${String(op.collection)}" is not a compatibility collection`)
             }
-            const id = normalizeCompatibilityId(op.id)
+            // Strict on a NEW payload, where the wire schema says `string > 0`: a numeric id is
+            // tolerated only when READING a stored legacy member. Accepting one here would let an op
+            // the schema refuses land anyway through a replayed log.
+            const id = parseCompatibilityOperationId(op.id)
             if (id === undefined) {
-                throw new OperationConflictError('template.addCompatibilityId requires a nonempty soft id')
+                throw new OperationConflictError(
+                    `template.addCompatibilityId requires a nonempty string soft id, not ${typeof op.id}`,
+                )
             }
             const meta = { ...(doc.meta ?? {}) } as Record<string, unknown>
             // Adding an id already present yields the identical set: content-idempotent, so no new
@@ -1596,9 +1602,14 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
             if (!isCompatibilityCollection(op.collection)) {
                 throw new OperationConflictError(`"${String(op.collection)}" is not a compatibility collection`)
             }
-            const id = normalizeCompatibilityId(op.id)
+            // Strict on a NEW payload, where the wire schema says `string > 0`: a numeric id is
+            // tolerated only when READING a stored legacy member. Accepting one here would let an op
+            // the schema refuses land anyway through a replayed log.
+            const id = parseCompatibilityOperationId(op.id)
             if (id === undefined) {
-                throw new OperationConflictError('template.removeCompatibilityId requires a nonempty soft id')
+                throw new OperationConflictError(
+                    `template.removeCompatibilityId requires a nonempty string soft id, not ${typeof op.id}`,
+                )
             }
             const meta = { ...(doc.meta ?? {}) } as Record<string, unknown>
             // Removing an absent id is a no-op, which is what makes remove/remove of one id converge.

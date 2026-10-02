@@ -355,14 +355,22 @@ export const templateAliasPathsOf = (canonicalPath: string): readonly string[] =
     TEMPLATE_AUTHORING_ALIASES.get(canonicalPath)?.aliasPaths ?? []
 
 /**
- * The canonical paths `path` is a recognized alias of.
+ * The canonical paths a write at `path` reaches through the recognized alias table.
+ *
+ * **Overlap, not equality**, and that distinction was a reproduced defect. An open patch writing
+ * `initiator.unresolved` is writing INSIDE the recognized alias `meta.initiator`: it makes that path
+ * an object, and the next typed initiator write deletes the alias wholesale — taking the intervening
+ * data with it. Matching the alias exactly classified the two as disjoint, so the orders produced
+ * different documents with no conflict raised, which is precisely the lost update the locus
+ * machinery exists to catch. Ancestor and descendant both count, the same way they do for canonical
+ * loci.
  *
  * Plural because one legacy spelling could in principle serve two canonical fields; the lookup is a
  * scan rather than a reverse index so the forward table stays the single declaration.
  */
-export const templateCanonicalPathsForAlias = (path: string): readonly string[] =>
+export const templateCanonicalPathsTouchedByAlias = (path: string): readonly string[] =>
     [...TEMPLATE_AUTHORING_ALIASES.entries()]
-        .filter(([, rule]) => rule.aliasPaths.includes(path))
+        .filter(([, rule]) => rule.aliasPaths.some((aliasPath) => templateLociOverlap(path, aliasPath)))
         .map(([canonicalPath]) => canonicalPath)
 
 // ─────────────────────────────── the non-mutating total reader ───────────────────────────────
@@ -382,6 +390,12 @@ export type TemplateAuthoringFinding = {
         | 'legacy-alias-read'
         /** A soft-id set, or one of its members, is not a law-valid primitive set. */
         | 'malformed-collection'
+        /**
+         * An ancestor container on the way to this field is not a container, so the field cannot be
+         * read — and the typed operations refuse to write through it. Distinct from
+         * `malformed-value`, which is about the leaf itself: here the leaf was never reached.
+         */
+        | 'malformed-ancestor'
     /** The canonical locus the finding is about. */
     locus: string
     /** The exact document paths the evidence was read from. */
@@ -430,10 +444,23 @@ export type ResolvedTemplateAuthoringMeta = {
  */
 type MetaRoot = { meta: QnrTemplateMeta | undefined }
 
-/** An own-property read along a dotted path. Absent and "present holding `undefined`" are one thing. */
-type PathRead = { present: boolean; value: unknown }
+/**
+ * An own-property read along a dotted path, with THREE outcomes rather than two.
+ *
+ * `blocked` is the one that cannot be folded into `absent`, and folding it was a real defect: when an
+ * import leaves a scalar at `meta.settings.rendering`, every leaf below it is unreadable, and
+ * reporting that as absence hands the author eight ordinary-looking defaults over a document that
+ * says something else — while the reducer separately REFUSES to write there. The reader and the
+ * writer have to agree about which paths are blocked, so the reader names the blocking path instead
+ * of quietly treating it as "not set".
+ */
+type PathRead =
+    | { status: 'absent' }
+    | { status: 'present'; value: unknown }
+    /** `blockedAt` is already document-absolute: the walk starts at the `{ meta }` root. */
+    | { status: 'blocked'; blockedAt: string; value: unknown }
 
-const ABSENT: PathRead = { present: false, value: undefined }
+const ABSENT: PathRead = { status: 'absent' }
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> => {
     if (typeof value !== 'object' || value === null) return false
@@ -449,12 +476,20 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> => {
  * "the document says so" the only way a value is present.
  */
 const readOwnPath = (root: unknown, path: string): PathRead => {
+    const segments = path.split('.')
     let current: unknown = root
-    for (const segment of path.split('.')) {
-        if (!isPlainObject(current) || !Object.hasOwn(current, segment)) return ABSENT
+    let walked = ''
+    for (const segment of segments) {
+        // `undefined` is ABSENCE at every depth, never a blocked container: the reader is handed
+        // `{ meta: undefined }` for a brand-new family that carries no `meta` key at all, and calling
+        // that malformed would put a finding on every field of an empty document.
+        if (current === undefined) return ABSENT
+        if (!isPlainObject(current)) return { status: 'blocked', blockedAt: walked, value: current }
+        if (!Object.hasOwn(current, segment)) return ABSENT
         current = current[segment]
+        walked = walked === '' ? segment : `${walked}.${segment}`
     }
-    return current === undefined ? ABSENT : { present: true, value: current }
+    return current === undefined ? ABSENT : { status: 'present', value: current }
 }
 
 /** A field's own validator: the effective value, or `undefined` when the stored value is unusable. */
@@ -518,10 +553,35 @@ const resolveField = <T>(
     combine?: (left: T, right: T) => T,
 ): T => {
     const rule = TEMPLATE_AUTHORING_ALIASES.get(canonicalPath)
-    const canonical = readOwnPath(root, canonicalPath)
 
-    const readOrReport = (path: string, raw: PathRead): T | undefined => {
-        if (!raw.present) return undefined
+    /**
+     * One spelling's contribution: the parsed value when the document holds a usable one, plus
+     * whether the document holds an own property there AT ALL.
+     *
+     * The two are separate because a malformed value is PRESENT. Collapsing them is what let a stale
+     * `ask_for_phone_nr: true` outvote an explicit canonical `requires_phone_number: 'false'` — the
+     * canonical property existed, so no alias should have been consulted, but a malformed parse looked
+     * exactly like absence.
+     */
+    const readSpelling = (path: string): { present: boolean; value: T | undefined } => {
+        const raw = readOwnPath(root, path)
+        if (raw.status === 'absent') return { present: false, value: undefined }
+
+        if (raw.status === 'blocked') {
+            findings.push({
+                kind: 'malformed-ancestor',
+                locus: canonicalPath,
+                paths: [raw.blockedAt],
+                detail:
+                    `"${raw.blockedAt}" holds ${describeContainer(raw.value)}, not a container, so ` +
+                    `"${path}" cannot be read; the typed operations refuse to write through it`,
+            })
+            // Blocked is NOT presence: there is no own property to defend, and the field has no
+            // trustworthy value. The finding is what keeps the returned default distinguishable from
+            // an authored one.
+            return { present: false, value: undefined }
+        }
+
         const parsed = read(raw.value)
         if (parsed === undefined) {
             findings.push({
@@ -531,17 +591,29 @@ const resolveField = <T>(
                 detail: `stored value ${JSON.stringify(raw.value) ?? String(raw.value)} is not a valid value for this field`,
             })
         }
-        return parsed
+        return { present: true, value: parsed }
     }
 
-    const canonicalValue = readOrReport(canonicalPath, canonical)
-    const aliasReads = (rule?.aliasPaths ?? []).map((path) => ({ path, read: readOwnPath(root, path) }))
-    const aliasValues = aliasReads
-        .map(({ path, read: raw }) => ({ path, value: readOrReport(path, raw) }))
+    const canonical = readSpelling(canonicalPath)
+
+    /**
+     * Aliases are always READ, because a stale spelling is worth REPORTING even when it cannot win.
+     * What the strategy below decides is only whether one may supply the effective value.
+     */
+    const aliasValues = (rule?.aliasPaths ?? [])
+        .map((path) => ({ path, value: readSpelling(path).value }))
         .filter((entry): entry is { path: string; value: T } => entry.value !== undefined)
 
     // The OR strategy folds canonical and aliases together: any spelling asserting `true` wins, and a
     // disagreement is reported rather than resolved by key order.
+    //
+    // **This is deliberately NOT the canonical-first rule below, and the frozen contract says so in
+    // both directions.** The two journal fields unify several legacy spellings of ONE requirement
+    // written by different code paths over the years, so a template that set any of them required an
+    // activity id; resolving to the canonical `false` while `soknadid_required: true` is still stored
+    // would silently drop that requirement. Phone is the explicit counter-case — it "never ORs
+    // competing canonical/old phone keys" — which is why it uses canonical-first and this does not.
+    // The suite pins that only these two boolean settings leaves use `or`.
     //
     // `combine` is supplied by the caller rather than carried on the rule, because a combiner on the
     // rule would have to be typed over every field's value type at once. Every `or` rule in the table
@@ -550,7 +622,7 @@ const resolveField = <T>(
     // non-boolean field is a red test and not a silent fall-through to canonical-first.
     if (rule?.strategy === 'or' && combine !== undefined) {
         const contributors = [
-            ...(canonicalValue === undefined ? [] : [{ path: canonicalPath, value: canonicalValue }]),
+            ...(canonical.value === undefined ? [] : [{ path: canonicalPath, value: canonical.value }]),
             ...aliasValues,
         ]
         if (contributors.length === 0) return fallback
@@ -566,21 +638,33 @@ const resolveField = <T>(
         return folded
     }
 
-    if (canonicalValue !== undefined) {
-        // Canonical explicit presence wins outright — but a disagreeing alias is still a classified
-        // finding, because it is a stale value a later reader on an older contract could pick up.
-        const disagreeing = aliasValues.filter((entry) => entry.value !== canonicalValue)
+    /**
+     * **Canonical-first: an alias may supply the value ONLY while the canonical property is absent.**
+     *
+     * The malformed half is the one that was wrong and is reproduced in the suite: a canonical
+     * `requires_phone_number: 'false'` is PRESENT — the author wrote this field, here — and a stale
+     * `ask_for_phone_nr: true` must not be allowed to re-decide it just because the stored value does
+     * not parse. Treating "unusable" as "absent" is what let the old spelling win. A malformed
+     * canonical therefore resolves to the declared default, with the `malformed-value` finding already
+     * recorded above so the default is never mistaken for an authored one.
+     */
+    if (canonical.present) {
+        if (canonical.value === undefined) return fallback
+
+        // A disagreeing alias is still a classified finding: it is a stale value a reader on an older
+        // contract could pick up, and the next typed write is what clears it.
+        const disagreeing = aliasValues.filter((entry) => entry.value !== canonical.value)
         if (disagreeing.length > 0) {
             findings.push({
                 kind: 'alias-disagreement',
                 locus: canonicalPath,
                 paths: [canonicalPath, ...disagreeing.map((entry) => entry.path)],
-                detail: `canonical value ${JSON.stringify(canonicalValue)} wins over ${disagreeing
+                detail: `canonical value ${JSON.stringify(canonical.value)} wins over ${disagreeing
                     .map((entry) => `${entry.path}=${JSON.stringify(entry.value)}`)
                     .join(', ')}`,
             })
         }
-        return canonicalValue
+        return canonical.value
     }
 
     const first = aliasValues[0]
@@ -591,11 +675,24 @@ const resolveField = <T>(
             paths: [first.path],
             detail: `effective value read from the recognized legacy spelling "${first.path}"`,
         })
+        const disagreeing = aliasValues.slice(1).filter((entry) => entry.value !== first.value)
+        if (disagreeing.length > 0) {
+            findings.push({
+                kind: 'alias-disagreement',
+                locus: canonicalPath,
+                paths: [first.path, ...disagreeing.map((entry) => entry.path)],
+                detail: 'recognized legacy spellings disagree; the first recognized one wins',
+            })
+        }
         return first.value
     }
 
     return fallback
 }
+
+/** Names what a blocking value actually is, so a finding reads as evidence rather than a category. */
+const describeContainer = (value: unknown): string =>
+    value === null ? 'null' : Array.isArray(value) ? 'an array' : `a ${typeof value}`
 
 /**
  * The canonical member form of one soft id.
@@ -616,6 +713,19 @@ export const normalizeCompatibilityId = (value: unknown): string | undefined => 
 }
 
 /**
+ * The id a NEW typed membership operation may carry: a nonempty string, NFC-normalised. Never a number.
+ *
+ * Separate from {@link normalizeCompatibilityId} on purpose, and the separation is the point. Numeric
+ * tolerance exists for **stored legacy members** — ids the port inherited and must not drop. A new
+ * operation is authored today against a contract whose wire schema says `string > 0`, so accepting
+ * `id: 42` in the reducer would mean the schema and the replay path disagree about what the vocabulary
+ * is: an op refused at the boundary would still land when replayed from a log. One spelling for new
+ * producers, full tolerance for old data.
+ */
+export const parseCompatibilityOperationId = (value: unknown): string | undefined =>
+    typeof value === 'string' && value.length > 0 ? value.normalize('NFC') : undefined
+
+/**
  * The canonical stored form of a touched soft-id set: sorted, unique, NFC.
  *
  * Sorted by UTF-16 code unit, which is the same comparison `canonicalJson` uses for object keys —
@@ -633,20 +743,32 @@ const resolveCompatibilityCollection = (
 ): readonly string[] => {
     const locus = compatibilityCollectionPath(collection)
     const raw = readOwnPath(root, locus)
-    if (!raw.present) return []
+    if (raw.status === 'absent') return []
+
+    if (raw.status === 'blocked') {
+        findings.push({
+            kind: 'malformed-ancestor',
+            locus,
+            paths: [raw.blockedAt],
+            detail:
+                `"${raw.blockedAt}" holds ${describeContainer(raw.value)}, not a container, so ` +
+                `"${locus}" cannot be read; the typed membership operations refuse to write through it`,
+        })
+        return []
+    }
 
     if (!Array.isArray(raw.value)) {
         findings.push({
             kind: 'malformed-collection',
             locus,
             paths: [locus],
-            detail: `stored value is ${typeof raw.value}, not an array of soft ids`,
+            detail: `stored value is ${describeContainer(raw.value)}, not an array of soft ids`,
         })
         return []
     }
 
     const members: string[] = []
-    raw.value.forEach((member, index) => {
+    raw.value.forEach((member: unknown, index: number) => {
         const normalized = normalizeCompatibilityId(member)
         if (normalized === undefined) {
             findings.push({
@@ -750,13 +872,22 @@ export const resolveTemplateAuthoringMeta = (
     }
 
     const legacy = readOwnPath(root, 'meta.legacy')
-    if (!legacy.present) return resolved
+    if (legacy.status === 'absent') return resolved
+    if (legacy.status === 'blocked') {
+        findings.push({
+            kind: 'malformed-ancestor',
+            locus: 'meta.legacy',
+            paths: [legacy.blockedAt],
+            detail: `"${legacy.blockedAt}" holds ${describeContainer(legacy.value)}, not a container`,
+        })
+        return resolved
+    }
     if (!isPlainObject(legacy.value)) {
         findings.push({
             kind: 'malformed-value',
             locus: 'meta.legacy',
             paths: ['meta.legacy'],
-            detail: `stored residue is ${typeof legacy.value}, not a container`,
+            detail: `stored residue is ${describeContainer(legacy.value)}, not a container`,
         })
         return resolved
     }
@@ -821,12 +952,14 @@ export const templateAuthoringIntentsOf = (op: TemplateOp): readonly TemplateAut
             return [{ locus: path, kind: 'set', value: storedLeafValue(path, op.value) }]
         }
         case 'template.addCompatibilityId': {
-            const id = normalizeCompatibilityId(op.id)
+            // The strict parser, matching the reducer: an op the reducer refuses must claim no locus,
+            // or a refused write would still be able to block a valid concurrent one.
+            const id = parseCompatibilityOperationId(op.id)
             if (id === undefined) return []
             return [{ locus: compatibilityIdPath(op.collection, id), kind: 'set', value: id }]
         }
         case 'template.removeCompatibilityId': {
-            const id = normalizeCompatibilityId(op.id)
+            const id = parseCompatibilityOperationId(op.id)
             if (id === undefined) return []
             return [{ locus: compatibilityIdPath(op.collection, id), kind: 'set', value: null }]
         }
@@ -858,13 +991,18 @@ const openPatchIntents = (
 ): readonly TemplateAuthoringIntent[] => {
     const loci = new Set<string>()
     for (const key of Object.keys(patch)) {
-        // An empty key is the reducer's documented no-op (`writeField` returns the record unchanged),
-        // so it is mapped to the patch root and reaches nothing rather than claiming the whole bag.
-        const written = key === '' ? root : `${root}.${key}`
+        // A patch key whose FIRST segment is empty writes nothing: `writeField` returns the record
+        // unchanged on an empty head, so `''` and `'.title'` are both historical no-ops. Mapping them
+        // to the patch root was a reproduced defect — the root is an ancestor of every canonical
+        // locus, so one inert key made an old patch conflict with every typed field in the document.
+        const [head] = key.split('.')
+        if (head === undefined || head === '') continue
+
+        const written = `${root}.${key}`
         for (const locus of CANONICAL_LOCI) {
             if (templateLociOverlap(written, locus)) loci.add(locus)
         }
-        for (const canonicalPath of templateCanonicalPathsForAlias(written)) loci.add(canonicalPath)
+        for (const canonicalPath of templateCanonicalPathsTouchedByAlias(written)) loci.add(canonicalPath)
     }
     return [...loci].map((locus): TemplateAuthoringIntent => ({ locus, kind: 'opaque' }))
 }
@@ -930,12 +1068,17 @@ export const readTemplateAuthoringLocus = (
         const parsedId: unknown = JSON.parse(member.groups['id'] as string)
         if (typeof parsedId !== 'string') return null
         const set = readOwnPath(document, member.groups['collection'] as string)
-        if (!Array.isArray(set.value)) return null
-        return set.value.some((entry) => normalizeCompatibilityId(entry) === parsedId) ? parsedId : null
+        if (set.status !== 'present' || !Array.isArray(set.value)) return null
+        return set.value.some((entry: unknown) => normalizeCompatibilityId(entry) === parsedId)
+            ? parsedId
+            : null
     }
 
+    // A blocked read is reported as absence here on purpose: a conflict record carries values, and a
+    // scalar sitting where a container belongs is not the value of the locus that was asked for. The
+    // reader above is where that condition is classified and surfaced.
     const read = readOwnPath(document, locus)
-    return read.present ? (read.value as JsonValue) : null
+    return read.status === 'present' ? (read.value as JsonValue) : null
 }
 
 /**
