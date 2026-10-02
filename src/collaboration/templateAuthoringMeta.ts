@@ -419,6 +419,17 @@ export type ResolvedTemplateAuthoringMeta = {
     findings: readonly TemplateAuthoringFinding[]
 }
 
+/**
+ * The traversal root every canonical path is anchored at.
+ *
+ * Paths in this module are document-absolute (`meta.settings.rendering.tabs`) because they are also
+ * the conflict loci, and a locus that dropped its `meta.` prefix would not match the path a conflict
+ * record carries. So the reader wraps the metadata it was handed in a document-shaped root rather than
+ * stripping the prefix at 30 call sites — one wrapper, and the registry stays the only place a path is
+ * spelled.
+ */
+type MetaRoot = { meta: QnrTemplateMeta | undefined }
+
 /** An own-property read along a dotted path. Absent and "present holding `undefined`" are one thing. */
 type PathRead = { present: boolean; value: unknown }
 
@@ -499,7 +510,7 @@ export const parseMetaFieldValue = (field: MetaField, value: unknown): MetaField
  * lie).
  */
 const resolveField = <T>(
-    meta: QnrTemplateMeta | undefined,
+    root: MetaRoot,
     canonicalPath: string,
     fallback: T,
     read: ValueReader<T>,
@@ -507,7 +518,7 @@ const resolveField = <T>(
     combine?: (left: T, right: T) => T,
 ): T => {
     const rule = TEMPLATE_AUTHORING_ALIASES.get(canonicalPath)
-    const canonical = readOwnPath(meta, canonicalPath)
+    const canonical = readOwnPath(root, canonicalPath)
 
     const readOrReport = (path: string, raw: PathRead): T | undefined => {
         if (!raw.present) return undefined
@@ -524,7 +535,7 @@ const resolveField = <T>(
     }
 
     const canonicalValue = readOrReport(canonicalPath, canonical)
-    const aliasReads = (rule?.aliasPaths ?? []).map((path) => ({ path, read: readOwnPath(meta, path) }))
+    const aliasReads = (rule?.aliasPaths ?? []).map((path) => ({ path, read: readOwnPath(root, path) }))
     const aliasValues = aliasReads
         .map(({ path, read: raw }) => ({ path, value: readOrReport(path, raw) }))
         .filter((entry): entry is { path: string; value: T } => entry.value !== undefined)
@@ -610,12 +621,12 @@ export const normalizeCompatibilityIds = (ids: readonly string[]): string[] => [
 
 /** A stored collection, read with its malformed members reported rather than silently dropped. */
 const resolveCompatibilityCollection = (
-    meta: QnrTemplateMeta | undefined,
+    root: MetaRoot,
     collection: CompatibilityCollection,
     findings: TemplateAuthoringFinding[],
 ): readonly string[] => {
     const locus = compatibilityCollectionPath(collection)
-    const raw = readOwnPath(meta, locus)
+    const raw = readOwnPath(root, locus)
     if (!raw.present) return []
 
     if (!Array.isArray(raw.value)) {
@@ -661,13 +672,14 @@ export const resolveTemplateAuthoringMeta = (
     meta: QnrTemplateMeta | undefined,
 ): ResolvedTemplateAuthoringMeta => {
     const findings: TemplateAuthoringFinding[] = []
+    const root: MetaRoot = { meta }
     const orBoolean = (left: boolean, right: boolean): boolean => left || right
 
     const settings = Object.fromEntries(
         TEMPLATE_SETTING_FIELDS.map((field) => [
             field,
             resolveField(
-                meta,
+                root,
                 settingFieldPath(field),
                 TEMPLATE_SETTING_DEFAULTS[field],
                 readBoolean,
@@ -678,16 +690,16 @@ export const resolveTemplateAuthoringMeta = (
     ) as Record<SettingField, boolean>
 
     const resolved: ResolvedTemplateAuthoringMeta = {
-        title: resolveField(meta, 'meta.title', TEMPLATE_META_DEFAULTS.title, META_FIELD_READERS.title, findings),
+        title: resolveField(root, 'meta.title', TEMPLATE_META_DEFAULTS.title, META_FIELD_READERS.title, findings),
         description: resolveField(
-            meta,
+            root,
             'meta.description',
             TEMPLATE_META_DEFAULTS.description,
             META_FIELD_READERS.description,
             findings,
         ),
         visibility: resolveField(
-            meta,
+            root,
             'meta.visibility',
             TEMPLATE_META_DEFAULTS.visibility,
             META_FIELD_READERS.visibility,
@@ -695,28 +707,28 @@ export const resolveTemplateAuthoringMeta = (
         ),
         instancePolicy: {
             requiredAccessLevel: resolveField(
-                meta,
+                root,
                 'meta.instancePolicy.requiredAccessLevel',
                 TEMPLATE_META_DEFAULTS['instancePolicy.requiredAccessLevel'],
                 META_FIELD_READERS['instancePolicy.requiredAccessLevel'],
                 findings,
             ),
             invitationRequired: resolveField(
-                meta,
+                root,
                 'meta.instancePolicy.invitationRequired',
                 TEMPLATE_META_DEFAULTS['instancePolicy.invitationRequired'],
                 META_FIELD_READERS['instancePolicy.invitationRequired'],
                 findings,
             ),
             initiator: resolveField(
-                meta,
+                root,
                 'meta.instancePolicy.initiator',
                 TEMPLATE_META_DEFAULTS['instancePolicy.initiator'],
                 META_FIELD_READERS['instancePolicy.initiator'],
                 findings,
             ),
             template_update_mode: resolveField(
-                meta,
+                root,
                 'meta.instancePolicy.template_update_mode',
                 TEMPLATE_META_DEFAULTS['instancePolicy.template_update_mode'],
                 META_FIELD_READERS['instancePolicy.template_update_mode'],
@@ -725,13 +737,13 @@ export const resolveTemplateAuthoringMeta = (
         },
         settings,
         compatibility: {
-            consentTemplateIds: resolveCompatibilityCollection(meta, 'consentTemplateIds', findings),
-            smsTemplateIds: resolveCompatibilityCollection(meta, 'smsTemplateIds', findings),
+            consentTemplateIds: resolveCompatibilityCollection(root, 'consentTemplateIds', findings),
+            smsTemplateIds: resolveCompatibilityCollection(root, 'smsTemplateIds', findings),
         },
         findings,
     }
 
-    const legacy = readOwnPath(meta, 'meta.legacy')
+    const legacy = readOwnPath(root, 'meta.legacy')
     if (!legacy.present) return resolved
     if (!isPlainObject(legacy.value)) {
         findings.push({
