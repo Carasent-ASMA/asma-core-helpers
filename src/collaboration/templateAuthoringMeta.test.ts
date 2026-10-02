@@ -767,6 +767,25 @@ describe('canonical loci name exactly one piece of state', () => {
         assert.equal(readTemplateAuthoringLocus(doc, compatibilityIdPath('smsTemplateIds', 's-2')), null)
     })
 
+    it('reads own properties only, so a locus can never resolve on the prototype', () => {
+        // Found by seeding the removal of the `Object.hasOwn` guard, which survived the suite as first
+        // written. `readTemplateAuthoringLocus` takes an ARBITRARY locus — a conflict record's stored
+        // `fieldPath` — so without the guard `meta.constructor` resolves to a function and
+        // `meta.__proto__.title` reads whatever is on `Object.prototype`. Either value would then be
+        // written into a conflict record, where the canonical serializer refuses a function outright
+        // and a prototype-sourced string is simply a value no document holds.
+        const doc = withMeta({ instancePolicy: { initiator: 'recipient' } })
+        for (const locus of [
+            'meta.constructor',
+            'meta.hasOwnProperty',
+            'meta.toString',
+            'meta.__proto__.title',
+            'meta.instancePolicy.constructor',
+        ]) {
+            assert.equal(readTemplateAuthoringLocus(doc, locus), null, locus)
+        }
+    })
+
     it('records a marker against the document with the real path', () => {
         assert.deepEqual(templateAuthoringConflictTarget(DOC, settingFieldPath('rendering.refresh_button')), {
             entityType: 'template',
@@ -850,6 +869,69 @@ describe('the released canonical form is untouched by the expanded registry', ()
             })
             assert.deepEqual(reduced.meta?.settings, { refresh_button: true, visibility: 'visible' })
         }
+    })
+})
+
+describe('an old log still recovers its exact document with no snapshot', () => {
+    /**
+     * Snapshotless recovery through the released arms only — the path bunjs takes when it rebuilds a
+     * document from `collab_ops` with no snapshot to start from. Pinned on the RELEASED predicate,
+     * because that is the form the stored history was hashed with.
+     *
+     * The log is deliberately full of things the new vocabulary would do differently: flat legacy
+     * flags, the old phone and initiator spellings, `meta.security_level`, an unsorted soft-id array
+     * and an unmapped residue key. None of them may be normalized, re-spelled, sorted or pruned by
+     * replay — expanding the reducer must not silently change the result of an old log.
+     */
+    const OLD_LOG: readonly TemplateOp[] = [
+        { type: 'template.updateMeta', patch: { title: 'Innkomst', security_level: 2, initiator: 'recipient' } },
+        { type: 'template.updateSettings', patch: { ask_for_phone_nr: true, tab_mode: true, refresh_button: false } },
+        { type: 'template.updateSettings', patch: { 'journal.requires_activity_id': true, activityId_required: true } },
+        { type: 'template.updateMeta', patch: { 'compatibility.consentTemplateIds': ['c-9', 'c-1'] } },
+        { type: 'template.updateMeta', patch: { some_unmapped_residue: 'kept' } },
+        { type: 'template.updateSettings', patch: { ask_for_phone_nr: null } },
+    ]
+
+    it('replays to the pinned bytes and hash', async () => {
+        const doc = applyAll(OLD_LOG, emptyTemplateDocument('tpl-replay'))
+        assert.equal(doc.revision, OLD_LOG.length)
+
+        const released = reduceToMinimalForm(doc, { isDefault: templateDocumentIsDefault })
+        assert.equal(
+            canonicalJson(released),
+            '{"documentId":"tpl-replay","meta":{"compatibility":{"consentTemplateIds":["c-9","c-1"]},' +
+                '"initiator":"recipient","security_level":2,"settings":{"activityId_required":true,' +
+                '"journal":{"requires_activity_id":true},"refresh_button":false,"tab_mode":true},' +
+                '"some_unmapped_residue":"kept","title":"Innkomst"},"revision":6}',
+        )
+        assert.equal(
+            await hashCanonical(released),
+            'sha256:5be6d4683b8a3d560e3cece37fddf4276f4cc11f8d4eaabb5cc885fb878e71a0',
+        )
+
+        // The unsorted soft-id array is the sharpest member here: the typed membership ops sort, and
+        // retro-sorting an untouched imported set would rewrite history's bytes. Only a TOUCHED set is
+        // normalized.
+        assert.deepEqual(metaOf(doc)['compatibility'], { consentTemplateIds: ['c-9', 'c-1'] })
+
+        // The explicit unset in the last entry removed the phone alias and nothing else.
+        assert.equal(Object.hasOwn(metaOf(doc)['settings'] as object, 'ask_for_phone_nr'), false)
+    })
+
+    it('reads that recovered document through the new total reader', () => {
+        const doc = applyAll(OLD_LOG, emptyTemplateDocument('tpl-replay'))
+        const resolved = resolveTemplateAuthoringMeta(doc.meta)
+
+        // Read hydration may expose the new effective defaults over an old stored form without
+        // rewriting it: every value below comes from a legacy spelling the document still carries.
+        assert.equal(resolved.title, 'Innkomst')
+        assert.equal(resolved.instancePolicy.initiator, 'recipient')
+        assert.equal(resolved.instancePolicy.requiredAccessLevel, 2)
+        assert.equal(resolved.settings['rendering.tabs'], true)
+        assert.equal(resolved.settings['rendering.refresh_button'], false)
+        assert.equal(resolved.settings['journal.requires_activity_id'], true)
+        assert.equal(resolved.settings['recipient.requires_phone_number'], false)
+        assert.deepEqual(resolved.compatibility.consentTemplateIds, ['c-1', 'c-9'])
     })
 })
 
