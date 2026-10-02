@@ -71,3 +71,98 @@ test('publishes the ASMA-7683 combined repair surface from the collaboration sub
         )
     }
 })
+
+/**
+ * ASMA-8339's shared surface, checked through the BUILT package.
+ *
+ * The Bun importer and the authoring app consume exactly this entry point, and the whole point of a
+ * shared registry is that neither of them re-spells a default or a legacy alias. A value that exists
+ * in source but never reaches `lib/` would send them straight back to spelling it themselves, which is
+ * the divergence the module exists to prevent — and `pnpm test` cannot see it, because it imports
+ * `./src/...` directly.
+ */
+test('publishes the ASMA-8339 template metadata/settings contract from the collaboration subpath', async () => {
+    const mod = await import('asma-core-helpers/collaboration')
+
+    for (const name of [
+        'resolveTemplateAuthoringMeta',
+        'parseMetaFieldValue',
+        'isTemplateAuthoringDefault',
+        'templateAuthoringIsDefault',
+        'metaFieldPath',
+        'settingFieldPath',
+        'compatibilityIdPath',
+        'compatibilityCollectionPath',
+        'normalizeCompatibilityId',
+        'normalizeCompatibilityIds',
+        'templateAliasPathsOf',
+        'templateCanonicalPathsForAlias',
+        'templateLociOverlap',
+        'templateAuthoringIntentsOf',
+        'classifyTemplateAuthoringOverlap',
+        'readTemplateAuthoringLocus',
+        'templateAuthoringConflictTarget',
+        'isMetaField',
+        'isSettingField',
+        'isCompatibilityCollection',
+        'templateMetaDefault',
+        'templateSettingDefault',
+    ] as const) {
+        assert.equal(typeof mod[name], 'function', `${name} must be a published function`)
+    }
+
+    // The released predicate must still be published ALONGSIDE the new one: verifying a historical
+    // snapshot as stored and normalizing a new write are different jobs, and a consumer that could
+    // only reach one of them would have to pick the wrong one for half its call sites.
+    assert.equal(typeof mod.templateDocumentIsDefault, 'function')
+
+    assert.equal(mod.TEMPLATE_SETTING_FIELDS.length, 23)
+    assert.equal(mod.TEMPLATE_META_FIELDS.length, 7)
+    assert.deepEqual([...mod.COMPATIBILITY_COLLECTIONS], ['consentTemplateIds', 'smsTemplateIds'])
+    assert.equal(mod.TEMPLATE_SETTING_DEFAULTS['rendering.refresh_button'], true)
+    assert.equal(mod.TEMPLATE_META_DEFAULTS['instancePolicy.initiator'], 'coordinator')
+    assert.deepEqual([...mod.TEMPLATE_VISIBILITIES], ['visible', 'hidden'])
+
+    // The alias table has to survive the build as DATA, not just as a type: the importer reads it to
+    // decide which legacy spelling it may consume.
+    assert.deepEqual([...mod.templateAliasPathsOf('meta.settings.recipient.requires_phone_number')], [
+        'meta.settings.recipient.ask_for_phone_nr',
+        'meta.settings.ask_for_phone_nr',
+    ])
+
+    for (const opType of [
+        'template.setMetaFieldTyped',
+        'template.setSettingTyped',
+        'template.addCompatibilityId',
+        'template.removeCompatibilityId',
+    ] as const) {
+        assert.ok(mod.IMPLEMENTED_OP_TYPES.includes(opType), `${opType} must be implemented`)
+        assert.ok(mod.SCHEMA_TEMPLATE_OP_TYPES.includes(opType), `${opType} must have a schema arm`)
+    }
+
+    // The two RELEASED open arms must still be in the registry: they are how an already-stored
+    // `collab_ops` log replays, and dropping them would make old history unreplayable.
+    for (const opType of ['template.updateMeta', 'template.updateSettings'] as const) {
+        assert.ok(mod.IMPLEMENTED_OP_TYPES.includes(opType))
+        assert.ok(mod.SCHEMA_TEMPLATE_OP_TYPES.includes(opType))
+    }
+
+    const { readFile } = await import('node:fs/promises')
+    const declarations = await readFile(
+        new URL('../lib/collaboration/templateAuthoringMeta.d.ts', import.meta.url),
+        'utf8',
+    )
+    for (const typeName of [
+        'MetaField',
+        'MetaFieldValue',
+        'SettingField',
+        'CompatibilityCollection',
+        'TemplateMetaFieldWrite',
+        'ResolvedTemplateAuthoringMeta',
+        'TemplateAuthoringFinding',
+        'TemplateAuthoringIntent',
+        'TemplateAuthoringOverlap',
+    ] as const) {
+        assert.ok(declarations.includes(`type ${typeName}`), `${typeName} must appear in the emitted declarations`)
+    }
+})
