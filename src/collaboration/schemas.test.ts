@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { type } from 'arktype'
 
-import { canonicalJson, reduceToMinimalForm } from './canonicalize.js'
+import { canonicalJson, hashCanonical, reduceToMinimalForm } from './canonicalize.js'
 import { findDocLawViolations } from './docLaws.js'
 import { emptyTemplateDocument, type QnrTemplateDocument } from './templateDocument.js'
 import { IMPLEMENTED_ANSWER_OP_TYPES } from './answerOperations.js'
@@ -20,7 +20,9 @@ import {
     findTemplateSchemaDocLawViolations,
     qnrAnswerDocumentSchema,
     qnrTemplateDocumentSchema,
+    templateAuthoringIsDefault,
     templateDocumentIsDefault,
+    templateDocumentIsDefaultV0281,
     templateOpSchema,
     validateTemplateDocument,
 } from './schemas.js'
@@ -531,5 +533,174 @@ describe('mappingBinding behaviour schemas', () => {
         assert.equal(templateDocumentIsDefault('mappingBindingsById.b-1.cardinality', '0..*'), false)
         assert.equal(templateDocumentIsDefault('mappingBindingsById.b-1.onMissing', 'omit'), true)
         assert.equal(templateDocumentIsDefault('mappingBindingsById.b-1.onMany', 'error'), true)
+    })
+})
+
+// ────────────── OQ-V2-56 · the frozen 0.28.1 canonical-default predicate ──────────────
+
+/**
+ * `templateDocumentIsDefaultV0281` exists because "the released predicate" is a moving target.
+ *
+ * 0.29.0 added the binding-behaviour branch, so a consumer pinned to 0.28.1 hashed a binding carrying
+ * `cardinality: '0..1'` with that member PRESENT, while every later release prunes it. Verifying such
+ * a snapshot with today's predicate reports corruption that is not there. These cases pin the old
+ * rule as an artifact: they describe bytes that were already written, so none of them may be
+ * "updated" to match a future canonical form.
+ */
+describe('the 0.28.1 default predicate is frozen', () => {
+    /** Every name 0.28.1 shipped, transcribed from `e885e839` — the complete list, in its order. */
+    const V0281_DEFAULT_NAMES = [
+        'required',
+        'requires_activity_id',
+        'ask_for_phone_nr',
+        'invitationRequired',
+        'singleRow',
+        'alwaysNew',
+        'timestamps',
+    ] as const
+
+    it('recognises exactly the seven 0.28.1 names, and only at `false`', () => {
+        for (const name of V0281_DEFAULT_NAMES) {
+            assert.equal(templateDocumentIsDefaultV0281(`someObject.${name}`, false), true, name)
+            // 0.28.1 keyed on the VALUE too: `true` is content, not an omittable default.
+            assert.equal(templateDocumentIsDefaultV0281(`someObject.${name}`, true), false, name)
+            // And on a non-boolean, which is a malformed value rather than a default.
+            assert.equal(templateDocumentIsDefaultV0281(`someObject.${name}`, 'false'), false, name)
+        }
+    })
+
+    it('reproduces 0.28.1\u2019s suffix matching, warts included', () => {
+        // The leading dot is required, so a ROOT key named `required` was never a default…
+        assert.equal(templateDocumentIsDefaultV0281('required', false), false)
+        // …while a coincidentally-named unknown member WAS matched. That is a flaw the later
+        // exact-path registry avoids, and preserving it here is the point: the bytes were hashed
+        // under this rule, so softening it now would change what 0.28.1 meant.
+        assert.equal(templateDocumentIsDefaultV0281('someUnknownBag.required', false), true)
+        assert.equal(templateDocumentIsDefaultV0281('a.b.c.timestamps', false), true)
+        // A partial suffix is not a match.
+        assert.equal(templateDocumentIsDefaultV0281('x.notrequired', false), false)
+        assert.equal(templateDocumentIsDefaultV0281('x.required_extra', false), false)
+    })
+
+    it('does NOT treat the three binding behaviours as defaults', () => {
+        // The whole delta, in four lines. 0.28.1 had no branch for these, so a binding spelling out
+        // its own default kept that member — and that is what the consumer's stored hashes cover.
+        for (const [key, value] of [
+            ['cardinality', '0..1'],
+            ['onMissing', 'omit'],
+            ['onMany', 'error'],
+        ] as const) {
+            const path = `mappingBindingsById.b-1.${key}`
+            assert.equal(templateDocumentIsDefaultV0281(path, value), false, path)
+            assert.equal(templateDocumentIsDefault(path, value), true, `${path} must still be pruned by the live predicate`)
+        }
+    })
+
+    /**
+     * The frozen list must not be the live list under another name.
+     *
+     * Today they happen to hold the same seven entries, so an implementation that simply reused
+     * `TEMPLATE_DOCUMENT_DEFAULT_PATHS` would pass every case above — and would then silently
+     * redefine "0.28.1" the first time the live list grows. This case is what makes that
+     * implementation fail: it names members the live registry may legitimately gain and asserts the
+     * frozen predicate stays blind to them.
+     */
+    it('stays blind to names 0.28.1 did not ship, however the live list evolves', () => {
+        for (const name of [
+            'deletableRows',
+            'editable',
+            'auto_import',
+            'refresh_button',
+            'requires_phone_number',
+            'invitation_required',
+        ]) {
+            assert.equal(templateDocumentIsDefaultV0281(`someObject.${name}`, false), false, name)
+        }
+    })
+
+    it('agrees with the live predicate everywhere EXCEPT the binding behaviours', () => {
+        // A differential oracle rather than a restatement of the implementation: if the frozen copy
+        // had dropped, renamed or gained a name, some probe outside the binding paths would disagree.
+        const probes: Array<[string, unknown]> = []
+        for (const name of [...V0281_DEFAULT_NAMES, 'deletableRows', 'editable', 'cardinality', 'onMany']) {
+            for (const value of [false, true, '0..1', 'omit', 'error', 0, null, undefined]) {
+                probes.push([`questionsById.q-1.${name}`, value])
+                probes.push([`mappingNodesById.n-1.${name}`, value])
+                probes.push([`meta.settings.journal.${name}`, value])
+            }
+        }
+
+        const disagreements = probes.filter(
+            ([path, value]) => templateDocumentIsDefaultV0281(path, value) !== templateDocumentIsDefault(path, value),
+        )
+        assert.deepEqual(disagreements, [], 'the two predicates must differ ONLY on mappingBindingsById paths')
+
+        // …and on those paths they must genuinely differ, or the oracle above proves nothing.
+        assert.notEqual(
+            templateDocumentIsDefaultV0281('mappingBindingsById.b-1.cardinality', '0..1'),
+            templateDocumentIsDefault('mappingBindingsById.b-1.cardinality', '0..1'),
+        )
+    })
+})
+
+describe('a 0.28.1-era snapshot verifies only under the 0.28.1 predicate', () => {
+    /** A binding spelling out all three behaviours — the shape the two canonical forms disagree on. */
+    const V0281_ERA_DOCUMENT: QnrTemplateDocument = {
+        documentId: 'tpl-v0281',
+        revision: 4,
+        questionOrder: ['q-1'],
+        questionsById: { 'q-1': { type: 'TextShort', required: false } },
+        mappingNodesById: { 'n-1': { entityId: 'Actor', cardinality: '0..1' } },
+        mappingBindingsById: {
+            'b-1': {
+                nodeId: 'n-1',
+                fieldId: 'Navn',
+                target: { kind: 'question', questionId: 'q-1' },
+                cardinality: '0..1',
+                onMissing: 'omit',
+                onMany: 'error',
+            },
+        },
+    }
+
+    it('keeps the binding behaviours and prunes the sentinel flag', async () => {
+        const reduced = reduceToMinimalForm(V0281_ERA_DOCUMENT, { isDefault: templateDocumentIsDefaultV0281 })
+        assert.equal(
+            canonicalJson(reduced),
+            '{"documentId":"tpl-v0281","mappingBindingsById":{"b-1":{"cardinality":"0..1","fieldId":"Navn",' +
+                '"nodeId":"n-1","onMany":"error","onMissing":"omit","target":{"kind":"question","questionId":"q-1"}}},' +
+                '"mappingNodesById":{"n-1":{"cardinality":"0..1","entityId":"Actor"}},"questionOrder":["q-1"],' +
+                '"questionsById":{"q-1":{"type":"TextShort"}},"revision":4}',
+        )
+        assert.equal(
+            await hashCanonical(reduced),
+            'sha256:38f3d38e0b0350b46d1f077f5368f2496cb93bed65572586d627490cb6d0ad30',
+        )
+    })
+
+    it('hashes differently under the live and authoring predicates, which is the gap', async () => {
+        const live = reduceToMinimalForm(V0281_ERA_DOCUMENT, { isDefault: templateDocumentIsDefault })
+        const authoring = reduceToMinimalForm(V0281_ERA_DOCUMENT, { isDefault: templateAuthoringIsDefault })
+
+        const liveHash = 'sha256:c7a82f82efbc2994c75069704245a99c087a726115fcf0a4aa0f19fe1e75b26d'
+        assert.equal(await hashCanonical(live), liveHash)
+        // The authoring predicate is a superset of the live one and adds nothing on this shape, so a
+        // NEW write of the same content agrees with the live form — only 0.28.1 stands apart.
+        assert.equal(await hashCanonical(authoring), liveHash)
+
+        assert.notEqual(
+            await hashCanonical(reduceToMinimalForm(V0281_ERA_DOCUMENT, { isDefault: templateDocumentIsDefaultV0281 })),
+            liveHash,
+        )
+    })
+
+    it('leaves a node-level behaviour alone under every predicate', () => {
+        // The live predicate anchors on `mappingBindingsById.<id>.<key>`, so a NODE carrying a
+        // deliberately-narrowed `cardinality` survives all three. Pinned because a suffix rule here
+        // would drop the one member that made the node take a single row.
+        for (const isDefault of [templateDocumentIsDefaultV0281, templateDocumentIsDefault, templateAuthoringIsDefault]) {
+            const reduced = reduceToMinimalForm(V0281_ERA_DOCUMENT, { isDefault }) as QnrTemplateDocument
+            assert.equal(reduced.mappingNodesById?.['n-1']?.['cardinality'], '0..1')
+        }
     })
 })
