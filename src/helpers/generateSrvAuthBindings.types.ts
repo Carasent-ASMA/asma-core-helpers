@@ -1,4 +1,8 @@
 import type { AdvocaTabBarMetadata, ITherapistOrSuperUserJwtClaims } from 'asma-types'
+import type { SharedContextController } from '../context/context.types.js'
+
+/** Host-only opt-in; authentication responses invalidate, never publish ready context. */
+export type GenerateSrvAuthBindingsOptions = { sharedContext?: SharedContextController }
 type IOpenreplay = {
     enable: boolean
     block: boolean

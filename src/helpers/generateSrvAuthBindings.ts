@@ -3,10 +3,16 @@ import { EnvConfigsFnInternal } from './generateEnvConfigsBindings.js'
 import { realWindow } from './getSubdomain.js'
 import { getInjectedPlatform } from './getDefaultAppVersions.js'
 import { get as _ } from 'idb-keyval'
-import type { ICheckSigninOptions, ICheckSigninTransformedOptions } from './generateSrvAuthBindings.types.js'
-import { domain, type ActivityStatus, type IAuthBindings } from '../index.js'
+import type { ICheckSigninOptions, ICheckSigninTransformedOptions, GenerateSrvAuthBindingsOptions } from './generateSrvAuthBindings.types.js'
+import { domain } from './initEnvConfigsVars.js'
+import type { ActivityStatus } from './getActivityStatus.js'
+import type { IAuthBindings } from '../g-definitions.js'
 import type { IBaseJwtClaims, IUUID } from 'asma-types'
 import { ActivityStatuses, getActivityStatus } from './getActivityStatus.js'
+import { SharedContextError } from '../context/createSharedContext.js'
+import type { SharedContextController, SharedContextLease, SharedContextOwnerClientSource } from '../context/context.types.js'
+
+const managedAuthContexts = new WeakMap<object, (context: SharedContextController) => void>()
 
 //let logoutSuccessful = false
 
@@ -144,54 +150,100 @@ export type ICheckRegisteredSubdomainResponse<FE extends string> = {
     token?: string
 }
 
-export function generateSrvAuthBindings<FE extends string>(logout?: () => void) {
-    if (logout) {
-        registerCallbackOnSrvAuthEvents('logout_event', logout)
-    }
-
+export function generateSrvAuthBindings<FE extends string>(logout?: () => void, options: GenerateSrvAuthBindingsOptions = {}) {
     if (realWindow.__ASMA__SHELL__?.auth_bindings) {
+        if (options.sharedContext) {
+            const attach = managedAuthContexts.get(realWindow.__ASMA__SHELL__.auth_bindings)
+            if (!attach) throw new SharedContextError('owner_unavailable')
+            attach(options.sharedContext)
+        }
+        if (logout) registerCallbackOnSrvAuthEvents('logout_event', logout)
         return realWindow.__ASMA__SHELL__.auth_bindings as typeof auth_bindings
     }
     let jwtToken = ''
 
     let metadata: ICheckSigninTransformedOptions<FE> | undefined
+    let requestGeneration = 0
+    let expiryTimer: ReturnType<typeof setTimeout> | undefined
+    const contexts = new Set<SharedContextController>()
+    const promiseRegistry = new Map<string, Promise<unknown>>()
+    type CachedActivityStatus = { value: ActivityStatus; expiresAt: number }
+    const CACHE_TTL = 1000 * 60 * 5
+    const activityStatusesCached = new Map<string, CachedActivityStatus>()
+    const pendingRequests = new Map<string, Promise<Map<string, ActivityStatus>>>()
+    let activityGeneration = 0
+
+    function invalidateRequests() {
+        ++requestGeneration
+        ++activityGeneration
+        promiseRegistry.clear()
+        activityStatusesCached.clear()
+        pendingRequests.clear()
+    }
+
+    function assertRequestCurrent(captured: number) {
+        if (captured !== requestGeneration) throw new SharedContextError('stale_context')
+    }
+
+    function attachContext(context: SharedContextController) {
+        if (contexts.has(context)) return
+        contexts.add(context)
+        let observed = context.getSnapshot().generation
+        context.subscribe(snapshot => {
+            if (snapshot.generation !== observed) {
+                observed = snapshot.generation
+                invalidateRequests()
+            }
+            if (snapshot.status === 'disposed') contexts.delete(context)
+        })
+        invalidateRequests()
+    }
+
+    function invalidateContexts(status: 'pending' | 'anonymous' | 'denied') {
+        // Do not let one owner's failed cleanup prevent the other contexts from revoking.
+        let failed = false
+        for (const context of contexts) {
+            try { context.invalidate(status) } catch { failed = true }
+        }
+        if (failed) throw new SharedContextError('cleanup_failed')
+    }
 
     const isJwtInvalid = () => (jwtToken && accessTokenHasExpired()) || !jwtToken
 
     const isJwtValid = () => !isJwtInvalid()
-
-    const promiseRegistry: Record<string, Promise<Response>> = <{}>{}
 
     async function _handleSrvAuthRequest<R>(url: string | URL, fetchOptions: RequestInit): Promise<R> {
         if (typeof url === 'string') {
             url = buildURL(url)
         }
 
-        if (!promiseRegistry[url.pathname]) {
-            promiseRegistry[url.pathname] = fetch(url.toString(), fetchOptions)
+        const endpoint = url
+        const captured = requestGeneration
+        // Never coalesce write/ceremony requests. Read keys include query, headers and scope.
+        const read = !fetchOptions.method || fetchOptions.method === 'GET'
+        const headers = [...new Headers(fetchOptions.headers)].sort(([a], [b]) => a.localeCompare(b))
+        const key = JSON.stringify([captured, endpoint.href, headers])
+        const existing = read ? promiseRegistry.get(key) : undefined
+        if (existing) return existing as Promise<R>
+        const request = (async () => {
+            const res = await fetch(endpoint.toString(), fetchOptions)
+            assertRequestCurrent(captured)
+            const responseData = await res.json() as R
+            assertRequestCurrent(captured)
+            if (!res.ok) throw responseData
+            // A failed/late signout must never repopulate credentials or metadata.
+            if (!endpoint.pathname.endsWith('/signout')) {
+                setAuthData(responseData as Partial<ISigninResponse<FE>>)
+                if (typeof responseData === 'object' && responseData !== null && 'default_app_versions' in responseData) {
+                    dispatchCustomerUserRelatedAppVersions(responseData.default_app_versions as Record<string, string>)
+                }
+            }
+            return responseData
+        })()
+        if (read) promiseRegistry.set(key, request)
+        try { return await request } finally {
+            if (promiseRegistry.get(key) === request) promiseRegistry.delete(key)
         }
-
-        const res = await promiseRegistry[url.pathname]!.finally(() => {
-            delete promiseRegistry[url.pathname]
-        })
-
-        const responseData = (await res.clone().json()) as R
-
-        if (typeof responseData === 'object' && responseData !== null && 'default_app_versions' in responseData) {
-            dispatchCustomerUserRelatedAppVersions(responseData.default_app_versions as Record<string, string>)
-        }
-
-        if (!res.ok) {
-            throw responseData
-        }
-
-        if (res.status === 299 && EnvConfigsFnInternal().DEVELOPMENT) {
-            console.info(responseData)
-        }
-
-        setAuthData(responseData as Partial<ISigninResponse<FE>>)
-
-        return responseData
     }
 
     async function srvAuthPost<T = unknown, R = unknown>(
@@ -222,7 +274,10 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         headers?: Record<string, string>
         signal?: AbortSignal
     }): Promise<R> {
+        const captured = requestGeneration
         const token = await getCachedJwt()
+        assertRequestCurrent(captured)
+        if (!token || !isJwtValid()) throw new SharedContextError('context_unavailable')
         const fetchOptions: RequestInit = {
             method: 'POST',
             headers: {
@@ -239,10 +294,13 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
             new URL(`${baseURL.replace(/\/+$/, '')}${url}`, window.location.origin).toString(),
             fetchOptions,
         )
+        assertRequestCurrent(captured)
 
         if (!response.ok) throw new Error(`Editor request failed with status ${response.status}`)
 
-        return response.json() as R
+        const data = await response.json() as R
+        assertRequestCurrent(captured)
+        return data
     }
 
     async function srvAuthGet<R>(url: string | URL, headers?: Record<string, string>): Promise<R> {
@@ -258,13 +316,26 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     }
 
     function accessTokenHasExpired(): boolean {
-        const tokenObj = getMetadata()
-
-        const accessTokenExpDate = tokenObj?.exp || 0
+        const accessTokenExpDate = metadata?.exp || 0
 
         const nowTime = Math.floor(new Date().getTime() / 1000)
 
-        return accessTokenExpDate - 10 <= nowTime
+        const expired = accessTokenExpDate - 10 <= nowTime
+        if (expired && jwtToken) resetData('denied')
+        return expired
+    }
+
+    function scheduleAuthExpiry() {
+        if (expiryTimer !== undefined) clearTimeout(expiryTimer)
+        expiryTimer = undefined
+        if (!metadata?.exp || !jwtToken) return
+        const delay = Math.max(Math.ceil(metadata.exp - 10) * 1000 - Date.now(), 0)
+        expiryTimer = setTimeout(() => {
+            expiryTimer = undefined
+            if (!accessTokenHasExpired()) scheduleAuthExpiry()
+        }, Math.min(delay, 2_147_483_647))
+        const processTimer: unknown = expiryTimer
+        if (typeof processTimer === 'object' && processTimer !== null && 'unref' in processTimer && typeof processTimer.unref === 'function') processTimer.unref()
     }
 
     /**
@@ -272,13 +343,18 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
      * TODO: need to investigate smarter way of registering and unregister on `logout_event`
      **/
     registerCallbackOnSrvAuthEvents('logout_event', async ({ device }) => {
-        resetData()
+        resetData('anonymous')
         const url = buildURL('/signout')
         if (device === 'UNTRUSTED') {
             url.searchParams.append('unset', 'device_authorization_token')
         }
-        await srvAuthGet(url)
+        try { await srvAuthGet(url) } catch {
+            // Local revocation precedes the request and remains in force on any failure.
+            console.warn('Signout request failed')
+        }
     })
+    // Local revocation runs before downstream logout observers.
+    if (logout) registerCallbackOnSrvAuthEvents('logout_event', logout)
 
     async function signin(url: string | URL, headers?: Record<string, string>): Promise<ISigninResponse<FE>> {
         const isLegalGuardianPath = url.toString().includes('advoca.lg.change-user')
@@ -302,37 +378,53 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     function getUserId() {
         return getMetadata()?.user_id
     }
-    function resetData() {
+    function resetData(status: 'anonymous' | 'denied' = 'anonymous') {
         jwtToken = ''
+        metadata = undefined
+        if (expiryTimer !== undefined) clearTimeout(expiryTimer)
+        expiryTimer = undefined
+        invalidateRequests()
+        invalidateContexts(status)
     }
 
     function setAuthData(data?: Partial<ISigninResponse<FE>>) {
+        if (!data?.metadata && !data?.token) return
+        const previousMetadata = metadata
+        const previousToken = jwtToken
+        // Clear and revoke before exposing a replacement, including same-ID grant changes.
+        resetData('denied')
+        invalidateContexts('pending')
+        const captured = requestGeneration
         if (data?.metadata) {
             metadata = {
                 ...data.metadata,
                 features: new Set(data.metadata?.features),
-                overviews: data.metadata?.overviews ? data.metadata.overviews : metadata?.overviews,
+                overviews: data.metadata.overviews,
             }
+        } else {
+            metadata = previousMetadata
         }
-        if (data?.token) {
-            jwtToken = data?.token
+        const sameIdentity = previousMetadata?.user_id === metadata?.user_id && previousMetadata?.customer_id === metadata?.customer_id && previousMetadata?.journal === metadata?.journal
+        jwtToken = data.token ?? (sameIdentity ? previousToken : '')
+        scheduleAuthExpiry()
+        if (data.token) {
 
             dispatchJwtChangedEvent(data.metadata)
 
             //data.metadata?.theme!== metadata?.theme setTheme(data.metadata.theme)
         }
-        if (!data?.metadata && !data?.token) {
-            console.warn('no metadata or token present in the response', 'data: ', data)
-        }
+        assertRequestCurrent(captured)
     }
 
     function getJwtToken() {
+        accessTokenHasExpired()
         return jwtToken
     }
 
     function getOpenReplay() {
+        accessTokenHasExpired()
         if (!metadata?.openreplay) {
-            console.warn('openreplay is not defined in metadata: ', metadata)
+            console.warn('openreplay is not defined in metadata')
         }
         return metadata?.openreplay
     }
@@ -348,8 +440,9 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     }
 
     function isTeamLeader() {
+        accessTokenHasExpired()
         if (!metadata?.isTeamLeader) {
-            console.warn('isTeamLeader is not defined in metadata: ', metadata)
+            console.warn('isTeamLeader is not defined in metadata')
         }
         return metadata?.isTeamLeader || false
     }
@@ -382,6 +475,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         _cache_ttl = 24,
         _do_not_cache = false,
     ): Promise<ICheckRegisteredSubdomainResponse<FE> | undefined> {
+        accessTokenHasExpired()
         const url = buildURL(`/check?context=subdomain`)
 
         if (metadata) {
@@ -405,11 +499,10 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     }
 
     async function getNewJwtToken() {
+        const captured = requestGeneration
         try {
             const url = buildURL(`/token` + realWindow.location.search)
             const data = await srvAuthGet<ISigninResponse<FE> & { signout?: boolean }>(url)
-
-            data.signout && logout?.()
 
             if (!data || 'errors' in data || data.signout) {
                 dispatchLogoutEvent()
@@ -419,15 +512,17 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
 
             return jwtToken
         } catch (error) {
+            // A stale failure belongs to the retired request, not a newer login.
+            if (captured !== requestGeneration) throw new SharedContextError('stale_context')
+            resetData('denied')
             dispatchLogoutEvent()
-
-            console.warn(error)
-
-            return jwtToken
+            console.warn('Token refresh failed')
+            return undefined
         }
     }
 
     function getMetadata() {
+        accessTokenHasExpired()
         return metadata
     }
     /**
@@ -438,6 +533,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
      * @var id = customer_id
      */
     function getParsedJwt() {
+        accessTokenHasExpired()
         if (metadata && metadata.user_role) {
             return {
                 //...metadata,
@@ -465,16 +561,18 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     }
 
     function getFeatures() {
+        accessTokenHasExpired()
         if (!metadata?.features) {
-            console.warn('no features present in the metadata', 'metadata: ', metadata)
+            console.warn('no features present in the metadata')
             return
         }
         return Array.from(metadata.features)
     }
 
     function getSrvUrls() {
+        accessTokenHasExpired()
         if (!metadata?.srv_urls) {
-            console.warn('no srv_urls present in the metadata', 'metadata: ', metadata)
+            console.warn('no srv_urls present in the metadata')
             return
         }
         return metadata?.srv_urls
@@ -485,6 +583,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
      * @returns boolean
      */
     function hasFeature(featureName: FE) {
+        accessTokenHasExpired()
         //let hasFeature = false
 
         //const asmaFeaturesIgnoreList: string | null = localStorage.getItem('asma-features-ignore-list')
@@ -523,28 +622,22 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     }
 
     function getConnector() {
+        accessTokenHasExpired()
         return metadata?.journal
     }
 
     function getTheme() {
+        accessTokenHasExpired()
         if (!metadata?.theme) {
-            console.warn('no theme present in the metadata', 'metadata: ', metadata)
+            console.warn('no theme present in the metadata')
             return
         }
         return metadata.theme
     }
 
-    type CachedActivityStatus = {
-        value: ActivityStatus
-        expiresAt: number
-    }
-
-    const CACHE_TTL = 1000 * 60 * 5
-    const activityStatusesCached = new Map<string, CachedActivityStatus>()
-
-    const pendingRequests = new Map<string, Promise<Map<string, ActivityStatus>>>()
-
     function invalidateActivityStatuses(activityIds?: string[]) {
+        ++activityGeneration
+        pendingRequests.clear()
         if (!activityIds?.length) {
             activityStatusesCached.clear()
             pendingRequests.clear()
@@ -560,6 +653,14 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         activityIds: string[],
         signal?: AbortSignal,
     ): Promise<Map<string, ActivityStatus>> {
+        const captured = requestGeneration
+        const capturedActivity = activityGeneration
+        const assertCurrent = () => {
+            assertRequestCurrent(captured)
+            if (capturedActivity !== activityGeneration || signal?.aborted) throw new SharedContextError('stale_context')
+        }
+        if (!isJwtValid()) return new Map()
+        assertCurrent()
         const result = new Map<string, ActivityStatus>()
         const missingIds: number[] = []
         const now = Date.now()
@@ -576,10 +677,11 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
 
         if (!missingIds.length) return result
 
-        const requestKey = missingIds.join(',')
+        const requestKey = JSON.stringify([captured, capturedActivity, missingIds])
 
         if (pendingRequests.has(requestKey)) {
             const ongoing = await pendingRequests.get(requestKey)!
+            assertCurrent()
             ongoing.forEach((v, k) => result.set(k, v))
             return result
         }
@@ -594,6 +696,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
                     body: { SoknadID: missingIds, AdVoca: domain === 'advoca' ? 1 : 0 },
                     signal,
                 })
+                assertCurrent()
 
                 const map = new Map<string, ActivityStatus>()
 
@@ -619,16 +722,18 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
 
                 return map
             } catch (error) {
-                console.error(error)
+                if (error instanceof SharedContextError) throw error
+                console.warn('Activity access request failed')
                 return new Map<string, ActivityStatus>()
             } finally {
-                pendingRequests.delete(requestKey)
+                if (capturedActivity === activityGeneration) pendingRequests.delete(requestKey)
             }
         })()
 
         pendingRequests.set(requestKey, requestPromise)
 
         const fetched = await requestPromise
+        assertCurrent()
         fetched.forEach((v, k) => result.set(k, v))
 
         return result
@@ -681,6 +786,8 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     realWindow.__ASMA__SHELL__ = realWindow.__ASMA__SHELL__ || {}
 
     realWindow.__ASMA__SHELL__.auth_bindings = auth_bindings
+    managedAuthContexts.set(auth_bindings, attachContext)
+    if (options.sharedContext) attachContext(options.sharedContext)
 
     // Seed the overrides bus from the server-injected first-hit versions so the map is available
     // before any auth response arrives (later responses still dispatch updates). ASMA-7544.
@@ -704,6 +811,38 @@ export function generateSrvAuthBindingsMicroApp(
         realWindow.__ASMA__SHELL__?.auth_bindings ||
         generateSrvAuthBindings(/* SRV_AUTH, DEVELOPMENT, ENVIRONMENT_TO_OPERATE, */ /* EnvConfigsFn, */ logout)
     )
+}
+
+/**
+ * Host-only adapter for an already qualified owner URL and the SAME auth producer.
+ * Consumers receive fetch/client capability, never a token getter or second session.
+ */
+export function createSrvAuthContextOwnerClient(
+    auth: Pick<IAuthBindings<string>, 'getCachedJwt' | 'isJwtValid' | 'getNewJwtToken'>,
+    url: string,
+    lease: SharedContextLease,
+): SharedContextOwnerClientSource {
+    const endpoint = new URL(url).href
+    const ownerFetch: typeof fetch = async (input, init) => {
+        const request = new Request(input, init)
+        lease.assertCurrent()
+        if (request.url !== endpoint) throw new SharedContextError('wrong_owner_endpoint')
+        async function authorizedRequest() {
+            const token = await lease.run(() => auth.getCachedJwt())
+            if (!token || !auth.isJwtValid()) throw new SharedContextError('context_unavailable')
+            lease.assertCurrent()
+            const headers = new Headers(request.headers)
+            headers.set('Authorization', `Bearer ${token}`)
+            return new Request(request.clone(), { headers, redirect: 'error', signal: AbortSignal.any([request.signal, lease.signal]) })
+        }
+        let response = await lease.run(async () => fetch(await authorizedRequest()))
+        if (response.status === 401) {
+            await lease.run(() => auth.getNewJwtToken())
+            response = await lease.run(async () => fetch(await authorizedRequest()))
+        }
+        return response
+    }
+    return Object.freeze({ url: endpoint, fetch: ownerFetch })
 }
 
 let current_app_version: Record<string, string> | undefined = undefined

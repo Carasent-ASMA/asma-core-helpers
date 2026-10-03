@@ -13,7 +13,7 @@
  *
  * @see asma-modules/_docs/frontend/operations/2026-07-11-23-00-runbook-graphql-schema-generation-secrets.md
  */
-import { createTadaBrowserClient, type ResolveExchanges } from './createTadaBrowserClient.js'
+import { createTadaBrowserClient, type ResolveExchanges, type CreateContextTadaBrowserClientOptions } from './createTadaBrowserClient.js'
 import { EnvConfigsFnInternal, type IEnvironmentUrlsGenQLOnly } from './generateEnvConfigsBindings.js'
 import {
     getCachedJwtInternal,
@@ -62,11 +62,10 @@ export interface InitTadaBrowserClientOptions {
  * from just a `service` name. URL resolution (`resolveSrvUrl`) and JWT binding
  * (`getCachedJwtInternal` / `isJwtValidInternal`) are wired internally.
  */
-export function initTadaBrowserClient({
-    service,
-    path = '/v1/graphql',
-    resolveExchanges,
-}: InitTadaBrowserClientOptions) {
+export function initTadaBrowserClient(options: InitTadaBrowserClientOptions | CreateContextTadaBrowserClientOptions) {
+    // Return before resolving any environment/metadata or global auth getter.
+    if ('contextBinding' in options) return createTadaBrowserClient(options)
+    const { service, path = '/v1/graphql', resolveExchanges } = options
     return createTadaBrowserClient({
         url: `${resolveSrvUrl(service)}${path}`,
         getJwt: getCachedJwtInternal,
