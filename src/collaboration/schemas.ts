@@ -1052,6 +1052,58 @@ export const templateDocumentIsDefault: IsDefault = (path, value) => {
 }
 
 /**
+ * The default registry **exactly as 0.28.1 shipped it** — a historical artifact, not a live list.
+ *
+ * Deliberately a full transcription rather than a reference to
+ * {@link TEMPLATE_DOCUMENT_DEFAULT_PATHS}, even though the two are identical today. The live list is
+ * allowed to grow; this one is not, because it describes bytes that were already hashed. Sharing the
+ * identifier would make the next addition to the live list silently rewrite what "0.28.1" means, which
+ * is the one thing a frozen predicate must never do.
+ *
+ * @see v0.28.1 `src/collaboration/schemas.ts` — `e885e839bec33c6950cfe3f192e07a64412541d8`
+ */
+const TEMPLATE_DOCUMENT_DEFAULT_PATHS_V0281: readonly string[] = [
+    'required',
+    'requires_activity_id',
+    'ask_for_phone_nr',
+    'invitationRequired',
+    'singleRow',
+    'alwaysNew',
+    'timestamps',
+]
+
+/**
+ * The 0.28.1 canonical-default predicate, frozen for consumers that still hash against that release.
+ *
+ * **Why this exists.** `templateDocumentIsDefault` is "the released predicate", but *released* is a
+ * moving target: 0.29.0 added a branch for the three `mappingBindingsById.<id>.{cardinality,
+ * onMissing, onMany}` behaviours, whose defaults are VALUES rather than `false`. A consumer pinned to
+ * 0.28.1 therefore hashed a binding carrying `cardinality: '0..1'` **with that member present**, while
+ * 0.29.0 and later prune it. Same document, two canonical byte strings, two `document_hash` values —
+ * so verifying a 0.28.1-era stored snapshot with today's predicate reports corruption that is not
+ * there.
+ *
+ * This is a consumer compatibility gap exposed by adoption, not a defect in the stored data: the
+ * earlier shared byte-identity check for this work was performed against `a0dfc955` (0.38.0), which is
+ * the correct baseline for THIS package's history and the wrong one for a consumer pinned to 0.28.1.
+ * Nothing historical is rewritten — the fix is to make the old rule addressable.
+ *
+ * **Which predicate to use.** Three, with three different jobs, and picking by name rather than by
+ * recency is the whole point:
+ *
+ * - `templateDocumentIsDefaultV0281` — verify a snapshot hashed by a consumer pinned to **0.28.1 or
+ *   earlier**, as stored.
+ * - {@link templateDocumentIsDefault} — verify a snapshot hashed by **0.29.0 through 0.38.0**, as
+ *   stored. Unchanged, and existing consumers keep reading it.
+ * - {@link templateAuthoringIsDefault} — normalize a **new** write or a **new** canonical import.
+ *
+ * **Never "keep this in sync".** It has no forward semantics to track: if a future release changes the
+ * canonical form again, that release gets its own frozen predicate and this one keeps meaning 0.28.1.
+ */
+export const templateDocumentIsDefaultV0281: IsDefault = (path, value) =>
+    value === false && TEMPLATE_DOCUMENT_DEFAULT_PATHS_V0281.some((name) => path.endsWith(`.${name}`))
+
+/**
  * The canonical-write predicate: the released rules PLUS the ASMA-8339 metadata/settings registry.
  *
  * **Two predicates, not one, and the split is a correctness requirement rather than caution.**

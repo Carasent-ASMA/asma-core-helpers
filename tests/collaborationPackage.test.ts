@@ -116,6 +116,14 @@ test('publishes the ASMA-8339 template metadata/settings contract from the colla
     // only reach one of them would have to pick the wrong one for half its call sites.
     assert.equal(typeof mod.templateDocumentIsDefault, 'function')
 
+    // OQ-V2-56: the same argument one release further back. A consumer pinned to 0.28.1 hashed the
+    // three binding behaviours as content, so it needs the 0.28.1 rule by name — reachable through the
+    // BUILT entry point, because that is the only thing the consumer actually imports.
+    assert.equal(typeof mod.templateDocumentIsDefaultV0281, 'function')
+    assert.equal(mod.templateDocumentIsDefaultV0281('mappingBindingsById.b-1.cardinality', '0..1'), false)
+    assert.equal(mod.templateDocumentIsDefault('mappingBindingsById.b-1.cardinality', '0..1'), true)
+    assert.equal(mod.templateDocumentIsDefaultV0281('questionsById.q-1.required', false), true)
+
     assert.equal(mod.TEMPLATE_SETTING_FIELDS.length, 23)
     assert.equal(mod.TEMPLATE_META_FIELDS.length, 7)
     assert.deepEqual([...mod.COMPATIBILITY_COLLECTIONS], ['consentTemplateIds', 'smsTemplateIds'])
