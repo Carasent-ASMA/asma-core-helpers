@@ -100,6 +100,8 @@ function contextExchange(lease: SharedContextLease): Exchange {
  *   3. fetchExchange      — standard HTTP fetch
  *   4. caller-provided    — appended via clientOptions.exchanges (end of pipeline)
  */
+export function createTadaBrowserClient(options: CreateTadaBrowserClientOptions): { getClient: () => Promise<Client>; createClient: (opts?: { clientOptions?: Partial<ClientOptions>; anonymous?: boolean }) => Promise<Client> }
+export function createTadaBrowserClient(options: CreateContextTadaBrowserClientOptions): { getClient: () => Promise<Client>; createClient: (opts?: { clientOptions?: Partial<ClientOptions>; anonymous?: boolean }) => Promise<Client> }
 export function createTadaBrowserClient(options: CreateTadaBrowserClientOptions | CreateContextTadaBrowserClientOptions): { getClient: () => Promise<Client>; createClient: (opts?: { clientOptions?: Partial<ClientOptions>; anonymous?: boolean }) => Promise<Client> } {
     if ('contextBinding' in options) return createContextClient(options)
     const { url, getJwt, getJwtToken, isJwtValid, resolveExchanges, clientOptions } = options

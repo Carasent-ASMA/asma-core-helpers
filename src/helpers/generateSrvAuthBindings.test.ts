@@ -58,6 +58,86 @@ function deferred<T>() {
 }
 const stale = (error: unknown) => error instanceof SharedContextError && error.code === 'stale_context'
 
+test('disposed attachment failure cannot poison a later login or replacement', async t => {
+    const disposed = createSharedContext()
+    disposed.dispose()
+    assert.throws(() => bindings.generateSrvAuthBindings(undefined, { sharedContext: disposed }),
+        (error: unknown) => error instanceof SharedContextError && error.code === 'disposed')
+    const context = createSharedContext()
+    t.after(() => context.dispose())
+    bindings.generateSrvAuthBindings(undefined, { sharedContext: context })
+    await login()
+    publish(context)
+    const lease = context.mount().capture()
+    await login({ user_id: 'replacement', customer_id: '00000000-0000-0000-0000-000000000002' }, 'replacement-token')
+    assert.equal(auth.getJwtToken(), 'replacement-token')
+    assert.equal(auth.getUserId(), 'replacement')
+    assert.equal(lease.isCurrent(), false)
+    assert.equal(context.getSnapshot().status, 'pending')
+})
+
+test('failed subscription does not retain an otherwise live controller', async t => {
+    const context = createSharedContext()
+    t.after(() => context.dispose())
+    let invalidations = 0
+    const unsubscribable: SharedContextController = {
+        ...context,
+        subscribe() { throw new Error('Fixture subscription failed') },
+        invalidate() { ++invalidations; throw new Error('Retained failed attachment') },
+    }
+    assert.throws(() => bindings.generateSrvAuthBindings(undefined, { sharedContext: unsubscribable }), /Fixture subscription failed/)
+    await login()
+    assert.equal(auth.getJwtToken(), 'fixture-token')
+    assert.equal(invalidations, 0)
+})
+
+test('successful attachment unsubscribes on disposal and permits login', async t => {
+    const context = createSharedContext()
+    let subscriptions = 0
+    let removals = 0
+    const tracked: SharedContextController = {
+        ...context,
+        subscribe(listener) {
+            ++subscriptions
+            const unsubscribe = context.subscribe(listener)
+            return () => { ++removals; unsubscribe() }
+        },
+    }
+    t.after(() => context.dispose())
+    bindings.generateSrvAuthBindings(undefined, { sharedContext: tracked })
+    bindings.generateSrvAuthBindings(undefined, { sharedContext: tracked })
+    assert.equal(subscriptions, 1)
+    context.dispose()
+    assert.equal(removals, 1)
+    await login()
+    assert.equal(auth.getJwtToken(), 'fixture-token')
+})
+
+test('live cleanup failure clears credentials and revokes every context before reporting failure', async t => {
+    const failing = createSharedContext()
+    const healthy = createSharedContext()
+    t.after(() => { failing.dispose(); healthy.dispose() })
+    bindings.generateSrvAuthBindings(undefined, { sharedContext: failing })
+    bindings.generateSrvAuthBindings(undefined, { sharedContext: healthy })
+    await login()
+    publish(failing)
+    publish(healthy)
+    const failedLease = failing.mount().capture()
+    const healthyLease = healthy.mount().capture()
+    failedLease.onRevoke(() => { throw new Error('Fixture cleanup failed') })
+    await assert.rejects(login({ user_id: 'replacement' }, 'replacement-token'),
+        (error: unknown) => error instanceof SharedContextError && error.code === 'cleanup_failed')
+    assert.equal(auth.getJwtToken(), '')
+    assert.equal(auth.getMetadata(), undefined)
+    assert.equal(failedLease.isCurrent(), false)
+    assert.equal(healthyLease.isCurrent(), false)
+    assert.equal(failedLease.signal.aborted, true)
+    assert.equal(healthyLease.signal.aborted, true)
+    assert.equal(failing.getSnapshot().status, 'denied')
+    await login({ user_id: 'recovered' }, 'recovered-token')
+    assert.equal(auth.getJwtToken(), 'recovered-token')
+})
+
 test('legacy producer is reused; login invalidates but cannot authorize or publish a selected record', async t => {
     const context = createSharedContext()
     t.after(() => context.dispose())
@@ -281,3 +361,61 @@ test('owner adapter preserves a current-generation 401 retry and rejects foreign
     await assert.rejects(owner.fetch('https://foreign.invalid/v1/graphql'), /wrong_owner_endpoint/)
     assert.equal(calls, 2)
 })
+
+for (const revocation of ['generation', 'unmount'] as const) {
+    test(`owner initial dispatch denies ${revocation} revocation queued before its await continuation`, async t => {
+        let calls = 0
+        const context = createSharedContext({ createOwnerClient: (_owner, lease) => bindings.createSrvAuthContextOwnerClient({
+            getCachedJwt: async () => 'fixture-token',
+            isJwtValid: () => {
+                queueMicrotask(() => revocation === 'generation' ? context.invalidate('anonymous') : mount.dispose())
+                return true
+            },
+            getNewJwtToken: async () => { throw new Error('No initial dispatch means no refresh') },
+        }, ownerUrl, lease) })
+        t.after(() => context.dispose())
+        publish(context)
+        const mount = context.mount()
+        const owner = await mount.createOwnerClient('fixture-owner')
+        // Deliberately ignores cancellation: authority must prevent invocation itself.
+        fetchHandler = async () => { ++calls; return Response.json({ data: 'retired' }) }
+        await assert.rejects(owner.fetch(ownerUrl), stale)
+        assert.equal(owner.lease.signal.aborted, true)
+        assert.equal(calls, 0)
+    })
+
+    test(`owner retry dispatch denies ${revocation} revocation queued before its await continuation`, async t => {
+        let calls = 0
+        let validityChecks = 0
+        let refreshes = 0
+        const context = createSharedContext({ createOwnerClient: (_owner, lease) => bindings.createSrvAuthContextOwnerClient({
+            getCachedJwt: async () => 'fixture-token',
+            isJwtValid: () => {
+                if (++validityChecks === 2) {
+                    queueMicrotask(() => revocation === 'generation' ? context.invalidate('anonymous') : mount.dispose())
+                }
+                return true
+            },
+            getNewJwtToken: async () => { ++refreshes; return 'fixture-refreshed' },
+        }, ownerUrl, lease) })
+        t.after(() => context.dispose())
+        publish(context)
+        const mount = context.mount()
+        const owner = await mount.createOwnerClient('fixture-owner')
+        // The first current request may run. An abort-ignoring retired retry may not.
+        fetchHandler = async (input, init) => {
+            ++calls
+            if (calls === 1) {
+                assert.equal(owner.lease.isCurrent(), true)
+                assert.equal(new Request(input, init).signal.aborted, false)
+                return new Response(null, { status: 401 })
+            }
+            return Response.json({ data: 'retired' })
+        }
+        await assert.rejects(owner.fetch(ownerUrl), stale)
+        assert.equal(validityChecks, 2)
+        assert.equal(refreshes, 1)
+        assert.equal(owner.lease.signal.aborted, true)
+        assert.equal(calls, 1)
+    })
+}

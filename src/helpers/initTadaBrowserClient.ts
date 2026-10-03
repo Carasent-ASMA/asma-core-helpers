@@ -62,7 +62,9 @@ export interface InitTadaBrowserClientOptions {
  * from just a `service` name. URL resolution (`resolveSrvUrl`) and JWT binding
  * (`getCachedJwtInternal` / `isJwtValidInternal`) are wired internally.
  */
-export function initTadaBrowserClient(options: InitTadaBrowserClientOptions | CreateContextTadaBrowserClientOptions) {
+export function initTadaBrowserClient(options: InitTadaBrowserClientOptions): ReturnType<typeof createTadaBrowserClient>
+export function initTadaBrowserClient(options: CreateContextTadaBrowserClientOptions): ReturnType<typeof createTadaBrowserClient>
+export function initTadaBrowserClient(options: InitTadaBrowserClientOptions | CreateContextTadaBrowserClientOptions): ReturnType<typeof createTadaBrowserClient> {
     // Return before resolving any environment/metadata or global auth getter.
     if ('contextBinding' in options) return createTadaBrowserClient(options)
     const { service, path = '/v1/graphql', resolveExchanges } = options

@@ -187,15 +187,23 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void, 
 
     function attachContext(context: SharedContextController) {
         if (contexts.has(context)) return
-        contexts.add(context)
         let observed = context.getSnapshot().generation
-        context.subscribe(snapshot => {
+        let disposed = false
+        let unsubscribe: (() => void) | undefined
+        unsubscribe = context.subscribe(snapshot => {
             if (snapshot.generation !== observed) {
                 observed = snapshot.generation
                 invalidateRequests()
             }
-            if (snapshot.status === 'disposed') contexts.delete(context)
+            if (snapshot.status === 'disposed') {
+                disposed = true
+                contexts.delete(context)
+                unsubscribe?.()
+            }
         })
+        // Retain only a successful subscription, including synchronous disposal callbacks.
+        if (disposed) { unsubscribe(); return }
+        contexts.add(context)
         invalidateRequests()
     }
 
@@ -835,10 +843,18 @@ export function createSrvAuthContextOwnerClient(
             headers.set('Authorization', `Bearer ${token}`)
             return new Request(request.clone(), { headers, redirect: 'error', signal: AbortSignal.any([request.signal, lease.signal]) })
         }
-        let response = await lease.run(async () => fetch(await authorizedRequest()))
+        let response = await lease.run(async () => {
+            const authorized = await authorizedRequest()
+            lease.assertCurrent()
+            return fetch(authorized)
+        })
         if (response.status === 401) {
             await lease.run(() => auth.getNewJwtToken())
-            response = await lease.run(async () => fetch(await authorizedRequest()))
+            response = await lease.run(async () => {
+                const authorized = await authorizedRequest()
+                lease.assertCurrent()
+                return fetch(authorized)
+            })
         }
         return response
     }
