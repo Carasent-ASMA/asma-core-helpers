@@ -545,6 +545,17 @@ export type HighlightRule = {
  * `false` would be a second encoding of "not set" and would change `document_hash`.
  */
 export type HighlightRuleSettings = { enabled?: true; requiredAll?: true }
+
+/**
+ * M-065 narrative flags, independent of the highlight flags and of stored rules.
+ * `enabled` is legacy `have_narrative`; `requiredAll` is legacy `required_all`.
+ * False means absence of that member only. Disabling retains the rules and the other flag.
+ *
+ * This shape does not encode legacy absent versus empty `conditional`. Enabled/any with absent
+ * conditional remains an unresolved import case until an explicit representation is ratified.
+ */
+export type NarrativeRuleSettings = { enabled?: true; requiredAll?: true }
+export type RuleSettingField = 'enabled' | 'requiredAll'
 export type NarrativeRule = { condition: RuleCondition; [key: string]: unknown }
 export type QnrRule = {
     condition: RuleCondition
@@ -886,6 +897,8 @@ export type QnrTemplateDocument = {
     prefillRuleOrderByQuestionId?: Record<QuestionId, PrefillRuleId[]>
     /** Only for a question that actually sets one of them; an all-default entry is omitted. */
     highlightRuleSettingsByQuestionId?: Record<QuestionId, HighlightRuleSettings>
+    /** M-065: true-only flags; stored rules never imply either setting. */
+    narrativeRuleSettingsByQuestionId?: Record<QuestionId, NarrativeRuleSettings>
     dataMappingsById?: Record<MappingId, QnrDataMapping>
     mappingNodesById?: Record<NodeId, MappingNode>
     mappingBindingsById?: Record<BindingId, MappingBinding>

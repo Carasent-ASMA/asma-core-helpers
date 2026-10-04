@@ -95,6 +95,13 @@ const highlightRuleSettingsSchema = type({
     requiredAll: 'true?',
 })
 
+/** M-065 new root: no undeclared member and no second encoding of false. */
+const narrativeRuleSettingsSchema = type({
+    enabled: 'true?',
+    requiredAll: 'true?',
+    '+': 'reject',
+})
+
 const narrativeRuleSchema = type({
     condition: ruleConditionSchema,
     ...({ '[string]': 'unknown' } as const),
@@ -441,6 +448,7 @@ export const qnrTemplateDocumentSchema = type({
     "prefillRulesById?": recordOf(prefillRuleSchema),
     prefillRuleOrderByQuestionId: 'Record<string, string[]>?',
     "highlightRuleSettingsByQuestionId?": recordOf(highlightRuleSettingsSchema),
+    "narrativeRuleSettingsByQuestionId?": recordOf(narrativeRuleSettingsSchema),
     "dataMappingsById?": recordOf(dataMappingSchema),
     "mappingNodesById?": recordOf(mappingNodeSchema),
     "mappingBindingsById?": recordOf(mappingBindingSchema),
@@ -808,6 +816,26 @@ export const templateOpSchema = type.or(
     type({ type: '"visibilityRule.delete"', ruleId: 'string' }),
     type({ type: '"highlightRule.set"', ruleId: 'string', questionId: 'string', condition: ruleConditionSchema }),
     type({ type: '"highlightRule.delete"', ruleId: 'string' }),
+    type({
+        type: '"highlightRule.setField"', ruleId: 'string > 0', questionId: 'string > 0',
+        field: '"condition"', value: ruleConditionSchema, '+': 'reject',
+    }),
+    type({
+        type: '"highlightRule.setField"', ruleId: 'string > 0', questionId: 'string > 0',
+        field: '"state"', value: 'number | null', '+': 'reject',
+    }),
+    type({
+        type: '"highlightRule.setField"', ruleId: 'string > 0', questionId: 'string > 0',
+        field: '"highlight" | "showLink"', value: 'boolean | null', '+': 'reject',
+    }),
+    type({
+        type: '"highlightRuleSettings.set"', questionId: 'string > 0',
+        field: '"enabled" | "requiredAll"', value: 'boolean', '+': 'reject',
+    }),
+    type({
+        type: '"narrativeRuleSettings.set"', questionId: 'string > 0',
+        field: '"enabled" | "requiredAll"', value: 'boolean', '+': 'reject',
+    }),
     type({ type: '"narrativeRule.set"', ruleId: 'string', questionId: 'string', condition: ruleConditionSchema }),
     type({ type: '"narrativeRule.delete"', ruleId: 'string' }),
     type({
@@ -1128,6 +1156,16 @@ export const templateDocumentIsDefaultV0281: IsDefault = (path, value) =>
  */
 export const templateAuthoringIsDefault: IsDefault = (path, value) =>
     templateDocumentIsDefault(path, value) || isTemplateAuthoringDefault(path, value)
+
+/**
+ * ASMA-7684 new-write canonical form: false rule flags are omitted, independently.
+ * Use for new rule authoring/imports only. All released predicates above stay unchanged for
+ * historical snapshot/delta verification, including the 0.39/0.40 authoring canonical form.
+ * The full path is anchored so a coincidentally named flag in a question/rule bag is untouched.
+ */
+export const templateRuleAuthoringIsDefault: IsDefault = (path, value) =>
+    templateAuthoringIsDefault(path, value) ||
+    (value === false && /^(highlight|narrative)RuleSettingsByQuestionId\.[^.]+\.(enabled|requiredAll)$/.test(path))
 
 /**
  * The instance-side half of the default lint: every present-and-default field on a stored
