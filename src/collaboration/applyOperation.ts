@@ -1,4 +1,5 @@
 import type { TemplateOp } from './operations.js'
+import { findNarrativePresenceViolations, hasSingleNarrativeQuestionOwner } from './narrativePresence.js'
 import type {
     ActionMetadata,
     AlternativeChartLegend,
@@ -1610,8 +1611,118 @@ const setHighlightField = (
     return { ...doc, highlightRulesById: { ...doc.highlightRulesById, [op.ruleId]: rule } }
 }
 
+const requireNarrativePresenceState = (document: QnrTemplateDocument): void => {
+    const violations = findNarrativePresenceViolations(document)
+    if (violations.length !== 0) throw new OperationConflictError(violations.map((v) => `${v.path}: ${v.detail}`).join('; '))
+}
+
+/** Strict NEW-arm-only ownership. Released replacing/moving setters keep their old replay. */
+const requireNarrativeQuestion = (doc: QnrTemplateDocument, questionId: unknown): void => {
+    requireRuleQuestion(doc, questionId)
+    if (!hasSingleNarrativeQuestionOwner(doc, questionId as string)) {
+        throw new OperationConflictError(`Question "${questionId}" must have exactly one structural owner`)
+    }
+}
+
+const editNarrativeCollection = (
+    doc: QnrTemplateDocument,
+    op: Extract<TemplateOp, { type: 'narrativeRuleCollection.edit' }>,
+): QnrTemplateDocument => {
+    assertRuleEditShape(op, ['type', 'questionId', 'expectedPresence', 'intent', 'action'])
+    requireNarrativeQuestion(doc, op.questionId)
+    const presence = doc.narrativeRuleSettingsByQuestionId?.[op.questionId]?.conditionalPresence ?? 'array'
+    if (presence !== op.expectedPresence) throw new OperationConflictError('Stale narrative expectedPresence')
+    if (!['array', 'absent', 'null'].includes(op.expectedPresence) ||
+        op.intent !== (presence === 'null' ? 'repair-null' : 'edit')) {
+        throw new OperationConflictError('Narrative edit requires the matching presence and intent')
+    }
+    const action = op.action
+    if (action === null || typeof action !== 'object' || Array.isArray(action) ||
+        !['set', 'delete', 'materialize'].includes(action.kind)) {
+        throw new OperationConflictError('Unknown narrative collection action')
+    }
+    const allowed = action.kind === 'set' ? ['kind', 'ruleId', 'condition'] :
+        action.kind === 'delete' ? ['kind', 'ruleId'] : ['kind']
+    if (Object.keys(action).some((key) => !allowed.includes(key)) || allowed.some((key) => !Object.hasOwn(action, key))) {
+        throw new OperationConflictError('Narrative action carries an undeclared member')
+    }
+    const settingsEntry = doc.narrativeRuleSettingsByQuestionId?.[op.questionId]
+    if (settingsEntry !== undefined && (settingsEntry === null || typeof settingsEntry !== 'object' ||
+        Array.isArray(settingsEntry) || Object.keys(settingsEntry).some((key) =>
+            key !== 'conditionalPresence' && !((key === 'enabled' || key === 'requiredAll') && settingsEntry[key] === true)))) {
+        throw new OperationConflictError('Narrative target settings are malformed')
+    }
+    if (Object.values(doc.narrativeRuleOrderByQuestionId ?? {}).some((ids) => !Array.isArray(ids) ||
+        ids.some((id) => typeof id !== 'string' || id === ''))) {
+        throw new OperationConflictError('Narrative ownership orders are malformed')
+    }
+    const order = doc.narrativeRuleOrderByQuestionId?.[op.questionId] ?? []
+    if (new Set(order).size !== order.length || order.some((id) =>
+        typeof id !== 'string' || id === '' || !Object.hasOwn(doc.narrativeRulesById ?? {}, id))) {
+        throw new OperationConflictError('Narrative target order is malformed')
+    }
+    for (const id of order) {
+        const rule = doc.narrativeRulesById?.[id]
+        const owners = Object.entries(doc.narrativeRuleOrderByQuestionId ?? {})
+            .flatMap(([owner, ids]) => ids.filter((entry) => entry === id).map(() => owner))
+        if (rule === null || typeof rule !== 'object' || Array.isArray(rule) ||
+            !Object.hasOwn(rule, 'condition') || owners.length !== 1 || owners[0] !== op.questionId) {
+            throw new OperationConflictError('Narrative target order must contain exclusively owned rule records')
+        }
+    }
+    let next = doc
+    if (action.kind === 'materialize') {
+        if (order.length !== 0) throw new OperationConflictError('Materialize requires an empty narrative collection')
+    } else {
+        if (typeof action.ruleId !== 'string' || action.ruleId === '') {
+            throw new OperationConflictError('Narrative edit requires a nonempty ruleId')
+        }
+        const owners = Object.entries(doc.narrativeRuleOrderByQuestionId ?? {})
+            .flatMap(([owner, ids]) => ids.filter((id) => id === action.ruleId).map(() => owner))
+        const exists = Object.hasOwn(doc.narrativeRulesById ?? {}, action.ruleId)
+        if ((exists || owners.length !== 0) && (!exists || owners.length !== 1 || owners[0] !== op.questionId)) {
+            throw new OperationConflictError('Narrative rule must belong only to its target')
+        }
+        if (action.kind === 'delete') {
+            if (presence !== 'array' || !exists) throw new OperationConflictError('Delete requires an existing ARRAY rule')
+            const { rulesById, orderByQuestionId } = deleteScopedRule(doc.narrativeRulesById, doc.narrativeRuleOrderByQuestionId, action.ruleId)
+            next = { ...doc, narrativeRulesById: rulesById, narrativeRuleOrderByQuestionId: orderByQuestionId }
+        } else {
+            requireRuleCondition(doc, action.condition)
+            if (!Object.hasOwn(action.condition, 'sourceQuestionId') ||
+                ['operator', 'value', 'alternativeId', 'alternativeIds'].some((key) =>
+                    Object.hasOwn(action.condition, key) && action.condition[key] === undefined)) {
+                throw new OperationConflictError('Narrative condition carries a missing or undefined member')
+            }
+            requireNarrativeQuestion(doc, action.condition.sourceQuestionId)
+            const alternatives = [...(action.condition.alternativeId === undefined ? [] : [action.condition.alternativeId]),
+                ...(action.condition.alternativeIds ?? [])]
+            if (Object.values(doc.alternativeOrderByQuestionId ?? {}).some((ids) => !Array.isArray(ids))) {
+                throw new OperationConflictError('Alternative ownership orders are malformed')
+            }
+            for (const id of alternatives) {
+                const owners = Object.entries(doc.alternativeOrderByQuestionId ?? {})
+                    .flatMap(([owner, ids]) => ids.filter((entry) => entry === id).map(() => owner))
+                if (owners.length !== 1 || owners[0] !== action.condition.sourceQuestionId) {
+                    throw new OperationConflictError('Narrative alternative must have exactly its source owner')
+                }
+            }
+            const { rulesById, orderByQuestionId } = setScopedRule(doc.narrativeRulesById, doc.narrativeRuleOrderByQuestionId,
+                action.ruleId, op.questionId, { ...doc.narrativeRulesById?.[action.ruleId], condition: action.condition })
+            next = { ...doc, narrativeRulesById: rulesById, narrativeRuleOrderByQuestionId: orderByQuestionId }
+        }
+    }
+    const settings = { ...(doc.narrativeRuleSettingsByQuestionId?.[op.questionId] ?? {}) }
+    delete settings.conditionalPresence
+    const byQuestion = omitKey(doc.narrativeRuleSettingsByQuestionId ?? {}, op.questionId)
+    return { ...next, narrativeRuleSettingsByQuestionId:
+        Object.keys(settings).length === 0 ? byQuestion : { ...byQuestion, [op.questionId]: settings } }
+}
+
 export const applyOperation = (document: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument => {
+    requireNarrativePresenceState(document)
     const next = reduce(document, op)
+    requireNarrativePresenceState(next)
     return prune({ ...next, revision: document.revision + 1 })
 }
 
@@ -2864,6 +2975,9 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
 
         case 'narrativeRuleSettings.set':
             return setRuleSetting(doc, op, 'narrativeRuleSettingsByQuestionId')
+
+        case 'narrativeRuleCollection.edit':
+            return editNarrativeCollection(doc, op)
 
         case 'narrativeRule.set': {
             if (!doc.questionsById?.[op.questionId]) {

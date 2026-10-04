@@ -1,0 +1,856 @@
+{
+  "kind": "AUTHOR_EXECUTED_SHARED_SOURCE_SUBSET_NOT_COMPLETE_M065",
+  "owner": "77e44382-75a7-4543-a3f1-f59091fb53c6",
+  "jira": "ASMA-7684",
+  "branch": "feat/ASMA-7684-qnr-m065-narrative-conditional-presence-shared-source",
+  "publishedBase": "24ece099622d04aa196ee43dbd2ea61db8010266",
+  "frozenR4": "48fa5aa9fdc580c4f4aa659fc6b58b359df162651aa0e0646e9b546ae43528ca",
+  "sourceFiles": {
+    "src/collaboration/applyOperation.ts": "26b3651510a12d97448ac9a87a1e0bb22e1ae94af14c883379cabbe761a54d5c",
+    "src/collaboration/index.ts": "e2ab7b5da6f92c4e749b84f6359672c0a107ad0c97b5a31a55bf433199377494",
+    "src/collaboration/operations.ts": "0c8ee1874f56a15434d6a7fd8e4b3402354bddf2922abb0336550c87114a9bf2",
+    "src/collaboration/schemas.ts": "cd96d51697c4db1e3ba2fc4db3793af131775a654eb410568d844d1e28896b71",
+    "src/collaboration/templateAuthoringMeta.ts": "eaffd29e86f0c84930bcb212967a683480ba6ed4af40b5b8e6cca7a3305029f9",
+    "src/collaboration/templateDocument.ts": "b788f17ad2797dd28801f21b078fb6ffecff70c889f376d5d6ae4b6980a49122",
+    "src/collaboration/narrativePresence.ts": "09e8634adb08be0dad1ba03eeb3e654a9383e4b3c6c3c710127b4d796fdef038",
+    "src/collaboration/narrativePresence.test.ts": "bed3adaa421f18a6c7f57b8c4b80f8d4157d3fd9479f94b295ec7f5306307451",
+    "tests/narrativePresenceConsumer.mts": "040d9291bb69273e5e65f50f59b49e80980fa971190909d0a08be900d8bf837f",
+    "tests/narrativePresencePackage.test.ts": "dae06fb79fcce0f26a9a569157e0bb734d128f6eef21c43e37bf8f674f2335b4"
+  },
+  "gates": {
+    "publishedBaseSource": {
+      "command": "pnpm test",
+      "exit": 0,
+      "sha256": "3c12b222ad2c44817528163d96c3f68150633823693ab2c4333d8c80d215578c",
+      "executed_summary": "\u2139 tests 610\n\u2139 suites 125\n\u2139 pass 610\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 2233.335042"
+    },
+    "publishedBasePackage": {
+      "command": "pnpm test:package",
+      "exit": 0,
+      "sha256": "d3e70930b1e7b06048f96f76f312e9687f979b077210f49bdf6d834162f342fe",
+      "executed_summary": "\u2139 tests 7\n\u2139 suites 0\n\u2139 pass 7\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 745.420709"
+    },
+    "source": {
+      "command": "pnpm test",
+      "exit": 0,
+      "sha256": "db3c2cf8600ad4b37b065172fa962652ab9a0f3fac43323470c8fcb8c649b661",
+      "executed_summary": "\u2139 tests 679\n\u2139 suites 129\n\u2139 pass 679\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 1845.884625"
+    },
+    "builtPackage": {
+      "command": "ASMA_NARRATIVE_BASELINE_040_ENTRY=/private/tmp/qnr-m065-shared-packages/0.40.0/package/lib/collaboration/index.js ASMA_NARRATIVE_BASELINE_041_ENTRY=/private/tmp/qnr-m065-shared-packages/0.41.0/package/lib/collaboration/index.js pnpm test:package",
+      "exit": 0,
+      "sha256": "6ccae16d78ffeb7271b527237042c499f0bf4566cc4b92c2fe3cf28bde072c59",
+      "executed_summary": "\u2139 tests 10\n\u2139 suites 0\n\u2139 pass 10\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 872.704542"
+    },
+    "compiledBehavior": {
+      "command": "ASMA_NARRATIVE_TEST_ENTRY=/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/lib/collaboration/index.js node --import tsx --test src/collaboration/narrativePresence.test.ts",
+      "exit": 0,
+      "sha256": "8db9b1fca4ca98199892e084ce25b3835d3f9f6df8910ab3b791560eea1af375",
+      "executed_summary": "\u2139 tests 69\n\u2139 suites 4\n\u2139 pass 69\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 659.179875"
+    },
+    "packedBehavior": {
+      "command": "ASMA_NARRATIVE_TEST_ENTRY=/private/tmp/qnr-m065-shared-candidate/package/lib/collaboration/index.js node --import tsx --test src/collaboration/narrativePresence.test.ts",
+      "exit": 0,
+      "sha256": "ed6868a8af59c1fcd91a32b904c3109c503e58fe350d97d81daf4a74a2cdb031",
+      "executed_summary": "\u2139 tests 69\n\u2139 suites 4\n\u2139 pass 69\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 700.8535"
+    },
+    "packedExportsHistory": {
+      "command": "ASMA_NARRATIVE_PACKAGE_ENTRY=/private/tmp/qnr-m065-shared-candidate/package/lib/collaboration/index.js ASMA_NARRATIVE_BASELINE_040_ENTRY=/private/tmp/qnr-m065-shared-packages/0.40.0/package/lib/collaboration/index.js ASMA_NARRATIVE_BASELINE_041_ENTRY=/private/tmp/qnr-m065-shared-packages/0.41.0/package/lib/collaboration/index.js node --import tsx --test tests/narrativePresencePackage.test.ts",
+      "exit": 0,
+      "sha256": "7e6c35bccccf259f3d66c6c4c89cb39c6fa1865e5391a81c22622118e15b8586",
+      "executed_summary": "\u2139 tests 3\n\u2139 suites 0\n\u2139 pass 3\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 844.573459"
+    },
+    "restoredBuild": {
+      "command": "pnpm ts:check",
+      "exit": 0,
+      "sha256": "5ac71a99decf5b92dbfe798066cbe8ea317395f8f764f5a8879fd3511ca99454",
+      "executed_summary": "$ tsc"
+    },
+    "exportedType": {
+      "command": "pnpm exec tsc --ignoreConfig --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --skipLibCheck tests/narrativePresenceConsumer.mts",
+      "exit": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "executed_summary": ""
+    },
+    "packedExportedType": {
+      "command": "pnpm exec tsc --ignoreConfig --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --skipLibCheck /private/tmp/qnr-m065-shared-candidate/exported-type-probe.mts",
+      "exit": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "executed_summary": ""
+    }
+  },
+  "historicalByteProof": {
+    "base": "24ece099622d04aa196ee43dbd2ea61db8010266",
+    "releasedHelperPrefix": {
+      "byteEqual": true,
+      "sha256": "479518c4f972e0e5936c2d699a0c738f8d51a80097f7174cbfd932a2fa7fe640"
+    },
+    "releasedReducerSwitchMinusNewArm": {
+      "byteEqual": true,
+      "sha256": "b91200f685429af6b787ea1dfb431f9b31766ed0e437bdee848c85f384fcbbac"
+    },
+    "historicalPredicatesAndRegistries": {
+      "byteEqual": true,
+      "start": "const TEMPLATE_DOCUMENT_DEFAULT_PATHS:",
+      "end": "// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 typed validators",
+      "sha256": "9ca21d9db0adecb69b0b9aeb48290c68bb495f51e1f2d33a851bf23e6f31564f"
+    }
+  },
+  "verifiedOldRegistryArtifacts": {
+    "0.40.0": {
+      "entry": "/private/tmp/qnr-m065-shared-packages/0.40.0/package/lib/collaboration/index.js",
+      "integrity": "sha512-FOwqQc532bDRyxCLQhHkhHbapOr/w6NS7zHggn5h6jRCqszgjBQwmk96/wF8izdLwO+Rc7IzIxdCWS7ObqIF3Q==",
+      "sha1": "020ea4a01c247543097cffb6a908021c7f4b318b",
+      "gitHead": null
+    },
+    "0.41.0": {
+      "entry": "/private/tmp/qnr-m065-shared-packages/0.41.0/package/lib/collaboration/index.js",
+      "integrity": "sha512-tGSSCg3vktW0N3lZp+C7i14g8SaoHcgTzayhV4leCe5Emc9VedqbaBW7PpqdYQpNT0bhaEcZWXSZ5jTV6xPV+A==",
+      "sha1": "3414eea8ba54a75a89186d9b44f8e08d350be707",
+      "gitHead": null
+    }
+  },
+  "privateSourceArtifact": {
+    "kind": "PRIVATE_PACKED_SOURCE_CANDIDATE_NOT_RELEASE",
+    "allocatedVersion": false,
+    "archive": "/private/tmp/qnr-m065-shared-candidate/asma-core-helpers-0.4.2.tgz",
+    "sha256": "e1cbb6ae7d680c29a58476737b611d93e425b7d60032688a9fab124ced84d496",
+    "srcByteEqualCount": 99,
+    "srcByteEqual": true,
+    "entry": "/private/tmp/qnr-m065-shared-candidate/package/lib/collaboration/index.js",
+    "typeProbe": "/private/tmp/qnr-m065-shared-candidate/exported-type-probe.mts"
+  },
+  "mutants": {
+    "author_run": true,
+    "base": "24ece099622d04aa196ee43dbd2ea61db8010266",
+    "r4": "48fa5aa9fdc580c4f4aa659fc6b58b359df162651aa0e0646e9b546ae43528ca",
+    "mode": "one compiling mutant at a time; SAME focused assertions against emitted lib JS",
+    "seeds": [
+      {
+        "id": "M01",
+        "file": "src/collaboration/applyOperation.ts",
+        "old": "    if (presence !== op.expectedPresence) throw new OperationConflictError('Stale narrative expectedPresence')",
+        "new": "    if (false && presence !== op.expectedPresence) throw new OperationConflictError('Stale narrative expectedPresence')",
+        "meaning": "omit expectedPresence fence",
+        "source_sha256": "26b3651510a12d97448ac9a87a1e0bb22e1ae94af14c883379cabbe761a54d5c",
+        "line": 1634,
+        "compile_exit": 0,
+        "test_exit": 1,
+        "assertion_failure_observed": true,
+        "failure_names": [
+          "stale array refuses with original bytes/revision (0.492708ms)",
+          "stale absent refuses with original bytes/revision (0.142416ms)",
+          "M065 shared O06/O11/O16: closed wire and direct-replay refusal (11.189417ms)",
+          "failing tests:"
+        ],
+        "test_log_sha256": "ae1c988cacd597c737a251c10ef472c8dd39bb7acee50b34930b11e954faee04",
+        "status": "KILLED",
+        "assertion_excerpt": " tests:\n\ntest at src/collaboration/narrativePresence.test.ts:1:8224\n\u2716 stale array refuses with original bytes/revision (0.492708ms)\n  AssertionError [ERR_ASSERTION]: Missing expected exception.\n      at refuse (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:38:12)\n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:141:9)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)\n      at Test.postRun (node:internal/test_runner/test:1232:19)\n      at Test.run (node:internal/test_runner/test:1160:12)\n      at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: undefined,\n    operator: 'throws',\n    diff: 'simple'\n  }\n\ntest at src/collaboration/narrativePresence.test.ts:1:8224\n\u2716 stale absent refuses with original bytes/revision (0.142416ms)\n  AssertionError [ERR_ASSERTION]: Missing expected exception.\n      at refuse (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:38:12)\n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:141:9)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)\n      at Test.postRun (node:internal/test_runner/test:1232:19)\n      at Test.run (node:internal/test_runner/test:1160:12)\n      at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: undefined,\n    operator: 'throws',\n    diff: 'simple'\n  }\n",
+        "executed_test_summary": "\u2139 tests 69\n\u2139 suites 4\n\u2139 pass 67\n\u2139 fail 2\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 674.781625"
+      },
+      {
+        "id": "M02",
+        "file": "src/collaboration/applyOperation.ts",
+        "old": "    delete settings.conditionalPresence",
+        "new": "    // mutant: retain conditionalPresence",
+        "meaning": "skip atomic marker removal",
+        "source_sha256": "26b3651510a12d97448ac9a87a1e0bb22e1ae94af14c883379cabbe761a54d5c",
+        "line": 1716,
+        "compile_exit": 0,
+        "test_exit": 1,
+        "assertion_failure_observed": true,
+        "failure_names": [
+          "set enters ARRAY at q once and preserves flags/extras/order (2.875042ms)",
+          "set enters ARRAY at column once and preserves flags/extras/order (0.156834ms)",
+          "delete-last remains ARRAY and preserves both flags (0.130125ms)",
+          "absent explicit set removes only the marker (0.634209ms)",
+          "absent explicit materialize removes only the marker (2.284625ms)",
+          "absent canonical fixed point differs from ARRAY-empty without inventing empty-order encoding (11.371083ms)",
+          "null explicit set removes only the marker (0.28025ms)",
+          "null explicit materialize removes only the marker (0.354ms)",
+          "null canonical fixed point differs from ARRAY-empty without inventing empty-order encoding (1.499375ms)",
+          "materialize marker-only settings prunes the target/root without manufacturing flags (0.2445ms)",
+          "M065 shared O07/O09/O10/O11/O12: atomic source presence transitions (21.3795ms)",
+          "flag-only writes commute with collection edit and with one another in actual reducer (0.176375ms)",
+          "conflict value reader handles exact bracket IDs, own fields and missing/default ARRAY (0.482708ms)",
+          "M065 shared C_CONFLICT: intents, ownership dependencies and released classifier (1.687167ms)",
+          "failing tests:"
+        ],
+        "test_log_sha256": "fdb21857ebeb495e57a261a91d2e4b823f6fdcd82f6b673cb0d28e6ef104cf73",
+        "status": "KILLED",
+        "assertion_excerpt": "\n  }\n\ntest at src/collaboration/narrativePresence.test.ts:1:4695\n\u2716 absent explicit materialize removes only the marker (2.284625ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n  + actual - expected\n  \n    {\n      q: {\n  +     conditionalPresence: 'absent',\n        enabled: true,\n        requiredAll: true\n      }\n    }\n  \n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:86:20)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)\n      at Test.postRun (node:internal/test_runner/test:1232:19)\n      at Test.run (node:internal/test_runner/test:1160:12)\n      at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: { q: { enabled: true, requiredAll: true, conditionalPresence: 'absent' } },\n    expected: { q: { enabled: true, requiredAll: true } },\n    operator: 'deepStrictEqual',\n    diff: 'simple'\n  }\n\ntest at src/collaboration/narrativePresence.test.ts:1:5945\n\u2716 absent canonical fixed point differs from ARRAY-empty without inventing empty-order encoding (11.371083ms)\n  AssertionError [ERR_ASSERTION]: same revision: the source marker itself distinguishes ARRAY-empty\n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:110:20)\n      at async Test.run (node:internal/test_runner/test:1110:7)\n      at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 'sha256:67609b1e32aeae65c9b258acbb50e78902a42e8920d7cf490e1cf2ee8b9ff51c',\n    expected: 'sha256:67609b1e32aeae65c9b258acbb50e78902a42e8920d7cf490e1cf2ee8b9ff51c',\n    operator: 'notStrictEqual',\n    diff: 'simple'\n  }\n\ntest at src/collaboration/narrativePresence.test.ts:1:4695\n\u2716 null explicit set removes only the marker (0.28025ms)\n  Error [CollaborationError]: narrativeRuleSettingsByQuestionId[\"q\"].conditionalPresence: Source p",
+        "executed_test_summary": "\u2139 tests 69\n\u2139 suites 4\n\u2139 pass 57\n\u2139 fail 12\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 660.856833"
+      },
+      {
+        "id": "M03",
+        "file": "src/collaboration/applyOperation.ts",
+        "old": "{ ...doc.narrativeRulesById?.[action.ruleId], condition: action.condition }",
+        "new": "{ condition: action.condition }",
+        "meaning": "replace existing rule extras",
+        "source_sha256": "26b3651510a12d97448ac9a87a1e0bb22e1ae94af14c883379cabbe761a54d5c",
+        "line": 1711,
+        "compile_exit": 0,
+        "test_exit": 1,
+        "assertion_failure_observed": true,
+        "failure_names": [
+          "set enters ARRAY at q once and preserves flags/extras/order (6.70375ms)",
+          "set enters ARRAY at column once and preserves flags/extras/order (0.402709ms)",
+          "M065 shared O07/O09/O10/O11/O12: atomic source presence transitions (21.036333ms)",
+          "failing tests:"
+        ],
+        "test_log_sha256": "5125e387dc4f74bc60992bde1ae11283e90d1b5846e114a39dc028c16c690787",
+        "status": "KILLED",
+        "assertion_excerpt": "est at src/collaboration/narrativePresence.test.ts:1:2741\n\u2716 set enters ARRAY at q once and preserves flags/extras/order (6.70375ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n  + actual - expected\n  \n    {\n      condition: {\n        sourceQuestionId: 'column'\n      },\n  -   imported: 'keep'\n    }\n  \n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:65:16)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Test.start (node:internal/test_runner/test:1000:17)\n      at node:internal/test_runner/test:1513:71\n      at node:internal/per_context/primordials:466:82\n      at new Promise (<anonymous>)\n      at new SafePromise (node:internal/per_context/primordials:435:3)\n      at node:internal/per_context/primordials:466:9\n      at Array.map (<anonymous>) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: { condition: { sourceQuestionId: 'column' } },\n    expected: { imported: 'keep', condition: { sourceQuestionId: 'column' } },\n    operator: 'deepStrictEqual',\n    diff: 'simple'\n  }\n\ntest at src/collaboration/narrativePresence.test.ts:1:2741\n\u2716 set enters ARRAY at column once and preserves flags/extras/order (0.402709ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n  + actual - expected\n  \n    {\n      condition: {\n        sourceQuestionId: 'column'\n      },\n  -   imported: 'keep'\n    }\n  \n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:65:16)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)\n      at Test.postRun (node:internal/test_runner/test:1232:19)\n      at Test.run (node:internal/test_runner/test:1160:12)\n      at async Promise.all (index 0)\n      at async Suite.run (node:internal/test_runner/test:1515:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {\n    generatedMessage: true,\n    ",
+        "executed_test_summary": "\u2139 tests 69\n\u2139 suites 4\n\u2139 pass 67\n\u2139 fail 2\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 672.832125"
+      },
+      {
+        "id": "M04",
+        "file": "src/collaboration/applyOperation.ts",
+        "old": "            requireRuleCondition(doc, action.condition)",
+        "new": "            // mutant: skip strict condition validation",
+        "meaning": "allow malformed condition value/operator",
+        "source_sha256": "26b3651510a12d97448ac9a87a1e0bb22e1ae94af14c883379cabbe761a54d5c",
+        "line": 1691,
+        "compile_exit": 0,
+        "test_exit": 1,
+        "assertion_failure_observed": true,
+        "failure_names": [
+          "wire and direct replay reject {\"action\":{\"kind\":\"set\",\"ruleId\":\"r\",\"condition\":null}} (5.803958ms)",
+          "wire and direct replay reject {\"action\":{\"kind\":\"set\",\"ruleId\":\"r\",\"condition\":{\"sourceQuestionId\":\"s\",\"value\":[]}}} (0.209042ms)",
+          "wire and direct replay reject {\"action\":{\"kind\":\"set\",\"ruleId\":\"r\",\"condition\":{\"sourceQuestionId\":\"s\",\"operator\":1}}} (0.126166ms)",
+          "validates all condition references before marker removal: {\"sourceQuestionId\":\"s\",\"value\":null} (0.122708ms)",
+          "validates all condition references before marker removal: {\"sourceQuestionId\":\"s\",\"value\":null} (0.100167ms)",
+          "M065 shared O06/O11/O16: closed wire and direct-replay refusal (16.167458ms)",
+          "failing tests:"
+        ],
+        "test_log_sha256": "9cd6ef416e3c4596c15ea9aeeb0fb89189b9e9565e7c935303972203a81b9267",
+        "status": "KILLED",
+        "assertion_excerpt": "rrativePresence.test.ts:1:8005\n\u2716 wire and direct replay reject {\"action\":{\"kind\":\"set\",\"ruleId\":\"r\",\"condition\":null}} (5.803958ms)\n  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n  \n    assert.ok(error instanceof OperationConflictError)\n  \n      at Object.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:39:16)\n      at expectedException (node:assert:578:17)\n      at expectsError (node:assert:703:21)\n      at strict.throws (node:assert:759:3)\n      at refuse (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:38:12)\n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:136:9)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)\n      at Test.postRun (node:internal/test_runner/test:1232:19) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: false,\n    expected: true,\n    operator: '==',\n    diff: 'simple'\n  }\n\ntest at src/collaboration/narrativePresence.test.ts:1:8005\n\u2716 wire and direct replay reject {\"action\":{\"kind\":\"set\",\"ruleId\":\"r\",\"condition\":{\"sourceQuestionId\":\"s\",\"value\":[]}}} (0.209042ms)\n  AssertionError [ERR_ASSERTION]: Missing expected exception.\n      at refuse (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:38:12)\n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:136:9)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)\n      at Test.postRun (node:internal/test_runner/test:1232:19)\n      at Test.run (node:internal/test_runner/test:1160:12)\n      at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7) {\n    generatedMessage: false,\n    code: 'ERR_AS",
+        "executed_test_summary": "\u2139 tests 69\n\u2139 suites 4\n\u2139 pass 64\n\u2139 fail 5\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 676.167917"
+      },
+      {
+        "id": "M05",
+        "file": "src/collaboration/applyOperation.ts",
+        "old": "        if ((exists || owners.length !== 0) && (!exists || owners.length !== 1 || owners[0] !== op.questionId)) {",
+        "new": "        if (false && (exists || owners.length !== 0) && (!exists || owners.length !== 1 || owners[0] !== op.questionId)) {",
+        "meaning": "allow foreign/orphan/duplicate rule ownership",
+        "source_sha256": "26b3651510a12d97448ac9a87a1e0bb22e1ae94af14c883379cabbe761a54d5c",
+        "line": 1683,
+        "compile_exit": 0,
+        "test_exit": 1,
+        "assertion_failure_observed": true,
+        "failure_names": [
+          "refuses orphan/foreign/multiple/duplicate rule IDs and incomplete orders (0.586959ms)",
+          "M065 shared O06/O11/O16: closed wire and direct-replay refusal (10.104625ms)",
+          "failing tests:"
+        ],
+        "test_log_sha256": "d3309ceb0dc68722cf8ac578ef9545666df75c1f12444d5145cccbfd5f56d459",
+        "status": "KILLED",
+        "assertion_excerpt": "laboration/narrativePresence.test.ts:1:9674\n\u2716 refuses orphan/foreign/multiple/duplicate rule IDs and incomplete orders (0.586959ms)\n  AssertionError [ERR_ASSERTION]: Missing expected exception.\n      at refuse (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:38:12)\n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:167:9)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)\n      at Test.postRun (node:internal/test_runner/test:1232:19)\n      at Test.run (node:internal/test_runner/test:1160:12)\n      at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: undefined,\n    operator: 'throws',\n    diff: 'simple'\n  }\n",
+        "executed_test_summary": "\u2139 tests 69\n\u2139 suites 4\n\u2139 pass 68\n\u2139 fail 1\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 708.445083"
+      },
+      {
+        "id": "M06",
+        "file": "src/collaboration/templateAuthoringMeta.ts",
+        "old": "        case 'narrativeRuleCollection.edit': {\n            const intents",
+        "new": "        case 'narrativeRuleCollection.edit': {\n            if (String(op.type) === 'narrativeRuleCollection.edit') return []\n            const intents",
+        "meaning": "omit new-arm classifier intents",
+        "source_sha256": "eaffd29e86f0c84930bcb212967a683480ba6ed4af40b5b8e6cca7a3305029f9",
+        "line": 946,
+        "compile_exit": 0,
+        "test_exit": 1,
+        "assertion_failure_observed": true,
+        "failure_names": [
+          "marker leaf is determinate, order/rule opaque; materialize only writes marker (1.613875ms)",
+          "same-target distinct rule edits conflict, different-target independent rules commute (0.311ms)",
+          "M065 shared C_CONFLICT: intents, ownership dependencies and released classifier (3.046083ms)",
+          "failing tests:"
+        ],
+        "test_log_sha256": "7da870e08f7f243a3a63d087048ab66158b36d3f24101e7b56f3694aba97ff53",
+        "status": "KILLED",
+        "assertion_excerpt": "tion/narrativePresence.test.ts:1:15285\n\u2716 marker leaf is determinate, order/rule opaque; materialize only writes marker (1.613875ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n  + actual - expected\n  \n  + []\n  - [\n  -   {\n  -     kind: 'set',\n  -     locus: 'narrativeRuleSettingsByQuestionId[\"q\"].conditionalPresence',\n  -     value: null\n  -   },\n  -   {\n  -     kind: 'opaque',\n  -     locus: 'narrativeRuleOrderByQuestionId[\"q\"]'\n  -   },\n  -   {\n  -     kind: 'opaque',\n  -     locus: 'narrativeRulesById[\"r\"]'\n  -   }\n  - ]\n  \n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:275:16)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Test.start (node:internal/test_runner/test:1000:17)\n      at node:internal/test_runner/test:1513:71\n      at node:internal/per_context/primordials:466:82\n      at new Promise (<anonymous>)\n      at new SafePromise (node:internal/per_context/primordials:435:3)\n      at node:internal/per_context/primordials:466:9\n      at Array.map (<anonymous>) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: [],\n    expected: [ { locus: 'narrativeRuleSettingsByQuestionId[\"q\"].conditionalPresence', kind: 'set', value: null }, { locus: 'narrativeRuleOrderByQuestionId[\"q\"]', kind: 'opaque' }, { locus: 'narrativeRulesById[\"r\"]', kind: 'opaque' } ],\n    operator: 'deepStrictEqual',\n    diff: 'simple'\n  }\n\ntest at src/collaboration/narrativePresence.test.ts:1:15727\n\u2716 same-target distinct rule edits conflict, different-target independent rules commute (0.311ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  + actual - expected\n  \n  + 'disjoint'\n  - 'conflict'\n  \n      at status (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:271:16)\n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:283:9)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/",
+        "executed_test_summary": "\u2139 tests 69\n\u2139 suites 4\n\u2139 pass 67\n\u2139 fail 2\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 703.0745"
+      },
+      {
+        "id": "M07",
+        "file": "src/collaboration/templateAuthoringMeta.ts",
+        "old": "    checkReads(left, right, rightIntents)\n    checkReads(right, left, leftIntents)",
+        "new": "    // mutant: skip left ownership dependencies\n    // mutant: skip right ownership dependencies\n    void checkReads",
+        "meaning": "omit source/alternative ownership dependencies",
+        "source_sha256": "eaffd29e86f0c84930bcb212967a683480ba6ed4af40b5b8e6cca7a3305029f9",
+        "line": 1133,
+        "compile_exit": 0,
+        "test_exit": 1,
+        "assertion_failure_observed": true,
+        "failure_names": [
+          "same-target distinct rule edits conflict, different-target independent rules commute (1.239583ms)",
+          "intervening target/source/grid deletion, alternative deletion/order and legacy rule move/delete conflict (0.238375ms)",
+          "M065 shared C_CONFLICT: intents, ownership dependencies and released classifier (2.391583ms)",
+          "failing tests:"
+        ],
+        "test_log_sha256": "540ea82aa14244fbc5bb1d0a93c456176a73b1ff09506edad99800c46d1324a6",
+        "status": "KILLED",
+        "assertion_excerpt": "rrativePresence.test.ts:1:15727\n\u2716 same-target distinct rule edits conflict, different-target independent rules commute (1.239583ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  + actual - expected\n  \n  + 'convergent'\n  - 'conflict'\n        ^\n  \n      at status (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:271:16)\n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:287:9)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)\n      at Test.postRun (node:internal/test_runner/test:1232:19)\n      at Test.run (node:internal/test_runner/test:1160:12)\n      at async Promise.all (index 0)\n      at async Suite.run (node:internal/test_runner/test:1515:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:785:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 'convergent',\n    expected: 'conflict',\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n\ntest at src/collaboration/narrativePresence.test.ts:1:16454\n\u2716 intervening target/source/grid deletion, alternative deletion/order and legacy rule move/delete conflict (0.238375ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  + actual - expected\n  \n  + 'disjoint'\n  - 'conflict'\n  \n      at status (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:271:16)\n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:306:28)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)\n      at Test.postRun (node:internal/test_runner/test:1232:19)\n      at Test.run (node:internal/test_runner/test:1160:12)\n      at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7) {\n    ",
+        "executed_test_summary": "\u2139 tests 69\n\u2139 suites 4\n\u2139 pass 67\n\u2139 fail 2\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 668.296083"
+      },
+      {
+        "id": "M08",
+        "file": "src/collaboration/templateAuthoringMeta.ts",
+        "old": "? (reader.action.kind === 'materialize' ? [narrativeLocus('narrativeRuleOrderByQuestionId', reader.questionId)] : [])",
+        "new": "? []",
+        "meaning": "omit materialize zero-order read dependency",
+        "source_sha256": "eaffd29e86f0c84930bcb212967a683480ba6ed4af40b5b8e6cca7a3305029f9",
+        "line": 1121,
+        "compile_exit": 0,
+        "test_exit": 1,
+        "assertion_failure_observed": true,
+        "failure_names": [
+          "same-target distinct rule edits conflict, different-target independent rules commute (1.245666ms)",
+          "M065 shared C_CONFLICT: intents, ownership dependencies and released classifier (2.669167ms)",
+          "failing tests:"
+        ],
+        "test_log_sha256": "182f0a4c966b974ab68003860f3c97686f373ec62d92930d0a0d2d72d1976e50",
+        "status": "KILLED",
+        "assertion_excerpt": "rrativePresence.test.ts:1:15727\n\u2716 same-target distinct rule edits conflict, different-target independent rules commute (1.245666ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  + actual - expected\n  \n  + 'convergent'\n  - 'conflict'\n        ^\n  \n      at status (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:271:16)\n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:287:9)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)\n      at Test.postRun (node:internal/test_runner/test:1232:19)\n      at Test.run (node:internal/test_runner/test:1160:12)\n      at async Promise.all (index 0)\n      at async Suite.run (node:internal/test_runner/test:1515:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:785:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 'convergent',\n    expected: 'conflict',\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+        "executed_test_summary": "\u2139 tests 69\n\u2139 suites 4\n\u2139 pass 68\n\u2139 fail 1\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 665.863"
+      },
+      {
+        "id": "M09",
+        "file": "src/collaboration/templateAuthoringMeta.ts",
+        "old": "const hasNarrativeEdit = left.type === 'narrativeRuleCollection.edit' || right.type === 'narrativeRuleCollection.edit'",
+        "new": "const hasNarrativeEdit = true",
+        "meaning": "widen OLD-vs-OLD classifier semantics",
+        "source_sha256": "eaffd29e86f0c84930bcb212967a683480ba6ed4af40b5b8e6cca7a3305029f9",
+        "line": 1102,
+        "compile_exit": 0,
+        "test_exit": 1,
+        "assertion_failure_observed": true,
+        "failure_names": [
+          "pure source title/value edits and OLD-vs-OLD classifier stay released (0.912333ms)",
+          "M065 shared C_CONFLICT: intents, ownership dependencies and released classifier (2.363167ms)",
+          "failing tests:"
+        ],
+        "test_log_sha256": "6f9dc85ba1ff2f2b29c5f93b99cc144b510133ea23b718099efdfe79dbf984bc",
+        "status": "KILLED",
+        "assertion_excerpt": "ollaboration/narrativePresence.test.ts:1:17198\n\u2716 pure source title/value edits and OLD-vs-OLD classifier stay released (0.912333ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  + actual - expected\n  \n  + 'conflict'\n  - 'disjoint'\n  \n      at status (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:271:16)\n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:313:9)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)\n      at Test.postRun (node:internal/test_runner/test:1232:19)\n      at Test.run (node:internal/test_runner/test:1160:12)\n      at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 'conflict',\n    expected: 'disjoint',\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+        "executed_test_summary": "\u2139 tests 69\n\u2139 suites 4\n\u2139 pass 68\n\u2139 fail 1\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 653.363958"
+      },
+      {
+        "id": "M10",
+        "file": "src/collaboration/templateAuthoringMeta.ts",
+        "old": "        return read.status === 'present' ? read.value as JsonValue : null",
+        "new": "        return read.status === 'present' ? null : null",
+        "meaning": "lose current marker value in conflict decoder",
+        "source_sha256": "eaffd29e86f0c84930bcb212967a683480ba6ed4af40b5b8e6cca7a3305029f9",
+        "line": 1165,
+        "compile_exit": 0,
+        "test_exit": 1,
+        "assertion_failure_observed": true,
+        "failure_names": [
+          "conflict value reader handles exact bracket IDs, own fields and missing/default ARRAY (1.019625ms)",
+          "M065 shared C_CONFLICT: intents, ownership dependencies and released classifier (2.364875ms)",
+          "failing tests:"
+        ],
+        "test_log_sha256": "5e129cec2678fdcad741d90ef8f1b5da31b398c11c40a3f9116c2225c7e1db35",
+        "status": "KILLED",
+        "assertion_excerpt": "rativePresence.test.ts:1:17608\n\u2716 conflict value reader handles exact bracket IDs, own fields and missing/default ARRAY (1.019625ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  null !== 'absent'\n  \n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:322:16)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)\n      at Test.postRun (node:internal/test_runner/test:1232:19)\n      at Test.run (node:internal/test_runner/test:1160:12)\n      at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: null,\n    expected: 'absent',\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+        "executed_test_summary": "\u2139 tests 69\n\u2139 suites 4\n\u2139 pass 68\n\u2139 fail 1\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 655.403"
+      },
+      {
+        "id": "M11",
+        "file": "src/collaboration/narrativePresence.ts",
+        "old": "    return occurrences === 1",
+        "new": "    return occurrences >= 1",
+        "meaning": "allow duplicate structural ownership",
+        "source_sha256": "09e8634adb08be0dad1ba03eeb3e654a9383e4b3c6c3c710127b4d796fdef038",
+        "line": 19,
+        "compile_exit": 0,
+        "test_exit": 1,
+        "assertion_failure_observed": true,
+        "failure_names": [
+          "refuses missing/orphan/duplicate structural owner q (0.685458ms)",
+          "refuses missing/orphan/duplicate structural owner s (0.266167ms)",
+          "M065 shared O06/O11/O16: closed wire and direct-replay refusal (9.438917ms)",
+          "marker plus owned rules, missing owner and duplicate owner are contract refusals (1.134541ms)",
+          "M065 shared O09/O10/O13/O16: document invariants, cleanup and old replay (6.5355ms)",
+          "failing tests:"
+        ],
+        "test_log_sha256": "731b4e7ed71bfcf9ef90358acc1bcbc01fae0a826d16888090f1355cfd32f078",
+        "status": "KILLED",
+        "assertion_excerpt": "ts:\n\ntest at src/collaboration/narrativePresence.test.ts:1:10396\n\u2716 refuses missing/orphan/duplicate structural owner q (0.685458ms)\n  AssertionError [ERR_ASSERTION]: Missing expected exception.\n      at refuse (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:38:12)\n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:187:9)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)\n      at Test.postRun (node:internal/test_runner/test:1232:19)\n      at Test.run (node:internal/test_runner/test:1160:12)\n      at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: undefined,\n    operator: 'throws',\n    diff: 'simple'\n  }\n\ntest at src/collaboration/narrativePresence.test.ts:1:10396\n\u2716 refuses missing/orphan/duplicate structural owner s (0.266167ms)\n  AssertionError [ERR_ASSERTION]: Missing expected exception.\n      at refuse (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:38:12)\n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:187:9)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)\n      at Test.postRun (node:internal/test_runner/test:1232:19)\n      at Test.run (node:internal/test_runner/test:1160:12)\n      at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: undefined,\n    operator: 'throws',\n    diff: 'simple'\n  }\n\ntest at src/collaboration/narrativePresence.test.ts:1:12327\n\u2716 marker plus owned rules, missing owner and duplicate owner are contract refusals (1.134541ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be str",
+        "executed_test_summary": "\u2139 tests 69\n\u2139 suites 4\n\u2139 pass 66\n\u2139 fail 3\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 684.6915"
+      },
+      {
+        "id": "M12",
+        "file": "src/collaboration/narrativePresence.ts",
+        "old": "        if ((document.narrativeRuleOrderByQuestionId?.[questionId]?.length ?? 0) !== 0) {",
+        "new": "        if (false && (document.narrativeRuleOrderByQuestionId?.[questionId]?.length ?? 0) !== 0) {",
+        "meaning": "ignore marker-plus-rule contradiction",
+        "source_sha256": "09e8634adb08be0dad1ba03eeb3e654a9383e4b3c6c3c710127b4d796fdef038",
+        "line": 37,
+        "compile_exit": 0,
+        "test_exit": 1,
+        "assertion_failure_observed": true,
+        "failure_names": [
+          "marker plus owned rules, missing owner and duplicate owner are contract refusals (1.110833ms)",
+          "old setter cannot create marker+rules on new input; ARRAY old setter still moves/replaces/dangles (0.173333ms)",
+          "M065 shared O09/O10/O13/O16: document invariants, cleanup and old replay (5.293833ms)",
+          "failing tests:"
+        ],
+        "test_log_sha256": "ae59116a4a804f9ba00607741ddfd4b8aeac75b2007b42e91b006b70060cb1a8",
+        "status": "KILLED",
+        "assertion_excerpt": "n/narrativePresence.test.ts:1:12327\n\u2716 marker plus owned rules, missing owner and duplicate owner are contract refusals (1.110833ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  true !== false\n  \n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:229:16)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)\n      at Test.postRun (node:internal/test_runner/test:1232:19)\n      at Test.run (node:internal/test_runner/test:1160:12)\n      at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: true,\n    expected: false,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n\ntest at src/collaboration/narrativePresence.test.ts:1:13059\n\u2716 old setter cannot create marker+rules on new input; ARRAY old setter still moves/replaces/dangles (0.173333ms)\n  AssertionError [ERR_ASSERTION]: Missing expected exception.\n      at refuse (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:38:12)\n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:239:9)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)\n      at Test.postRun (node:internal/test_runner/test:1232:19)\n      at Test.run (node:internal/test_runner/test:1160:12)\n      at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: undefined,\n    operator: 'throws',\n    diff: 'simple'\n  }\n",
+        "executed_test_summary": "\u2139 tests 69\n\u2139 suites 4\n\u2139 pass 67\n\u2139 fail 2\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 656.747167"
+      },
+      {
+        "id": "M13",
+        "file": "src/collaboration/narrativePresence.ts",
+        "old": "        const marker = settings.conditionalPresence",
+        "new": "        const marker = String('absent')",
+        "meaning": "normalize invalid/undefined marker before validation",
+        "source_sha256": "09e8634adb08be0dad1ba03eeb3e654a9383e4b3c6c3c710127b4d796fdef038",
+        "line": 28,
+        "compile_exit": 0,
+        "test_exit": 1,
+        "assertion_failure_observed": true,
+        "failure_names": [
+          "rejects malformed marker null rather than canonicalizing it to ARRAY (2.22525ms)",
+          "rejects malformed marker array rather than canonicalizing it to ARRAY (0.244208ms)",
+          "rejects malformed marker undefined rather than canonicalizing it to ARRAY (0.211042ms)",
+          "M065 shared O09/O10/O13/O16: document invariants, cleanup and old replay (5.829416ms)",
+          "failing tests:"
+        ],
+        "test_log_sha256": "c9e037b07da11ade1f4654afbe788cb0c96e41c0b11507a69490997cf9b219df",
+        "status": "KILLED",
+        "assertion_excerpt": "/collaboration/narrativePresence.test.ts:1:11660\n\u2716 rejects malformed marker null rather than canonicalizing it to ARRAY (2.22525ms)\n  AssertionError [ERR_ASSERTION]: Missing expected exception.\n      at refuse (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:38:12)\n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:217:9)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Test.start (node:internal/test_runner/test:1000:17)\n      at node:internal/test_runner/test:1513:71\n      at node:internal/per_context/primordials:466:82\n      at new Promise (<anonymous>)\n      at new SafePromise (node:internal/per_context/primordials:435:3)\n      at node:internal/per_context/primordials:466:9 {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: undefined,\n    operator: 'throws',\n    diff: 'simple'\n  }\n\ntest at src/collaboration/narrativePresence.test.ts:1:11660\n\u2716 rejects malformed marker array rather than canonicalizing it to ARRAY (0.244208ms)\n  AssertionError [ERR_ASSERTION]: Missing expected exception.\n      at refuse (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:38:12)\n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:217:9)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)\n      at Test.postRun (node:internal/test_runner/test:1232:19)\n      at Test.run (node:internal/test_runner/test:1160:12)\n      at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: undefined,\n    operator: 'throws',\n    diff: 'simple'\n  }\n\ntest at src/collaboration/narrativePresence.test.ts:1:11660\n\u2716 rejects malformed marker undefined rather than canonicalizing it to ARRAY (0.211042ms)\n  Asserti",
+        "executed_test_summary": "\u2139 tests 69\n\u2139 suites 4\n\u2139 pass 66\n\u2139 fail 3\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 681.439833"
+      },
+      {
+        "id": "M14",
+        "file": "src/collaboration/schemas.ts",
+        "old": "    conditionalPresence: '(\"absent\" | \"null\")?',",
+        "new": "    conditionalPresence: '(\"array\" | \"absent\" | \"null\")?',",
+        "meaning": "admit alternate stored ARRAY spelling",
+        "source_sha256": "cd96d51697c4db1e3ba2fc4db3793af131775a654eb410568d844d1e28896b71",
+        "line": 103,
+        "compile_exit": 0,
+        "test_exit": 1,
+        "assertion_failure_observed": true,
+        "failure_names": [
+          "rejects malformed marker array rather than canonicalizing it to ARRAY (1.041458ms)",
+          "M065 shared O09/O10/O13/O16: document invariants, cleanup and old replay (5.039ms)",
+          "failing tests:"
+        ],
+        "test_log_sha256": "ee2dee34dbe85cadb56968bd358145b2992374428cbda4a18a166b1da75f41ae",
+        "status": "KILLED",
+        "assertion_excerpt": "ollaboration/narrativePresence.test.ts:1:11660\n\u2716 rejects malformed marker array rather than canonicalizing it to ARRAY (1.041458ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  true !== false\n  \n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:215:16)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)\n      at Test.postRun (node:internal/test_runner/test:1232:19)\n      at Test.run (node:internal/test_runner/test:1160:12)\n      at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: true,\n    expected: false,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+        "executed_test_summary": "\u2139 tests 69\n\u2139 suites 4\n\u2139 pass 68\n\u2139 fail 1\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 663.114209"
+      },
+      {
+        "id": "M15",
+        "file": "src/collaboration/schemas.ts",
+        "old": "        expectedPresence: '\"array\" | \"absent\"', intent: '\"edit\"', '+': 'reject',",
+        "new": "        expectedPresence: '\"array\" | \"absent\"', intent: '\"edit\"',",
+        "meaning": "open new-arm envelope to unknown keys",
+        "source_sha256": "cd96d51697c4db1e3ba2fc4db3793af131775a654eb410568d844d1e28896b71",
+        "line": 843,
+        "compile_exit": 0,
+        "test_exit": 1,
+        "assertion_failure_observed": true,
+        "failure_names": [
+          "wire and direct replay reject {\"extra\":true} (0.693625ms)",
+          "M065 shared O06/O11/O16: closed wire and direct-replay refusal (11.424167ms)",
+          "failing tests:"
+        ],
+        "test_log_sha256": "ccf295e2318444ccf3c991ad346e18368e06271a0d98b0ccd223cb3d537c7326",
+        "status": "KILLED",
+        "assertion_excerpt": "ling tests:\n\ntest at src/collaboration/narrativePresence.test.ts:1:8005\n\u2716 wire and direct replay reject {\"extra\":true} (0.693625ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  true !== false\n  \n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:135:16)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)\n      at Test.postRun (node:internal/test_runner/test:1232:19)\n      at Test.run (node:internal/test_runner/test:1160:12)\n      at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: true,\n    expected: false,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+        "executed_test_summary": "\u2139 tests 69\n\u2139 suites 4\n\u2139 pass 68\n\u2139 fail 1\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 649.396709"
+      },
+      {
+        "id": "M16",
+        "file": "src/collaboration/schemas.ts",
+        "old": "        expectedPresence: '\"null\"', intent: '\"repair-null\"', '+': 'reject',",
+        "new": "        expectedPresence: '\"null\"', intent: '\"edit\"', '+': 'reject',",
+        "meaning": "uncorrelate NULL repair intent at wire",
+        "source_sha256": "cd96d51697c4db1e3ba2fc4db3793af131775a654eb410568d844d1e28896b71",
+        "line": 852,
+        "compile_exit": 0,
+        "test_exit": 1,
+        "assertion_failure_observed": true,
+        "failure_names": [
+          "null explicit set removes only the marker (0.952083ms)",
+          "null explicit materialize removes only the marker (0.193ms)",
+          "M065 shared O07/O09/O10/O11/O12: atomic source presence transitions (16.520125ms)",
+          "NULL requires repair intent; delete cannot repair NULL or ABSENT (0.509666ms)",
+          "M065 shared O06/O11/O16: closed wire and direct-replay refusal (11.408167ms)",
+          "failing tests:"
+        ],
+        "test_log_sha256": "aeb85a6b89897dcf3b294381178259a41e16387727c04f06c9b1e544240def55",
+        "status": "KILLED",
+        "assertion_excerpt": "failing tests:\n\ntest at src/collaboration/narrativePresence.test.ts:1:4695\n\u2716 null explicit set removes only the marker (0.952083ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  false !== true\n  \n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:84:20)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)\n      at Test.postRun (node:internal/test_runner/test:1232:19)\n      at Test.run (node:internal/test_runner/test:1160:12)\n      at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: false,\n    expected: true,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n\ntest at src/collaboration/narrativePresence.test.ts:1:4695\n\u2716 null explicit materialize removes only the marker (0.193ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  false !== true\n  \n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:84:20)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)\n      at Test.postRun (node:internal/test_runner/test:1232:19)\n      at Test.run (node:internal/test_runner/test:1160:12)\n      at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: false,\n    expected: true,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n\ntest at src/collaboration/narrativePresence.test.ts:1:8452\n\u2716 NULL requires repair intent; delete cannot repair NULL or ABSENT (0.509666ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  true !== false\n  \n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:148:16)\n    ",
+        "executed_test_summary": "\u2139 tests 69\n\u2139 suites 4\n\u2139 pass 66\n\u2139 fail 3\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 652.437167"
+      },
+      {
+        "id": "M17",
+        "file": "src/collaboration/applyOperation.ts",
+        "old": "            !Object.hasOwn(rule, 'condition') || owners.length !== 1 || owners[0] !== op.questionId) {",
+        "new": "            !Object.hasOwn(rule, 'condition') || owners.length < 0) {",
+        "meaning": "ignore another target-order rule foreign ownership on fresh-ID set",
+        "source_sha256": "26b3651510a12d97448ac9a87a1e0bb22e1ae94af14c883379cabbe761a54d5c",
+        "line": 1669,
+        "compile_exit": 0,
+        "test_exit": 1,
+        "assertion_failure_observed": true,
+        "failure_names": [
+          "fresh-ID set refuses a target order containing another foreign-owned rule (0.638917ms)",
+          "M065 shared O06/O11/O16: closed wire and direct-replay refusal (14.020833ms)",
+          "failing tests:"
+        ],
+        "test_log_sha256": "3b88a0670f6d7d3ef50022d6bfa782c418a86c5242515cdffb67ddbc8fa825f8",
+        "status": "KILLED",
+        "assertion_excerpt": "boration/narrativePresence.test.ts:1:10875\n\u2716 fresh-ID set refuses a target order containing another foreign-owned rule (0.638917ms)\n  AssertionError [ERR_ASSERTION]: Missing expected exception.\n      at refuse (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:38:12)\n      at TestContext.<anonymous> (/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers/src/collaboration/narrativePresence.test.ts:197:9)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)\n      at Test.postRun (node:internal/test_runner/test:1232:19)\n      at Test.run (node:internal/test_runner/test:1160:12)\n      at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: undefined,\n    operator: 'throws',\n    diff: 'simple'\n  }\n",
+        "executed_test_summary": "\u2139 tests 69\n\u2139 suites 4\n\u2139 pass 68\n\u2139 fail 1\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 655.919125"
+      }
+    ],
+    "source_bytes_restored": true,
+    "git_status_restored": true,
+    "status_before": " M .cursor/rules/copilot-instructions.mdc\n M src/collaboration/applyOperation.ts\n M src/collaboration/index.ts\n M src/collaboration/operations.ts\n M src/collaboration/schemas.ts\n M src/collaboration/templateAuthoringMeta.ts\n M src/collaboration/templateDocument.ts\n?? .agents/\n?? .asma/\n?? .claude/\n?? .cursor/rules/asma-workspace-asma-doc-routing.mdc\n?? .cursor/rules/asma-workspace-asma-playwright-routing.mdc\n?? .cursor/rules/asma-workspace-asma-python-routing.mdc\n?? .cursor/rules/asma-workspace-asma-qnr-index.mdc\n?? .cursor/rules/asma-workspace-asma-yaml-routing.mdc\n?? .cursor/rules/asma-workspace-docs-navigation.mdc\n?? AGENTS.md\n?? CLAUDE.md\n?? src/collaboration/narrativePresence.test.ts\n?? src/collaboration/narrativePresence.ts\n?? tests/narrativePresenceConsumer.mts\n?? tests/narrativePresencePackage.test.ts\n",
+    "status_after": " M .cursor/rules/copilot-instructions.mdc\n M src/collaboration/applyOperation.ts\n M src/collaboration/index.ts\n M src/collaboration/operations.ts\n M src/collaboration/schemas.ts\n M src/collaboration/templateAuthoringMeta.ts\n M src/collaboration/templateDocument.ts\n?? .agents/\n?? .asma/\n?? .claude/\n?? .cursor/rules/asma-workspace-asma-doc-routing.mdc\n?? .cursor/rules/asma-workspace-asma-playwright-routing.mdc\n?? .cursor/rules/asma-workspace-asma-python-routing.mdc\n?? .cursor/rules/asma-workspace-asma-qnr-index.mdc\n?? .cursor/rules/asma-workspace-asma-yaml-routing.mdc\n?? .cursor/rules/asma-workspace-docs-navigation.mdc\n?? AGENTS.md\n?? CLAUDE.md\n?? src/collaboration/narrativePresence.test.ts\n?? src/collaboration/narrativePresence.ts\n?? tests/narrativePresenceConsumer.mts\n?? tests/narrativePresencePackage.test.ts\n",
+    "restored_build_exit": 0,
+    "restored_compiled_test_exit": 0
+  },
+  "proofAccounting": {
+    "sharedBehaviorCases": 69,
+    "full42ParentDischarges": 0,
+    "browserRuns": 0,
+    "actualEvaluatorTruthRows": 0,
+    "targetRequests": 0,
+    "release": false,
+    "emission": false
+  },
+  "cases": [
+    {
+      "id": "M065-RAW-ABSENT",
+      "group": "truth_rows",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "M065-RAW-NULL",
+      "group": "truth_rows",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "M065-RAW-EMPTY",
+      "group": "truth_rows",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "M065-RAW-NONE-MATCH",
+      "group": "truth_rows",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "M065-RAW-SOME-MATCH",
+      "group": "truth_rows",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "M065-MODEL-ABSENT",
+      "group": "truth_rows",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "M065-MODEL-NULL",
+      "group": "truth_rows",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "M065-MODEL-NULL-RECONCILE",
+      "group": "truth_rows",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "M065-MODEL-EMPTY",
+      "group": "truth_rows",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "M065-MODEL-NONEMPTY",
+      "group": "truth_rows",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "M065-O01",
+      "group": "oracles",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "M065-O02",
+      "group": "oracles",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "M065-O03",
+      "group": "oracles",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "M065-O04",
+      "group": "oracles",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "M065-O05",
+      "group": "oracles",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "M065-O06",
+      "group": "oracles",
+      "status": "PARTIAL_SHARED_SOURCE_EVIDENCE",
+      "full_parent_discharge": 0,
+      "shared_scope": "Closed marker/new arm shapes and direct malformed condition refusals only; raw importer/typed evaluator not covered."
+    },
+    {
+      "id": "M065-O07",
+      "group": "oracles",
+      "status": "PARTIAL_SHARED_SOURCE_EVIDENCE",
+      "full_parent_discharge": 0,
+      "shared_scope": "Atomic ABSENT-to-ARRAY set preserves enabled/requiredAll; actual typed evaluation deferred."
+    },
+    {
+      "id": "M065-O08",
+      "group": "oracles",
+      "status": "PARTIAL_SHARED_SOURCE_EVIDENCE",
+      "full_parent_discharge": 0,
+      "shared_scope": "Fieldwise canonical flags remain independent; omitted required_all import default not covered."
+    },
+    {
+      "id": "M065-O09",
+      "group": "oracles",
+      "status": "PARTIAL_SHARED_SOURCE_EVIDENCE",
+      "full_parent_discharge": 0,
+      "shared_scope": "Canonical marker fixed point, same-revision ARRAY-empty hash distinction, exact old predicate bytes and published-package hash examples."
+    },
+    {
+      "id": "M065-O10",
+      "group": "oracles",
+      "status": "PARTIAL_SHARED_SOURCE_EVIDENCE",
+      "full_parent_discharge": 0,
+      "shared_scope": "Flag/unrelated reducer edits preserve marker; actual reload/cache/reimport/reconstruction deferred."
+    },
+    {
+      "id": "M065-O11",
+      "group": "oracles",
+      "status": "PARTIAL_SHARED_SOURCE_EVIDENCE",
+      "full_parent_discharge": 0,
+      "shared_scope": "Single revision and atomic set/delete/materialize/repair; stale/refusal input unchanged. Auth/server transaction/receipt proof deferred."
+    },
+    {
+      "id": "M065-O12",
+      "group": "oracles",
+      "status": "PARTIAL_SHARED_SOURCE_EVIDENCE",
+      "full_parent_discharge": 0,
+      "shared_scope": "Independent flag toggles preserve marker/rules; disabled NULL active-use fence deferred."
+    },
+    {
+      "id": "M065-O13",
+      "group": "oracles",
+      "status": "PARTIAL_SHARED_SOURCE_EVIDENCE",
+      "full_parent_discharge": 0,
+      "shared_scope": "Existing question/grid-column descendant cleanup and source deletion ownership; actual consumer clone/remap deferred."
+    },
+    {
+      "id": "M065-O14",
+      "group": "oracles",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "M065-O15",
+      "group": "oracles",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "M065-O16",
+      "group": "oracles",
+      "status": "PARTIAL_SHARED_SOURCE_EVIDENCE",
+      "full_parent_discharge": 0,
+      "shared_scope": "Closed schema/inventories/exported union and old published parser refusals only; capability/build/server/fanout proof deferred."
+    },
+    {
+      "id": "M065-FLAGS",
+      "group": "extra_required_cases",
+      "status": "PARTIAL_SHARED_SOURCE_EVIDENCE",
+      "full_parent_discharge": 0,
+      "shared_scope": "Existing true-only field edits only; NEW-import typed defaults/raw flag provenance remain unexecuted."
+    },
+    {
+      "id": "M065-NULL-FENCE",
+      "group": "extra_required_cases",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "M065-ATOMIC-REPAIR",
+      "group": "extra_required_cases",
+      "status": "PARTIAL_SHARED_SOURCE_EVIDENCE",
+      "full_parent_discharge": 0,
+      "shared_scope": "Shared one-op/intent/stale/ownership/refusal only; authorization and original writer transaction remain unexecuted."
+    },
+    {
+      "id": "M065-REIMPORT",
+      "group": "extra_required_cases",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "M065-ANSWERS",
+      "group": "extra_required_cases",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "M065-CAPABILITY",
+      "group": "extra_required_cases",
+      "status": "PARTIAL_SHARED_SOURCE_EVIDENCE",
+      "full_parent_discharge": 0,
+      "shared_scope": "Old published parser observations only; actual finite-three/build/serving/DDL qualification remains unexecuted."
+    },
+    {
+      "id": "MF-T01",
+      "group": "finite_dependency_cases",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "MF-T02",
+      "group": "finite_dependency_cases",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "MF-T03",
+      "group": "finite_dependency_cases",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "MF-T04",
+      "group": "finite_dependency_cases",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "MF-T05",
+      "group": "finite_dependency_cases",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "MF-T06",
+      "group": "finite_dependency_cases",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "MF-T07",
+      "group": "finite_dependency_cases",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "MF-T08",
+      "group": "finite_dependency_cases",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "MF-T09",
+      "group": "finite_dependency_cases",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    },
+    {
+      "id": "MF-T10",
+      "group": "finite_dependency_cases",
+      "status": "PREPARED_NOT_EXECUTED_BY_THIS_UNIT",
+      "full_parent_discharge": 0,
+      "shared_scope": "No complete case execution or discharge in this shared-only unit."
+    }
+  ],
+  "extraSharedFacets": {
+    "M065-FLAGS": "Partial: existing true-only field edits, not NEW-import typed defaults.",
+    "M065-ATOMIC-REPAIR": "Partial: shared one-op/intent/stale/ownership/refusal, not authorization or original writer transaction.",
+    "M065-CAPABILITY": "Partial: actual old parser observation; no finite-three/build/serving/DDL qualification."
+  },
+  "namedOpenBinding": {
+    "id": "M065-CONSUMER-BUNDLE-MARKER-ID-REMAP",
+    "condition": "C_CONFLICT/clone",
+    "status": "DEFERRED_CONSUMER_OWNED",
+    "deliveredHere": "Existing narrative root/settings DTO fields only; representation/diffing.",
+    "unblocksWhen": "An existing or separately-admitted consumer clone/bundle surface proves real target/source/rule ID remaps with marker/flags/order/duplicate occurrences retained, unique ownership, actual emitted/persisted behavior under qualified producer fences. Generic deep clone is not evidence."
+  },
+  "holds": [
+    "PR-only/unmerged/unreleased",
+    "No consumer adoption or new writer/op emission enabled",
+    "C_ACTIVE/C_CONFLICT/C_HISTORY/C_PROOF OPEN",
+    "M065-LOSSLESS-RAW-FLAG-BAG-ROUNDTRIP BLOCKED_NOT_QUALIFIED",
+    "Third token unallocated; finite-two/1791109800000 unchanged",
+    "No raw-source store/DDL/roles/grants/RLS/protocol/control flag",
+    "No real build/all-serving qualification/target install/18oracles; A6/#71/#72/#262 retained"
+  ],
+  "distinction": "These 17 are author-executed compiling source mutants for this unit. They are not the earlier independent21, the earlier uncommitted author16 or any SC/MV credit.",
+  "toolchain": {
+    "node": "v24.13.1",
+    "pnpm": "11.23.0",
+    "typescript": "7.0.2",
+    "workingDirectory": "/Users/igor/carasent/asma-modules/.worktrees/asma-7684/asma-core-helpers"
+  }
+}
