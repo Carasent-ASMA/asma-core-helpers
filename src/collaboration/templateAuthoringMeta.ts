@@ -937,12 +937,23 @@ const storedLeafValue = <T extends JsonValue>(path: string, value: T | null): Js
  * The four typed arms report determinate intents. The two released open arms report `opaque` intents
  * for every canonical locus their patch keys reach — by exact path, by ancestor, by descendant, and
  * through the recognized alias table, because a patch that writes `settings.ask_for_phone_nr` is
- * writing the phone requirement whatever it spells it. Every other operation touches no metadata and
- * returns nothing, which is what makes "disjoint loci commute" true by construction for the rest of
- * the vocabulary.
+ * writing the phone requirement whatever it spells it. The new narrative collection arm reports
+ * its marker/order/rule writes. All other non-metadata arms retain their released empty result;
+ * ownership dependencies are classified separately only when paired with the new arm.
  */
 export const templateAuthoringIntentsOf = (op: TemplateOp): readonly TemplateAuthoringIntent[] => {
     switch (op.type) {
+        case 'narrativeRuleCollection.edit': {
+            const intents: TemplateAuthoringIntent[] = [{
+                locus: narrativeLocus('narrativeRuleSettingsByQuestionId', op.questionId, 'conditionalPresence'),
+                kind: 'set', value: null,
+            }]
+            if (op.action.kind !== 'materialize') {
+                intents.push({ locus: narrativeLocus('narrativeRuleOrderByQuestionId', op.questionId), kind: 'opaque' },
+                    { locus: narrativeLocus('narrativeRulesById', op.action.ruleId), kind: 'opaque' })
+            }
+            return intents
+        }
         case 'template.setMetaFieldTyped': {
             const path = metaFieldPath(op.field)
             return [{ locus: path, kind: 'set', value: storedLeafValue(path, op.value) }]
@@ -1025,12 +1036,72 @@ export type TemplateAuthoringOverlap =
     | { status: 'convergent'; loci: readonly string[] }
     | { status: 'conflict'; loci: readonly string[] }
 
+const narrativeLocus = (root: string, id: string, leaf?: string): string =>
+    `${root}[${JSON.stringify(id)}]${leaf === undefined ? '' : `.${leaf}`}`
+
+/** Ownership reads are dependencies, never fabricated opaque writes. Flags are preserved, not
+ * collection preconditions. All-owner scans conservatively overlap released moving/deleting arms;
+ * NEW arms cannot move IDs and their exact target/rule writes already cover new-vs-new overlap. */
+const narrativeReadLoci = (op: Extract<TemplateOp, { type: 'narrativeRuleCollection.edit' }>): string[] => {
+    const reads = [narrativeLocus('questionsById', op.questionId), 'questionOrder',
+        narrativeLocus('narrativeRuleSettingsByQuestionId', op.questionId, 'conditionalPresence'),
+        narrativeLocus('narrativeRuleOrderByQuestionId', op.questionId)]
+    if (op.action.kind !== 'materialize') {
+        reads.push(narrativeLocus('narrativeRulesById', op.action.ruleId), 'narrativeRuleOrderByQuestionId')
+    }
+    if (op.action.kind === 'set') {
+        const condition = op.action.condition
+        reads.push(narrativeLocus('questionsById', condition.sourceQuestionId),
+            narrativeLocus('alternativeOrderByQuestionId', condition.sourceQuestionId))
+        for (const id of [...(condition.alternativeId === undefined ? [] : [condition.alternativeId]),
+            ...(condition.alternativeIds ?? [])]) {
+            reads.push(narrativeLocus('alternativesById', id), 'alternativeOrderByQuestionId')
+        }
+    }
+    return reads
+}
+
+/** Used ONLY when paired with the NEW arm. Old-vs-old default[] and replay remain released.
+ * A context-free classifier cannot know a grid deletion's descendants or a moved rule's old owner:
+ * those actual write families conservatively cover their roots until row-lock revalidation. */
+const narrativeInterveningWrites = (op: TemplateOp): readonly TemplateAuthoringIntent[] => {
+    const opaque = (...loci: string[]): TemplateAuthoringIntent[] => loci.map((locus) => ({ locus, kind: 'opaque' }))
+    switch (op.type) {
+        case 'narrativeRuleCollection.edit': return templateAuthoringIntentsOf(op)
+        case 'narrativeRuleSettings.set':
+            return [{ locus: narrativeLocus('narrativeRuleSettingsByQuestionId', op.questionId, op.field),
+                kind: 'set', value: op.value ? true : null }]
+        case 'narrativeRule.set':
+            return opaque(narrativeLocus('narrativeRulesById', op.ruleId), 'narrativeRuleOrderByQuestionId')
+        case 'narrativeRule.delete':
+            return opaque(narrativeLocus('narrativeRulesById', op.ruleId), 'narrativeRuleOrderByQuestionId')
+        case 'question.delete':
+            return opaque('questionsById', 'questionOrder', 'narrativeRuleSettingsByQuestionId',
+                'narrativeRulesById', 'narrativeRuleOrderByQuestionId', 'alternativesById', 'alternativeOrderByQuestionId')
+        case 'question.create':
+            return opaque(narrativeLocus('questionsById', op.questionId), 'questionOrder')
+        case 'question.move': return opaque('questionOrder')
+        case 'gridColumn.create':
+        case 'gridColumn.move':
+            // Structural ownership is read across all grids, not known from op.questionId alone.
+            return opaque('questionsById', 'questionOrder')
+        case 'question.updateField':
+            return opaque(narrativeLocus('questionsById', op.questionId, op.field))
+        case 'alternative.create':
+        case 'alternative.move':
+        case 'alternative.delete':
+            return opaque(narrativeLocus('alternativesById', op.alternativeId), 'alternativeOrderByQuestionId')
+        default: return templateAuthoringIntentsOf(op)
+    }
+}
+
 export const classifyTemplateAuthoringOverlap = (
     left: TemplateOp,
     right: TemplateOp,
 ): TemplateAuthoringOverlap => {
-    const leftIntents = templateAuthoringIntentsOf(left)
-    const rightIntents = templateAuthoringIntentsOf(right)
+    const hasNarrativeEdit = left.type === 'narrativeRuleCollection.edit' || right.type === 'narrativeRuleCollection.edit'
+    const leftIntents = hasNarrativeEdit ? narrativeInterveningWrites(left) : templateAuthoringIntentsOf(left)
+    const rightIntents = hasNarrativeEdit ? narrativeInterveningWrites(right) : templateAuthoringIntentsOf(right)
 
     const overlapping = new Set<string>()
     let converges = true
@@ -1044,6 +1115,23 @@ export const classifyTemplateAuthoringOverlap = (
         }
     }
 
+    const checkReads = (reader: TemplateOp, writer: TemplateOp, writes: readonly TemplateAuthoringIntent[]): void => {
+        if (reader.type !== 'narrativeRuleCollection.edit') return
+        const reads = writer.type === 'narrativeRuleCollection.edit'
+            ? (reader.action.kind === 'materialize' ? [narrativeLocus('narrativeRuleOrderByQuestionId', reader.questionId)] : [])
+            : narrativeReadLoci(reader)
+        for (const read of reads) for (const write of writes) {
+            // Ordinary title/value edits do not change identity or structural ownership.
+            if (writer.type === 'question.updateField' &&
+                !['type', 'grid', 'grid.columnIds'].some((field) => templateLociOverlap(field, writer.field))) continue
+            if (!templateLociOverlap(read, write.locus)) continue
+            overlapping.add(read)
+            overlapping.add(write.locus)
+            converges = false
+        }
+    }
+    checkReads(left, right, rightIntents)
+    checkReads(right, left, leftIntents)
     if (overlapping.size === 0) return { status: 'disjoint' }
     const loci = [...overlapping].sort()
     return converges ? { status: 'convergent', loci } : { status: 'conflict', loci }
@@ -1060,9 +1148,22 @@ export const classifyTemplateAuthoringOverlap = (
  * A bracketed member locus answers membership: the id when the set contains it, `null` when not.
  */
 export const readTemplateAuthoringLocus = (
-    document: Pick<QnrTemplateDocument, 'meta'>,
+    document: Pick<QnrTemplateDocument, 'meta'> & Partial<Pick<QnrTemplateDocument,
+        'questionsById' | 'questionOrder' | 'narrativeRulesById' | 'narrativeRuleOrderByQuestionId' |
+        'narrativeRuleSettingsByQuestionId' | 'alternativesById' | 'alternativeOrderByQuestionId'>>,
     locus: string,
 ): JsonValue | null => {
+    const narrative = /^(?<root>questionsById|narrativeRulesById|narrativeRuleOrderByQuestionId|narrativeRuleSettingsByQuestionId|alternativesById|alternativeOrderByQuestionId)\[(?<id>"(?:[^"\\]|\\.)*")\](?:\.(?<leaf>.*))?$/u.exec(locus)
+    if (narrative?.groups !== undefined) {
+        const id: unknown = JSON.parse(narrative.groups['id'] as string)
+        const root = narrative.groups['root'] as keyof typeof document
+        const collection = document[root]
+        if (typeof id !== 'string' || collection === undefined || !Object.hasOwn(collection, id)) return null
+        const entry = (collection as Record<string, unknown>)[id]
+        if (narrative.groups['leaf'] === undefined) return entry as JsonValue
+        const read = readOwnPath(entry, narrative.groups['leaf'])
+        return read.status === 'present' ? read.value as JsonValue : null
+    }
     const member = /^(?<collection>meta\.compatibility\.[^.[]+)\[(?<id>.*)\]$/u.exec(locus)
     if (member?.groups !== undefined) {
         const parsedId: unknown = JSON.parse(member.groups['id'] as string)

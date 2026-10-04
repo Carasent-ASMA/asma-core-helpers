@@ -5,6 +5,7 @@ import { findDocLawViolations, type DocLawViolation } from './docLaws.js'
 import { IMPLEMENTED_ANSWER_OP_TYPES } from './answerOperations.js'
 import { IMPLEMENTED_OP_TYPES } from './operations.js'
 import { QUESTION_TYPES } from './questionTypes.js'
+import { findNarrativePresenceViolations, type NarrativePresenceViolation } from './narrativePresence.js'
 import {
     COMPATIBILITY_COLLECTIONS,
     isTemplateAuthoringDefault,
@@ -99,6 +100,7 @@ const highlightRuleSettingsSchema = type({
 const narrativeRuleSettingsSchema = type({
     enabled: 'true?',
     requiredAll: 'true?',
+    conditionalPresence: '("absent" | "null")?',
     '+': 'reject',
 })
 
@@ -836,6 +838,23 @@ export const templateOpSchema = type.or(
         type: '"narrativeRuleSettings.set"', questionId: 'string > 0',
         field: '"enabled" | "requiredAll"', value: 'boolean', '+': 'reject',
     }),
+    type({
+        type: '"narrativeRuleCollection.edit"', questionId: 'string > 0',
+        expectedPresence: '"array" | "absent"', intent: '"edit"', '+': 'reject',
+        action: type.or(
+            type({ kind: '"set"', ruleId: 'string > 0', condition: ruleConditionSchema, '+': 'reject' }),
+            type({ kind: '"delete"', ruleId: 'string > 0', '+': 'reject' }),
+            type({ kind: '"materialize"', '+': 'reject' }),
+        ),
+    }),
+    type({
+        type: '"narrativeRuleCollection.edit"', questionId: 'string > 0',
+        expectedPresence: '"null"', intent: '"repair-null"', '+': 'reject',
+        action: type.or(
+            type({ kind: '"set"', ruleId: 'string > 0', condition: ruleConditionSchema, '+': 'reject' }),
+            type({ kind: '"materialize"', '+': 'reject' }),
+        ),
+    }),
     type({ type: '"narrativeRule.set"', ruleId: 'string', questionId: 'string', condition: ruleConditionSchema }),
     type({ type: '"narrativeRule.delete"', ruleId: 'string' }),
     type({
@@ -1308,13 +1327,18 @@ const validate =
         return { ok: true, value: out as T }
     }
 
-export const validateTemplateDocument = validate<QnrTemplateDocument>(qnrTemplateDocumentSchema)
+export const validateTemplateDocument = (value: unknown): Validation<QnrTemplateDocument> => {
+    const shape = validate<QnrTemplateDocument>(qnrTemplateDocumentSchema)(value)
+    if (!shape.ok) return shape
+    const violations = findNarrativePresenceViolations(shape.value)
+    return violations.length === 0 ? shape : { ok: false, summary: violations.map((v) => `${v.path}: ${v.detail}`).join('; ') }
+}
 
 /**
  * Full template-document admission check for the contract test: schema + DOC-LAW-1/2 lints +
  * default lint + binding uniqueness. A document passes only in its canonical minimal form.
  */
-export type TemplateDocumentContractViolation = DocLawViolation | QuestionOwnershipViolation
+export type TemplateDocumentContractViolation = DocLawViolation | QuestionOwnershipViolation | NarrativePresenceViolation
 
 export const findTemplateDocumentContractViolations = (
     document: QnrTemplateDocument,
@@ -1322,6 +1346,7 @@ export const findTemplateDocumentContractViolations = (
     ...findDocLawViolations(document),
     ...findDocLawDefaultViolations(document),
     ...findQuestionOwnershipViolations(document),
+    ...findNarrativePresenceViolations(document),
 ]
 
 export const findDuplicateBindingTargetsSummary = (document: QnrTemplateDocument): string[] =>

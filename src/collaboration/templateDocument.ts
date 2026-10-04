@@ -551,10 +551,16 @@ export type HighlightRuleSettings = { enabled?: true; requiredAll?: true }
  * `enabled` is legacy `have_narrative`; `requiredAll` is legacy `required_all`.
  * False means absence of that member only. Disabling retains the rules and the other flag.
  *
- * This shape does not encode legacy absent versus empty `conditional`. Enabled/any with absent
- * conditional remains an unresolved import case until an explicit representation is ratified.
+ * Omitted `conditionalPresence` means ARRAY (including empty); `absent`/`null` are source-only
+ * states with no owned rules. NULL is a diagnostic draft state, never active-use admission.
+ * This source representation does not establish raw source provenance or consumer support.
  */
-export type NarrativeRuleSettings = { enabled?: true; requiredAll?: true }
+export type NarrativeConditionalPresence = 'array' | 'absent' | 'null'
+export type NarrativeRuleSettings = {
+    enabled?: true
+    requiredAll?: true
+    conditionalPresence?: 'absent' | 'null'
+}
 export type RuleSettingField = 'enabled' | 'requiredAll'
 export type NarrativeRule = { condition: RuleCondition; [key: string]: unknown }
 export type QnrRule = {
@@ -914,6 +920,10 @@ export type QnrTemplateDocument = {
 export type QnrQuestionBundle = {
     rootQuestionId: QuestionId
     questionsById: Record<QuestionId, QnrQuestion>
+    /** Representation only. Consumer-owned picks must qualify real target/source/rule ID remaps. */
+    narrativeRulesById?: Record<NarrativeRuleId, NarrativeRule>
+    narrativeRuleOrderByQuestionId?: Record<QuestionId, NarrativeRuleId[]>
+    narrativeRuleSettingsByQuestionId?: Record<QuestionId, NarrativeRuleSettings>
     gridRowsById?: Record<RowId, QnrGridRow>
     gridRowOrderByQuestionId?: Record<QuestionId, RowId[]>
     alternativesById?: Record<AltId, QnrAlternative>

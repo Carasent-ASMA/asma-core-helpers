@@ -73,6 +73,11 @@ export type HighlightRuleFieldWrite =
     | { field: 'state'; value: number | null }
     | { field: 'highlight' | 'showLink'; value: boolean | null }
 
+export type NarrativeRuleCollectionAction =
+    | { kind: 'set'; ruleId: NarrativeRuleId; condition: RuleCondition }
+    | { kind: 'delete'; ruleId: NarrativeRuleId }
+    | { kind: 'materialize' }
+
 export type TemplateOp =
     | { type: 'template.updateMeta'; patch: Record<string, OpValue | Record<string, unknown>> }
     | {
@@ -452,6 +457,11 @@ export type TemplateOp =
     | ({ type: 'highlightRule.setField'; ruleId: HighlightRuleId; questionId: QuestionId } & HighlightRuleFieldWrite)
     | { type: 'highlightRuleSettings.set'; questionId: QuestionId; field: RuleSettingField; value: boolean }
     | { type: 'narrativeRuleSettings.set'; questionId: QuestionId; field: RuleSettingField; value: boolean }
+    /** Atomic explicit ARRAY selection/edit; ABSENT/NULL may only originate in validated source. */
+    | ({ type: 'narrativeRuleCollection.edit'; questionId: QuestionId } & (
+          | { expectedPresence: 'array' | 'absent'; intent: 'edit'; action: NarrativeRuleCollectionAction }
+          | { expectedPresence: 'null'; intent: 'repair-null'; action: Exclude<NarrativeRuleCollectionAction, { kind: 'delete' }> }
+      ))
     | { type: 'narrativeRule.set'; ruleId: NarrativeRuleId; questionId: QuestionId; condition: RuleCondition }
     | { type: 'narrativeRule.delete'; ruleId: NarrativeRuleId }
     | {
@@ -533,6 +543,7 @@ const OP_TYPE_COVERAGE: Record<TemplateOpType, true> = {
     'highlightRule.setField': true,
     'highlightRuleSettings.set': true,
     'narrativeRuleSettings.set': true,
+    'narrativeRuleCollection.edit': true,
     'narrativeRule.set': true,
     'narrativeRule.delete': true,
     'qnrRule.set': true,
