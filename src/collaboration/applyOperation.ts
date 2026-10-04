@@ -11,6 +11,8 @@ import type {
     MappingBinding,
     MappingFilter,
     MappingNode,
+    HighlightRule,
+    RuleCondition,
     QnrAlternative,
     QnrDataMapping,
     QnrAction,
@@ -1079,6 +1081,7 @@ const OPTIONAL_COLLECTIONS = [
     'prefillRulesById',
     'prefillRuleOrderByQuestionId',
     'highlightRuleSettingsByQuestionId',
+    'narrativeRuleSettingsByQuestionId',
     'dataMappingsById',
     'mappingNodesById',
     'mappingBindingsById',
@@ -1432,6 +1435,8 @@ const deleteQuestion = (doc: QnrTemplateDocument, questionId: QuestionId): QnrTe
         // unreachable state that still changes `document_hash`.
         highlightRuleSettingsByQuestionId:
             doc.highlightRuleSettingsByQuestionId && omitKey(doc.highlightRuleSettingsByQuestionId, questionId),
+        narrativeRuleSettingsByQuestionId:
+            doc.narrativeRuleSettingsByQuestionId && omitKey(doc.narrativeRuleSettingsByQuestionId, questionId),
     })
     // A binding pointing at a deleted question is an unresolvable reference the
     // compiler would reject at publication; drop it with its target. A grid column
@@ -1501,6 +1506,108 @@ const scrubColumnPresentationRefs = (doc: QnrTemplateDocument, questionId: Quest
     )
 
     return changed ? { ...doc, questionsById: nextQuestions } : doc
+}
+
+/** New operations are checked on direct replay as well as at the wire boundary. */
+const assertRuleEditShape = (op: TemplateOp, keys: readonly string[]): void => {
+    if (Object.keys(op).some((key) => !keys.includes(key))) {
+        throw new OperationConflictError(`Operation ${op.type} carries an undeclared member`)
+    }
+}
+
+const requireRuleQuestion = (doc: QnrTemplateDocument, questionId: unknown): void => {
+    if (typeof questionId !== 'string' || questionId === '' || !Object.hasOwn(doc.questionsById ?? {}, questionId)) {
+        throw new OperationConflictError(`Unknown question "${questionId}"`)
+    }
+}
+
+/** Fieldwise true-only settings. Neither a rule nor the other setting is touched. */
+const setRuleSetting = (
+    doc: QnrTemplateDocument,
+    op: Extract<TemplateOp, { type: 'highlightRuleSettings.set' | 'narrativeRuleSettings.set' }>,
+    root: 'highlightRuleSettingsByQuestionId' | 'narrativeRuleSettingsByQuestionId',
+): QnrTemplateDocument => {
+    assertRuleEditShape(op, ['type', 'questionId', 'field', 'value'])
+    requireRuleQuestion(doc, op.questionId)
+    if ((op.field !== 'enabled' && op.field !== 'requiredAll') || typeof op.value !== 'boolean') {
+        throw new OperationConflictError(`Operation ${op.type} requires a known field and boolean value`)
+    }
+    const settings = { ...(doc[root]?.[op.questionId] ?? {}) }
+    if (op.value) settings[op.field] = true
+    else delete settings[op.field]
+    const byQuestion = omitKey(doc[root] ?? {}, op.questionId)
+    return {
+        ...doc,
+        [root]: Object.keys(settings).length === 0 ? byQuestion : { ...byQuestion, [op.questionId]: settings },
+    }
+}
+
+/** A new condition edit must resolve its source and every alternative to that source's ownership. */
+const requireRuleCondition = (doc: QnrTemplateDocument, value: unknown): void => {
+    if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+        throw new OperationConflictError('A highlight condition must be an object')
+    }
+    const condition = value as RuleCondition
+    requireRuleQuestion(doc, condition.sourceQuestionId)
+    if ((condition.operator !== undefined && typeof condition.operator !== 'string') ||
+        (condition.value !== undefined && (!isDocScalarValue(condition.value) ||
+            (typeof condition.value === 'number' && !Number.isFinite(condition.value)))) ||
+        (condition.alternativeId !== undefined && typeof condition.alternativeId !== 'string') ||
+        (condition.alternativeIds !== undefined && (!Array.isArray(condition.alternativeIds) ||
+            condition.alternativeIds.some((id) => typeof id !== 'string')))) {
+        throw new OperationConflictError('A highlight condition carries a malformed member')
+    }
+    const alternatives = [
+        ...(condition.alternativeId === undefined ? [] : [condition.alternativeId]),
+        ...(condition.alternativeIds ?? []),
+    ]
+    for (const id of alternatives) {
+        if (!Object.hasOwn(doc.alternativesById ?? {}, id) ||
+            !doc.alternativeOrderByQuestionId?.[condition.sourceQuestionId]?.includes(id)) {
+            throw new OperationConflictError(`Alternative "${id}" is not owned by question "${condition.sourceQuestionId}"`)
+        }
+    }
+}
+
+/** A field edit requires the existing owner; unlike the released setter it never moves/replaces. */
+const setHighlightField = (
+    doc: QnrTemplateDocument,
+    op: Extract<TemplateOp, { type: 'highlightRule.setField' }>,
+): QnrTemplateDocument => {
+    assertRuleEditShape(op, ['type', 'ruleId', 'questionId', 'field', 'value'])
+    requireRuleQuestion(doc, op.questionId)
+    const owners = Object.entries(doc.highlightRuleOrderByQuestionId ?? {})
+        .filter(([, ids]) => ids.includes(op.ruleId)).map(([id]) => id)
+    const existing = doc.highlightRulesById?.[op.ruleId]
+    if (typeof op.ruleId !== 'string' || op.ruleId === '' || !existing ||
+        !Object.hasOwn(doc.highlightRulesById ?? {}, op.ruleId) || owners.length !== 1 || owners[0] !== op.questionId) {
+        throw new OperationConflictError(`Highlight rule "${op.ruleId}" is not owned by question "${op.questionId}"`)
+    }
+    const rule: HighlightRule = { ...existing }
+    switch (op.field) {
+        case 'condition':
+            requireRuleCondition(doc, op.value)
+            rule.condition = op.value
+            break
+        case 'state':
+            if (op.value !== null && (typeof op.value !== 'number' || !Number.isFinite(op.value))) {
+                throw new OperationConflictError('Highlight state must be a finite number or null')
+            }
+            if (op.value === null) delete rule.state
+            else rule.state = op.value
+            break
+        case 'highlight':
+        case 'showLink':
+            if (op.value !== null && typeof op.value !== 'boolean') {
+                throw new OperationConflictError('Highlight output must be a boolean or null')
+            }
+            if (op.value === null) delete rule[op.field]
+            else rule[op.field] = op.value
+            break
+        default:
+            throw new OperationConflictError('Unknown highlight field')
+    }
+    return { ...doc, highlightRulesById: { ...doc.highlightRulesById, [op.ruleId]: rule } }
 }
 
 export const applyOperation = (document: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument => {
@@ -2748,6 +2855,15 @@ const reduce = (doc: QnrTemplateDocument, op: TemplateOp): QnrTemplateDocument =
                 highlightRuleOrderByQuestionId: orderByQuestionId,
             })
         }
+
+        case 'highlightRule.setField':
+            return setHighlightField(doc, op)
+
+        case 'highlightRuleSettings.set':
+            return setRuleSetting(doc, op, 'highlightRuleSettingsByQuestionId')
+
+        case 'narrativeRuleSettings.set':
+            return setRuleSetting(doc, op, 'narrativeRuleSettingsByQuestionId')
 
         case 'narrativeRule.set': {
             if (!doc.questionsById?.[op.questionId]) {

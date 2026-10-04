@@ -22,6 +22,7 @@ import type {
     QnrRuleId,
     RowId,
     RuleCondition,
+    RuleSettingField,
     TabId,
     VisibilityRuleId,
 } from './templateDocument.js'
@@ -65,6 +66,12 @@ export type OpValue = DocScalar | DocScalar[] | null
  * exists to avoid, and it would type-check a value from the wrong field.
  */
 type MetaFieldUnset<W> = W extends { field: infer F; value: infer V } ? { field: F; value: V | null } : never
+
+/** A single highlight member edit; null clears an output, never the condition. */
+export type HighlightRuleFieldWrite =
+    | { field: 'condition'; value: RuleCondition }
+    | { field: 'state'; value: number | null }
+    | { field: 'highlight' | 'showLink'; value: boolean | null }
 
 export type TemplateOp =
     | { type: 'template.updateMeta'; patch: Record<string, OpValue | Record<string, unknown>> }
@@ -441,6 +448,10 @@ export type TemplateOp =
     | { type: 'visibilityRule.delete'; ruleId: VisibilityRuleId }
     | { type: 'highlightRule.set'; ruleId: HighlightRuleId; questionId: QuestionId; condition: RuleCondition }
     | { type: 'highlightRule.delete'; ruleId: HighlightRuleId }
+    /** Edits an existing, owned rule without replacing its other authored outputs. */
+    | ({ type: 'highlightRule.setField'; ruleId: HighlightRuleId; questionId: QuestionId } & HighlightRuleFieldWrite)
+    | { type: 'highlightRuleSettings.set'; questionId: QuestionId; field: RuleSettingField; value: boolean }
+    | { type: 'narrativeRuleSettings.set'; questionId: QuestionId; field: RuleSettingField; value: boolean }
     | { type: 'narrativeRule.set'; ruleId: NarrativeRuleId; questionId: QuestionId; condition: RuleCondition }
     | { type: 'narrativeRule.delete'; ruleId: NarrativeRuleId }
     | {
@@ -519,6 +530,9 @@ const OP_TYPE_COVERAGE: Record<TemplateOpType, true> = {
     'visibilityRule.delete': true,
     'highlightRule.set': true,
     'highlightRule.delete': true,
+    'highlightRule.setField': true,
+    'highlightRuleSettings.set': true,
+    'narrativeRuleSettings.set': true,
     'narrativeRule.set': true,
     'narrativeRule.delete': true,
     'qnrRule.set': true,

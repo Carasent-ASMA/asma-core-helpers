@@ -5,6 +5,7 @@ import type {
     AlternativeChartLegend,
     LegacyBindingOverride,
     MappingBinding,
+    NarrativeRuleSettings,
 } from './templateDocument.js'
 
 /**
@@ -315,3 +316,19 @@ export type UpdateSettingsStaysOpen = Assert<
         ? true
         : false
 >
+
+
+// ASMA-7684: member/value correlation and true-only stored narrative settings.
+export type NarrativeSettingsRefuseFalse = Assert<Refuses<{ enabled: false }, NarrativeRuleSettings>>
+export type NarrativeSettingsOpRefusesNull = Assert<Refuses<
+    { type: 'narrativeRuleSettings.set'; questionId: string; field: 'enabled'; value: null }, TemplateOp
+>>
+export type NarrativeSettingsOpRefusesUnknownField = Assert<Refuses<
+    { type: 'narrativeRuleSettings.set'; questionId: string; field: 'showLink'; value: boolean }, TemplateOp
+>>
+export type HighlightFieldRefusesWrongValue = Assert<Refuses<
+    { type: 'highlightRule.setField'; ruleId: string; questionId: string; field: 'state'; value: boolean }, TemplateOp
+>>
+export type HighlightFieldRefusesMissingCondition = Assert<Refuses<
+    { type: 'highlightRule.setField'; ruleId: string; questionId: string; field: 'condition'; value: null }, TemplateOp
+>>
