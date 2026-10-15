@@ -9,6 +9,8 @@ import { realWindow } from './helpers/getSubdomain.js'
 import type { ICheckSigninOptions, ICheckSigninTransformedOptions } from './helpers/generateSrvAuthBindings.types.js'
 import type { IBaseJwtClaims } from 'asma-types'
 import type { ActivityStatus } from './helpers/getActivityStatus.js'
+import { finishOverlayBackInstall, installOverlayBackPopstateListener } from './overlayBack.js'
+import type { OverlayBackAdapter } from './overlayBack.js'
 //import type { IGenerateSRVAuthBindings } from './helpers/generateSrvAuthBindings'
 //import type { IGenerateSRVAuthBindings } from './helpers/generateSrvAuthBindings'
 export {}
@@ -154,6 +156,10 @@ declare global {
                  *  tab in the URL path (`createSectionPath`/`useSectionTab`). */
                 sectionRoutePaths?: boolean
             }
+            /** Native Back closes the top ui-core overlay (ASMA-8470/8471/8472). `enabled` is the
+             *  kill switch — stays `false` until a host opts in; ui-core runs registry-only until
+             *  then. */
+            overlayBack?: OverlayBackAdapter
         }
 
         _env_cloud?: Record<'adopus' | 'adcuris', Record<string, string>>
@@ -206,11 +212,18 @@ function getHistory() {
         return realWindow.__ASMA__SHELL__.history
     }
 
+    // Must run before createBrowserHistory() so our popstate listener wins the registration-order
+    // race against history@5's own listener (CON-002).
+    const overlayBack = installOverlayBackPopstateListener(realWindow)
+
     const history = createBrowserHistory()
+
+    finishOverlayBackInstall(realWindow, history)
 
     realWindow.__ASMA__SHELL__ = {
         ...realWindow.__ASMA__SHELL__,
         history,
+        overlayBack,
     }
 
     return history
