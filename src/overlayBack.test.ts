@@ -18,13 +18,32 @@ function createTestWindow(url: string): Window {
 
 /** Mirrors `getHistory()`'s own ordering: the popstate listener must be installed before
  *  `createBrowserHistory()` runs (CON-002). Each test gets its own fresh window, which is itself
- *  how the global singleton is reset between tests. */
-function setUp(url: string) {
+ *  how the global singleton is reset between tests. Does not simulate a gesture, so the arming
+ *  gate fails by default — use `setUp()` for tests that need an armed guard. */
+function setUpAdapter(url: string) {
     const win = createTestWindow(url)
     const adapter = installOverlayBackPopstateListener(win)
     const history: History = createBrowserHistory({ window: win as unknown as Window & typeof globalThis })
     finishOverlayBackInstall(win, history)
     return { win, adapter, history }
+}
+
+/** jsdom cannot dispatch a genuinely trusted event, so the arming gate's gesture side is
+ *  simulated by writing directly to the live internal state (see
+ *  `__inspectOverlayBackForTests__`'s doc comment). */
+function simulateTrustedGesture(win: Window): void {
+    const internal = __inspectOverlayBackForTests__(win)
+    if (internal) {
+        internal.lastGestureAt = Date.now()
+    }
+}
+
+/** Same as `setUpAdapter`, plus a simulated trusted gesture, so `register()` passes the arming
+ *  gate — the shape every non-gate-focused test in this suite needs. */
+function setUp(url: string) {
+    const result = setUpAdapter(url)
+    simulateTrustedGesture(result.win)
+    return result
 }
 
 async function waitUntil(predicate: () => boolean, timeoutMs = 2000): Promise<void> {
@@ -98,9 +117,14 @@ describe('overlayBack adapter', () => {
             foreignListenCalls += 1
         })
         history.push('/other')
+        // The push itself notifies listeners synchronously — isolate the baseline from it so the
+        // assertion below can only be satisfied by the back()'s popstate, not by this push.
+        const listenCallsAfterPush = foreignListenCalls
+        assert.equal(listenCallsAfterPush, 1)
+
         history.back()
-        await waitUntil(() => foreignListenCalls === 1)
-        assert.equal(foreignListenCalls, 1)
+        await waitUntil(() => foreignListenCalls === listenCallsAfterPush + 1)
+        assert.equal(foreignListenCalls, listenCallsAfterPush + 1)
     })
 
     it('TEST-003: push while armed defers until the overlay closes, landing on C; a blocker on B prompts once', async () => {
@@ -219,5 +243,74 @@ describe('overlayBack adapter', () => {
         assert.equal(state.key, 'k9')
         assert.equal(state.idx, 4)
         assert.equal(win.location.href, 'https://example.test/reload')
+    })
+})
+
+describe('overlayBack arming gate', () => {
+    it('gate-pass: a trusted gesture newer than the last popstate arms the guard', () => {
+        const { win, adapter } = setUpAdapter('https://example.test/list')
+        simulateTrustedGesture(win)
+        adapter.enabled = true
+
+        const unregister = adapter.register(() => {})
+
+        const state = win.history.state as Record<string, unknown>
+        assert.ok(state.__asmaOverlayBack)
+        assert.ok(__inspectOverlayBackForTests__(win)?.guard)
+
+        unregister()
+    })
+
+    it('gate-fail: no trusted gesture recorded yet keeps the overlay registry-only', () => {
+        const { win, adapter } = setUpAdapter('https://example.test/list')
+        adapter.enabled = true
+
+        const stateBefore = win.history.state
+        const lengthBefore = win.history.length
+
+        const unregister = adapter.register(() => {})
+
+        assert.equal(win.history.state, stateBefore)
+        assert.equal(win.history.length, lengthBefore)
+        assert.equal(__inspectOverlayBackForTests__(win)?.guard, null)
+
+        unregister()
+    })
+
+    it('gate-fail: a popstate after the last gesture keeps the overlay registry-only', async () => {
+        const { win, adapter, history } = setUpAdapter('https://example.test/home')
+        history.push('/list')
+        simulateTrustedGesture(win)
+
+        // A navigation lands after the gesture, so the gesture is no longer the newest signal.
+        history.back()
+        await waitUntil(() => history.location.pathname === '/home')
+
+        adapter.enabled = true
+        const lengthBefore = win.history.length
+        const unregister = adapter.register(() => {})
+
+        assert.equal(__inspectOverlayBackForTests__(win)?.guard, null)
+        assert.equal(win.history.length, lengthBefore)
+
+        unregister()
+    })
+
+    it('gate-fail: navigator.userActivation.isActive === false overrides a fresh gesture', () => {
+        const { win, adapter } = setUpAdapter('https://example.test/list')
+        simulateTrustedGesture(win)
+        Object.defineProperty(win.navigator, 'userActivation', {
+            value: { isActive: false },
+            configurable: true,
+        })
+        adapter.enabled = true
+
+        const lengthBefore = win.history.length
+        const unregister = adapter.register(() => {})
+
+        assert.equal(__inspectOverlayBackForTests__(win)?.guard, null)
+        assert.equal(win.history.length, lengthBefore)
+
+        unregister()
     })
 })

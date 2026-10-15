@@ -1,4 +1,4 @@
-import type { Blocker, History, To } from 'history'
+import type { History, To } from 'history'
 
 export const OVERLAY_BACK_VERSION = 1 as const
 export const OVERLAY_BACK_MARKER_KEY = '__asmaOverlayBack' as const
@@ -48,7 +48,10 @@ export interface OverlayBackInternalState {
     openCount: number
     listenerInstalled: boolean
     historyWrapped: boolean
-    activeBlockerCount: number
+    /** Timestamp (ms) of the last trusted click, non-Escape keydown, touchend or pointerup. */
+    lastGestureAt: number
+    /** Timestamp (ms) of the last popstate, owned or foreign. */
+    lastPopstateAt: number
     originalPush: History['push'] | null
     originalReplace: History['replace'] | null
     public: OverlayBackAdapter
@@ -96,7 +99,8 @@ function getOrCreateInternal(win: Window): OverlayBackInternalState {
         openCount: 0,
         listenerInstalled: false,
         historyWrapped: false,
-        activeBlockerCount: 0,
+        lastGestureAt: Number.NEGATIVE_INFINITY,
+        lastPopstateAt: Number.NEGATIVE_INFINITY,
         originalPush: null,
         originalReplace: null,
         public: publicApi,
@@ -142,9 +146,25 @@ function reconcileAfterRestore(win: Window, internal: OverlayBackInternalState):
     internal.phase = null
 }
 
+/** Biased toward no guard (REQ per the arming gate spec): arms only when the API says the page
+ *  hasn't lost user activation, and the last trusted gesture is newer than the last popstate —
+ *  otherwise an overlay that opened without a fresh click/tap/key (idle-timeout dialog, a result
+ *  dialog after a long request, or one opened programmatically right after a Back press) gets no
+ *  guard and falls back to today's behaviour. */
+function armingGatePasses(win: Window, internal: OverlayBackInternalState): boolean {
+    const userActivation = (win.navigator as Navigator & { userActivation?: { isActive: boolean } }).userActivation
+    if (userActivation?.isActive === false) {
+        return false
+    }
+    return internal.lastGestureAt > internal.lastPopstateAt
+}
+
 function arm(win: Window, internal: OverlayBackInternalState, requestClose: () => void | Promise<unknown>): void {
     if (!internal.public.enabled) {
         return // kill switch off: registry-only, no history write
+    }
+    if (!armingGatePasses(win, internal)) {
+        return // gate fails: registry-only, no history write
     }
     const baseState = readState(win)
     const marker: OverlayBackMarker = { v: OVERLAY_BACK_VERSION, s: internal.sessionId, m: nextMarkerId(internal) }
@@ -244,6 +264,7 @@ function register(
 }
 
 function handlePopstate(win: Window, internal: OverlayBackInternalState, event: Event): void {
+    internal.lastPopstateAt = Date.now()
     if (internal.suspended) {
         return
     }
@@ -335,6 +356,24 @@ export function installOverlayBackPopstateListener(win: Window): OverlayBackAdap
 
     stripStaleMarker(win)
 
+    const recordTrustedGesture = (event: Event) => {
+        if (event.isTrusted) {
+            internal.lastGestureAt = Date.now()
+        }
+    }
+    win.addEventListener('click', recordTrustedGesture, { capture: true })
+    win.addEventListener('touchend', recordTrustedGesture, { capture: true })
+    win.addEventListener('pointerup', recordTrustedGesture, { capture: true })
+    win.addEventListener(
+        'keydown',
+        (event) => {
+            if ((event as KeyboardEvent).key !== 'Escape') {
+                recordTrustedGesture(event)
+            }
+        },
+        { capture: true },
+    )
+
     win.addEventListener('popstate', (event) => handlePopstate(win, internal, event))
     win.addEventListener('pagehide', () => {
         internal.suspended = true
@@ -349,8 +388,12 @@ export function installOverlayBackPopstateListener(win: Window): OverlayBackAdap
     return internal.public
 }
 
-/** Wraps `push`/`replace`/`block` on the real history instance. Must run after
- *  `createBrowserHistory()` returns, since it wraps that instance's methods. Idempotent. */
+/** Wraps `push`/`replace` on the real history instance. Must run after `createBrowserHistory()`
+ *  returns, since it wraps that instance's methods. Idempotent. `block` is left untouched: the
+ *  suppression predicate already keeps owned hops from ever reaching history@5's own blocker
+ *  check (TEST-002), and a deferred push/replace runs through the real, unwrapped `push`/`replace`
+ *  so a live blocker evaluates it normally (TEST-003) — there is nothing left for a `block` wrap
+ *  to do. */
 export function finishOverlayBackInstall(win: Window, history: History): void {
     const internal = getOrCreateInternal(win)
     if (internal.historyWrapped) {
@@ -360,7 +403,6 @@ export function finishOverlayBackInstall(win: Window, history: History): void {
 
     const originalPush = history.push.bind(history)
     const originalReplace = history.replace.bind(history)
-    const originalBlock = history.block.bind(history)
     internal.originalPush = originalPush
     internal.originalReplace = originalReplace
 
@@ -405,18 +447,12 @@ export function finishOverlayBackInstall(win: Window, history: History): void {
         internal.pendingNav = { kind: 'REPLACE', to, state }
         void guard.requestClose()
     }
-
-    history.block = (blocker: Blocker) => {
-        internal.activeBlockerCount += 1
-        const unblock = originalBlock(blocker)
-        return () => {
-            internal.activeBlockerCount = Math.max(0, internal.activeBlockerCount - 1)
-            unblock()
-        }
-    }
 }
 
-/** Test-only introspection of the window-singleton state. Never import this outside tests. */
+/** Test-only introspection of the window-singleton state. The returned object is the live state
+ *  (not a copy), so a test may also mutate `lastGestureAt`/`lastPopstateAt` to simulate the arming
+ *  gate, since jsdom cannot dispatch a genuinely trusted gesture event. Never import this outside
+ *  tests. */
 export function __inspectOverlayBackForTests__(win: Window): OverlayBackInternalState | undefined {
     return win.__ASMA_OVERLAY_BACK_INTERNAL__
 }
