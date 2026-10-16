@@ -102,11 +102,30 @@ describe('overlayBack adapter', () => {
             closeCalls += 1
         })
 
+        // Registered after the adapter and after history@5, so it only stays silent when the adapter
+        // actually stops the event. history.listen stays at 0 either way: the guard clones idx, so
+        // history@5 sees a zero delta and ignores the pop on its own.
+        let lateCalls = 0
+        win.addEventListener('popstate', () => {
+            lateCalls += 1
+        })
+
         win.history.back()
         await waitUntil(() => closeCalls === 1)
 
         assert.equal(listenCalls, 0)
         assert.equal(blockCalls, 0)
+        assert.equal(lateCalls, 0)
+
+        const forgedState = {
+            ...(win.history.state as Record<string, unknown>),
+            key: 'forged-key',
+            __asmaOverlayBack: { v: 1, s: 'forged-session', m: 'forged-marker' },
+        }
+        win.history.pushState(forgedState, '', win.location.href)
+        win.dispatchEvent(new win.PopStateEvent('popstate'))
+        assert.equal(lateCalls, 1)
+        assert.equal(closeCalls, 2)
 
         unblock()
         unregister()
