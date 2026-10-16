@@ -47,6 +47,7 @@ export interface OverlayBackInternalState {
     retiredMarker: OverlayBackMarker | null
     disablePending: boolean
     enabled: boolean
+    currentRequestClose: (() => false | void | Promise<unknown>) | null
     suspended: boolean
     openCount: number
     listenerInstalled: boolean
@@ -106,6 +107,7 @@ function getOrCreateInternal(win: Window): OverlayBackInternalState {
         retiredMarker: null,
         disablePending: false,
         enabled: false,
+        currentRequestClose: null,
         suspended: false,
         openCount: 0,
         listenerInstalled: false,
@@ -179,6 +181,9 @@ function setOverlayBackEnabled(win: Window, internal: OverlayBackInternalState, 
     internal.enabled = enabled
     if (enabled) {
         internal.disablePending = false
+        if (!internal.guard && internal.openCount > 0 && internal.currentRequestClose) {
+            arm(win, internal, internal.currentRequestClose)
+        }
         return
     }
 
@@ -308,6 +313,7 @@ function register(
     requestClose: () => false | void | Promise<unknown>,
 ): () => void {
     internal.openCount += 1
+    internal.currentRequestClose = requestClose
     if (internal.openCount === 1 && internal.phase === 'draining') {
         internal.pendingRearmRequestClose = requestClose
     } else if (!internal.guard) {
@@ -323,6 +329,7 @@ function register(
         }
         unregistered = true
         internal.openCount = Math.max(0, internal.openCount - 1)
+        if (internal.openCount === 0) internal.currentRequestClose = null
         if (internal.openCount === 0 && internal.phase === 'draining') {
             internal.pendingRearmRequestClose = null
         }

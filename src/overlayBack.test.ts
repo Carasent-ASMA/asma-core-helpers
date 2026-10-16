@@ -429,6 +429,18 @@ describe('overlayBack adapter', () => {
 })
 
 describe('overlayBack arming gate', () => {
+    it('arms an already-registered overlay when the host enables the feature', () => {
+        const { win, adapter } = setUp('https://example.test/list')
+        const unregister = adapter.register(() => {})
+        assert.equal(__inspectOverlayBackForTests__(win)?.guard, null)
+
+        adapter.enabled = true
+
+        assert.ok(__inspectOverlayBackForTests__(win)?.guard)
+        assert.ok((win.history.state as Record<string, unknown>).__asmaOverlayBack)
+        unregister()
+    })
+
     it('gate-pass: a trusted gesture newer than the last popstate arms the guard', () => {
         const { win, adapter } = setUpAdapter('https://example.test/list')
         simulateTrustedGesture(win)
