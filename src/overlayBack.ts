@@ -323,6 +323,9 @@ function register(
         }
         unregistered = true
         internal.openCount = Math.max(0, internal.openCount - 1)
+        if (internal.openCount === 0 && internal.phase === 'draining') {
+            internal.pendingRearmRequestClose = null
+        }
         if (internal.openCount === 0 && internal.guard && internal.phase === null) {
             drain(win, internal)
         }
@@ -363,6 +366,10 @@ function handlePopstate(win: Window, internal: OverlayBackInternalState, event: 
         if (landedOnGuard) {
             ;(event as PopStateEvent).stopImmediatePropagation()
             internal.phase = null
+            if (internal.openCount === 0) {
+                drain(win, internal)
+                return
+            }
             if (internal.disablePending || !internal.public.enabled) {
                 internal.disablePending = false
                 drain(win, internal)

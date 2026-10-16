@@ -247,6 +247,42 @@ describe('overlayBack adapter', () => {
         unregister()
     })
 
+    it('drains instead of calling a stale closer when the last overlay unregisters during rearm', async () => {
+        const { win, adapter } = setUp('https://example.test/list')
+        adapter.enabled = true
+        let closeCalls = 0
+        const unregister = adapter.register(() => {
+            closeCalls += 1
+        })
+        const internal = __inspectOverlayBackForTests__(win)!
+        internal.phase = 'rearming'
+        unregister()
+
+        win.dispatchEvent(new win.PopStateEvent('popstate'))
+        await waitUntil(() => internal.guard === null)
+
+        assert.equal(closeCalls, 0)
+        assert.equal(internal.openCount, 0)
+        assert.equal((win.history.state as Record<string, unknown>).__asmaOverlayBack, undefined)
+    })
+
+    it('cancels a pending rearm when its replacement overlay unregisters during drain', () => {
+        const { win, adapter } = setUp('https://example.test/list')
+        adapter.enabled = true
+        const unregisterOriginal = adapter.register(() => {})
+        const internal = __inspectOverlayBackForTests__(win)!
+        internal.openCount = 0
+        internal.phase = 'draining'
+
+        const unregisterReplacement = adapter.register(() => {})
+        assert.ok(internal.pendingRearmRequestClose)
+        unregisterReplacement()
+
+        assert.equal(internal.openCount, 0)
+        assert.equal(internal.pendingRearmRequestClose, null)
+        unregisterOriginal()
+    })
+
     it('a refused close fails open for push and cross-path replace instead of blocking forever', async () => {
         for (const kind of ['push', 'replace'] as const) {
             const { win, adapter, history } = setUp('https://example.test/list')
