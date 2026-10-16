@@ -417,7 +417,7 @@ function handlePopstate(win: Window, internal: OverlayBackInternalState, event: 
 
 function pathOf(to: To, fallback: string): string {
     if (typeof to === 'string') {
-        return to.split('?')[0]?.split('#')[0] ?? fallback
+        return to.split(/[?#]/, 1)[0] || fallback
     }
     return to.pathname ?? fallback
 }

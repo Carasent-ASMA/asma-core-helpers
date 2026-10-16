@@ -358,6 +358,11 @@ describe('overlayBack adapter', () => {
         assert.ok(internalMid?.guard)
         assert.equal(internalMid?.phase, null)
 
+        history.replace('?page=3')
+        assert.equal(win.location.search, '?page=3')
+        assert.equal(closeCalls, 0)
+        assert.deepEqual((win.history.state as Record<string, unknown>).__asmaOverlayBack, markerBefore)
+
         history.replace('/checkout')
         await waitUntil(() => history.location.pathname === '/checkout')
         assert.equal(closeCalls, 1)
