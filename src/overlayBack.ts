@@ -56,6 +56,7 @@ export interface OverlayBackInternalState {
     disablePending: boolean
     enabled: boolean
     currentRequestClose: (() => false | void | Promise<unknown>) | null
+    registrations: Array<() => false | void | Promise<unknown>>
     suspended: boolean
     openCount: number
     listenerInstalled: boolean
@@ -129,6 +130,7 @@ function getOrCreateInternal(win: Window): OverlayBackInternalState {
         disablePending: false,
         enabled: false,
         currentRequestClose: null,
+        registrations: [],
         suspended: false,
         openCount: 0,
         listenerInstalled: false,
@@ -206,6 +208,10 @@ function setOverlayBackEnabled(win: Window, internal: OverlayBackInternalState, 
     internal.enabled = enabled
     if (enabled) {
         internal.disablePending = false
+        if (internal.guard && internal.phase === 'draining' && internal.currentRequestClose) {
+            internal.pendingRearmRequestClose = internal.currentRequestClose
+            return
+        }
         if (!internal.guard && internal.openCount > 0 && internal.currentRequestClose) {
             arm(win, internal, internal.currentRequestClose)
         }
@@ -252,8 +258,8 @@ function arm(win: Window, internal: OverlayBackInternalState, requestClose: () =
 
 function finishDrain(win: Window, internal: OverlayBackInternalState): void {
     const retiredMarker = internal.guard?.marker ?? null
-    const retiredBaseKey = internal.guard?.baseKey
     const snapshot = internal.pendingDrainSnapshot
+    const retiredBaseKey = snapshot?.state.key ?? internal.guard?.baseKey
     internal.pendingDrainSnapshot = null
     if (snapshot) {
         try {
@@ -323,10 +329,17 @@ function requestCloseForPendingNavigation(
     guard: GuardState,
 ): void {
     const attempt = ++internal.pendingCloseAttempt
-    const result = guard.requestClose()
+    let result: false | void | Promise<unknown>
+    try {
+        result = guard.requestClose()
+    } catch (error) {
+        console.error('[overlayBack] overlay closer threw; continuing the pending navigation', error)
+        failOpenPendingNavigation(win, internal)
+        return
+    }
     if (result === false) failOpenPendingNavigation(win, internal)
-    else if (result === undefined) {
-        win.setTimeout(() => {
+    else {
+        const failOpenIfStalled = (): void => {
             if (
                 internal.pendingNav &&
                 internal.guard === guard &&
@@ -335,6 +348,16 @@ function requestCloseForPendingNavigation(
             ) {
                 failOpenPendingNavigation(win, internal)
             }
+        }
+        const scheduleFailOpen = (): void => {
+            win.setTimeout(failOpenIfStalled, 0)
+        }
+        if (result && typeof (result as Promise<unknown>).then === 'function') {
+            void (result as Promise<unknown>).then(scheduleFailOpen, scheduleFailOpen)
+            return
+        }
+        win.setTimeout(() => {
+            failOpenIfStalled()
         }, 0)
     }
 }
@@ -367,9 +390,10 @@ function register(
     internal: OverlayBackInternalState,
     requestClose: () => false | void | Promise<unknown>,
 ): () => void {
-    internal.openCount += 1
+    internal.registrations.push(requestClose)
+    internal.openCount = internal.registrations.length
     internal.currentRequestClose = requestClose
-    if (internal.openCount === 1 && internal.phase === 'draining') {
+    if (internal.phase === 'draining') {
         internal.pendingRearmRequestClose = requestClose
     } else if (!internal.guard) {
         arm(win, internal, requestClose)
@@ -383,10 +407,15 @@ function register(
             return
         }
         unregistered = true
-        internal.openCount = Math.max(0, internal.openCount - 1)
-        if (internal.openCount === 0) internal.currentRequestClose = null
-        if (internal.openCount === 0 && internal.phase === 'draining') {
-            internal.pendingRearmRequestClose = null
+        const index = internal.registrations.lastIndexOf(requestClose)
+        if (index !== -1) internal.registrations.splice(index, 1)
+        internal.openCount = internal.registrations.length
+        internal.currentRequestClose = internal.registrations.at(-1) ?? null
+        if (internal.guard && internal.phase === null && internal.currentRequestClose) {
+            internal.guard = { ...internal.guard, requestClose: internal.currentRequestClose }
+        }
+        if (internal.phase === 'draining') {
+            internal.pendingRearmRequestClose = internal.currentRequestClose
         }
         if (internal.openCount === 0 && internal.guard && internal.phase === null) {
             drain(win, internal)
@@ -395,7 +424,6 @@ function register(
 }
 
 function handlePopstate(win: Window, internal: OverlayBackInternalState, event: Event): void {
-    internal.lastPopstateAt = Date.now()
     if (internal.suspended) {
         return
     }
@@ -426,7 +454,9 @@ function handlePopstate(win: Window, internal: OverlayBackInternalState, event: 
                 internal.retiredBouncePending = false
                 /* fail open: leave the stray marker in place */
             }
+            return
         }
+        internal.lastPopstateAt = Date.now()
         return
     }
 
@@ -446,9 +476,13 @@ function handlePopstate(win: Window, internal: OverlayBackInternalState, event: 
                 drain(win, internal)
                 return
             }
-            void guard.requestClose()
+            if (internal.pendingNav) requestCloseForPendingNavigation(win, internal, guard)
+            else void guard.requestClose()
             return
         }
+        internal.lastPopstateAt = Date.now()
+        internal.retiredMarker = guard.marker
+        internal.retiredBaseKey = guard.baseKey
         internal.guard = null
         internal.phase = null
         void guard.requestClose()
@@ -461,6 +495,9 @@ function handlePopstate(win: Window, internal: OverlayBackInternalState, event: 
             finishDrain(win, internal)
             return
         }
+        internal.lastPopstateAt = Date.now()
+        internal.retiredMarker = guard.marker
+        internal.retiredBaseKey = guard.baseKey
         internal.guard = null
         internal.phase = null
         internal.pendingDrainSnapshot = null
@@ -481,6 +518,9 @@ function handlePopstate(win: Window, internal: OverlayBackInternalState, event: 
     }
 
     // Landed somewhere neither B nor G recognises (multi-step jump, foreign navigation): fail open.
+    internal.lastPopstateAt = Date.now()
+    internal.retiredMarker = guard.marker
+    internal.retiredBaseKey = guard.baseKey
     internal.guard = null
     internal.phase = null
     void guard.requestClose()
@@ -557,7 +597,7 @@ export function finishOverlayBackInstall(win: Window, history: History): void {
 
     history.push = (to: To, state?: unknown) => {
         const guard = internal.guard
-        if (!guard || internal.phase !== null) {
+        if (!guard || internal.phase === 'draining') {
             originalPush(to, state)
             return
         }
@@ -566,16 +606,16 @@ export function finishOverlayBackInstall(win: Window, history: History): void {
             return
         }
         internal.pendingNav = { kind: 'PUSH', to, state }
-        requestCloseForPendingNavigation(win, internal, guard)
+        if (internal.phase === null) requestCloseForPendingNavigation(win, internal, guard)
     }
 
     history.replace = (to: To, state?: unknown) => {
         const guard = internal.guard
-        if (!guard || internal.phase !== null) {
+        if (!guard || internal.phase === 'draining') {
             originalReplace(to, state)
             return
         }
-        if (pathOf(to, history.location.pathname) === history.location.pathname) {
+        if (internal.phase === null && pathOf(to, history.location.pathname) === history.location.pathname) {
             originalReplace(to, state)
             const rawState = readState(win)
             try {
@@ -594,7 +634,7 @@ export function finishOverlayBackInstall(win: Window, history: History): void {
             return
         }
         internal.pendingNav = { kind: 'REPLACE', to, state }
-        requestCloseForPendingNavigation(win, internal, guard)
+        if (internal.phase === null) requestCloseForPendingNavigation(win, internal, guard)
     }
 }
 

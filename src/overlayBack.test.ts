@@ -336,8 +336,8 @@ describe('overlayBack adapter', () => {
         adapter.enabled = true
         const unregisterOriginal = adapter.register(() => {})
         const internal = __inspectOverlayBackForTests__(win)!
-        internal.openCount = 0
-        internal.phase = 'draining'
+        unregisterOriginal()
+        assert.equal(internal.phase, 'draining')
 
         const unregisterReplacement = adapter.register(() => {})
         assert.ok(internal.pendingRearmRequestClose)
@@ -345,7 +345,6 @@ describe('overlayBack adapter', () => {
 
         assert.equal(internal.openCount, 0)
         assert.equal(internal.pendingRearmRequestClose, null)
-        unregisterOriginal()
     })
 
     it('a refused close fails open for push and cross-path replace instead of blocking forever', async () => {
@@ -538,7 +537,7 @@ describe('overlayBack adapter', () => {
         const nativeGo = win.history.go.bind(win.history)
         win.history.go = ((delta?: number) => {
             if (delta === -1) {
-                scrollX = 0
+                scrollX = 24
                 scrollY = 0
             }
             nativeGo(delta)
@@ -558,6 +557,105 @@ describe('overlayBack adapter', () => {
         history.push('/checkout')
         await waitUntil(() => history.location.pathname === '/checkout', 100)
 
+        assert.equal(adapter.pendingNavigation, false)
+    })
+
+    it('restores the previous closer when the top registration unregisters', async () => {
+        const { adapter, history } = setUp('https://example.test/list')
+        adapter.enabled = true
+        let lowerCalls = 0
+        adapter.register(() => {
+            lowerCalls += 1
+            return false
+        })
+        const unregisterTop = adapter.register(() => {
+            throw new Error('stale top closer')
+        })
+        unregisterTop()
+
+        history.push('/checkout')
+        await waitUntil(() => history.location.pathname === '/checkout')
+
+        assert.equal(lowerCalls, 1)
+    })
+
+    it('fails open when a closer throws or returns a non-contract value', async () => {
+        for (const requestClose of [() => null, () => true, () => {
+            throw new Error('close failed')
+        }]) {
+            const { adapter, history } = setUp('https://example.test/list')
+            adapter.enabled = true
+            adapter.register(requestClose as () => void)
+
+            history.push('/checkout')
+            await waitUntil(() => history.location.pathname === '/checkout', 100)
+            assert.equal(adapter.pendingNavigation, false)
+        }
+    })
+
+    it('re-arms an overlay registered while the previous guard drains', async () => {
+        const { win, adapter } = setUp('https://example.test/list')
+        adapter.enabled = true
+        const unregister = adapter.register(() => {})
+        unregister()
+        adapter.register(() => {})
+
+        await waitUntil(() => __inspectOverlayBackForTests__(win)?.phase === null)
+
+        assert.ok(__inspectOverlayBackForTests__(win)?.guard)
+        assert.ok((win.history.state as Record<string, unknown>).__asmaOverlayBack)
+    })
+
+    it('keeps the replaced key aligned for a retired-marker Forward bounce', async () => {
+        const { win, adapter, history } = setUp('https://example.test/list')
+        adapter.enabled = true
+        const unregister = adapter.register(() => {})
+        history.replace('/list?view=compact')
+        unregister()
+        const internal = __inspectOverlayBackForTests__(win)!
+        await waitUntil(() => internal.guard === null)
+
+        let leakedPopstates = 0
+        win.addEventListener('popstate', () => {
+            leakedPopstates += 1
+        })
+        win.history.forward()
+        await waitUntil(() => internal.retiredBouncePending)
+        await waitUntil(() => !internal.retiredBouncePending)
+
+        assert.equal(leakedPopstates, 0)
+    })
+
+    it('re-arms an open overlay after the feature is disabled and enabled again', async () => {
+        const { win, adapter } = setUp('https://example.test/list')
+        adapter.enabled = true
+        adapter.register(() => {})
+
+        adapter.enabled = false
+        await waitUntil(() => __inspectOverlayBackForTests__(win)?.guard === null)
+        adapter.enabled = true
+        await waitUntil(() => __inspectOverlayBackForTests__(win)?.guard !== null)
+
+        assert.ok((win.history.state as Record<string, unknown>).__asmaOverlayBack)
+    })
+
+    it('defers a push that arrives while an owned Back is rearming', async () => {
+        const { win, adapter, history } = setUp('https://example.test/list')
+        adapter.enabled = true
+        let closeCalls = 0
+        const unregister: () => void = adapter.register(() => {
+            closeCalls += 1
+            unregister()
+        })
+        const internal = __inspectOverlayBackForTests__(win)!
+        internal.phase = 'rearming'
+
+        history.push('/checkout')
+        assert.equal(history.location.pathname, '/list')
+        win.dispatchEvent(new win.PopStateEvent('popstate'))
+        await waitUntil(() => history.location.pathname === '/checkout')
+
+        assert.equal(closeCalls, 1)
         assert.equal(adapter.pendingNavigation, false)
     })
 })
