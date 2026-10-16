@@ -15,10 +15,15 @@ export interface OverlayBackMarker {
 export interface OverlayBackAdapter {
     readonly v: typeof OVERLAY_BACK_VERSION
     enabled: boolean
+    readonly pendingNavigation: boolean
     /** Registers the current top overlay's close function. Call again (with the new top's
      *  `requestClose`) before unregistering the previous top, so the stack never looks empty
      *  while an overlay is still open. Returns the unregister function for that entry. */
     register: (requestClose: () => false | void | Promise<unknown>) => () => void
+    /** Ask the current registry top to close after the previous top unregistered. */
+    continuePendingNavigation: () => void
+    /** Complete a pending route intent when the current top explicitly cannot close. */
+    failOpenPendingNavigation: () => void
 }
 
 type OverlayBackHistoryState = Record<string, unknown> & {
@@ -96,7 +101,17 @@ function getOrCreateInternal(win: Window): OverlayBackInternalState {
         set enabled(enabled: boolean) {
             setOverlayBackEnabled(win, internal, enabled)
         },
+        get pendingNavigation() {
+            return internal.pendingNav !== null
+        },
         register: (requestClose) => register(win, internal, requestClose),
+        continuePendingNavigation: () => {
+            const guard = internal.guard
+            if (internal.pendingNav && guard && internal.phase === null) {
+                requestCloseForPendingNavigation(win, internal, guard)
+            }
+        },
+        failOpenPendingNavigation: () => failOpenPendingNavigation(win, internal),
     }
     internal = {
         sessionId: generateId(),

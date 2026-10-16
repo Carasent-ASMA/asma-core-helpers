@@ -369,6 +369,29 @@ describe('overlayBack adapter', () => {
         }
     })
 
+    it('continues a pending route through each registry layer before draining', async () => {
+        const { adapter, history } = setUp('https://example.test/list')
+        adapter.enabled = true
+        let layers = 2
+        let closeCalls = 0
+        const unregister: () => void = adapter.register(() => {
+            closeCalls += 1
+            layers -= 1
+            if (layers === 0) unregister()
+        })
+
+        history.push('/checkout')
+        assert.equal(adapter.pendingNavigation, true)
+        assert.equal(history.location.pathname, '/list')
+        assert.equal(closeCalls, 1)
+
+        adapter.continuePendingNavigation()
+        await waitUntil(() => history.location.pathname === '/checkout')
+
+        assert.equal(closeCalls, 2)
+        assert.equal(adapter.pendingNavigation, false)
+    })
+
     it('TEST-003: push while armed defers until the overlay closes, landing on C; a blocker on B prompts once', async () => {
         const { win: _win, adapter, history } = setUp('https://example.test/home')
         history.push('/list')
