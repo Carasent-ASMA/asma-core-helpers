@@ -56,6 +56,12 @@ async function waitUntil(predicate: () => boolean, timeoutMs = 2000): Promise<vo
     }
 }
 
+function dispatchPersistedPageShow(win: Window): void {
+    const event = new win.Event('pageshow')
+    Object.defineProperty(event, 'persisted', { value: true })
+    win.dispatchEvent(event)
+}
+
 describe('overlayBack adapter', () => {
     it('TEST-001: arm clones usr, key and idx, keeps unknown fields, and leaves the URL unchanged', () => {
         const { win, adapter } = setUp('https://example.test/orders')
@@ -189,6 +195,39 @@ describe('overlayBack adapter', () => {
         assert.equal(lateCalls, 1)
         assert.equal(__inspectOverlayBackForTests__(win)?.guard, guardBefore)
         unregister()
+    })
+
+    it('reconciles the exact marker identity after a bfcache restore', () => {
+        const exact = setUp('https://example.test/list')
+        exact.adapter.enabled = true
+        exact.adapter.register(() => {})
+        const exactInternal = __inspectOverlayBackForTests__(exact.win)!
+        const exactGuard = exactInternal.guard
+        exact.win.dispatchEvent(new exact.win.Event('pagehide'))
+        dispatchPersistedPageShow(exact.win)
+        assert.equal(exactInternal.guard, exactGuard)
+        assert.equal(exactInternal.suspended, false)
+
+        const mismatch = setUp('https://example.test/list')
+        mismatch.adapter.enabled = true
+        mismatch.adapter.register(() => {})
+        const mismatchInternal = __inspectOverlayBackForTests__(mismatch.win)!
+        const marker = (mismatch.win.history.state as Record<string, unknown>).__asmaOverlayBack as Record<
+            string,
+            unknown
+        >
+        mismatch.win.history.replaceState(
+            { ...mismatch.win.history.state, __asmaOverlayBack: { ...marker, v: 2 } },
+            '',
+            mismatch.win.location.href,
+        )
+        mismatchInternal.pendingNav = { kind: 'PUSH', to: '/stale', state: undefined }
+        mismatch.win.dispatchEvent(new mismatch.win.Event('pagehide'))
+        dispatchPersistedPageShow(mismatch.win)
+
+        assert.equal(mismatchInternal.guard, null)
+        assert.equal(mismatchInternal.pendingNav, null)
+        assert.equal(mismatchInternal.suspended, false)
     })
 
     it('BACK-6: Forward bounces off a retired guard marker without reopening an overlay', async () => {

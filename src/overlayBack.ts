@@ -160,11 +160,15 @@ function reconcileAfterRestore(win: Window, internal: OverlayBackInternalState):
         return
     }
     const marker = readMarker(readState(win))
-    if (marker && marker.s === guard.marker.s && marker.m === guard.marker.m) {
+    if (markerMatches(marker, guard.marker)) {
         return // restored exactly onto the live guard entry: stay armed
     }
     internal.guard = null
     internal.phase = null
+    internal.pendingNav = null
+    internal.pendingDrainSnapshot = null
+    internal.pendingRearmRequestClose = null
+    internal.disablePending = false
 }
 
 /** Biased toward no guard (REQ per the arming gate spec): arms only when the API says the page
