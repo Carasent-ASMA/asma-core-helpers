@@ -18,7 +18,7 @@ export interface OverlayBackAdapter {
     /** Registers the current top overlay's close function. Call again (with the new top's
      *  `requestClose`) before unregistering the previous top, so the stack never looks empty
      *  while an overlay is still open. Returns the unregister function for that entry. */
-    register: (requestClose: () => void | Promise<unknown>) => () => void
+    register: (requestClose: () => false | void | Promise<unknown>) => () => void
 }
 
 type OverlayBackHistoryState = Record<string, unknown> & {
@@ -31,7 +31,7 @@ type OverlayBackHistoryState = Record<string, unknown> & {
 interface GuardState {
     marker: OverlayBackMarker
     baseKey: string | undefined
-    requestClose: () => void | Promise<unknown>
+    requestClose: () => false | void | Promise<unknown>
 }
 
 type PendingNav = { kind: 'PUSH'; to: To; state: unknown } | { kind: 'REPLACE'; to: To; state: unknown }
@@ -43,7 +43,10 @@ export interface OverlayBackInternalState {
     phase: 'rearming' | 'draining' | null
     pendingNav: PendingNav | null
     pendingDrainSnapshot: { href: string; state: OverlayBackHistoryState } | null
-    pendingRearmRequestClose: (() => void | Promise<unknown>) | null
+    pendingRearmRequestClose: (() => false | void | Promise<unknown>) | null
+    retiredMarker: OverlayBackMarker | null
+    disablePending: boolean
+    enabled: boolean
     suspended: boolean
     openCount: number
     listenerInstalled: boolean
@@ -84,7 +87,12 @@ function getOrCreateInternal(win: Window): OverlayBackInternalState {
     let internal!: OverlayBackInternalState
     const publicApi: OverlayBackAdapter = {
         v: OVERLAY_BACK_VERSION,
-        enabled: false,
+        get enabled() {
+            return internal.enabled
+        },
+        set enabled(enabled: boolean) {
+            setOverlayBackEnabled(win, internal, enabled)
+        },
         register: (requestClose) => register(win, internal, requestClose),
     }
     internal = {
@@ -95,6 +103,9 @@ function getOrCreateInternal(win: Window): OverlayBackInternalState {
         pendingNav: null,
         pendingDrainSnapshot: null,
         pendingRearmRequestClose: null,
+        retiredMarker: null,
+        disablePending: false,
+        enabled: false,
         suspended: false,
         openCount: 0,
         listenerInstalled: false,
@@ -115,6 +126,10 @@ function readState(win: Window): OverlayBackHistoryState | null {
 
 function readMarker(state: OverlayBackHistoryState | null): OverlayBackMarker | undefined {
     return state?.[OVERLAY_BACK_MARKER_KEY]
+}
+
+function markerMatches(marker: OverlayBackMarker | undefined, expected: OverlayBackMarker | null): boolean {
+    return !!marker && !!expected && marker.v === expected.v && marker.s === expected.s && marker.m === expected.m
 }
 
 /** Init-time cleanup (boot row of §2.6): a reload that lands on a stale guard entry keeps
@@ -159,7 +174,24 @@ function armingGatePasses(win: Window, internal: OverlayBackInternalState): bool
     return internal.lastGestureAt > internal.lastPopstateAt
 }
 
-function arm(win: Window, internal: OverlayBackInternalState, requestClose: () => void | Promise<unknown>): void {
+function setOverlayBackEnabled(win: Window, internal: OverlayBackInternalState, enabled: boolean): void {
+    if (internal.enabled === enabled) return
+    internal.enabled = enabled
+    if (enabled) {
+        internal.disablePending = false
+        return
+    }
+
+    internal.pendingRearmRequestClose = null
+    if (!internal.guard) return
+    if (internal.phase === null) {
+        drain(win, internal)
+    } else {
+        internal.disablePending = true
+    }
+}
+
+function arm(win: Window, internal: OverlayBackInternalState, requestClose: () => false | void | Promise<unknown>): void {
     if (!internal.public.enabled) {
         return // kill switch off: registry-only, no history write
     }
@@ -182,10 +214,12 @@ function arm(win: Window, internal: OverlayBackInternalState, requestClose: () =
         return // WebKit's 100-push budget or similar: fail open, stay idle
     }
     internal.guard = { marker, baseKey: baseState?.key, requestClose }
+    internal.retiredMarker = null
     internal.phase = null
 }
 
 function finishDrain(win: Window, internal: OverlayBackInternalState): void {
+    const retiredMarker = internal.guard?.marker ?? null
     const snapshot = internal.pendingDrainSnapshot
     internal.pendingDrainSnapshot = null
     if (snapshot) {
@@ -196,7 +230,9 @@ function finishDrain(win: Window, internal: OverlayBackInternalState): void {
         }
     }
     internal.guard = null
+    internal.retiredMarker = retiredMarker
     internal.phase = null
+    internal.disablePending = false
 
     const pendingNav = internal.pendingNav
     internal.pendingNav = null
@@ -216,6 +252,36 @@ function runPendingNav(internal: OverlayBackInternalState, pending: PendingNav):
     } else {
         internal.originalReplace?.(pending.to, pending.state)
     }
+}
+
+function failOpenPendingNavigation(win: Window, internal: OverlayBackInternalState): void {
+    const pending = internal.pendingNav
+    if (!pending) return
+    const state = readState(win)
+    const marker = readMarker(state)
+    if (markerMatches(marker, internal.guard?.marker ?? null)) {
+        const { [OVERLAY_BACK_MARKER_KEY]: _marker, ...rest } = state ?? {}
+        try {
+            win.history.replaceState(rest, '', win.location.href)
+        } catch {
+            // The intent must not remain blocked merely because marker cleanup failed.
+        }
+    }
+    internal.pendingNav = null
+    internal.pendingDrainSnapshot = null
+    internal.retiredMarker = internal.guard?.marker ?? internal.retiredMarker
+    internal.guard = null
+    internal.phase = null
+    queueMicrotask(() => runPendingNav(internal, pending))
+}
+
+function requestCloseForPendingNavigation(
+    win: Window,
+    internal: OverlayBackInternalState,
+    guard: GuardState,
+): void {
+    const result = guard.requestClose()
+    if (result === false) failOpenPendingNavigation(win, internal)
 }
 
 function drain(win: Window, internal: OverlayBackInternalState): void {
@@ -239,7 +305,7 @@ function drain(win: Window, internal: OverlayBackInternalState): void {
 function register(
     win: Window,
     internal: OverlayBackInternalState,
-    requestClose: () => void | Promise<unknown>,
+    requestClose: () => false | void | Promise<unknown>,
 ): () => void {
     internal.openCount += 1
     if (internal.openCount === 1 && internal.phase === 'draining') {
@@ -277,7 +343,7 @@ function handlePopstate(win: Window, internal: OverlayBackInternalState, event: 
     const guard = internal.guard
 
     if (!guard) {
-        if (marker) {
+        if (markerMatches(marker, internal.retiredMarker)) {
             // Forward landed on a retired guard marker (REQ-006): bounce back, delta is 0 so this
             // never moves a real page.
             ;(event as PopStateEvent).stopImmediatePropagation()
@@ -290,13 +356,18 @@ function handlePopstate(win: Window, internal: OverlayBackInternalState, event: 
         return
     }
 
-    const landedOnGuard = !!marker && marker.s === guard.marker.s && marker.m === guard.marker.m
+    const landedOnGuard = markerMatches(marker, guard.marker)
     const landedOnBase = !landedOnGuard && (state?.key ?? undefined) === guard.baseKey
 
     if (internal.phase === 'rearming') {
         if (landedOnGuard) {
             ;(event as PopStateEvent).stopImmediatePropagation()
             internal.phase = null
+            if (internal.disablePending || !internal.public.enabled) {
+                internal.disablePending = false
+                drain(win, internal)
+                return
+            }
             void guard.requestClose()
             return
         }
@@ -417,7 +488,7 @@ export function finishOverlayBackInstall(win: Window, history: History): void {
             return
         }
         internal.pendingNav = { kind: 'PUSH', to, state }
-        void guard.requestClose()
+        requestCloseForPendingNavigation(win, internal, guard)
     }
 
     history.replace = (to: To, state?: unknown) => {
@@ -445,7 +516,7 @@ export function finishOverlayBackInstall(win: Window, history: History): void {
             return
         }
         internal.pendingNav = { kind: 'REPLACE', to, state }
-        void guard.requestClose()
+        requestCloseForPendingNavigation(win, internal, guard)
     }
 }
 

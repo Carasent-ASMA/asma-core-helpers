@@ -208,6 +208,66 @@ describe('overlayBack adapter', () => {
         assert.equal((win.history.state as Record<string, unknown>).__asmaOverlayBack, undefined)
     })
 
+    it('does not suppress a forged marker when there is no matching retired guard', () => {
+        const { win } = setUp('https://example.test/list')
+        win.history.pushState(
+            { ...win.history.state, __asmaOverlayBack: { v: 1, s: 'forged-session', m: 'forged-marker' } },
+            '',
+            win.location.href,
+        )
+        let lateCalls = 0
+        win.addEventListener('popstate', () => {
+            lateCalls += 1
+        })
+
+        win.dispatchEvent(new win.PopStateEvent('popstate'))
+
+        assert.equal(lateCalls, 1)
+        assert.deepEqual((win.history.state as Record<string, unknown>).__asmaOverlayBack, {
+            v: 1,
+            s: 'forged-session',
+            m: 'forged-marker',
+        })
+    })
+
+    it('disabling the feature drains an armed guard without closing the overlay', async () => {
+        const { win, adapter } = setUp('https://example.test/list')
+        adapter.enabled = true
+        let closeCalls = 0
+        const unregister = adapter.register(() => {
+            closeCalls += 1
+        })
+        assert.ok(__inspectOverlayBackForTests__(win)?.guard)
+
+        adapter.enabled = false
+        await waitUntil(() => __inspectOverlayBackForTests__(win)?.guard === null)
+
+        assert.equal(closeCalls, 0)
+        assert.equal((win.history.state as Record<string, unknown>).__asmaOverlayBack, undefined)
+        unregister()
+    })
+
+    it('a refused close fails open for push and cross-path replace instead of blocking forever', async () => {
+        for (const kind of ['push', 'replace'] as const) {
+            const { win, adapter, history } = setUp('https://example.test/list')
+            adapter.enabled = true
+            let closeCalls = 0
+            const unregister = adapter.register(() => {
+                closeCalls += 1
+                return false
+            })
+
+            history[kind]('/checkout')
+            await waitUntil(() => history.location.pathname === '/checkout')
+
+            assert.equal(closeCalls, 1)
+            assert.equal(__inspectOverlayBackForTests__(win)?.pendingNav, null)
+            assert.equal(__inspectOverlayBackForTests__(win)?.guard, null)
+            assert.equal((win.history.state as Record<string, unknown>).__asmaOverlayBack, undefined)
+            unregister()
+        }
+    })
+
     it('TEST-003: push while armed defers until the overlay closes, landing on C; a blocker on B prompts once', async () => {
         const { win: _win, adapter, history } = setUp('https://example.test/home')
         history.push('/list')
