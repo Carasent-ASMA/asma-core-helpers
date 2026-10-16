@@ -196,16 +196,42 @@ describe('overlayBack adapter', () => {
         adapter.enabled = true
         const unregister = adapter.register(() => {})
         unregister()
-        await waitUntil(() => __inspectOverlayBackForTests__(win)?.guard === null)
+        const internal = __inspectOverlayBackForTests__(win)!
+        await waitUntil(() => internal.guard === null)
 
         let lateCalls = 0
         win.addEventListener('popstate', () => {
             lateCalls += 1
         })
         win.history.forward()
-        await waitUntil(() => lateCalls === 1)
+        await waitUntil(() => internal.retiredBouncePending)
+        await waitUntil(() => !internal.retiredBouncePending)
 
+        assert.equal(lateCalls, 0)
         assert.equal((win.history.state as Record<string, unknown>).__asmaOverlayBack, undefined)
+    })
+
+    it('does not suppress markers whose version, session or marker id differs from the retired guard', async () => {
+        for (const field of ['v', 's', 'm'] as const) {
+            const { win, adapter } = setUp('https://example.test/list')
+            adapter.enabled = true
+            const unregister = adapter.register(() => {})
+            unregister()
+            const internal = __inspectOverlayBackForTests__(win)!
+            await waitUntil(() => internal.guard === null)
+            const retired = internal.retiredMarker!
+            const forged = { ...retired, [field]: field === 'v' ? 2 : `forged-${field}` }
+            win.history.pushState({ ...win.history.state, __asmaOverlayBack: forged }, '', win.location.href)
+            let lateCalls = 0
+            win.addEventListener('popstate', () => {
+                lateCalls += 1
+            })
+
+            win.dispatchEvent(new win.PopStateEvent('popstate'))
+
+            assert.equal(lateCalls, 1)
+            assert.equal(internal.retiredBouncePending, false)
+        }
     })
 
     it('does not suppress a forged marker when there is no matching retired guard', () => {
@@ -382,9 +408,14 @@ describe('overlayBack adapter', () => {
             'https://example.test/list?x=2',
         )
 
+        let lateCalls = 0
+        win.addEventListener('popstate', () => {
+            lateCalls += 1
+        })
         unregister()
         await waitUntil(() => __inspectOverlayBackForTests__(win)?.guard === null)
 
+        assert.equal(lateCalls, 0)
         assert.equal(win.location.search, '?x=2')
         assert.equal(history.location.pathname, '/list')
         const finalState = win.history.state as Record<string, unknown>

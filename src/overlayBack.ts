@@ -45,6 +45,8 @@ export interface OverlayBackInternalState {
     pendingDrainSnapshot: { href: string; state: OverlayBackHistoryState } | null
     pendingRearmRequestClose: (() => false | void | Promise<unknown>) | null
     retiredMarker: OverlayBackMarker | null
+    retiredBaseKey: string | undefined
+    retiredBouncePending: boolean
     disablePending: boolean
     enabled: boolean
     currentRequestClose: (() => false | void | Promise<unknown>) | null
@@ -105,6 +107,8 @@ function getOrCreateInternal(win: Window): OverlayBackInternalState {
         pendingDrainSnapshot: null,
         pendingRearmRequestClose: null,
         retiredMarker: null,
+        retiredBaseKey: undefined,
+        retiredBouncePending: false,
         disablePending: false,
         enabled: false,
         currentRequestClose: null,
@@ -220,11 +224,14 @@ function arm(win: Window, internal: OverlayBackInternalState, requestClose: () =
     }
     internal.guard = { marker, baseKey: baseState?.key, requestClose }
     internal.retiredMarker = null
+    internal.retiredBaseKey = undefined
+    internal.retiredBouncePending = false
     internal.phase = null
 }
 
 function finishDrain(win: Window, internal: OverlayBackInternalState): void {
     const retiredMarker = internal.guard?.marker ?? null
+    const retiredBaseKey = internal.guard?.baseKey
     const snapshot = internal.pendingDrainSnapshot
     internal.pendingDrainSnapshot = null
     if (snapshot) {
@@ -236,6 +243,7 @@ function finishDrain(win: Window, internal: OverlayBackInternalState): void {
     }
     internal.guard = null
     internal.retiredMarker = retiredMarker
+    internal.retiredBaseKey = retiredBaseKey
     internal.phase = null
     internal.disablePending = false
 
@@ -275,6 +283,7 @@ function failOpenPendingNavigation(win: Window, internal: OverlayBackInternalSta
     internal.pendingNav = null
     internal.pendingDrainSnapshot = null
     internal.retiredMarker = internal.guard?.marker ?? internal.retiredMarker
+    internal.retiredBaseKey = internal.guard?.baseKey ?? internal.retiredBaseKey
     internal.guard = null
     internal.phase = null
     queueMicrotask(() => runPendingNav(internal, pending))
@@ -353,13 +362,22 @@ function handlePopstate(win: Window, internal: OverlayBackInternalState, event: 
     const guard = internal.guard
 
     if (!guard) {
+        if (internal.retiredBouncePending) {
+            internal.retiredBouncePending = false
+            if (!marker && (state?.key ?? undefined) === internal.retiredBaseKey) {
+                ;(event as PopStateEvent).stopImmediatePropagation()
+                return
+            }
+        }
         if (markerMatches(marker, internal.retiredMarker)) {
             // Forward landed on a retired guard marker (REQ-006): bounce back, delta is 0 so this
             // never moves a real page.
             ;(event as PopStateEvent).stopImmediatePropagation()
+            internal.retiredBouncePending = true
             try {
                 win.history.go(-1)
             } catch {
+                internal.retiredBouncePending = false
                 /* fail open: leave the stray marker in place */
             }
         }
