@@ -146,6 +146,68 @@ describe('overlayBack adapter', () => {
         assert.equal(foreignListenCalls, listenCallsAfterPush + 1)
     })
 
+    it('ignores a single-spa popstate even when its state resembles the live guard', () => {
+        const { win, adapter } = setUp('https://example.test/list')
+        adapter.enabled = true
+        let closeCalls = 0
+        const unregister = adapter.register(() => {
+            closeCalls += 1
+        })
+        const guardBefore = __inspectOverlayBackForTests__(win)?.guard
+        let lateCalls = 0
+        win.addEventListener('popstate', () => {
+            lateCalls += 1
+        })
+
+        const event = new win.PopStateEvent('popstate') as PopStateEvent & { singleSpa?: boolean }
+        event.singleSpa = true
+        win.dispatchEvent(event)
+
+        assert.equal(closeCalls, 0)
+        assert.equal(lateCalls, 1)
+        assert.equal(__inspectOverlayBackForTests__(win)?.guard, guardBefore)
+        unregister()
+    })
+
+    it('does not consume or close anything while pagehide has suspended the adapter', () => {
+        const { win, adapter } = setUp('https://example.test/list')
+        adapter.enabled = true
+        let closeCalls = 0
+        const unregister = adapter.register(() => {
+            closeCalls += 1
+        })
+        const guardBefore = __inspectOverlayBackForTests__(win)?.guard
+        let lateCalls = 0
+        win.addEventListener('popstate', () => {
+            lateCalls += 1
+        })
+
+        win.dispatchEvent(new win.Event('pagehide'))
+        win.dispatchEvent(new win.PopStateEvent('popstate'))
+
+        assert.equal(closeCalls, 0)
+        assert.equal(lateCalls, 1)
+        assert.equal(__inspectOverlayBackForTests__(win)?.guard, guardBefore)
+        unregister()
+    })
+
+    it('BACK-6: Forward bounces off a retired guard marker without reopening an overlay', async () => {
+        const { win, adapter } = setUp('https://example.test/list')
+        adapter.enabled = true
+        const unregister = adapter.register(() => {})
+        unregister()
+        await waitUntil(() => __inspectOverlayBackForTests__(win)?.guard === null)
+
+        let lateCalls = 0
+        win.addEventListener('popstate', () => {
+            lateCalls += 1
+        })
+        win.history.forward()
+        await waitUntil(() => lateCalls === 1)
+
+        assert.equal((win.history.state as Record<string, unknown>).__asmaOverlayBack, undefined)
+    })
+
     it('TEST-003: push while armed defers until the overlay closes, landing on C; a blocker on B prompts once', async () => {
         const { win: _win, adapter, history } = setUp('https://example.test/home')
         history.push('/list')
