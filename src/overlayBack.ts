@@ -47,7 +47,8 @@ export interface OverlayBackInternalState {
     guard: GuardState | null
     phase: 'rearming' | 'draining' | null
     pendingNav: PendingNav | null
-    pendingDrainSnapshot: { href: string; state: OverlayBackHistoryState } | null
+    pendingDrainSnapshot: { href: string; state: OverlayBackHistoryState; scrollX: number; scrollY: number } | null
+    pendingCloseAttempt: number
     pendingRearmRequestClose: (() => false | void | Promise<unknown>) | null
     retiredMarker: OverlayBackMarker | null
     retiredBaseKey: string | undefined
@@ -120,6 +121,7 @@ function getOrCreateInternal(win: Window): OverlayBackInternalState {
         phase: null,
         pendingNav: null,
         pendingDrainSnapshot: null,
+        pendingCloseAttempt: 0,
         pendingRearmRequestClose: null,
         retiredMarker: null,
         retiredBaseKey: undefined,
@@ -259,6 +261,13 @@ function finishDrain(win: Window, internal: OverlayBackInternalState): void {
         } catch {
             /* fail open: keep whatever natively landed on B */
         }
+        if (win.scrollX !== snapshot.scrollX || win.scrollY !== snapshot.scrollY) {
+            try {
+                win.scrollTo(snapshot.scrollX, snapshot.scrollY)
+            } catch {
+                /* fail open: route state is more important than scroll restoration */
+            }
+        }
     }
     internal.guard = null
     internal.retiredMarker = retiredMarker
@@ -313,8 +322,21 @@ function requestCloseForPendingNavigation(
     internal: OverlayBackInternalState,
     guard: GuardState,
 ): void {
+    const attempt = ++internal.pendingCloseAttempt
     const result = guard.requestClose()
     if (result === false) failOpenPendingNavigation(win, internal)
+    else if (result === undefined) {
+        win.setTimeout(() => {
+            if (
+                internal.pendingNav &&
+                internal.guard === guard &&
+                internal.phase === null &&
+                internal.pendingCloseAttempt === attempt
+            ) {
+                failOpenPendingNavigation(win, internal)
+            }
+        }, 0)
+    }
 }
 
 function drain(win: Window, internal: OverlayBackInternalState): void {
@@ -324,7 +346,12 @@ function drain(win: Window, internal: OverlayBackInternalState): void {
     }
     const state = readState(win)
     const { [OVERLAY_BACK_MARKER_KEY]: _marker, ...rest } = state ?? {}
-    internal.pendingDrainSnapshot = { href: win.location.href, state: rest }
+    internal.pendingDrainSnapshot = {
+        href: win.location.href,
+        state: rest,
+        scrollX: win.scrollX,
+        scrollY: win.scrollY,
+    }
     internal.phase = 'draining'
     try {
         win.history.go(-1)

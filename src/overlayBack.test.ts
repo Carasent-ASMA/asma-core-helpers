@@ -519,6 +519,47 @@ describe('overlayBack adapter', () => {
         assert.equal(state.idx, 4)
         assert.equal(win.location.href, 'https://example.test/reload')
     })
+
+    it('preserves the current scroll position while draining the guard entry', async () => {
+        const { win, adapter } = setUp('https://example.test/list')
+        let scrollX = 24
+        let scrollY = 800
+        Object.defineProperties(win, {
+            scrollX: { configurable: true, get: () => scrollX },
+            scrollY: { configurable: true, get: () => scrollY },
+        })
+        win.scrollTo = ((x: number, y: number) => {
+            scrollX = x
+            scrollY = y
+        }) as typeof win.scrollTo
+
+        adapter.enabled = true
+        const unregister = adapter.register(() => {})
+        const nativeGo = win.history.go.bind(win.history)
+        win.history.go = ((delta?: number) => {
+            if (delta === -1) {
+                scrollX = 0
+                scrollY = 0
+            }
+            nativeGo(delta)
+        }) as typeof win.history.go
+
+        unregister()
+        await waitUntil(() => __inspectOverlayBackForTests__(win)?.guard === null)
+
+        assert.deepEqual([scrollX, scrollY], [24, 800])
+    })
+
+    it('fails open when a fire-and-forget closer leaves the overlay mounted', async () => {
+        const { adapter, history } = setUp('https://example.test/list')
+        adapter.enabled = true
+        adapter.register(() => {})
+
+        history.push('/checkout')
+        await waitUntil(() => history.location.pathname === '/checkout', 100)
+
+        assert.equal(adapter.pendingNavigation, false)
+    })
 })
 
 describe('overlayBack arming gate', () => {
