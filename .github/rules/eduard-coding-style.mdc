@@ -1,0 +1,55 @@
+---
+description: "Eduard coding style: pragmatic ASMA planning, frontend/backend patterns, and clean-code guardrails."
+globs:
+alwaysApply: false
+---
+<!-- Generated from .github/rules/eduard-coding-style.mdc by _tools/scripts/sync-module-agent-config.py; do not edit. -->
+
+# Eduard Coding Style
+
+Inherit and obey all global/workspace instructions first. This rule adds Eduard's preferred coding and planning style.
+
+## Planning Style
+
+- Build exactly what was asked for. Prefer MVP, KISS, YAGNI, and the smallest safe diff.
+- In Ask/Plan mode, do not blindly agree. Challenge assumptions, ask "what if" questions, and think one step ahead. For significant architecture/product tradeoffs, use Devils Advocate, Grill Me, or ASMA Architect Expert when available.
+- If asked to find or trace code in the project, use `codebase-memory-mcp` first. Use text search only for docs, configs, SQL, migrations, or when the graph cannot answer.
+- When a consequential ambiguity remains, follow the shared ambiguity and uncertainty workflow, record the owner and disposition, and continue independent work while withholding only the dependent change.
+- If Eduard repeatedly or strongly complains about the same coding/planning pattern, proactively suggest adding a concise new rule to `.github/rules/eduard-coding-style.mdc`.
+
+## Submodule & Branch Hygiene
+
+ASMA is a catalog of independent repositories. Before changes, inspect branch, HEAD, staged/unstaged/untracked state, and checkout ownership without changing them. Do not automatically switch to or pull the default branch. Create a task branch/worktree only through the authorized ASMA workflow and from its confirmed Jira key. A detached HEAD or stale checkout is evidence to assess, not permission to switch it.
+
+Preserve user and concurrent-agent changes. Do not stage or commit work you did not author; stage explicit owned paths, never git add -A in a shared checkout. Keep the task's existing branch/PR plan and verify the actual base before publication. Read long-task-commit-checkpoints for the supported grammar and recovery.
+
+Switching branches may invalidate dependencies: compare manifests/lockfiles before trusting installed packages. A submodule PR merge may produce a new SHA; use the owning workflow to read back the accepted pointer. Never claim currentness without checking it in the authorized scope.
+
+## Code Quality
+
+- Clean code beats clever code. Names must clearly say what the function, variable, component, or store action does.
+- Avoid long ternaries. A ternary is fine only when it fits cleanly on one line and remains obvious.
+- Avoid huge functions/components. Decompose into logical pieces, but do not create abstractions without real reuse or clarity.
+- Before writing a new helper, check whether the codebase already has the same or a similar solution.
+- Follow KISS, DRY, Open/Closed, Single Responsibility, Separation of Concerns, YAGNI, no premature optimization, continuous refactoring, and readable code over smart code.
+- Do not use `any` or `as unknown as SomeType`. Type properly or ask.
+
+## Frontend Style
+
+- Avoid God Components, prop drilling, redundant `useEffect`, and derived constants calculated directly in TSX.
+- Prefer MST stores, views/getters, actions, and hooks for shared/derived state. Use `useState` only for truly local UI state and do not pass it more than one component down.
+- When using MST in components, destructure needed properties/actions from the store instead of repeatedly calling through dot chains.
+- Prefer generated/inferred types over hand-written interfaces: `Instance`, `SnapshotIn`, `SnapshotOut`, `VariablesOf`, `ResultOf`, and existing local model/query types.
+- Follow project naming conventions: MST model fields usually use `snake_case`; computed views/actions and React code follow the existing local TypeScript conventions; React components are `PascalCase`.
+- Keep folder structure clean. Do not mix interfaces/types, React components, stores, services, and helpers in one random folder if the project has a clearer convention.
+- If a UI problem is repeated across services, consider whether the fix belongs in shared packages such as `asma-ui-core` instead of a one-off microservice workaround.
+
+## Backend Style
+
+- Be extra conservative in backend, Hasura, PostgreSQL, Bun, and Node changes. Preserve backward compatibility unless explicitly told otherwise.
+- For Bun/backend validation, prefer the project standard (`arktype` for deep/large contracts where appropriate) and existing request/error patterns.
+- Cover backend behavior with tests whenever practical, especially migrations, data-changing logic, request handlers, and compatibility-sensitive paths.
+
+## Safety Rule
+
+It is better to do nothing or ask a clarifying question than to introduce a regression with confident but under-checked changes.

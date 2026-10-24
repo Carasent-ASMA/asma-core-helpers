@@ -1,0 +1,24 @@
+---
+description: Shared Copilot entry and compatibility router for ASMA Modules.
+globs:
+alwaysApply: false
+---
+<!-- Generated from .github/rules/copilot-instructions.mdc by _tools/scripts/sync-module-agent-config.py; do not edit. -->
+
+# GitHub Copilot entry
+
+Use the workspace policy in [AGENTS.md](../AGENTS.md) for authority, Jira scope, checkout ownership, shared skills, and task routing. Preserve user and concurrent-agent changes and follow the current repository workflow.
+
+Copilot loads matching .github/instructions files using their applyTo metadata. These patterns are Copilot-specific. Cursor uses .cursor/rules MDC metadata; other harnesses read a relevant instruction or skill through their own native router. Do not assume that a Markdown link or applyTo field loads content in another harness.
+
+Use .github/skills as the canonical skill source. Select a skill by its description and task trigger; use role personas only when the work needs that role’s expertise. Do not load a full persona for routine edits.
+
+Run commands in the shell selected for that tool. A Fish code block is an interactive Fish example; it does not constrain zsh/POSIX agent tools, and agent examples must not be pasted blindly into another shell. Follow the target repo's Python, SQL, JavaScript/TypeScript, YAML, and infrastructure conventions independently.
+
+Resolve WORKING_ROLE only through [working-context.instructions.md](instructions/working-context.instructions.md). Memory or session history is optional and capability-dependent; never request a tool that the active runtime does not provide.
+
+Architectural changes: read the ADR status router at ../_docs/adr/README.md. Accepted ADRs govern their scope; engineering-effect decisions retain their named approver and are changed only through an explicitly superseding ADR.
+
+Before changing a legacy backend endpoint or service, read the retired/frozen service registry linked by backend-service.instructions.md. Production traffic can outlive an in-repository caller migration.
+
+Prefer the smallest solution that reuses existing code, the standard library, or a native platform feature. Avoid unrequested abstractions and dependencies.

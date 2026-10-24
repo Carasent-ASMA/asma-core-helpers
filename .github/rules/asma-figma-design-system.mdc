@@ -1,0 +1,17 @@
+---
+description: Use when implementing UI from Figma or selecting ASMA Design System components; not for topology or existing-component visual parity.
+globs:
+alwaysApply: false
+---
+<!-- Generated from .github/rules/asma-figma-design-system.mdc by _tools/scripts/sync-module-agent-config.py; do not edit. -->
+
+# ASMA Figma Design System
+
+When the task involves a Figma URL, Design System components, design-to-code, or Code Connect:
+
+1. Read `.agents/skills/asma-figma-design-system/SKILL.md` and its `component-map.md` resource.
+2. Design System fileKey is always `wXrXt5uKNNzV2DnQCgyYZH`. Prefer published library **Design System**.
+3. Implement with `asma-ui-core` / `asma-ui-icons` / `asma-ui-table` / `asma-ui-datetime` / `asma-ui-richeditor` / `asma-ui-notistack` — see `_docs/ASMA_UI_COMPONENTS.md`.
+4. Never leave Figma MCP React+Tailwind stubs in the final code. Example: Figma `Button` → `StyledButton` from `asma-ui-core`.
+5. If Code Connect tools work, prefer published mappings. If they error on seat/plan, use the local component map — do not invent new primitives.
+6. New Code Connect files belong in the owning package (`shared/asma-ui-core/src/figma/*.figma.tsx`), CLI-first.

@@ -1,0 +1,11 @@
+---
+description: Route Node/Bun server, route, handler, middleware, and request-helper source changes.
+globs: "actions/asma-njs-actions/src/{server,app,routes}.{ts,tsx,js,jsx},actions/asma-njs-actions/src/modules/**/routes.{ts,tsx,js,jsx},actions/asma-njs-actions/src/**/{handlers,helpers,middleware,middlewares,routes}/**/*.{ts,tsx,js,jsx},actions/asma-njs-forwarder/src/{server,app,routes}.{ts,tsx,js,jsx},actions/asma-njs-forwarder/src/**/{handlers,helpers,middleware,middlewares,routes}/**/*.{ts,tsx,js,jsx},auth/asma-njs-auth/src/{server,server.fastify,app,routes,adminRoutes,staticRoutes}.{ts,tsx,js,jsx},auth/asma-njs-auth/src/**/{handlers,helpers,middleware,middlewares,routes}/**/*.{ts,tsx,js,jsx},auth/asma-static-server/src/{server,server.fastify,app,routes,adminRoutes,staticRoutes}.{ts,tsx,js,jsx},auth/asma-static-server/src/**/{handlers,helpers,middleware,middlewares,routes}/**/*.{ts,tsx,js,jsx},editor/asma-bunjs-editor/src/{server,app,routes}.{ts,tsx,js,jsx},editor/asma-bunjs-editor/src/**/{handlers,helpers,middleware,middlewares,routes}/**/*.{ts,tsx,js,jsx},storage/asma-njs-storage/src/{server,app,routes}.{ts,tsx,js,jsx},storage/asma-njs-storage/src/**/{handlers,helpers,middleware,middlewares,routes}/**/*.{ts,tsx,js,jsx}"
+alwaysApply: false
+---
+<!-- Generated from .github/rules/asma-backend-routing.mdc by _tools/scripts/sync-module-agent-config.py; do not edit. -->
+
+For matched Node/Bun runtime request code, read the backend instruction and request-context skill. The positive paths cover server entry points, routes, handlers, middleware, and request helpers in the listed services; Python scripts, SQL files, generated code, and migration directories are outside this route.
+
+@.github/instructions/backend-service.instructions.md
+@.agents/skills/backend-request-context-and-errors/SKILL.md

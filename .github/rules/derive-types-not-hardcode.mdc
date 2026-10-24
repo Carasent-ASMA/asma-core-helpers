@@ -1,0 +1,59 @@
+---
+description: Derive API/MST types from OpenAPI schema or existing models — never hand-roll duplicate interfaces
+globs: editor/asma-app-editor/**/*.{ts,tsx}
+alwaysApply: false
+---
+<!-- Generated from .github/rules/derive-types-not-hardcode.mdc by _tools/scripts/sync-module-agent-config.py; do not edit. -->
+
+# Derive types — do not hardcode interfaces
+
+When typing API payloads, serializers, stores, or mocks in editor/asma-app-editor, **never invent a local `interface Foo` that mirrors a shape you already have**.
+
+## Source-of-truth ladder (first match wins)
+
+1. **OpenAPI component** — `components['schemas']['X']` via the `*.api.ts` export (preferred):
+   ```typescript
+   // module_templates.api.ts / pathway_templates.api.ts
+   export type ApiContentSlot = components['schemas']['ContentSlot']
+   ```
+2. **Path/response slice** — when the schema is endpoint-specific:
+   ```typescript
+   type ApiListItem = paths['/pathways/catalog/...']['get']['responses']['200']['content']['application/json']['items'][number]
+   ```
+3. **Nested derive** — from an already-imported API type:
+   ```typescript
+   type ApiContentSlot = NonNullable<ApiPathwayTemplateVersionTree['modules'][number]['contents']>[number]
+   ```
+4. **MST model** — for snapshots and store state:
+   ```typescript
+   SnapshotIn<typeof ContentSlotModel>
+   IPathwayTemplateSnapshotIn  // from ../types when exported
+   ```
+
+## Do not
+
+- Hand-write optional fields (`contentType?: string`) when OpenAPI marks them required
+- Duplicate the same API alias in serializers, stores, and mocks — import from `*.api.ts`
+- Add `?? 'questionnaire'` / `?? ''` fallbacks in serializers when the OpenAPI type is complete; MST model defaults cover creation-time gaps
+- Hardcode a status union — use the enum-derived alias `TVersionStatus` (`mst/enums.ts`), never `'draft' | 'published' | 'superseded'` inline
+- Inline the duration record — use `TDurationRecord` / `TDurationSegment` (`utils/durationSegments.ts`), never `Record<string, { value: number; unit: 'day' | 'week' | 'month' }>` (nor `t.frozen<Record<…>>()`)
+
+## Composite / aggregate query-DTOs are OK — but their members must still derive
+
+A DTO that combines several resources into one fetch result (e.g. `PathwayFormQueryData` in `api/catalog/fetchPathwayFormData.ts` — template + category + modules bundle + version authors) mirrors **no single** OpenAPI schema or MST model, so an explicit `interface` for it is fine. That is **not** a licence to hand-roll its member types: each field must come from the ladder above (`ReturnType<typeof x_to_snapshot>`, `SnapshotIn<typeof XModel>`, `TVersionStatus`, `TDurationRecord`, an `ApiX` alias, or a nested derive from a sibling DTO like `PathwayPreviewModulesData['duration']`).
+
+## Do
+
+- Add missing `export type ApiX = components['schemas']['X']` once in the relevant `*.api.ts`, then import everywhere
+- Keep serializers as near-identity maps (field rename only if API ≠ MST naming)
+
+```typescript
+// ❌ BAD — duplicate, drift-prone
+interface ApiContentSlot {
+  slotId: string
+  contentType?: string
+}
+
+// ✅ GOOD — single source of truth
+import type { ApiContentSlot } from '../../api/catalog/module_templates.api'
+```

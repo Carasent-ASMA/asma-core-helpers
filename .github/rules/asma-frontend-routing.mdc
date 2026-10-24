@@ -1,0 +1,11 @@
+---
+description: Route frontend and shared UI files to their scoped topology and component rules.
+globs: "{activities,artifact,calendar,chat,consents,crm,devextreme,editor,notification,office,shell,storage}/asma-app-*/**/*.{ts,tsx},directory/{asma-app-*,adopus-app-*}/**/*.{ts,tsx},shared/asma-ui-*/**/*.{ts,tsx}"
+alwaysApply: false
+---
+<!-- Generated from .github/rules/asma-frontend-routing.mdc by _tools/scripts/sync-module-agent-config.py; do not edit. -->
+
+For matched app and shared UI files, use the frontend topology and development workflow. Select Figma and shared-component skills only when their task triggers match.
+
+@.github/instructions/frontend-topology.instructions.md
+@.github/instructions/development-workflow.instructions.md
