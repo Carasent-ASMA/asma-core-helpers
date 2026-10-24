@@ -1,0 +1,18 @@
+---
+description: HSR Wrapper — use `asma hsr-wrapper` CLI for Hasura schema, metadata, and tenant management.
+globs: directory/adopus-hsr-wrapper/**
+alwaysApply: false
+---
+<!-- Generated from .github/rules/hsr-wrapper.mdc by _tools/scripts/sync-module-agent-config.py; do not edit. -->
+
+# HSR Wrapper workflow
+
+When working in `directory/adopus-hsr-wrapper/`, always prefer the `asma hsr-wrapper` CLI over raw Python scripts. Read `.github/skills/hsr-wrapper/SKILL.md` for full reference.
+
+Key points:
+
+- `migrate` requires `--all` or `--only` (mandatory, no silent fleet-wide fan-out)
+- `apply` is whole-engine only (no `--only` — subset payload drops omitted tenants)
+- Metadata follows schema: never apply until all tenants converge on migrations
+- `config.yaml` is in `.gitignore` — never commit secrets
+- Slug changes require regenerate + apply (slug = namespace + type prefix + role + source name)

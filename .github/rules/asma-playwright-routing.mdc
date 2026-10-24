@@ -1,0 +1,10 @@
+---
+description: Route Playwright specs and opted-in behaviour scenarios to their test rules.
+globs: "**/*.spec.ts,**/*.spec.tsx,**/*.feature,**/*.steps.ts"
+alwaysApply: false
+---
+<!-- Generated from .github/rules/asma-playwright-routing.mdc by _tools/scripts/sync-module-agent-config.py; do not edit. -->
+
+Read the Playwright instructions for matching test files. Behaviour-scenario authoring remains opt-in through the owning plan.
+
+@.github/instructions/playwright-typescript.instructions.md

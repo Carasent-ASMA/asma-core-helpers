@@ -1,0 +1,8 @@
+---
+description: Route new or reorganized documentation to its placement procedure.
+globs: "_docs/**/*.md,**/_docs/**/*.md"
+alwaysApply: false
+---
+<!-- Generated from .github/rules/asma-doc-routing.mdc by _tools/scripts/sync-module-agent-config.py; do not edit. -->
+
+For ordinary edits, follow the owning document and use docs-navigation to find existing material. Load document-organization only when creating, moving, or reorganizing documentation; a typo or prose correction does not need its full procedure.

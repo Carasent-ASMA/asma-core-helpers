@@ -1,0 +1,10 @@
+---
+description: Apply YAML-specific editing and validation rules.
+globs: "**/*.yml,**/*.yaml"
+alwaysApply: false
+---
+<!-- Generated from .github/rules/asma-yaml-routing.mdc by _tools/scripts/sync-module-agent-config.py; do not edit. -->
+
+Use the canonical YAML instructions for YAML edits.
+
+@.github/instructions/yaml.instructions.md

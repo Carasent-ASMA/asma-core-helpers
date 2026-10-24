@@ -1,0 +1,10 @@
+---
+description: Apply the Python-specific rules to Python source and tests.
+globs: "**/*.py"
+alwaysApply: false
+---
+<!-- Generated from .github/rules/asma-python-routing.mdc by _tools/scripts/sync-module-agent-config.py; do not edit. -->
+
+Use the target repository's Python instructions. TypeScript app-generation rules do not govern Python code.
+
+@.github/instructions/python.instructions.md
