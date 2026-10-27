@@ -3,11 +3,21 @@ import { registerCallbackOnSrvAuthEvents } from './generateSrvAuthBindings.js'
 import { realWindow } from './getSubdomain.js'
 
 export interface TableSettingsKeyOptions {
-    /** Sanitized to [A-Za-z0-9-]{0,32}; anything else becomes ''. */
+    /**
+     * A short, stable name for a view of the same table, for example `ME` or `RECIPIENT`. It is kept only if
+     * it matches [A-Za-z0-9-]{0,32}; anything else becomes ''.
+     *
+     * It must be an opaque name chosen by the app, never a patient, questionnaire, answer or record id, and
+     * never free text (AC 12 of ASMA-8597: keys hold no record data). The pattern checks the shape only: a
+     * number or a UUID passes it, because the helper cannot tell it from a name.
+     */
     context?: string
 }
 
-/** `<app>.<table>` for new ids; legacy ids such as `UsersTable` pass too. Rejects spaces, `:`, `/` and non-ASCII. */
+/**
+ * `<app>.<table>` for new ids; legacy ids such as `UsersTable` pass too. Rejects spaces, `:`, `/` and non-ASCII.
+ * It checks the shape only, so a UUID-shaped id passes; see the `tableId` rule on `getTableSettingsKey`.
+ */
 const TABLE_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/
 const CONTEXT_PATTERN = /^[A-Za-z0-9-]{0,32}$/
 
@@ -40,6 +50,12 @@ function sanitizeContext(context: unknown): string {
  *
  * Naming rule for new table ids: `<app>.<table>` in lowercase kebab-case, for example
  * `directory.my-participants`. Name the table, never a header label, a position or a record id.
+ *
+ * @param tableId A stable, opaque name for the table. It must never be a patient, questionnaire, answer or
+ * record id, or anything built from one (AC 12 of ASMA-8597: keys hold no record data). The helper does not
+ * guard against this: a UUID-shaped id passes. Keeping such ids out of keys is the job of the key inventory
+ * in ASMA-8698 (AC 3) and of each app's own migration to this helper.
+ * @param options `context` is the same kind of name, see {@link TableSettingsKeyOptions}.
  *
  * The helper never reads the URL: pass the app's current context (for example its `user_context` value)
  * as `options.context`. A key contains only the table id, the opaque user and tenant ids and the sanitized
