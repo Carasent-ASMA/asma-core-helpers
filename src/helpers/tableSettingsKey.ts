@@ -9,7 +9,8 @@ export interface TableSettingsKeyOptions {
      *
      * It must be an opaque name chosen by the app, never a patient, questionnaire, answer or record id, and
      * never free text (AC 12 of ASMA-8597: keys hold no record data). The pattern checks the shape only: a
-     * number or a UUID passes it, because the helper cannot tell it from a name.
+     * numeric string or another short id of up to 32 characters passes, because the helper cannot tell it from
+     * a name; a non-string number and a 36-character UUID do not.
      */
     context?: string
 }
