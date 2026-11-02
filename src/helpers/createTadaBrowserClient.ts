@@ -118,7 +118,10 @@ export function createTadaBrowserClient({
                             })
                         },
                         didAuthError(error) {
-                            return error.response.status === 401
+                            // A network-level failure (offline, aborted request, dropped
+                            // WebSocket) carries no `response`; reading `.status` off it used
+                            // to throw and swallow the operation's error entirely.
+                            return error?.response?.status === 401
                         },
                         async refreshAuth() {
                             token = await getJwt()
