@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
 import { createBrowserHistory } from 'history'
-import type { History } from 'history'
+import type { History, Transition } from 'history'
 import { JSDOM } from 'jsdom'
 
 import {
@@ -657,6 +657,112 @@ describe('overlayBack adapter', () => {
 
         assert.equal(closeCalls, 1)
         assert.equal(adapter.pendingNavigation, false)
+    })
+
+    /** The unsaved-changes prompt shape: history@5 blocks a push, the dialog opens (registers), and
+     *  "discard" replays the transition through `tx.retry` — history@5's real push, which the
+     *  wrapper never sees. Returns the armed adapter sitting on the entry pushed past the guard. */
+    function pushPastGuardThroughBlockerRetry() {
+        const fixture = setUp('https://example.test/home')
+        const { adapter, history } = fixture
+        history.push('/list')
+        adapter.enabled = true
+
+        let blockedTx: Transition | null = null
+        const unblock = history.block((tx) => {
+            blockedTx = tx
+        })
+        history.push('/checkout')
+        assert.equal(history.location.pathname, '/list')
+        assert.ok(blockedTx)
+
+        const unregister: () => void = adapter.register(() => {})
+        const internal = __inspectOverlayBackForTests__(fixture.win)!
+        assert.ok(internal.guard)
+        const guardMarker = internal.guard!.marker
+
+        unblock()
+        blockedTx!.retry()
+        assert.equal(history.location.pathname, '/checkout')
+        assert.equal((fixture.win.history.state as Record<string, unknown>).__asmaOverlayBack, undefined)
+
+        return { ...fixture, internal, unregister, guardMarker }
+    }
+
+    it('ASMA-8894: a blocker retry pushed past the guard retires it on close instead of popping the new entry', async () => {
+        const { win, adapter, history, internal, unregister, guardMarker } = pushPastGuardThroughBlockerRetry()
+
+        let popstates = 0
+        win.addEventListener('popstate', () => {
+            popstates += 1
+        })
+        unregister()
+        await new Promise((resolve) => setTimeout(resolve, 20))
+
+        assert.equal(popstates, 0)
+        assert.equal(history.location.pathname, '/checkout')
+        assert.equal(win.location.pathname, '/checkout')
+        assert.equal(internal.guard, null)
+        assert.deepEqual(internal.retiredMarker, guardMarker)
+        assert.equal(adapter.pendingNavigation, false)
+
+        // Back from the new entry crosses the abandoned guard in one press and history@5 follows.
+        history.back()
+        await waitUntil(() => win.location.pathname === '/list' && !internal.retiredBouncePending)
+        assert.equal(history.location.pathname, '/list')
+        assert.equal((win.history.state as Record<string, unknown>).__asmaOverlayBack, undefined)
+
+        history.back()
+        await waitUntil(() => history.location.pathname === '/home')
+        assert.equal(win.location.pathname, '/home')
+    })
+
+    it('ASMA-8894: a same-path replace on the entry pushed past the guard neither re-merges the marker nor defers', async () => {
+        const { win, history, internal, unregister } = pushPastGuardThroughBlockerRetry()
+
+        history.replace('/checkout?x=1')
+
+        assert.equal(win.location.search, '?x=1')
+        assert.equal((win.history.state as Record<string, unknown>).__asmaOverlayBack, undefined)
+        assert.equal(internal.guard, null)
+
+        let popstates = 0
+        win.addEventListener('popstate', () => {
+            popstates += 1
+        })
+        unregister()
+        await new Promise((resolve) => setTimeout(resolve, 20))
+        assert.equal(popstates, 0)
+        assert.equal(history.location.pathname, '/checkout')
+    })
+
+    it('a blocker retry that replaces the guard entry in place still drains onto the base', async () => {
+        const { win, adapter, history } = setUp('https://example.test/home')
+        history.push('/list')
+        adapter.enabled = true
+
+        let blockedTx: Transition | null = null
+        const unblock = history.block((tx) => {
+            blockedTx = tx
+        })
+        history.replace('/checkout')
+        assert.equal(history.location.pathname, '/list')
+
+        const unregister = adapter.register(() => {})
+        const internal = __inspectOverlayBackForTests__(win)!
+        assert.ok(internal.guard)
+
+        unblock()
+        blockedTx!.retry()
+        assert.equal(history.location.pathname, '/checkout')
+
+        unregister()
+        await waitUntil(() => internal.guard === null)
+
+        assert.equal(history.location.pathname, '/checkout')
+        assert.equal(win.location.pathname, '/checkout')
+        history.back()
+        await waitUntil(() => history.location.pathname === '/home')
     })
 })
 

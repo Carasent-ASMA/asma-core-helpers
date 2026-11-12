@@ -36,6 +36,8 @@ type OverlayBackHistoryState = Record<string, unknown> & {
 interface GuardState {
     marker: OverlayBackMarker
     baseKey: string | undefined
+    /** history@5 index cloned from the base entry on arm (CON-003); the guard entry shares it. */
+    baseIdx: number | undefined
     requestClose: () => false | void | Promise<unknown>
 }
 
@@ -65,6 +67,11 @@ export interface OverlayBackInternalState {
     lastGestureAt: number
     /** Timestamp (ms) of the last popstate, owned or foreign. */
     lastPopstateAt: number
+    /** history@5 `idx` of the entry this adapter last saw the document on. Read on every popstate,
+     *  wrapped push/replace and guard retirement; a raw `pushState` the wrapper never sees leaves
+     *  it stale until the next hop. Tells a bounce off a retired guard whether Back arrived from an
+     *  entry ahead of it (ASMA-8894) or Forward arrived from the base (REQ-006). */
+    lastSeenIdx: number | undefined
     originalPush: History['push'] | null
     originalReplace: History['replace'] | null
     public: OverlayBackAdapter
@@ -137,6 +144,7 @@ function getOrCreateInternal(win: Window): OverlayBackInternalState {
         historyWrapped: false,
         lastGestureAt: Number.NEGATIVE_INFINITY,
         lastPopstateAt: Number.NEGATIVE_INFINITY,
+        lastSeenIdx: undefined,
         originalPush: null,
         originalReplace: null,
         public: publicApi,
@@ -249,7 +257,8 @@ function arm(win: Window, internal: OverlayBackInternalState, requestClose: () =
     } catch {
         return // WebKit's 100-push budget or similar: fail open, stay idle
     }
-    internal.guard = { marker, baseKey: baseState?.key, requestClose }
+    internal.guard = { marker, baseKey: baseState?.key, baseIdx: baseState?.idx, requestClose }
+    internal.lastSeenIdx = baseState?.idx
     internal.retiredMarker = null
     internal.retiredBaseKey = undefined
     internal.retiredBouncePending = false
@@ -287,18 +296,19 @@ function finishDrain(win: Window, internal: OverlayBackInternalState): void {
     internal.pendingRearmRequestClose = null
 
     if (pendingNav) {
-        queueMicrotask(() => runPendingNav(internal, pendingNav))
+        queueMicrotask(() => runPendingNav(win, internal, pendingNav))
     } else if (pendingRearm) {
         arm(win, internal, pendingRearm)
     }
 }
 
-function runPendingNav(internal: OverlayBackInternalState, pending: PendingNav): void {
+function runPendingNav(win: Window, internal: OverlayBackInternalState, pending: PendingNav): void {
     if (pending.kind === 'PUSH') {
         internal.originalPush?.(pending.to, pending.state)
     } else {
         internal.originalReplace?.(pending.to, pending.state)
     }
+    internal.lastSeenIdx = readState(win)?.idx
 }
 
 function failOpenPendingNavigation(win: Window, internal: OverlayBackInternalState): void {
@@ -320,7 +330,7 @@ function failOpenPendingNavigation(win: Window, internal: OverlayBackInternalSta
     internal.retiredBaseKey = internal.guard?.baseKey ?? internal.retiredBaseKey
     internal.guard = null
     internal.phase = null
-    queueMicrotask(() => runPendingNav(internal, pending))
+    queueMicrotask(() => runPendingNav(win, internal, pending))
 }
 
 function requestCloseForPendingNavigation(
@@ -362,9 +372,51 @@ function requestCloseForPendingNavigation(
     }
 }
 
+/** True when the document is no longer on the guard entry. history@5's blocker `retry` closes over
+ *  the real, unwrapped `push`, so an unsaved-changes prompt that replays the blocked push on
+ *  "discard" lands past the guard while the prompt is still registered, and this wrapper never
+ *  sees the hop (ASMA-8894). Only a push moves `idx`; a raw `replaceState` that wiped the marker
+ *  keeps it and still counts as the guard (TEST-005). No `idx` at all: assume the guard. */
+function guardEntryAbandoned(win: Window, guard: GuardState): boolean {
+    const state = readState(win)
+    if (markerMatches(readMarker(state), guard.marker)) {
+        return false
+    }
+    const idx = state?.idx
+    return typeof idx === 'number' && typeof guard.baseIdx === 'number' && idx !== guard.baseIdx
+}
+
+/** Drop a guard whose entry is behind the current one without moving history — a `go(-1)` here
+ *  would pop the entry the app just navigated to. The marker still sits on the abandoned entry, so
+ *  it is retired for the bounce (REQ-006), and a route intent queued against the dead guard runs. */
+function retireAbandonedGuard(win: Window, internal: OverlayBackInternalState): void {
+    const guard = internal.guard
+    if (!guard) {
+        return
+    }
+    internal.guard = null
+    internal.phase = null
+    internal.pendingDrainSnapshot = null
+    internal.pendingRearmRequestClose = null
+    internal.disablePending = false
+    internal.retiredMarker = guard.marker
+    internal.retiredBaseKey = guard.baseKey
+    internal.lastSeenIdx = readState(win)?.idx
+
+    const pendingNav = internal.pendingNav
+    internal.pendingNav = null
+    if (pendingNav) {
+        queueMicrotask(() => runPendingNav(win, internal, pendingNav))
+    }
+}
+
 function drain(win: Window, internal: OverlayBackInternalState): void {
     const guard = internal.guard
     if (!guard) {
+        return
+    }
+    if (guardEntryAbandoned(win, guard)) {
+        retireAbandonedGuard(win, internal)
         return
     }
     const state = readState(win)
@@ -434,6 +486,8 @@ function handlePopstate(win: Window, internal: OverlayBackInternalState, event: 
     const state = readState(win)
     const marker = readMarker(state)
     const guard = internal.guard
+    const previousIdx = internal.lastSeenIdx
+    internal.lastSeenIdx = state?.idx
 
     if (!guard) {
         if (internal.retiredBouncePending) {
@@ -444,9 +498,16 @@ function handlePopstate(win: Window, internal: OverlayBackInternalState, event: 
             }
         }
         if (markerMatches(marker, internal.retiredMarker)) {
-            // Forward landed on a retired guard marker (REQ-006): bounce back, delta is 0 so this
-            // never moves a real page.
-            ;(event as PopStateEvent).stopImmediatePropagation()
+            // Landed on a retired guard marker: bounce back with go(-1). From the base this is a
+            // Forward with delta 0, never a real page, so history@5 must not hear it (REQ-006).
+            // From an entry pushed past the guard (ASMA-8894) it is a real Back: history@5 still
+            // holds that entry, so this hop has to reach it; the bounce onto the base then lands
+            // on the same key and index history@5 just read, and is suppressed as usual.
+            const cameFromAhead =
+                typeof previousIdx === 'number' && typeof state?.idx === 'number' && previousIdx > state.idx
+            if (!cameFromAhead) {
+                ;(event as PopStateEvent).stopImmediatePropagation()
+            }
             internal.retiredBouncePending = true
             try {
                 win.history.go(-1)
@@ -544,6 +605,7 @@ export function installOverlayBackPopstateListener(win: Window): OverlayBackAdap
     internal.listenerInstalled = true
 
     stripStaleMarker(win)
+    internal.lastSeenIdx = readState(win)?.idx
 
     const recordTrustedGesture = (event: Event) => {
         if (event.isTrusted) {
@@ -595,10 +657,20 @@ export function finishOverlayBackInstall(win: Window, history: History): void {
     internal.originalPush = originalPush
     internal.originalReplace = originalReplace
 
+    const navigateUnguarded = (navigate: () => void): void => {
+        navigate()
+        internal.lastSeenIdx = readState(win)?.idx
+    }
+
     history.push = (to: To, state?: unknown) => {
         const guard = internal.guard
         if (!guard || internal.phase === 'draining') {
-            originalPush(to, state)
+            navigateUnguarded(() => originalPush(to, state))
+            return
+        }
+        if (internal.phase === null && !internal.pendingNav && guardEntryAbandoned(win, guard)) {
+            retireAbandonedGuard(win, internal)
+            navigateUnguarded(() => originalPush(to, state))
             return
         }
         if (internal.pendingNav) {
@@ -612,7 +684,13 @@ export function finishOverlayBackInstall(win: Window, history: History): void {
     history.replace = (to: To, state?: unknown) => {
         const guard = internal.guard
         if (!guard || internal.phase === 'draining') {
-            originalReplace(to, state)
+            navigateUnguarded(() => originalReplace(to, state))
+            return
+        }
+        if (internal.phase === null && !internal.pendingNav && guardEntryAbandoned(win, guard)) {
+            // The entry being replaced is not the guard, so the marker must not be re-merged onto it.
+            retireAbandonedGuard(win, internal)
+            navigateUnguarded(() => originalReplace(to, state))
             return
         }
         if (internal.phase === null && pathOf(to, history.location.pathname) === history.location.pathname) {
