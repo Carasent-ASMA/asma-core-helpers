@@ -70,6 +70,20 @@ describe('Figma copy rules (ASMA-8073)', () => {
     })
 })
 
+describe('ASMA-8073 wave 3 copy', () => {
+    it('adds personal_number_no_spaces and drops the unapproved duplicate_employee_no/duplicate_phone keys', () => {
+        assert.equal(getValidationMessages('en').personal_number_no_spaces, 'Enter 11 digits without spaces.')
+        assert.equal(getValidationMessages('nb').personal_number_no_spaces, 'Skriv inn 11 sifre uten mellomrom.')
+        assert.ok(!('duplicate_employee_no' in validationMessages.en))
+        assert.ok(!('duplicate_phone' in validationMessages.en))
+    })
+
+    it('allows the same day in a date/time range (G1/G2)', () => {
+        assert.equal(getValidationMessages('en').date_after_start, 'Select a date on or after the start date.')
+        assert.equal(getValidationMessages('en').time_after_start, 'Select a time at or after the start time.')
+    })
+})
+
 describe('formatValidationMessage', () => {
     it('fills placeholders', () => {
         assert.equal(getValidationMessage('en', 'max_length', { n: 100 }), 'Enter no more than 100 characters.')

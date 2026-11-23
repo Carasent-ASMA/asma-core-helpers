@@ -15,13 +15,12 @@ export type ValidationMessageKey =
     | 'invalid_phone'
     | 'invalid_personal_number'
     | 'personal_number_length'
+    | 'personal_number_no_spaces'
     | 'personal_number_birth_date'
     | 'personal_number_enter'
     | 'duplicate_email'
     | 'duplicate_journal_id'
     | 'duplicate_personal_number'
-    | 'duplicate_employee_no'
-    | 'duplicate_phone'
     | 'duplicate_username'
     | 'duplicate_category'
     | 'min_length'
@@ -85,13 +84,12 @@ export const validationMessages = {
         invalid_phone: 'Skriv inn et gyldig telefonnummer, for eksempel +47 12 34 56 78.',
         invalid_personal_number: 'Skriv inn et gyldig personnummer.',
         personal_number_length: 'Skriv inn 11 sifre.',
-        personal_number_birth_date: 'Skriv inn et gyldig personnummer. Sjekk fødselsdatoen.',
+        personal_number_no_spaces: 'Skriv inn 11 sifre uten mellomrom.',
+        personal_number_birth_date: 'Skriv inn et gyldig personnummer.',
         personal_number_enter: 'Skriv inn personnummeret ditt.',
         duplicate_email: 'Skriv inn en annen e-postadresse.',
         duplicate_journal_id: 'Skriv inn en annen journal-ID.',
         duplicate_personal_number: 'Skriv inn et annet personnummer.',
-        duplicate_employee_no: 'Skriv inn et annet ansattnummer.',
-        duplicate_phone: 'Skriv inn et annet telefonnummer.',
         duplicate_username: 'Skriv inn et annet brukernavn.',
         duplicate_category: 'Skriv inn en annen kategori.',
         min_length: 'Skriv inn minst {n} tegn.',
@@ -106,7 +104,7 @@ export const validationMessages = {
         date_invalid_month: 'Skriv inn en gyldig måned.',
         date_year_range: 'Skriv inn et år mellom {min} og {max}.',
         date_invalid: 'Skriv inn en gyldig dato.',
-        date_after_start: 'Velg en dato etter startdatoen.',
+        date_after_start: 'Velg en dato på eller etter startdatoen.',
         date_unavailable: 'Velg en annen dato.',
         date_today_or_future: 'Velg dagens dato eller en senere dato.',
         date_today_or_earlier: 'Velg dagens dato eller en tidligere dato.',
@@ -114,7 +112,7 @@ export const validationMessages = {
         date_of_birth_invalid: 'Skriv inn en gyldig fødselsdato.',
         date_of_birth_not_future: 'Skriv inn en fødselsdato som er i dag eller tidligere.',
         time_invalid_format: 'Skriv inn et gyldig klokkeslett i formatet TT:mm.',
-        time_after_start: 'Velg et klokkeslett etter starttidspunktet.',
+        time_after_start: 'Velg et klokkeslett på eller etter starttidspunktet.',
         hour_invalid: 'Skriv inn en gyldig time.',
         hour_range: 'Skriv inn en time mellom {min} og {max}.',
         minutes_quarter: 'Skriv inn 0, 15, 30 eller 45 minutter.',
@@ -152,13 +150,12 @@ export const validationMessages = {
         invalid_phone: 'Enter a valid phone number, like +47 12 34 56 78.',
         invalid_personal_number: 'Enter a valid personal number.',
         personal_number_length: 'Enter 11 digits.',
-        personal_number_birth_date: 'Enter a valid personal number. Check the birth date.',
+        personal_number_no_spaces: 'Enter 11 digits without spaces.',
+        personal_number_birth_date: 'Enter a valid personal number.',
         personal_number_enter: 'Enter your personal number.',
         duplicate_email: 'Enter a different email address.',
         duplicate_journal_id: 'Enter a different journal ID.',
         duplicate_personal_number: 'Enter a different personal number.',
-        duplicate_employee_no: 'Enter a different employee number.',
-        duplicate_phone: 'Enter a different phone number.',
         duplicate_username: 'Enter a different username.',
         duplicate_category: 'Enter a different category.',
         min_length: 'Enter at least {n} characters.',
@@ -173,7 +170,7 @@ export const validationMessages = {
         date_invalid_month: 'Enter a valid month.',
         date_year_range: 'Enter a year between {min} and {max}.',
         date_invalid: 'Enter a valid date.',
-        date_after_start: 'Select a date after the start date.',
+        date_after_start: 'Select a date on or after the start date.',
         date_unavailable: 'Select another date.',
         date_today_or_future: 'Select today or a future date.',
         date_today_or_earlier: 'Select today or an earlier date.',
@@ -181,7 +178,7 @@ export const validationMessages = {
         date_of_birth_invalid: 'Enter a real date of birth.',
         date_of_birth_not_future: "Enter a date of birth that's today or earlier.",
         time_invalid_format: 'Enter a valid time in HH:mm format.',
-        time_after_start: 'Select a time after start time.',
+        time_after_start: 'Select a time at or after the start time.',
         hour_invalid: 'Enter a valid hour.',
         hour_range: 'Enter an hour between {min} and {max}.',
         minutes_quarter: 'Enter 0, 15, 30, or 45 minutes.',
@@ -190,7 +187,7 @@ export const validationMessages = {
         category_from_list: 'Select a category from the list.',
         customer_required: 'Select a customer.',
         patient_invalid: 'Select a valid patient.',
-        file_required: 'Select file to upload.',
+        file_required: 'Select a file to upload.',
         file_download_required: 'Select a file to download.',
         file_count_max: 'Select up to {n} files.',
         file_single: 'Select one file.',
