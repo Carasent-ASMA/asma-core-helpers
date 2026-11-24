@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { _getServerErrorMessage } from './_processServerError.js'
+import { _getServerErrorMessage, _processServerError } from './_processServerError.js'
 
 function fetchError(data: unknown, status = 422): Record<string, unknown> {
     return {
@@ -172,6 +172,98 @@ describe('HTTP error messages through the shared entry point', () => {
         assert.equal(
             _getServerErrorMessage({ response: { status: 422, data: { Message: 'Legacy public reason' } } }),
             'Legacy public reason',
+        )
+    })
+
+    it('uses the selected interface language for fallback and required validation text', () => {
+        for (const locale of ['no', 'nb', 'nb-NO', 'NO']) {
+            assert.equal(
+                _getServerErrorMessage(fetchError(null), { locale }),
+                'Kontroller feltene i skjemaet og prøv igjen.',
+            )
+            assert.equal(
+                _getServerErrorMessage(fetchError({ errors: { title: ['validation.required'] } }), { locale }),
+                'Title: Obligatorisk',
+            )
+        }
+        assert.equal(
+            _getServerErrorMessage(fetchError(null, 401), { locale: 'no' }),
+            'Økten din er utløpt. Logg inn på nytt.',
+        )
+        assert.equal(
+            _getServerErrorMessage(fetchError(null), { locale: 'en-GB' }),
+            'Check the form fields and try again.',
+        )
+        assert.equal(
+            _getServerErrorMessage(fetchError({ publicMessage: 'Expired' }), { locale: 'no' }),
+            'Expired',
+        )
+    })
+
+    it('keeps nested validation constraints from segment error envelopes', () => {
+        assert.equal(
+            _getServerErrorMessage(fetchError({
+                code: 'domain_validation',
+                message: 'Request validation failed.',
+                details: { issues: [{ path: ['title'], message: 'Must contain at most 80 characters.' }] },
+            }, 400)),
+            'Title: Must contain at most 80 characters.',
+        )
+        assert.doesNotMatch(
+            _getServerErrorMessage(fetchError({
+                publicMessage: null,
+                details: { issues: [{ path: ['sql'], message: 'private constraint' }] },
+            }, 400)),
+            /private|constraint/,
+        )
+    })
+
+    it('keeps complete HTTP explanations at the actual snackbar entry point', () => {
+        const publicMessage = 'Choose another title. '.repeat(20)
+        const result = _processServerError(fetchError({ publicMessage }))
+        assert.equal(result, publicMessage.trim())
+        assert.ok(result.length > 250)
+    })
+
+    it('preserves legacy Axios text/array and HTTP GraphQL adapters', () => {
+        assert.equal(
+            _getServerErrorMessage({ response: { status: 403, data: 'You may not edit this.' } }),
+            'You may not edit this.',
+        )
+        assert.equal(
+            _getServerErrorMessage({ response: { status: 400, data: [{ message: 'First problem' }] } }),
+            'First problem',
+        )
+        assert.equal(
+            _getServerErrorMessage(fetchError({ Message: 'Legacy public reason' })),
+            'Legacy public reason',
+        )
+        assert.equal(
+            _getServerErrorMessage({
+                response: new Response(null, { status: 400 }),
+                graphQLErrors: [{ message: "field 'deleted_at' not found" }],
+                message: "[GraphQL] field 'deleted_at' not found",
+            }),
+            "[GraphQL] field 'deleted_at' not found",
+        )
+        assert.doesNotMatch(
+            _getServerErrorMessage({ response: { status: 500, data: 'SELECT private FROM database' } }),
+            /SELECT|private/,
+        )
+    })
+
+    it('honors explicit public intent for 5xx and deduplicates validation reasons', () => {
+        assert.equal(
+            _getServerErrorMessage(fetchError({ publicMessage: '  Retry later.  ' }, 503)),
+            'Retry later.',
+        )
+        assert.equal(
+            _getServerErrorMessage(fetchError({ errors: { title: ['Required', 'Required'] } }, 400)),
+            'Title: Required',
+        )
+        assert.equal(
+            _getServerErrorMessage(fetchError({ publicMessage: null }, 400)),
+            'Check the form fields and try again.',
         )
     })
 })

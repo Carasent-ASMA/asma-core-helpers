@@ -1,4 +1,6 @@
-import { validationMessages } from '../validation/messages.js'
+import { type ValidationLocale, validationMessages } from '../validation/messages.js'
+
+import { httpErrorLocale, type HttpErrorMessageOptions, httpFallback } from './httpErrorMessages.js'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -23,8 +25,8 @@ function fieldLabel(path: unknown): string {
         .join(' → ')
 }
 
-function validationMessage(path: unknown, message: unknown): string | undefined {
-    const reason = message === 'validation.required' ? validationMessages.en.required : nonEmptyText(message)
+function validationMessage(path: unknown, message: unknown, locale: ValidationLocale): string | undefined {
+    const reason = message === 'validation.required' ? validationMessages[locale].required : nonEmptyText(message)
     if (!reason) return undefined
     const label = fieldLabel(path)
     return label ? `${label}: ${reason}` : reason
@@ -33,6 +35,8 @@ function validationMessage(path: unknown, message: unknown): string | undefined 
 function validatorIssues(body: Record<string, unknown>): unknown[] {
     if (Array.isArray(body['issues'])) return body['issues']
     if (Array.isArray(body['errors'])) return body['errors']
+    const details = body['details']
+    if (isRecord(details) && Array.isArray(details['issues'])) return details['issues']
     const error = body['error']
     if (!isRecord(error) || error['name'] !== 'ZodError') return []
     if (Array.isArray(error['issues'])) return error['issues']
@@ -45,10 +49,10 @@ function validatorIssues(body: Record<string, unknown>): unknown[] {
     }
 }
 
-function validationMessagesFromBody(body: Record<string, unknown>): string[] {
+function validationMessagesFromBody(body: Record<string, unknown>, locale: ValidationLocale): string[] {
     const messages = validatorIssues(body).flatMap((issue) => {
         if (!isRecord(issue)) return []
-        const message = validationMessage(issue['path'], issue['message'])
+        const message = validationMessage(issue['path'], issue['message'], locale)
         return message ? [message] : []
     })
     // Laravel field maps are a legacy public validation contract. Other arrays in an error
@@ -58,22 +62,11 @@ function validationMessagesFromBody(body: Record<string, unknown>): string[] {
         if (fields === body && ['error', 'errors', 'issues', 'message', 'publicMessage'].includes(path)) continue
         if (!Array.isArray(reasons) || !reasons.every((reason) => typeof reason === 'string')) continue
         for (const reason of reasons) {
-            const message = validationMessage(path, reason)
+            const message = validationMessage(path, reason, locale)
             if (message) messages.push(message)
         }
     }
     return [...new Set(messages)]
-}
-
-function httpFallback(status: number): string {
-    if (status === 401) return 'Your session has expired. Sign in again.'
-    if (status === 403) return 'You do not have permission to do this.'
-    if (status === 404) return 'This no longer exists. Reload the page and try again.'
-    if (status === 409) return 'This action conflicts with the current state. Reload the page and try again.'
-    if (status === 413) return 'The request is too large. Reduce its size and try again.'
-    if (status === 429) return 'Too many requests. Wait a little and try again.'
-    if (status === 400 || status === 422) return 'Check the form fields and try again.'
-    return 'Something went wrong. Try again, and contact support if it keeps happening.'
 }
 
 /**
@@ -82,25 +75,32 @@ function httpFallback(status: number): string {
  * Laravel and Hono/Zod validation payloads keep their field paths and actual constraints.
  * Undefined leaves non-HTTP errors to the existing GraphQL/text compatibility handling.
  */
-export function getHttpErrorMessage(error: unknown): string | undefined {
+export function getHttpErrorMessage(error: unknown, options: HttpErrorMessageOptions = {}): string | undefined {
     if (!isRecord(error)) return undefined
     const response = isRecord(error['response']) ? error['response'] : undefined
     const status: unknown = response?.['status'] ?? error['statusCode']
     if (typeof status !== 'number' || !Number.isInteger(status) || status < 400 || status > 599) return undefined
+    const locale = httpErrorLocale(options)
     const body: unknown = response?.['data'] ?? error['data'] ?? error
+    if (Array.isArray(body) && (status === 400 || status === 422)) {
+        const validation = validationMessagesFromBody({ issues: body }, locale)
+        if (validation.length) return validation.join('; ')
+    }
     if (isRecord(body)) {
         const message = nonEmptyText(body['publicMessage'])
         if (message) return message
-        if (Object.hasOwn(body, 'publicMessage')) return httpFallback(status)
+        if (Object.hasOwn(body, 'publicMessage')) return httpFallback(status, locale)
+        if (status < 500 && nonEmptyText(body['Message'])) return nonEmptyText(body['Message'])
         if (status === 400 || status === 422) {
-            const validation = validationMessagesFromBody(body)
+            const validation = validationMessagesFromBody(body, locale)
             if (validation.length) return validation.join('; ')
         }
-        // Axios/Laravel/GraphQL integrations predate the public-message envelope. Keep their
-        // established adapters unless this is the new structured HTTP error contract.
-        if (response && Object.hasOwn(response, 'data') && !Object.hasOwn(body, 'statusCode') && status < 500) {
-            return undefined
-        }
     }
-    return httpFallback(status)
+    // Preserve established legacy adapters (including text/array Axios responses and urql),
+    // while new private envelopes and all unmarked 5xx failures use a safe fallback.
+    if (status < 500 && (!isRecord(body) || !Object.hasOwn(body, 'statusCode'))) {
+        if (response?.['data']) return undefined
+        if (Array.isArray(error['graphQLErrors']) && error['graphQLErrors'].length) return undefined
+    }
+    return httpFallback(status, locale)
 }

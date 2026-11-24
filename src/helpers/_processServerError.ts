@@ -1,7 +1,18 @@
-export function _processServerError(error: string | Record<string, any>): string {
+import { getHttpErrorMessage } from './httpErrorMessage.js'
+import type { HttpErrorMessageOptions } from './httpErrorMessages.js'
+
+export type { HttpErrorMessageOptions } from './httpErrorMessages.js'
+
+export function _processServerError(
+    error: string | Record<string, any>,
+    options: HttpErrorMessageOptions = {},
+): string {
     console['error'](error)
 
-    let errorMessage = _getServerErrorMessage(error)
+    const httpMessage = getHttpErrorMessage(error, options)
+    if (httpMessage !== undefined) return httpMessage
+
+    let errorMessage = _getServerErrorMessage(error, options)
 
     /* if (i18n[errorMessage]) {
         ;(errorMessage = (window as any).strings)[errorMessage]
@@ -11,8 +22,11 @@ export function _processServerError(error: string | Record<string, any>): string
     return errorMessage.slice(0, 250)
 }
 
-export function _getServerErrorMessage(error: Record<string, any> | string): string {
-    const httpMessage = getHttpErrorMessage(error)
+export function _getServerErrorMessage(
+    error: Record<string, any> | string,
+    options: HttpErrorMessageOptions = {},
+): string {
+    const httpMessage = getHttpErrorMessage(error, options)
     if (httpMessage !== undefined) return httpMessage
     if (typeof error == 'string') {
         return error
@@ -92,4 +106,3 @@ function _getArrayErrorsMessage(error: Record<string, unknown>[]): string {
 
     return processed_error ?? 'No message field found! please check logs'
 }
-import { getHttpErrorMessage } from './httpErrorMessage.js'
