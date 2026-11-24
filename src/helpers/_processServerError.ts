@@ -12,6 +12,8 @@ export function _processServerError(error: string | Record<string, any>): string
 }
 
 export function _getServerErrorMessage(error: Record<string, any> | string): string {
+    const httpMessage = getHttpErrorMessage(error)
+    if (httpMessage !== undefined) return httpMessage
     if (typeof error == 'string') {
         return error
     } else if (error['data'] && error['data']['Message']) {
@@ -90,3 +92,4 @@ function _getArrayErrorsMessage(error: Record<string, unknown>[]): string {
 
     return processed_error ?? 'No message field found! please check logs'
 }
+import { getHttpErrorMessage } from './httpErrorMessage.js'
