@@ -605,15 +605,6 @@ function pathOf(to: To, fallback: string): string {
     return to.pathname ?? fallback
 }
 
-/** Records the gesture for the arming gate, and arms an overlay that is open without a guard: one
- *  opened without a gesture (a deep link, a timeout dialog) or left behind when a multi-step Back
- *  dropped the guard. Arming inside the gesture keeps the entry from being skipped by Back. */
-function noteTrustedGesture(win: Window, internal: OverlayBackInternalState): void {
-    internal.lastGestureAt = Date.now()
-    if (internal.guard || internal.phase !== null || internal.suspended || internal.pendingNav) return
-    if (internal.openCount > 0 && internal.currentRequestClose) arm(win, internal, internal.currentRequestClose)
-}
-
 /** Must run before `createBrowserHistory()` (CON-002): the popstate listener added here has to
  *  win the registration-order race against history@5's own listener. Idempotent — a second call
  *  (HMR, several bundle copies) reuses the existing window-level state and adds no listener. */
@@ -628,7 +619,9 @@ export function installOverlayBackPopstateListener(win: Window): OverlayBackAdap
     internal.lastSeenIdx = readState(win)?.idx
 
     const recordTrustedGesture = (event: Event) => {
-        if (event.isTrusted) noteTrustedGesture(win, internal)
+        if (event.isTrusted) {
+            internal.lastGestureAt = Date.now()
+        }
     }
     win.addEventListener('click', recordTrustedGesture, { capture: true })
     win.addEventListener('touchend', recordTrustedGesture, { capture: true })
@@ -740,10 +733,4 @@ export function finishOverlayBackInstall(win: Window, history: History): void {
  *  tests. */
 export function __inspectOverlayBackForTests__(win: Window): OverlayBackInternalState | undefined {
     return win.__ASMA_OVERLAY_BACK_INTERNAL__
-}
-
-/** Test-only: jsdom cannot dispatch a trusted event, so this runs the trusted-gesture path directly. */
-export function __noteTrustedGestureForTests__(win: Window): void {
-    const internal = win.__ASMA_OVERLAY_BACK_INTERNAL__
-    if (internal) noteTrustedGesture(win, internal)
 }
