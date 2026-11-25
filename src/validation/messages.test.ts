@@ -82,6 +82,11 @@ describe('ASMA-8073 wave 3 copy', () => {
         assert.equal(getValidationMessages('en').date_after_start, 'Select a date on or after the start date.')
         assert.equal(getValidationMessages('en').time_after_start, 'Select a time at or after the start time.')
     })
+
+    it('has one URL message for the link and URL fields', () => {
+        assert.equal(getValidationMessages('en').invalid_url, 'Enter a valid URL, like https://example.com.')
+        assert.equal(getValidationMessages('nb').invalid_url, 'Skriv inn en gyldig URL, for eksempel https://example.com.')
+    })
 })
 
 describe('formatValidationMessage', () => {

@@ -13,6 +13,7 @@ export type ValidationMessageKey =
     | 'email_missing_at'
     | 'invalid_name'
     | 'invalid_phone'
+    | 'invalid_url'
     | 'invalid_personal_number'
     | 'personal_number_length'
     | 'personal_number_no_spaces'
@@ -82,6 +83,7 @@ export const validationMessages = {
         email_missing_at: 'Skriv inn en e-postadresse med @.',
         invalid_name: 'Bruk bokstaver, mellomrom, bindestrek eller apostrof.',
         invalid_phone: 'Skriv inn et gyldig telefonnummer, for eksempel +47 12 34 56 78.',
+        invalid_url: 'Skriv inn en gyldig URL, for eksempel https://example.com.',
         invalid_personal_number: 'Skriv inn et gyldig personnummer.',
         personal_number_length: 'Skriv inn 11 sifre.',
         personal_number_no_spaces: 'Skriv inn 11 sifre uten mellomrom.',
@@ -148,6 +150,7 @@ export const validationMessages = {
         email_missing_at: 'Enter an email address with an @.',
         invalid_name: 'Use letters, spaces, hyphens, or apostrophes.',
         invalid_phone: 'Enter a valid phone number, like +47 12 34 56 78.',
+        invalid_url: 'Enter a valid URL, like https://example.com.',
         invalid_personal_number: 'Enter a valid personal number.',
         personal_number_length: 'Enter 11 digits.',
         personal_number_no_spaces: 'Enter 11 digits without spaces.',
