@@ -314,6 +314,13 @@ function runPendingNav(win: Window, internal: OverlayBackInternalState, pending:
 function failOpenPendingNavigation(win: Window, internal: OverlayBackInternalState): void {
     const pending = internal.pendingNav
     if (!pending) return
+    // Step off the guard first, as a normal close does: pushing on top of it leaves a dead same-URL
+    // entry, one per route change while an overlay that outlives navigation (a docked panel) stays
+    // open, since the next gesture re-arms it. `finishDrain` / `retireAbandonedGuard` run the intent.
+    if (internal.guard && internal.phase === null) {
+        drain(win, internal)
+        if (internal.phase === 'draining' || !internal.pendingNav) return
+    }
     const state = readState(win)
     const marker = readMarker(state)
     if (markerMatches(marker, internal.guard?.marker ?? null)) {

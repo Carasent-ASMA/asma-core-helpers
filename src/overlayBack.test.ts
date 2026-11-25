@@ -369,6 +369,26 @@ describe('overlayBack adapter', () => {
         }
     })
 
+    it('a refused close drains the guard before the push, so a docked overlay leaves no dead Back entry', async () => {
+        const { win, adapter, history } = setUp('https://example.test/list')
+        adapter.enabled = true
+        const lengthBefore = win.history.length
+        const unregister = adapter.register(() => false)
+
+        for (const path of ['/a', '/b']) {
+            __noteTrustedGestureForTests__(win)
+            history.push(path)
+            await waitUntil(() => history.location.pathname === path)
+        }
+
+        assert.equal(win.history.length, lengthBefore + 2)
+        history.back()
+        await waitUntil(() => history.location.pathname === '/a')
+        history.back()
+        await waitUntil(() => history.location.pathname === '/list')
+        unregister()
+    })
+
     it('continues a pending route through each registry layer before draining', async () => {
         const { adapter, history } = setUp('https://example.test/list')
         adapter.enabled = true
