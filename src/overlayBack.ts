@@ -416,14 +416,18 @@ function requestCloseForPendingNavigation(
  *  the real, unwrapped `push`, so an unsaved-changes prompt that replays the blocked push on
  *  "discard" lands past the guard while the prompt is still registered, and this wrapper never
  *  sees the hop (ASMA-8894). Only a push moves `idx`; a raw `replaceState` that wiped the marker
- *  keeps it and still counts as the guard (TEST-005). No `idx` at all: assume the guard. */
+ *  keeps it and still counts as the guard (TEST-005). No `idx` at all (a raw `pushState(null)`,
+ *  e.g. single-spa's `navigateToUrl`): the document moved on, so the guard is abandoned. */
 function guardEntryAbandoned(win: Window, guard: GuardState): boolean {
     const state = readState(win)
     if (markerMatches(readMarker(state), guard.marker)) {
         return false
     }
     const idx = state?.idx
-    return typeof idx === 'number' && typeof guard.baseIdx === 'number' && idx !== guard.baseIdx
+    if (typeof idx !== 'number') {
+        return true
+    }
+    return typeof guard.baseIdx === 'number' && idx !== guard.baseIdx
 }
 
 /** Drop a guard whose entry is behind the current one without moving history — a `go(-1)` here

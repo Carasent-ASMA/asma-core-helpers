@@ -1287,3 +1287,20 @@ describe('overlayBack re-arm after a fail-open navigation (ASMA-8470)', () => {
         assert.equal(__inspectOverlayBackForTests__(win)?.pendingNav, null)
     })
 })
+
+describe('overlayBack edge cases (ASMA-8470)', () => {
+    it('closing an overlay does not undo a raw pushState made while it was open', async () => {
+        const { win, adapter } = setUp('https://example.test/a')
+        adapter.enabled = true
+        const unregister: () => void = adapter.register(() => unregister())
+
+        // single-spa's navigateToUrl pushes without state, so the entry has no history@5 idx.
+        win.history.pushState(null, '', '/b')
+        win.history.pushState(null, '', '/c')
+        unregister()
+        await settle()
+
+        assert.equal(win.location.pathname, '/c')
+        assert.equal(__inspectOverlayBackForTests__(win)?.guard, null)
+    })
+})
