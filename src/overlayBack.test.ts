@@ -7,6 +7,7 @@ import { JSDOM } from 'jsdom'
 
 import {
     __inspectOverlayBackForTests__,
+    __noteTrustedGestureForTests__,
     finishOverlayBackInstall,
     installOverlayBackPopstateListener,
 } from './overlayBack.ts'
@@ -886,6 +887,50 @@ describe('overlayBack foreign landings and races (ASMA-8470)', () => {
         const unregisterMenu: () => void = adapter.register(() => unregisterMenu())
         history.push('/settings')
         await waitUntil(() => win.location.pathname === '/settings')
+    })
+
+    it('a trusted gesture arms an overlay that opened without one', () => {
+        const { win, adapter } = setUpAdapter('https://example.test/home')
+        adapter.enabled = true
+        const unregister = adapter.register(() => {})
+        assert.equal(__inspectOverlayBackForTests__(win)?.guard, null)
+        const lengthBefore = win.history.length
+
+        __noteTrustedGestureForTests__(win)
+
+        assert.ok(__inspectOverlayBackForTests__(win)?.guard)
+        assert.ok((win.history.state as Record<string, unknown>).__asmaOverlayBack)
+        assert.equal(win.history.length, lengthBefore + 1)
+        __noteTrustedGestureForTests__(win)
+        assert.equal(win.history.length, lengthBefore + 1)
+        unregister()
+    })
+
+    it('after a multi-step Back drops the guard, the next gesture re-arms the overlay still open', async () => {
+        const { win, adapter, history } = setUp('https://example.test/home')
+        history.push('/list')
+        history.push('/detail')
+        adapter.enabled = true
+        let dialogCloses = 0
+        const unregisterDialog = adapter.register(() => {
+            dialogCloses += 1
+            unregisterDialog()
+        })
+        const unregisterPicker: () => void = adapter.register(() => unregisterPicker())
+
+        win.history.go(-2)
+        await waitUntil(() => win.location.pathname === '/list')
+        await settle()
+        assert.equal(__inspectOverlayBackForTests__(win)?.guard, null)
+        assert.equal(__inspectOverlayBackForTests__(win)?.openCount, 1)
+
+        __noteTrustedGestureForTests__(win)
+        assert.ok(__inspectOverlayBackForTests__(win)?.guard)
+
+        win.history.back()
+        await waitUntil(() => dialogCloses === 1)
+        await settle()
+        assert.equal(win.location.pathname, '/list')
     })
 
     it('a dropped route intent never runs later as a ghost navigation', async () => {
