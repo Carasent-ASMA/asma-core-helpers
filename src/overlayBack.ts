@@ -316,6 +316,12 @@ function failOpenPendingNavigation(win: Window, internal: OverlayBackInternalSta
     if (!pending) return
     const state = readState(win)
     const marker = readMarker(state)
+    if (internal.phase === null && markerMatches(marker, internal.guard?.marker ?? null)) {
+        // Navigating from the guard entry would strand a same-URL copy of the page in history and
+        // cost an extra Back; leave from the base instead, and `finishDrain` runs the intent there.
+        drain(win, internal)
+        if (internal.phase === 'draining') return
+    }
     if (markerMatches(marker, internal.guard?.marker ?? null)) {
         const { [OVERLAY_BACK_MARKER_KEY]: _marker, ...rest } = state ?? {}
         try {
