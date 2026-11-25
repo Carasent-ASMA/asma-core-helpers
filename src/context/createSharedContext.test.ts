@@ -83,7 +83,7 @@ test('snapshots copy only safe fields and cannot be changed through retained pro
     assert.equal(Object.isFrozen(snapshot.selectedRecord?.journal), true)
 })
 
-test('rejects wrong revision, tenant, missing record, conflicting self/ward and UNKNOWN journal', t => {
+test('rejects wrong revision, tenant, missing record, conflicting self/participant/ward and UNKNOWN journal', t => {
     const context = createSharedContext()
     t.after(() => context.dispose())
     const invalid = [
@@ -91,6 +91,7 @@ test('rejects wrong revision, tenant, missing record, conflicting self/ward and 
         { ...validated(), selectedRecord: undefined },
         validated({ selectedRecord: { user_id: 'patient', customer_id: '00000000-0000-0000-0000-000000000002', relationship: 'participant', journal: null } }),
         validated({ selectedRecord: { user_id: 'other', customer_id: customer, relationship: 'self', journal: null } }),
+        validated({ selectedRecord: { user_id: 'actor', customer_id: customer, relationship: 'participant', journal: null } }),
         validated({ selectedRecord: { user_id: 'actor', customer_id: customer, relationship: 'ward', journal: null } }),
         { ...validated(), journal: { journal: 'UNKNOWN', journal_user_id: 'x' } },
         validated({ exp: 0 }),
@@ -227,6 +228,116 @@ test('owner factory and request completions cannot escape revocation; other endp
     response.resolve(new Response('{}'))
     await late
     assert.equal(calls, 1)
+})
+
+test('owner URL parsing denies malformed or non-http(s) endpoints without leaking the input', async t => {
+    const secret = 'super-secret'
+    for (const url of [
+        `not a url?token=${secret}`,
+        'ftp://owner.invalid/v1/graphql',
+        'https://user@owner.invalid/v1/graphql',
+        `https://user:${secret}@owner.invalid/v1/graphql`,
+        `https://:${secret}@owner.invalid/v1/graphql`,
+        `https://user%40name:${secret}@owner.invalid/v1/graphql`,
+    ]) {
+        const context = createSharedContext({ createOwnerClient: () => ({ url, fetch: async () => new Response('{}') }) })
+        t.after(() => context.dispose())
+        ready(context)
+        let error: unknown
+        try {
+            await context.mount().createOwnerClient('owner')
+        } catch (caught) {
+            error = caught
+        }
+        assert.ok(error instanceof SharedContextError)
+        assert.equal(error.code, 'wrong_owner_endpoint')
+        assert.equal(String(error).includes(secret), false)
+        assert.equal((error as Error & { cause?: unknown }).cause, undefined)
+    }
+})
+
+test('runtime invalidate status is rejected with invalid_context', t => {
+    const context = createSharedContext()
+    t.after(() => context.dispose())
+    ready(context)
+    const before = context.getSnapshot()
+    for (const status of ['ready', 'disposed', 'bogus']) {
+        assert.throws(
+            () => context.invalidate(status as never),
+            (error: unknown) => error instanceof SharedContextError && error.code === 'invalid_context',
+        )
+    }
+    assert.equal(context.getSnapshot(), before)
+    assert.equal(context.getSnapshot().status, 'ready')
+})
+
+test('inactive mount snapshots are referentially stable while status and generation stay fixed', t => {
+    const context = createSharedContext()
+    t.after(() => context.dispose())
+    ready(context)
+    const incompatible = context.mount(2)
+    const firstInactive = incompatible.getSnapshot()
+    const secondInactive = incompatible.getSnapshot()
+    assert.equal(firstInactive.status, 'denied')
+    assert.equal(firstInactive, secondInactive)
+
+    const disposed = context.mount()
+    disposed.dispose()
+    const firstDisposed = disposed.getSnapshot()
+    const secondDisposed = disposed.getSnapshot()
+    assert.equal(firstDisposed.status, 'disposed')
+    assert.equal(firstDisposed, secondDisposed)
+})
+
+test('publish rejects an expiry equal to now', t => {
+    const context = createSharedContext({ now: () => 1000 })
+    t.after(() => context.dispose())
+    assert.equal(context.invalidate().publish(validated({ exp: 1 })), false)
+    assert.equal(context.getSnapshot().status, 'denied')
+})
+
+test('expiry on read denies without throwing when cleanup fails', t => {
+    let now = 1000
+    const context = createSharedContext({ now: () => now })
+    t.after(() => context.dispose())
+    assert.equal(context.invalidate().publish(validated({ exp: 2 })), true)
+    const lease = context.mount().capture()
+    lease.onRevoke(() => { throw Error('Synthetic read expiry cleanup failure') })
+    now = 2000
+    assert.doesNotThrow(() => context.getSnapshot())
+    assert.equal(context.getSnapshot().status, 'denied')
+    assert.equal(lease.isCurrent(), false)
+})
+
+test('expiry timer denies without an uncaught cleanup failure', t => {
+    const started = Date.now()
+    t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: started })
+    const context = createSharedContext()
+    t.after(() => context.dispose())
+    assert.equal(context.invalidate().publish(validated({ exp: started / 1000 + 60 })), true)
+    const lease = context.mount().capture()
+    lease.onRevoke(() => { throw Error('Synthetic timer expiry cleanup failure') })
+    assert.doesNotThrow(() => t.mock.timers.tick(60_000))
+    assert.equal(context.getSnapshot().status, 'denied')
+    assert.equal(lease.isCurrent(), false)
+})
+
+test('context owner fetch sets redirect:error', async t => {
+    let redirect: RequestRedirect | undefined
+    const context = createSharedContext({
+        createOwnerClient: () => ({
+            url: 'https://owner.invalid/v1/graphql',
+            fetch: async (input, init) => {
+                redirect = new Request(input, init).redirect
+                return Response.json({})
+            },
+        }),
+    })
+    t.after(() => context.dispose())
+    ready(context)
+    const owner = await context.mount().createOwnerClient('owner')
+    await owner.fetch(owner.url)
+    assert.equal(redirect, 'error')
 })
 
 test('reconnect and retained subscription callbacks cannot refill a cleared owner cache', t => {

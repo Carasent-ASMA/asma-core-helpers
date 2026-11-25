@@ -74,11 +74,24 @@ function contextExchange(lease: SharedContextLease): Exchange {
         const teardown = makeSubject<Operation>()
         const revoked = makeSubject<OperationResult>()
         lease.onRevoke(() => {
-            for (const operation of [...active.values()]) {
-                revoked.next(revokedResult(operation))
-                teardown.next(makeOperation('teardown', operation, operation.context))
-            }
+            const operations = [...active.values()]
+            // Clear before notifying subscribers: a throwing observer must not leave the registry
+            // populated, and every teardown must still be attempted.
             active.clear()
+            let failed = false
+            for (const operation of operations) {
+                try {
+                    revoked.next(revokedResult(operation))
+                } catch {
+                    failed = true
+                }
+                try {
+                    teardown.next(makeOperation('teardown', operation, operation.context))
+                } catch {
+                    failed = true
+                }
+            }
+            if (failed) throw new SharedContextError('cleanup_failed')
         })
         const incoming = pipe(operations, share)
         const current = pipe(incoming, filter(operation => operation.kind === 'teardown' || lease.isCurrent()), tap(operation => {
@@ -102,6 +115,11 @@ function contextExchange(lease: SharedContextLease): Exchange {
  */
 export function createTadaBrowserClient(options: CreateTadaBrowserClientOptions): { getClient: () => Promise<Client>; createClient: (opts?: { clientOptions?: Partial<ClientOptions>; anonymous?: boolean }) => Promise<Client> }
 export function createTadaBrowserClient(options: CreateContextTadaBrowserClientOptions): { getClient: () => Promise<Client>; createClient: (opts?: { clientOptions?: Partial<ClientOptions>; anonymous?: boolean }) => Promise<Client> }
+export function createTadaBrowserClient(options: CreateTadaBrowserClientOptions | CreateContextTadaBrowserClientOptions): { getClient: () => Promise<Client>; createClient: (opts?: { clientOptions?: Partial<ClientOptions>; anonymous?: boolean }) => Promise<Client> }
+// Duplicate legacy last so Parameters<typeof createTadaBrowserClient>[0] keeps legacy property
+// access; context users use the exported explicit context option type. The union signature above
+// keeps union-typed callers working while direct contextual literals select the specific overloads.
+export function createTadaBrowserClient(options: CreateTadaBrowserClientOptions): { getClient: () => Promise<Client>; createClient: (opts?: { clientOptions?: Partial<ClientOptions>; anonymous?: boolean }) => Promise<Client> }
 export function createTadaBrowserClient(options: CreateTadaBrowserClientOptions | CreateContextTadaBrowserClientOptions): { getClient: () => Promise<Client>; createClient: (opts?: { clientOptions?: Partial<ClientOptions>; anonymous?: boolean }) => Promise<Client> } {
     if ('contextBinding' in options) return createContextClient(options)
     const { url, getJwt, getJwtToken, isJwtValid, resolveExchanges, clientOptions } = options

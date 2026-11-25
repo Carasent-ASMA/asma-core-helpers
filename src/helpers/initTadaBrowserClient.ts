@@ -64,6 +64,9 @@ export interface InitTadaBrowserClientOptions {
  */
 export function initTadaBrowserClient(options: InitTadaBrowserClientOptions): ReturnType<typeof createTadaBrowserClient>
 export function initTadaBrowserClient(options: CreateContextTadaBrowserClientOptions): ReturnType<typeof createTadaBrowserClient>
+export function initTadaBrowserClient(options: InitTadaBrowserClientOptions | CreateContextTadaBrowserClientOptions): ReturnType<typeof createTadaBrowserClient>
+// Duplicate legacy last for Parameters<typeof initTadaBrowserClient>[0] legacy property access.
+export function initTadaBrowserClient(options: InitTadaBrowserClientOptions): ReturnType<typeof createTadaBrowserClient>
 export function initTadaBrowserClient(options: InitTadaBrowserClientOptions | CreateContextTadaBrowserClientOptions): ReturnType<typeof createTadaBrowserClient> {
     // Return before resolving any environment/metadata or global auth getter.
     if ('contextBinding' in options) return createTadaBrowserClient(options)

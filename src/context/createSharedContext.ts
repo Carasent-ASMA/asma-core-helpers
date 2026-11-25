@@ -23,6 +23,24 @@ function inactive(status: SharedContextInactiveStatus, generation: number): Shar
     return Object.freeze({ revision: SHARED_CONTEXT_REVISION, status, generation, actor: null, organization: null, journal: null, selectedRecord: null })
 }
 
+const INACTIVE_STATUSES = ['unavailable', 'anonymous', 'pending', 'denied'] as const
+function isInactiveStatus(value: unknown): value is Exclude<SharedContextInactiveStatus, 'disposed'> {
+    return typeof value === 'string' && (INACTIVE_STATUSES as readonly string[]).includes(value)
+}
+
+/** Parse the host-supplied owner endpoint without exposing its value in a thrown error. */
+function ownerEndpoint(url: string): string {
+    let parsed: URL
+    try {
+        parsed = new URL(url)
+    } catch {
+        throw new SharedContextError('wrong_owner_endpoint')
+    }
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') throw new SharedContextError('wrong_owner_endpoint')
+    if (parsed.username || parsed.password) throw new SharedContextError('wrong_owner_endpoint')
+    return parsed.href
+}
+
 function nonempty(value: unknown): value is string {
     return typeof value === 'string' && value.trim().length > 0
 }
@@ -41,6 +59,7 @@ function validatedInput(input: ValidatedSharedContext, now: number): boolean {
     if (!record || !nonempty(record.user_id) || record.customer_id !== input.organization.customer_id || !journalIsValid(record.journal)) return false
     if (!['self', 'participant', 'ward'].includes(record.relationship)) return false
     if (record.relationship === 'self' && record.user_id !== input.actor.user_id) return false
+    if (record.relationship === 'participant' && record.user_id === input.actor.user_id) return false
     if (record.relationship === 'ward' && record.user_id === input.actor.user_id) return false
     return true
 }
@@ -93,7 +112,14 @@ export function createSharedContext(options: SharedContextOptions = {}): SharedC
     }
 
     function checkExpiry() {
-        if (snapshot.status === 'ready' && snapshot.exp * 1000 <= now()) change('denied')
+        if (snapshot.status !== 'ready' || snapshot.exp * 1000 > now()) return
+        try {
+            change('denied')
+        } catch {
+            // Expiry is a read/timer path. The denial and cleanup attempts are already complete;
+            // report only the sanitized classification instead of throwing from a getter or timer.
+            console.warn('Shared context expiry cleanup failed')
+        }
     }
 
     function getSnapshot() {
@@ -123,6 +149,7 @@ export function createSharedContext(options: SharedContextOptions = {}): SharedC
         subscribe,
         invalidate(status = 'pending') {
             if (snapshot.status === 'disposed') throw new SharedContextError('disposed')
+            if (!isInactiveStatus(status)) throw new SharedContextError('invalid_context')
             const captured = change(status)
             let published = false
             return Object.freeze({
@@ -164,11 +191,19 @@ export function createSharedContext(options: SharedContextOptions = {}): SharedC
             const compatible = revision === SHARED_CONTEXT_REVISION
             const mountListeners = new Set<{ listener: SharedContextListener; wrapped: SharedContextListener }>()
             const mountRevocations = new Set<() => void>()
+            let inactiveView: { status: SharedContextInactiveStatus; generation: number; snapshot: SharedContextSnapshot } | undefined
+
+            function mountInactive(status: SharedContextInactiveStatus, generation: number) {
+                if (!inactiveView || inactiveView.status !== status || inactiveView.generation !== generation) {
+                    inactiveView = { status, generation, snapshot: inactive(status, generation) }
+                }
+                return inactiveView.snapshot
+            }
 
             function mountSnapshot() {
                 const current = getSnapshot()
-                if (!live || current.status === 'disposed') return inactive('disposed', current.generation)
-                return compatible ? current : inactive('denied', current.generation)
+                if (!live || current.status === 'disposed') return mountInactive('disposed', current.generation)
+                return compatible ? current : mountInactive('denied', current.generation)
             }
 
             function assertMount() {
@@ -255,8 +290,8 @@ export function createSharedContext(options: SharedContextOptions = {}): SharedC
                     if (!options.createOwnerClient || !nonempty(owner)) throw new SharedContextError('owner_unavailable')
                     const source = await lease.run(() => options.createOwnerClient!(owner, lease))
                     // Exact owner endpoint only, not a generic foreign-backend gateway.
-                    const endpoint = new URL(source.url).href
-                    if (!['http:', 'https:'].includes(new URL(endpoint).protocol)) throw new SharedContextError('wrong_owner_endpoint')
+                    // Parsing is sanitized: malformed host input must not echo a URL or cause.
+                    const endpoint = ownerEndpoint(source.url)
                     const ownerFetch: typeof fetch = async (input, init) => {
                         const request = new Request(input, init)
                         lease.assertCurrent()

@@ -144,6 +144,78 @@ test('disposing one instance cannot revoke another mounted owner client', async 
     assert.equal((await secondClient.query(query, {}).toPromise()).data?.value, 'current')
 })
 
+test('one throwing result observer cannot skip teardown of other active operations', async t => {
+    const operations: Operation[] = []
+    const extra: Exchange = () => incoming =>
+        pipe(
+            incoming,
+            tap(operation => operations.push(operation)),
+            filter(() => false),
+        ) as never
+    const context = createSharedContext({
+        createOwnerClient: () => ({
+            url: 'https://owner.invalid/graphql',
+            fetch: async () => {
+                throw Error('No transport expected')
+            },
+        }),
+    })
+    t.after(() => context.dispose())
+    ready(context)
+    const mount = context.mount()
+    const client = await createTadaBrowserClient({ contextBinding: mount, owner: 'fixture-owner', resolveExchanges: () => [extra] }).getClient()
+    const first = client.query(gql`query ThrowingFirst { first }`, {}).subscribe(() => {
+        throw Error('Synthetic result observer failure')
+    })
+    const second = client.query(gql`query ThrowingSecond { second }`, {}).subscribe(() => {})
+    t.after(() => {
+        first.unsubscribe()
+        second.unsubscribe()
+    })
+    assert.equal(operations.filter(operation => operation.kind === 'query').length, 2)
+    assert.throws(() => mount.dispose(), /cleanup_failed/)
+    assert.equal(operations.filter(operation => operation.kind === 'teardown').length, 2)
+})
+
+test('a throwing teardown observer is contained and all active operations are still torn down', async t => {
+    const teardowns: Operation[] = []
+    let threw = false
+    const extra: Exchange = () => incoming =>
+        pipe(
+            incoming,
+            tap(operation => {
+                if (operation.kind === 'teardown') {
+                    teardowns.push(operation)
+                    if (!threw) {
+                        threw = true
+                        throw Error('Synthetic teardown failure')
+                    }
+                }
+            }),
+            filter(() => false),
+        ) as never
+    const context = createSharedContext({
+        createOwnerClient: () => ({
+            url: 'https://owner.invalid/graphql',
+            fetch: async () => {
+                throw Error('No transport expected')
+            },
+        }),
+    })
+    t.after(() => context.dispose())
+    ready(context)
+    const mount = context.mount()
+    const client = await createTadaBrowserClient({ contextBinding: mount, owner: 'fixture-owner', resolveExchanges: () => [extra] }).getClient()
+    const first = client.query(gql`query TeardownFirst { first }`, {}).subscribe(() => {})
+    const second = client.query(gql`query TeardownSecond { second }`, {}).subscribe(() => {})
+    t.after(() => {
+        first.unsubscribe()
+        second.unsubscribe()
+    })
+    assert.throws(() => mount.dispose(), /cleanup_failed/)
+    assert.equal(teardowns.length, 2)
+})
+
 test('legacy API retains auth headers, exchange callbacks, client caching and anonymous option', async t => {
     let calls = 0
     const seen: (string | null)[] = []
