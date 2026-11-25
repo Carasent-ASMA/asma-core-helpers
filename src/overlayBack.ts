@@ -38,6 +38,8 @@ interface GuardState {
     baseKey: string | undefined
     /** history@5 index cloned from the base entry on arm (CON-003); the guard entry shares it. */
     baseIdx: number | undefined
+    /** `pathname + search` of the page the guard was armed on; a hash-only popstate keeps it. */
+    path: string
     requestClose: () => false | void | Promise<unknown>
 }
 
@@ -75,6 +77,9 @@ export interface OverlayBackInternalState {
     /** Timestamps of recent re-arms after a fail-open navigation (loop breaker). Optional: a state
      *  object created by an older bundle copy on the same window lacks it. */
     rearmTimes?: number[]
+    /** Timestamp (ms) of the last Back an overlay refused (`requestClose` returned `false`). Optional
+     *  for the same older-bundle reason as `rearmTimes`. */
+    lastRefusedBackAt?: number
     originalPush: History['push'] | null
     originalReplace: History['replace'] | null
     public: OverlayBackAdapter
@@ -260,7 +265,14 @@ function arm(win: Window, internal: OverlayBackInternalState, requestClose: () =
     } catch {
         return // WebKit's 100-push budget or similar: fail open, stay idle
     }
-    internal.guard = { marker, baseKey: baseState?.key, baseIdx: baseState?.idx, requestClose }
+    internal.guard = {
+        marker,
+        baseKey: baseState?.key,
+        baseIdx: baseState?.idx,
+        path: win.location.pathname + win.location.search,
+        requestClose,
+    }
+    internal.lastRefusedBackAt = undefined
     internal.lastSeenIdx = baseState?.idx
     internal.retiredMarker = null
     internal.retiredBaseKey = undefined
@@ -416,14 +428,18 @@ function requestCloseForPendingNavigation(
  *  the real, unwrapped `push`, so an unsaved-changes prompt that replays the blocked push on
  *  "discard" lands past the guard while the prompt is still registered, and this wrapper never
  *  sees the hop (ASMA-8894). Only a push moves `idx`; a raw `replaceState` that wiped the marker
- *  keeps it and still counts as the guard (TEST-005). No `idx` at all: assume the guard. */
+ *  keeps it and still counts as the guard (TEST-005). No `idx` at all (a raw `pushState(null)`,
+ *  e.g. single-spa's `navigateToUrl`): the document moved on, so the guard is abandoned. */
 function guardEntryAbandoned(win: Window, guard: GuardState): boolean {
     const state = readState(win)
     if (markerMatches(readMarker(state), guard.marker)) {
         return false
     }
     const idx = state?.idx
-    return typeof idx === 'number' && typeof guard.baseIdx === 'number' && idx !== guard.baseIdx
+    if (typeof idx !== 'number') {
+        return true
+    }
+    return typeof guard.baseIdx === 'number' && idx !== guard.baseIdx
 }
 
 /** Drop a guard whose entry is behind the current one without moving history — a `go(-1)` here
@@ -515,6 +531,11 @@ function register(
     }
 }
 
+/** A second Back this soon after a refused one fails open. ponytail: a person who really wants to
+ *  leave presses again within a second or two; a refusal that only lifts after longer (a slow
+ *  confirm dialog) is not told apart from a trap. */
+const REFUSED_BACK_WINDOW_MS = 1500
+
 function handlePopstate(win: Window, internal: OverlayBackInternalState, event: Event): void {
     if (internal.suspended) {
         return
@@ -581,7 +602,7 @@ function handlePopstate(win: Window, internal: OverlayBackInternalState, event: 
                 return
             }
             if (internal.pendingNav) requestCloseForPendingNavigation(win, internal, guard)
-            else void guard.requestClose()
+            else if (guard.requestClose() === false) internal.lastRefusedBackAt = Date.now()
             return
         }
         dropGuardOnForeignLanding(internal, guard)
@@ -607,6 +628,11 @@ function handlePopstate(win: Window, internal: OverlayBackInternalState, event: 
 
     // armed: expect Back to land on the base entry
     if (landedOnBase) {
+        if (Date.now() - (internal.lastRefusedBackAt ?? Number.NEGATIVE_INFINITY) < REFUSED_BACK_WINDOW_MS) {
+            // The overlay refused the previous Back: let this one go back instead of trapping the user.
+            dropGuardOnForeignLanding(internal, guard)
+            return
+        }
         ;(event as PopStateEvent).stopImmediatePropagation()
         internal.phase = 'rearming'
         try {
@@ -616,6 +642,24 @@ function handlePopstate(win: Window, internal: OverlayBackInternalState, event: 
             internal.phase = null
         }
         return
+    }
+
+    // A `#hash` link inside the overlay: the page is the same, so the overlay stays open. The new
+    // entry becomes the guard (fresh marker, cloned key/idx), and the old guard entry now looks
+    // like the base, so the next Back is stepped over and closes the overlay in one step.
+    if (win.location.pathname + win.location.search === guard.path && win.location.hash !== '') {
+        const marker: OverlayBackMarker = { v: OVERLAY_BACK_VERSION, s: internal.sessionId, m: nextMarkerId(internal) }
+        try {
+            win.history.replaceState(
+                { ...state, key: guard.baseKey, idx: guard.baseIdx, [OVERLAY_BACK_MARKER_KEY]: marker },
+                '',
+                win.location.href,
+            )
+            internal.guard = { ...guard, marker }
+            return
+        } catch {
+            /* fail open: fall through to the foreign landing */
+        }
     }
 
     // Landed somewhere neither B nor G recognises (multi-step jump, foreign navigation): fail open.

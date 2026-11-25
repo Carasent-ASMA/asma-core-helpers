@@ -1287,3 +1287,70 @@ describe('overlayBack re-arm after a fail-open navigation (ASMA-8470)', () => {
         assert.equal(__inspectOverlayBackForTests__(win)?.pendingNav, null)
     })
 })
+
+describe('overlayBack edge cases (ASMA-8470)', () => {
+    it('closing an overlay does not undo a raw pushState made while it was open', async () => {
+        const { win, adapter } = setUp('https://example.test/a')
+        adapter.enabled = true
+        const unregister: () => void = adapter.register(() => unregister())
+
+        // single-spa's navigateToUrl pushes without state, so the entry has no history@5 idx.
+        win.history.pushState(null, '', '/b')
+        win.history.pushState(null, '', '/c')
+        unregister()
+        await settle()
+
+        assert.equal(win.location.pathname, '/c')
+        assert.equal(__inspectOverlayBackForTests__(win)?.guard, null)
+    })
+
+    it('a #hash link inside an overlay keeps it open and the next Back closes it in one step', async () => {
+        const { win, adapter } = setUp('https://example.test/a')
+        adapter.enabled = true
+        let closeCalls = 0
+        const unregister: () => void = adapter.register(() => {
+            closeCalls += 1
+            unregister()
+        })
+
+        win.location.hash = '#section'
+        win.dispatchEvent(new win.PopStateEvent('popstate'))
+        await settle()
+        assert.equal(closeCalls, 0)
+        assert.notEqual(__inspectOverlayBackForTests__(win)?.guard, null)
+
+        win.history.back()
+        await waitUntil(() => closeCalls === 1)
+        await waitUntil(() => __inspectOverlayBackForTests__(win)?.guard === null)
+        await settle()
+
+        assert.equal(win.location.pathname, '/a')
+        assert.equal(__inspectOverlayBackForTests__(win)?.phase, null)
+    })
+
+    it('a second Back shortly after a refused close lets the browser go back', async () => {
+        const { win, adapter, history } = setUp('https://example.test/home')
+        history.push('/list')
+        adapter.enabled = true
+        let closeCalls = 0
+        adapter.register(() => {
+            closeCalls += 1
+            return false
+        })
+
+        win.history.back()
+        await waitUntil(() => closeCalls === 1)
+        await settle()
+        assert.equal(win.location.pathname, '/list')
+        assert.notEqual(__inspectOverlayBackForTests__(win)?.guard, null)
+
+        win.history.back()
+        await waitUntil(() => __inspectOverlayBackForTests__(win)?.guard === null)
+        await settle()
+        assert.equal(win.location.pathname, '/list')
+        assert.equal(closeCalls, 1)
+
+        win.history.back()
+        await waitUntil(() => win.location.pathname === '/home')
+    })
+})
