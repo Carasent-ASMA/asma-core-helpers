@@ -1327,30 +1327,4 @@ describe('overlayBack edge cases (ASMA-8470)', () => {
         assert.equal(win.location.pathname, '/a')
         assert.equal(__inspectOverlayBackForTests__(win)?.phase, null)
     })
-
-    it('a second Back shortly after a refused close lets the browser go back', async () => {
-        const { win, adapter, history } = setUp('https://example.test/home')
-        history.push('/list')
-        adapter.enabled = true
-        let closeCalls = 0
-        adapter.register(() => {
-            closeCalls += 1
-            return false
-        })
-
-        win.history.back()
-        await waitUntil(() => closeCalls === 1)
-        await settle()
-        assert.equal(win.location.pathname, '/list')
-        assert.notEqual(__inspectOverlayBackForTests__(win)?.guard, null)
-
-        win.history.back()
-        await waitUntil(() => __inspectOverlayBackForTests__(win)?.guard === null)
-        await settle()
-        assert.equal(win.location.pathname, '/list')
-        assert.equal(closeCalls, 1)
-
-        win.history.back()
-        await waitUntil(() => win.location.pathname === '/home')
-    })
 })

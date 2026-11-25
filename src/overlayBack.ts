@@ -77,9 +77,6 @@ export interface OverlayBackInternalState {
     /** Timestamps of recent re-arms after a fail-open navigation (loop breaker). Optional: a state
      *  object created by an older bundle copy on the same window lacks it. */
     rearmTimes?: number[]
-    /** Timestamp (ms) of the last Back an overlay refused (`requestClose` returned `false`). Optional
-     *  for the same older-bundle reason as `rearmTimes`. */
-    lastRefusedBackAt?: number
     originalPush: History['push'] | null
     originalReplace: History['replace'] | null
     public: OverlayBackAdapter
@@ -272,7 +269,6 @@ function arm(win: Window, internal: OverlayBackInternalState, requestClose: () =
         path: win.location.pathname + win.location.search,
         requestClose,
     }
-    internal.lastRefusedBackAt = undefined
     internal.lastSeenIdx = baseState?.idx
     internal.retiredMarker = null
     internal.retiredBaseKey = undefined
@@ -531,11 +527,6 @@ function register(
     }
 }
 
-/** A second Back this soon after a refused one fails open. ponytail: a person who really wants to
- *  leave presses again within a second or two; a refusal that only lifts after longer (a slow
- *  confirm dialog) is not told apart from a trap. */
-const REFUSED_BACK_WINDOW_MS = 1500
-
 function handlePopstate(win: Window, internal: OverlayBackInternalState, event: Event): void {
     if (internal.suspended) {
         return
@@ -602,7 +593,7 @@ function handlePopstate(win: Window, internal: OverlayBackInternalState, event: 
                 return
             }
             if (internal.pendingNav) requestCloseForPendingNavigation(win, internal, guard)
-            else if (guard.requestClose() === false) internal.lastRefusedBackAt = Date.now()
+            else void guard.requestClose()
             return
         }
         dropGuardOnForeignLanding(internal, guard)
@@ -628,11 +619,6 @@ function handlePopstate(win: Window, internal: OverlayBackInternalState, event: 
 
     // armed: expect Back to land on the base entry
     if (landedOnBase) {
-        if (Date.now() - (internal.lastRefusedBackAt ?? Number.NEGATIVE_INFINITY) < REFUSED_BACK_WINDOW_MS) {
-            // The overlay refused the previous Back: let this one go back instead of trapping the user.
-            dropGuardOnForeignLanding(internal, guard)
-            return
-        }
         ;(event as PopStateEvent).stopImmediatePropagation()
         internal.phase = 'rearming'
         try {
