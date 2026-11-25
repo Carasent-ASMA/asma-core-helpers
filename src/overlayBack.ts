@@ -38,8 +38,6 @@ interface GuardState {
     baseKey: string | undefined
     /** history@5 index cloned from the base entry on arm (CON-003); the guard entry shares it. */
     baseIdx: number | undefined
-    /** `pathname + search` of the page the guard was armed on; a hash-only popstate keeps it. */
-    path: string
     requestClose: () => false | void | Promise<unknown>
 }
 
@@ -262,13 +260,7 @@ function arm(win: Window, internal: OverlayBackInternalState, requestClose: () =
     } catch {
         return // WebKit's 100-push budget or similar: fail open, stay idle
     }
-    internal.guard = {
-        marker,
-        baseKey: baseState?.key,
-        baseIdx: baseState?.idx,
-        path: win.location.pathname + win.location.search,
-        requestClose,
-    }
+    internal.guard = { marker, baseKey: baseState?.key, baseIdx: baseState?.idx, requestClose }
     internal.lastSeenIdx = baseState?.idx
     internal.retiredMarker = null
     internal.retiredBaseKey = undefined
@@ -628,24 +620,6 @@ function handlePopstate(win: Window, internal: OverlayBackInternalState, event: 
             internal.phase = null
         }
         return
-    }
-
-    // A `#hash` link inside the overlay: the page is the same, so the overlay stays open. The new
-    // entry becomes the guard (fresh marker, cloned key/idx), and the old guard entry now looks
-    // like the base, so the next Back is stepped over and closes the overlay in one step.
-    if (win.location.pathname + win.location.search === guard.path && win.location.hash !== '') {
-        const marker: OverlayBackMarker = { v: OVERLAY_BACK_VERSION, s: internal.sessionId, m: nextMarkerId(internal) }
-        try {
-            win.history.replaceState(
-                { ...state, key: guard.baseKey, idx: guard.baseIdx, [OVERLAY_BACK_MARKER_KEY]: marker },
-                '',
-                win.location.href,
-            )
-            internal.guard = { ...guard, marker }
-            return
-        } catch {
-            /* fail open: fall through to the foreign landing */
-        }
     }
 
     // Landed somewhere neither B nor G recognises (multi-step jump, foreign navigation): fail open.
