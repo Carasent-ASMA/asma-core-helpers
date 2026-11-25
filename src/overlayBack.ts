@@ -72,6 +72,9 @@ export interface OverlayBackInternalState {
      *  it stale until the next hop. Tells a bounce off a retired guard whether Back arrived from an
      *  entry ahead of it (ASMA-8894) or Forward arrived from the base (REQ-006). */
     lastSeenIdx: number | undefined
+    /** Timestamps of recent re-arms after a fail-open navigation (loop breaker). Optional: a state
+     *  object created by an older bundle copy on the same window lacks it. */
+    rearmTimes?: number[]
     originalPush: History['push'] | null
     originalReplace: History['replace'] | null
     public: OverlayBackAdapter
@@ -313,9 +316,33 @@ function runPendingNav(win: Window, internal: OverlayBackInternalState, pending:
     // outlived the navigation (fail-open). Guard the destination again so the next Back closes it
     // instead of leaving the page; `arm` keeps the kill switch and the gesture/activation gate,
     // which the user click behind the refused navigation passes. Never reached by a POP traversal.
-    if (!internal.guard && !internal.suspended && internal.openCount > 0 && internal.currentRequestClose) {
+    if (
+        !internal.guard &&
+        !internal.suspended &&
+        internal.openCount > 0 &&
+        internal.currentRequestClose &&
+        rearmBudgetLeft(internal)
+    ) {
         arm(win, internal, internal.currentRequestClose)
     }
+}
+
+const REARM_BURST_LIMIT = 6
+const REARM_BURST_WINDOW_MS = 3000
+
+/** A route that fails open again after every re-arm (an effect re-issuing a replace on each location
+ *  change) would otherwise churn history for ever. Past the limit the overlay is left unguarded, as
+ *  before the re-arm existed. ponytail: a person never hits it; a sixth fail-open navigation inside
+ *  three seconds just goes unguarded. */
+function rearmBudgetLeft(internal: OverlayBackInternalState): boolean {
+    const now = Date.now()
+    const recent = (internal.rearmTimes ?? []).filter((at) => now - at < REARM_BURST_WINDOW_MS)
+    internal.rearmTimes = recent
+    if (recent.length >= REARM_BURST_LIMIT) {
+        return false
+    }
+    recent.push(now)
+    return true
 }
 
 function failOpenPendingNavigation(win: Window, internal: OverlayBackInternalState): void {
@@ -613,7 +640,9 @@ function dropGuardOnForeignLanding(internal: OverlayBackInternalState, guard: Gu
 
 function pathOf(to: To, fallback: string): string {
     if (typeof to === 'string') {
-        return to.split(/[?#]/, 1)[0] || fallback
+        // An absolute URL of this page is a same-path replace too; comparing it whole deferred it.
+        const path = /^https?:\/\//i.test(to) ? new URL(to).pathname : to.split(/[?#]/, 1)[0]
+        return path || fallback
     }
     return to.pathname ?? fallback
 }

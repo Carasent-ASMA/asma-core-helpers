@@ -1240,4 +1240,50 @@ describe('overlayBack re-arm after a fail-open navigation (ASMA-8470)', () => {
         assert.equal(internal.guard, null)
         assert.equal(markerOf(win), undefined)
     })
+
+    it('treats a replace to an absolute URL of the same page as a same-path replace', async () => {
+        const { win, adapter, history } = setUp('https://example.test/list')
+        adapter.enabled = true
+        const internal = __inspectOverlayBackForTests__(win)!
+        const docked = registerDocked(adapter)
+        const guard = internal.guard
+
+        history.replace('https://example.test/list?tab=2')
+        await settle()
+
+        assert.equal(win.location.search, '?tab=2')
+        assert.equal(docked.closeCalls, 0)
+        assert.equal(adapter.pendingNavigation, false)
+        assert.equal(internal.guard, guard)
+        assert.deepEqual(markerOf(win), guard?.marker)
+        assert.equal(win.history.length, 2)
+    })
+
+    it('stops re-arming when a route keeps failing open in a loop', async () => {
+        const { win, adapter, history } = setUp('https://example.test/a')
+        adapter.enabled = true
+        registerDocked(adapter)
+        let arms = 0
+        const realPushState = win.history.pushState.bind(win.history)
+        win.history.pushState = (state: unknown, unused: string, url?: string | URL | null) => {
+            if ((state as Record<string, unknown> | null)?.__asmaOverlayBack) arms += 1
+            realPushState(state, unused, url)
+        }
+        // An effect that re-issues a cross-path replace on every location change.
+        let replaces = 0
+        history.listen(() => {
+            if (replaces >= 30) return
+            replaces += 1
+            const to = replaces % 2 ? '/x' : '/y'
+            setTimeout(() => history.replace(to), 0)
+        })
+
+        history.push('/b')
+        await waitUntil(() => replaces >= 30, 8000)
+        await settle()
+        await settle()
+
+        assert.ok(arms <= 6, `re-armed ${arms} times`)
+        assert.equal(__inspectOverlayBackForTests__(win)?.pendingNav, null)
+    })
 })
