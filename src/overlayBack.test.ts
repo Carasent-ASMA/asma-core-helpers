@@ -846,3 +846,181 @@ describe('overlayBack arming gate', () => {
         unregister()
     })
 })
+
+describe('overlayBack foreign landings and races (ASMA-8470)', () => {
+    /** A trusted gesture that is newer than the last popstate, even one in the same millisecond. */
+    function simulateGestureAfterLastPopstate(win: Window): void {
+        const internal = __inspectOverlayBackForTests__(win)!
+        internal.lastGestureAt = Math.max(Date.now(), internal.lastPopstateAt + 1)
+    }
+
+    const settle = () => new Promise((resolve) => setTimeout(resolve, 20))
+
+    /** A dirty dialog whose first close (the deferred push) waits on the user forever, and whose
+     *  next close (the fail-open after the user leaves) unmounts it. */
+    function registerDirtyDialog(adapter: ReturnType<typeof setUp>['adapter']): void {
+        let closeCalls = 0
+        const unregister: () => void = adapter.register(() => {
+            closeCalls += 1
+            if (closeCalls === 1) return new Promise(() => {})
+            unregister()
+            return undefined
+        })
+    }
+
+    it('a multi-step Back away from the guard drops the route intent queued against it', async () => {
+        const { win, adapter, history } = setUp('https://example.test/home')
+        history.push('/list')
+        history.push('/detail')
+        adapter.enabled = true
+        registerDirtyDialog(adapter)
+        history.push('/checkout')
+        assert.equal(adapter.pendingNavigation, true)
+
+        win.history.go(-2)
+        await waitUntil(() => win.location.pathname === '/list')
+        await settle()
+        assert.equal(adapter.pendingNavigation, false)
+
+        simulateGestureAfterLastPopstate(win)
+        const unregisterMenu: () => void = adapter.register(() => unregisterMenu())
+        history.push('/settings')
+        await waitUntil(() => win.location.pathname === '/settings')
+    })
+
+    it('a dropped route intent never runs later as a ghost navigation', async () => {
+        const { win, adapter, history } = setUp('https://example.test/home')
+        history.push('/list')
+        history.push('/detail')
+        adapter.enabled = true
+        registerDirtyDialog(adapter)
+        history.push('/checkout')
+        win.history.go(-2)
+        await waitUntil(() => win.location.pathname === '/list')
+
+        simulateGestureAfterLastPopstate(win)
+        const unregisterMenu = adapter.register(() => {})
+        unregisterMenu()
+        await settle()
+
+        assert.equal(win.location.pathname, '/list')
+        assert.equal(history.location.pathname, '/list')
+    })
+
+    it('a drain that lands past the base does not re-arm for an overlay opened during it', async () => {
+        const { win, adapter, history } = setUp('https://example.test/home')
+        history.push('/list')
+        history.push('/detail')
+        adapter.enabled = true
+        const internal = __inspectOverlayBackForTests__(win)!
+
+        // Chromium may coalesce the drain's go(-1) with a user Back already in flight.
+        const realGo = win.history.go.bind(win.history)
+        let coalesced = false
+        win.history.go = (delta?: number) => {
+            realGo(!coalesced && delta === -1 ? -2 : delta)
+            coalesced = true
+        }
+        adapter.register(() => {})()
+        const unregisterOpenedDuringDrain = adapter.register(() => {})
+        await waitUntil(() => win.location.pathname === '/list')
+        await settle()
+        unregisterOpenedDuringDrain()
+
+        simulateGestureAfterLastPopstate(win)
+        adapter.register(() => {})()
+        await waitUntil(() => internal.phase === null)
+        await settle()
+
+        assert.equal(internal.openCount, 0)
+        assert.equal(internal.guard, null)
+    })
+
+    it('Back from an entry raw-pushed on top of the guard neither closes the overlay nor drops the guard', async () => {
+        const { win, adapter, history } = setUp('https://example.test/home')
+        history.push('/list')
+        adapter.enabled = true
+        let closeCalls = 0
+        adapter.register(() => {
+            closeCalls += 1
+        })
+        const internal = __inspectOverlayBackForTests__(win)!
+        const guardMarker = internal.guard!.marker
+
+        win.history.pushState({ ...win.history.state, __asmaPickerBack: 'picker' }, '', win.location.href)
+        win.history.back()
+        await waitUntil(() => (win.history.state as Record<string, unknown>).__asmaPickerBack === undefined)
+        await settle()
+
+        assert.equal(closeCalls, 0)
+        assert.deepEqual(internal.guard?.marker, guardMarker)
+    })
+
+    it('a hash navigation from a keyless first entry is not mistaken for the base', async () => {
+        const { win, adapter, history } = setUp('https://example.test/home')
+        adapter.enabled = true
+        const internal = __inspectOverlayBackForTests__(win)!
+        assert.equal((win.history.state as Record<string, unknown>).key, undefined)
+        let closeCalls = 0
+        const unregister: () => void = adapter.register(() => {
+            closeCalls += 1
+            unregister()
+        })
+
+        win.location.hash = '#section'
+        await settle()
+        assert.notEqual(internal.phase, 'rearming')
+
+        history.push('/list')
+        await waitUntil(() => win.location.pathname === '/list')
+        assert.equal(closeCalls, 1)
+    })
+
+    it('a push that arrives while the guard drains runs after the drain instead of being popped by it', async () => {
+        const { win, adapter, history } = setUp('https://example.test/home')
+        history.push('/list')
+        adapter.enabled = true
+        const unregister = adapter.register(() => {})
+
+        // Chromium aims go(-1) at the entry current when it is called: a pushState before the
+        // traversal runs does not cancel it, and the hop still lands on B. jsdom resolves the delta
+        // when the traversal runs, so hold the drain's hop and replay it with Chromium's target.
+        const realGo = win.history.go.bind(win.history)
+        let lengthAtDrain: number | undefined
+        win.history.go = (delta?: number) => {
+            if (delta === -1 && lengthAtDrain === undefined) {
+                lengthAtDrain = win.history.length
+                return
+            }
+            realGo(delta)
+        }
+        unregister()
+        history.push('/checkout')
+        realGo(-1 - (win.history.length - lengthAtDrain!))
+        await waitUntil(() => __inspectOverlayBackForTests__(win)?.guard === null)
+        await settle()
+
+        assert.equal(win.location.pathname, '/checkout')
+        assert.equal(history.location.pathname, '/checkout')
+    })
+
+    it('an overlay that unregisters during rearm is not the one closed on the guard landing', async () => {
+        const { win, adapter } = setUp('https://example.test/list')
+        adapter.enabled = true
+        const closed: string[] = []
+        adapter.register(() => {
+            closed.push('lower')
+        })
+        const unregisterTop = adapter.register(() => {
+            closed.push('top')
+        })
+        const internal = __inspectOverlayBackForTests__(win)!
+
+        win.history.back()
+        await waitUntil(() => internal.phase === 'rearming')
+        unregisterTop()
+        await waitUntil(() => internal.phase === null)
+
+        assert.deepEqual(closed, ['lower'])
+    })
+})
