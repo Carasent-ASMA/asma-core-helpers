@@ -15,8 +15,15 @@ import {
     createClient,
     type Exchange,
     fetchExchange,
+    CombinedError,
+    makeOperation,
+    type Operation,
+    type OperationResult,
 } from '@urql/core'
 import { authExchange } from '@urql/exchange-auth'
+import { filter, makeSubject, map, merge, pipe, share, tap } from 'wonka'
+import { SharedContextError } from '../context/createSharedContext.js'
+import type { SharedContextBinding, SharedContextLease, SharedContextReadySnapshot } from '../context/context.types.js'
 
 /**
  * Contributes service-specific exchanges (e.g. the Adopus per-tenant namespace
@@ -46,6 +53,57 @@ export interface CreateTadaBrowserClientOptions {
     clientOptions?: Partial<ClientOptions>
 }
 
+export type ResolveContextExchanges = (ctx: { url: string; snapshot: SharedContextReadySnapshot }) => Exchange[] | Promise<Exchange[]>
+
+/** The host's owner-qualified closure owns credentials; this path never reads auth globals. */
+export interface CreateContextTadaBrowserClientOptions {
+    contextBinding: SharedContextBinding
+    owner: string
+    resolveExchanges?: ResolveContextExchanges
+    clientOptions?: Partial<ClientOptions>
+}
+
+function revokedResult(operation: Operation): OperationResult {
+    return { operation, data: undefined, error: new CombinedError({ networkError: new SharedContextError('stale_context') }), stale: false, hasNext: false }
+}
+
+/** Guard cached/stream results too, and tear down every active operation on revocation. */
+function contextExchange(lease: SharedContextLease): Exchange {
+    return ({ forward }) => operations => {
+        const active = new Map<number, Operation>()
+        const teardown = makeSubject<Operation>()
+        const revoked = makeSubject<OperationResult>()
+        lease.onRevoke(() => {
+            const operations = [...active.values()]
+            // Clear before notifying subscribers: a throwing observer must not leave the registry
+            // populated, and every teardown must still be attempted.
+            active.clear()
+            let failed = false
+            for (const operation of operations) {
+                try {
+                    revoked.next(revokedResult(operation))
+                } catch {
+                    failed = true
+                }
+                try {
+                    teardown.next(makeOperation('teardown', operation, operation.context))
+                } catch {
+                    failed = true
+                }
+            }
+            if (failed) throw new SharedContextError('cleanup_failed')
+        })
+        const incoming = pipe(operations, share)
+        const current = pipe(incoming, filter(operation => operation.kind === 'teardown' || lease.isCurrent()), tap(operation => {
+            if (operation.kind === 'teardown') active.delete(operation.key)
+            else active.set(operation.key, operation)
+        }))
+        const denied = pipe(incoming, filter(operation => operation.kind !== 'teardown' && !lease.isCurrent()), map(revokedResult))
+        const results = pipe(merge([current, teardown.source]), forward, map(result => lease.isCurrent() ? result : revokedResult(result.operation)))
+        return merge([results, denied, revoked.source])
+    }
+}
+
 /**
  * Creates a configured, authenticated urql Client for an ASMA frontend app.
  *
@@ -55,14 +113,16 @@ export interface CreateTadaBrowserClientOptions {
  *   3. fetchExchange      — standard HTTP fetch
  *   4. caller-provided    — appended via clientOptions.exchanges (end of pipeline)
  */
-export function createTadaBrowserClient({
-    url,
-    getJwt,
-    getJwtToken,
-    isJwtValid,
-    resolveExchanges,
-    clientOptions,
-}: CreateTadaBrowserClientOptions): { getClient: () => Promise<Client>; createClient: (opts?: { clientOptions?: Partial<ClientOptions>; anonymous?: boolean }) => Promise<Client> } {
+export function createTadaBrowserClient(options: CreateTadaBrowserClientOptions): { getClient: () => Promise<Client>; createClient: (opts?: { clientOptions?: Partial<ClientOptions>; anonymous?: boolean }) => Promise<Client> }
+export function createTadaBrowserClient(options: CreateContextTadaBrowserClientOptions): { getClient: () => Promise<Client>; createClient: (opts?: { clientOptions?: Partial<ClientOptions>; anonymous?: boolean }) => Promise<Client> }
+export function createTadaBrowserClient(options: CreateTadaBrowserClientOptions | CreateContextTadaBrowserClientOptions): { getClient: () => Promise<Client>; createClient: (opts?: { clientOptions?: Partial<ClientOptions>; anonymous?: boolean }) => Promise<Client> }
+// Duplicate legacy last so Parameters<typeof createTadaBrowserClient>[0] keeps legacy property
+// access; context users use the exported explicit context option type. The union signature above
+// keeps union-typed callers working while direct contextual literals select the specific overloads.
+export function createTadaBrowserClient(options: CreateTadaBrowserClientOptions): { getClient: () => Promise<Client>; createClient: (opts?: { clientOptions?: Partial<ClientOptions>; anonymous?: boolean }) => Promise<Client> }
+export function createTadaBrowserClient(options: CreateTadaBrowserClientOptions | CreateContextTadaBrowserClientOptions): { getClient: () => Promise<Client>; createClient: (opts?: { clientOptions?: Partial<ClientOptions>; anonymous?: boolean }) => Promise<Client> } {
+    if ('contextBinding' in options) return createContextClient(options)
+    const { url, getJwt, getJwtToken, isJwtValid, resolveExchanges, clientOptions } = options
     let tadaClient: Client | undefined
 
     const getClient = async () => {
@@ -139,5 +199,40 @@ export function createTadaBrowserClient({
         return createClient(_clientOptions as ClientOptions)
     }
 
+    return { getClient, createClient: buildClient }
+}
+
+function createContextClient(options: CreateContextTadaBrowserClientOptions) {
+    let cached: { generation: number; promise: Promise<Client> } | undefined
+    async function buildClient(opts?: { clientOptions?: Partial<ClientOptions>; anonymous?: boolean }) {
+        if (opts?.anonymous) throw new SharedContextError('context_unavailable')
+        const owner = await options.contextBinding.createOwnerClient(options.owner)
+        owner.lease.assertCurrent()
+        const extra = await owner.lease.run(() => options.resolveExchanges?.({ url: owner.url, snapshot: owner.lease.snapshot }) ?? [])
+        const clientOptions = opts?.clientOptions ?? options.clientOptions ?? {}
+        const client = createClient({
+            ...clientOptions,
+            url: owner.url,
+            fetch: owner.fetch,
+            preferGetMethod: false,
+            requestPolicy: clientOptions.requestPolicy ?? 'cache-and-network',
+            exchanges: [contextExchange(owner.lease), ...extra, fetchExchange, ...(clientOptions.exchanges ?? [])],
+        })
+        owner.lease.assertCurrent()
+        return client
+    }
+    async function getClient() {
+        const snapshot = options.contextBinding.getSnapshot()
+        if (snapshot.status !== 'ready') throw new SharedContextError('context_unavailable')
+        if (!cached || cached.generation !== snapshot.generation) {
+            const entry = { generation: snapshot.generation, promise: buildClient() }
+            cached = entry
+            entry.promise.catch(() => { if (cached === entry) cached = undefined })
+        }
+        const client = await cached.promise
+        const current = options.contextBinding.getSnapshot()
+        if (current.status !== 'ready' || current.generation !== snapshot.generation) throw new SharedContextError('stale_context')
+        return client
+    }
     return { getClient, createClient: buildClient }
 }

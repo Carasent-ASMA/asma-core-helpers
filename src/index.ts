@@ -51,6 +51,8 @@ export * from './helpers/getActivityStatus.js'
 export * from './helpers/stringToKeyValueMap.js'
 
 export { createTadaBrowserClient } from './helpers/createTadaBrowserClient.js'
-export type { CreateTadaBrowserClientOptions, ResolveExchanges } from './helpers/createTadaBrowserClient.js'
+export type { CreateTadaBrowserClientOptions, CreateContextTadaBrowserClientOptions, ResolveExchanges, ResolveContextExchanges } from './helpers/createTadaBrowserClient.js'
 export { initTadaBrowserClient, resolveSrvUrl } from './helpers/initTadaBrowserClient.js'
 export type { InitTadaBrowserClientOptions } from './helpers/initTadaBrowserClient.js'
+
+export * from './context/index.js'
