@@ -1,0 +1,2246 @@
+{
+  "schema": "ASMA-8342/TASK08 corrected helpers SOURCE evidence frozen before separate RESULTS effect",
+  "frozen_at": "2026-10-03T16:28:47.666682+00:00",
+  "author": {
+    "agent": "2f71ba5c-8d9e-4283-b4f6-31ce0da52d66",
+    "native": "01a1016a-d566-7fb2-8722-4dda4f0a48ec",
+    "account": "codex-personal",
+    "provider": "codex",
+    "model": "gpt-6.1-sol",
+    "configured_effective_runtime_effort": "xhigh",
+    "mode": "auto",
+    "project": "prj_fc87bc1f96af0ed3",
+    "TSW": "wks_128565ef9e09dc1d",
+    "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+    "writer_authority": "sole exclusive four-path continuation admitted after ROOT+TPM .08 forecast acceptance; retired Claude closed readback before source; no new source writer/reviewer dispatch"
+  },
+  "actual_corrected_SOURCE": "0c71872d34f2dfe586ec6654f2df8c0f3f7c5bc5",
+  "actual_SOURCE_parent": "6bfe8267549eaced9eb6f3b0ae3dafc8091918af",
+  "actual_SOURCE_subject": "fix(context): ASMA-8342 Fix dispatch and client lifecycle",
+  "actual_SOURCE_paths_SHA256": {
+    "src/helpers/generateSrvAuthBindings.ts": "6e4cac43a77b0e06ff81cf7a9dcbe3f0b432ac26320871a8fbf91931ee681647",
+    "src/helpers/generateSrvAuthBindings.test.ts": "5fd52e3e22a7853b2cec6bc4f2c60c51e3728c2c1eb927391724180179d47400",
+    "src/helpers/createTadaBrowserClient.ts": "16cc4ce4b8d07cc164c288556bd270231e8a5f02ab10aa79cfc6c818d9000b97",
+    "src/helpers/initTadaBrowserClient.ts": "b646c109ec0c37af1f9544f4507f954170e13793f7a7991b460e7562f5c6dd43"
+  },
+  "actual_remote_task_ref": {
+    "origin": "git@github.com:Carasent-ASMA/asma-core-helpers.git",
+    "ref": "refs/heads/feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding",
+    "SHA": "0c71872d34f2dfe586ec6654f2df8c0f3f7c5bc5",
+    "before_and_after": [
+      {
+        "name": "remote-task-before",
+        "argv": [
+          "git",
+          "ls-remote",
+          "origin",
+          "refs/heads/feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding"
+        ],
+        "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+        "started": "2026-10-03T16:23:47.267153+00:00",
+        "ended": "2026-10-03T16:23:49.262545+00:00",
+        "exit": 0,
+        "stdin": null,
+        "stdout": "6bfe8267549eaced9eb6f3b0ae3dafc8091918af\trefs/heads/feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding\n",
+        "stderr": ""
+      },
+      {
+        "name": "ASMA-commit-push",
+        "argv": [
+          "asma",
+          "git",
+          "commit",
+          "-m",
+          "fix(context): ASMA-8342 Fix dispatch and client lifecycle",
+          "--push",
+          "--verbose"
+        ],
+        "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+        "started": "2026-10-03T16:23:49.262971+00:00",
+        "ended": "2026-10-03T16:24:00.167828+00:00",
+        "exit": 0,
+        "stdin": null,
+        "stdout": "ℹ Commit scope: asma-core-helpers\nℹ Workspace root pointer commit: disabled for submodule flow; asma-modules may still be pulled for sync\nℹ Generating 1 commit message(s) in parallel...\nℹ ✓ .worktrees/asma-8342/asma-core-helpers (manual)\nℹ Submodule target: asma-core-helpers\nℹ Commit message for asma-core-helpers (manual):\n› fix(context): ASMA-8342 Fix dispatch and client lifecycle\n› git -C /Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers commit -m fix(context): ASMA-8342 Fix dispatch and client lifecycle\n› git -C /Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers push origin\n› git: ✅ doc refs OK (4 files)\n› git: ✅ Commit message valid: fix(context): ASMA-8342 Fix dispatch and client lifecycle\n› git: [feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding 0c71872] fix(context): ASMA-8342 Fix dispatch and client lifecycle\n› git:  4 files changed, 164 insertions(+), 6 deletions(-)\n⚠ Kontor would refuse 'feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding' (binding_unconfirmed); publishing anyway (paseo-direct surface; ASMA_ORCHESTRATION_SURFACE=kontor fails closed)\nℹ Refusal recorded as attestation 01a10294-5106-7430-9252-bd04336fa507\n› git: remote:\n› git: remote: GitHub found 4 vulnerabilities on Carasent-ASMA/asma-core-helpers's default branch (2 high, 2 moderate). To find out more, visit:\n› git: remote:      https://github.com/Carasent-ASMA/asma-core-helpers/security/dependabot\n› git: remote:\n› git: To github.com:Carasent-ASMA/asma-core-helpers.git\n› git:    6bfe826..0c71872  feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding -> feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding\n✅ Commit flow complete for asma-core-helpers\n",
+        "stderr": ""
+      },
+      {
+        "name": "remote-task-after",
+        "argv": [
+          "git",
+          "ls-remote",
+          "origin",
+          "refs/heads/feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding"
+        ],
+        "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+        "started": "2026-10-03T16:24:00.375812+00:00",
+        "ended": "2026-10-03T16:24:02.229421+00:00",
+        "exit": 0,
+        "stdin": null,
+        "stdout": "0c71872d34f2dfe586ec6654f2df8c0f3f7c5bc5\trefs/heads/feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding\n",
+        "stderr": ""
+      }
+    ]
+  },
+  "historical_SOURCE": "f6763bd252f5462bebdfb6d5e4a43959cc76504b",
+  "historical_RESULTS": "6bfe8267549eaced9eb6f3b0ae3dafc8091918af",
+  "retained_coherent_candidate_packet": {
+    "path": "/private/tmp/asma-8342-api-attach-correction/correction-return.json",
+    "sha256": "c0e3c1a67ce45452059cf035548e16042949aceb3b273553266f1e4a74ec5144",
+    "check_summary": {
+      "focused": {
+        "tests": 41,
+        "pass": 41,
+        "fail": 0,
+        "exit": 0
+      },
+      "full": {
+        "tests": 477,
+        "suites": 95,
+        "pass": 477,
+        "fail": 0,
+        "exit": 0
+      },
+      "typescript_noEmit": 0,
+      "build": 0,
+      "package": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "exit": 0
+      },
+      "source_consumer": {
+        "frozen": 1,
+        "corrected": 0,
+        "frozen_TS7006": 4,
+        "corrected_diagnostics": 0
+      },
+      "emitted_consumer": {
+        "frozen": 1,
+        "corrected": 0,
+        "frozen_TS7006": 4,
+        "corrected_diagnostics": 0
+      },
+      "runtime_red": {
+        "disposed_attachment": 1,
+        "unsubscribable_attachment": 1,
+        "unsubscribe": 1
+      },
+      "diff_check": 0
+    },
+    "full_diff": "diff --git a/src/helpers/createTadaBrowserClient.ts b/src/helpers/createTadaBrowserClient.ts\nindex d066235..bb478b7 100644\n--- a/src/helpers/createTadaBrowserClient.ts\n+++ b/src/helpers/createTadaBrowserClient.ts\n@@ -100,6 +100,8 @@ function contextExchange(lease: SharedContextLease): Exchange {\n  *   3. fetchExchange      — standard HTTP fetch\n  *   4. caller-provided    — appended via clientOptions.exchanges (end of pipeline)\n  */\n+export function createTadaBrowserClient(options: CreateTadaBrowserClientOptions): { getClient: () => Promise<Client>; createClient: (opts?: { clientOptions?: Partial<ClientOptions>; anonymous?: boolean }) => Promise<Client> }\n+export function createTadaBrowserClient(options: CreateContextTadaBrowserClientOptions): { getClient: () => Promise<Client>; createClient: (opts?: { clientOptions?: Partial<ClientOptions>; anonymous?: boolean }) => Promise<Client> }\n export function createTadaBrowserClient(options: CreateTadaBrowserClientOptions | CreateContextTadaBrowserClientOptions): { getClient: () => Promise<Client>; createClient: (opts?: { clientOptions?: Partial<ClientOptions>; anonymous?: boolean }) => Promise<Client> } {\n     if ('contextBinding' in options) return createContextClient(options)\n     const { url, getJwt, getJwtToken, isJwtValid, resolveExchanges, clientOptions } = options\ndiff --git a/src/helpers/generateSrvAuthBindings.test.ts b/src/helpers/generateSrvAuthBindings.test.ts\nindex 5748e80..f619dd3 100644\n--- a/src/helpers/generateSrvAuthBindings.test.ts\n+++ b/src/helpers/generateSrvAuthBindings.test.ts\n@@ -58,6 +58,86 @@ function deferred<T>() {\n }\n const stale = (error: unknown) => error instanceof SharedContextError && error.code === 'stale_context'\n \n+test('disposed attachment failure cannot poison a later login or replacement', async t => {\n+    const disposed = createSharedContext()\n+    disposed.dispose()\n+    assert.throws(() => bindings.generateSrvAuthBindings(undefined, { sharedContext: disposed }),\n+        (error: unknown) => error instanceof SharedContextError && error.code === 'disposed')\n+    const context = createSharedContext()\n+    t.after(() => context.dispose())\n+    bindings.generateSrvAuthBindings(undefined, { sharedContext: context })\n+    await login()\n+    publish(context)\n+    const lease = context.mount().capture()\n+    await login({ user_id: 'replacement', customer_id: '00000000-0000-0000-0000-000000000002' }, 'replacement-token')\n+    assert.equal(auth.getJwtToken(), 'replacement-token')\n+    assert.equal(auth.getUserId(), 'replacement')\n+    assert.equal(lease.isCurrent(), false)\n+    assert.equal(context.getSnapshot().status, 'pending')\n+})\n+\n+test('failed subscription does not retain an otherwise live controller', async t => {\n+    const context = createSharedContext()\n+    t.after(() => context.dispose())\n+    let invalidations = 0\n+    const unsubscribable: SharedContextController = {\n+        ...context,\n+        subscribe() { throw new Error('Fixture subscription failed') },\n+        invalidate() { ++invalidations; throw new Error('Retained failed attachment') },\n+    }\n+    assert.throws(() => bindings.generateSrvAuthBindings(undefined, { sharedContext: unsubscribable }), /Fixture subscription failed/)\n+    await login()\n+    assert.equal(auth.getJwtToken(), 'fixture-token')\n+    assert.equal(invalidations, 0)\n+})\n+\n+test('successful attachment unsubscribes on disposal and permits login', async t => {\n+    const context = createSharedContext()\n+    let subscriptions = 0\n+    let removals = 0\n+    const tracked: SharedContextController = {\n+        ...context,\n+        subscribe(listener) {\n+            ++subscriptions\n+            const unsubscribe = context.subscribe(listener)\n+            return () => { ++removals; unsubscribe() }\n+        },\n+    }\n+    t.after(() => context.dispose())\n+    bindings.generateSrvAuthBindings(undefined, { sharedContext: tracked })\n+    bindings.generateSrvAuthBindings(undefined, { sharedContext: tracked })\n+    assert.equal(subscriptions, 1)\n+    context.dispose()\n+    assert.equal(removals, 1)\n+    await login()\n+    assert.equal(auth.getJwtToken(), 'fixture-token')\n+})\n+\n+test('live cleanup failure clears credentials and revokes every context before reporting failure', async t => {\n+    const failing = createSharedContext()\n+    const healthy = createSharedContext()\n+    t.after(() => { failing.dispose(); healthy.dispose() })\n+    bindings.generateSrvAuthBindings(undefined, { sharedContext: failing })\n+    bindings.generateSrvAuthBindings(undefined, { sharedContext: healthy })\n+    await login()\n+    publish(failing)\n+    publish(healthy)\n+    const failedLease = failing.mount().capture()\n+    const healthyLease = healthy.mount().capture()\n+    failedLease.onRevoke(() => { throw new Error('Fixture cleanup failed') })\n+    await assert.rejects(login({ user_id: 'replacement' }, 'replacement-token'),\n+        (error: unknown) => error instanceof SharedContextError && error.code === 'cleanup_failed')\n+    assert.equal(auth.getJwtToken(), '')\n+    assert.equal(auth.getMetadata(), undefined)\n+    assert.equal(failedLease.isCurrent(), false)\n+    assert.equal(healthyLease.isCurrent(), false)\n+    assert.equal(failedLease.signal.aborted, true)\n+    assert.equal(healthyLease.signal.aborted, true)\n+    assert.equal(failing.getSnapshot().status, 'denied')\n+    await login({ user_id: 'recovered' }, 'recovered-token')\n+    assert.equal(auth.getJwtToken(), 'recovered-token')\n+})\n+\n test('legacy producer is reused; login invalidates but cannot authorize or publish a selected record', async t => {\n     const context = createSharedContext()\n     t.after(() => context.dispose())\n@@ -281,3 +361,61 @@ test('owner adapter preserves a current-generation 401 retry and rejects foreign\n     await assert.rejects(owner.fetch('https://foreign.invalid/v1/graphql'), /wrong_owner_endpoint/)\n     assert.equal(calls, 2)\n })\n+\n+for (const revocation of ['generation', 'unmount'] as const) {\n+    test(`owner initial dispatch denies ${revocation} revocation queued before its await continuation`, async t => {\n+        let calls = 0\n+        const context = createSharedContext({ createOwnerClient: (_owner, lease) => bindings.createSrvAuthContextOwnerClient({\n+            getCachedJwt: async () => 'fixture-token',\n+            isJwtValid: () => {\n+                queueMicrotask(() => revocation === 'generation' ? context.invalidate('anonymous') : mount.dispose())\n+                return true\n+            },\n+            getNewJwtToken: async () => { throw new Error('No initial dispatch means no refresh') },\n+        }, ownerUrl, lease) })\n+        t.after(() => context.dispose())\n+        publish(context)\n+        const mount = context.mount()\n+        const owner = await mount.createOwnerClient('fixture-owner')\n+        // Deliberately ignores cancellation: authority must prevent invocation itself.\n+        fetchHandler = async () => { ++calls; return Response.json({ data: 'retired' }) }\n+        await assert.rejects(owner.fetch(ownerUrl), stale)\n+        assert.equal(owner.lease.signal.aborted, true)\n+        assert.equal(calls, 0)\n+    })\n+\n+    test(`owner retry dispatch denies ${revocation} revocation queued before its await continuation`, async t => {\n+        let calls = 0\n+        let validityChecks = 0\n+        let refreshes = 0\n+        const context = createSharedContext({ createOwnerClient: (_owner, lease) => bindings.createSrvAuthContextOwnerClient({\n+            getCachedJwt: async () => 'fixture-token',\n+            isJwtValid: () => {\n+                if (++validityChecks === 2) {\n+                    queueMicrotask(() => revocation === 'generation' ? context.invalidate('anonymous') : mount.dispose())\n+                }\n+                return true\n+            },\n+            getNewJwtToken: async () => { ++refreshes; return 'fixture-refreshed' },\n+        }, ownerUrl, lease) })\n+        t.after(() => context.dispose())\n+        publish(context)\n+        const mount = context.mount()\n+        const owner = await mount.createOwnerClient('fixture-owner')\n+        // The first current request may run. An abort-ignoring retired retry may not.\n+        fetchHandler = async (input, init) => {\n+            ++calls\n+            if (calls === 1) {\n+                assert.equal(owner.lease.isCurrent(), true)\n+                assert.equal(new Request(input, init).signal.aborted, false)\n+                return new Response(null, { status: 401 })\n+            }\n+            return Response.json({ data: 'retired' })\n+        }\n+        await assert.rejects(owner.fetch(ownerUrl), stale)\n+        assert.equal(validityChecks, 2)\n+        assert.equal(refreshes, 1)\n+        assert.equal(owner.lease.signal.aborted, true)\n+        assert.equal(calls, 1)\n+    })\n+}\ndiff --git a/src/helpers/generateSrvAuthBindings.ts b/src/helpers/generateSrvAuthBindings.ts\nindex 4304dd6..97a1bec 100644\n--- a/src/helpers/generateSrvAuthBindings.ts\n+++ b/src/helpers/generateSrvAuthBindings.ts\n@@ -187,15 +187,23 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void,\n \n     function attachContext(context: SharedContextController) {\n         if (contexts.has(context)) return\n-        contexts.add(context)\n         let observed = context.getSnapshot().generation\n-        context.subscribe(snapshot => {\n+        let disposed = false\n+        let unsubscribe: (() => void) | undefined\n+        unsubscribe = context.subscribe(snapshot => {\n             if (snapshot.generation !== observed) {\n                 observed = snapshot.generation\n                 invalidateRequests()\n             }\n-            if (snapshot.status === 'disposed') contexts.delete(context)\n+            if (snapshot.status === 'disposed') {\n+                disposed = true\n+                contexts.delete(context)\n+                unsubscribe?.()\n+            }\n         })\n+        // Retain only a successful subscription, including synchronous disposal callbacks.\n+        if (disposed) { unsubscribe(); return }\n+        contexts.add(context)\n         invalidateRequests()\n     }\n \n@@ -835,10 +843,18 @@ export function createSrvAuthContextOwnerClient(\n             headers.set('Authorization', `Bearer ${token}`)\n             return new Request(request.clone(), { headers, redirect: 'error', signal: AbortSignal.any([request.signal, lease.signal]) })\n         }\n-        let response = await lease.run(async () => fetch(await authorizedRequest()))\n+        let response = await lease.run(async () => {\n+            const authorized = await authorizedRequest()\n+            lease.assertCurrent()\n+            return fetch(authorized)\n+        })\n         if (response.status === 401) {\n             await lease.run(() => auth.getNewJwtToken())\n-            response = await lease.run(async () => fetch(await authorizedRequest()))\n+            response = await lease.run(async () => {\n+                const authorized = await authorizedRequest()\n+                lease.assertCurrent()\n+                return fetch(authorized)\n+            })\n         }\n         return response\n     }\ndiff --git a/src/helpers/initTadaBrowserClient.ts b/src/helpers/initTadaBrowserClient.ts\nindex 9fca2d8..d7da22f 100644\n--- a/src/helpers/initTadaBrowserClient.ts\n+++ b/src/helpers/initTadaBrowserClient.ts\n@@ -62,7 +62,9 @@ export interface InitTadaBrowserClientOptions {\n  * from just a `service` name. URL resolution (`resolveSrvUrl`) and JWT binding\n  * (`getCachedJwtInternal` / `isJwtValidInternal`) are wired internally.\n  */\n-export function initTadaBrowserClient(options: InitTadaBrowserClientOptions | CreateContextTadaBrowserClientOptions) {\n+export function initTadaBrowserClient(options: InitTadaBrowserClientOptions): ReturnType<typeof createTadaBrowserClient>\n+export function initTadaBrowserClient(options: CreateContextTadaBrowserClientOptions): ReturnType<typeof createTadaBrowserClient>\n+export function initTadaBrowserClient(options: InitTadaBrowserClientOptions | CreateContextTadaBrowserClientOptions): ReturnType<typeof createTadaBrowserClient> {\n     // Return before resolving any environment/metadata or global auth getter.\n     if ('contextBinding' in options) return createTadaBrowserClient(options)\n     const { service, path = '/v1/graphql', resolveExchanges } = options\n",
+    "full_15_commands": [
+      {
+        "name": "frozen-source-consumer",
+        "argv": [
+          "node",
+          "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers/node_modules/typescript/bin/tsc",
+          "-p",
+          "tsconfig.consumer.json"
+        ],
+        "cwd": "/private/tmp/asma-8342-api-attach-correction/frozen",
+        "started": "2026-10-03T13:45:34.514835+00:00",
+        "ended": "2026-10-03T13:45:34.759103+00:00",
+        "exit": 1,
+        "stdout": "src/_consumer.ts(11,29): error TS7006: Parameter 'ctx' implicitly has an 'any' type.\nsrc/_consumer.ts(15,29): error TS7006: Parameter 'ctx' implicitly has an 'any' type.\nsrc/_consumer.ts(20,29): error TS7006: Parameter 'ctx' implicitly has an 'any' type.\nsrc/_consumer.ts(29,29): error TS7006: Parameter 'ctx' implicitly has an 'any' type.\n",
+        "stderr": "",
+        "stdout_sha256": "42a69e5596ad8f920264ac66767af88c8a3e6cd2e789f1d1ad6eccba4b12d280",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "environment_overrides": {
+          "pnpm_config_verify_deps_before_run": "false",
+          "COREPACK_ENABLE_NETWORK": "0",
+          "TSX_DISABLE_CACHE": "1",
+          "CI": "1",
+          "NO_COLOR": "1"
+        },
+        "exit_capture": "subprocess.run returncode for this command, independently; no pipeline or tail"
+      },
+      {
+        "name": "frozen-build",
+        "argv": [
+          "node",
+          "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers/node_modules/typescript/bin/tsc",
+          "-p",
+          "tsconfig.build.json"
+        ],
+        "cwd": "/private/tmp/asma-8342-api-attach-correction/frozen",
+        "started": "2026-10-03T13:45:34.759717+00:00",
+        "ended": "2026-10-03T13:45:35.204078+00:00",
+        "exit": 0,
+        "stdout": "",
+        "stderr": "",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "environment_overrides": {
+          "pnpm_config_verify_deps_before_run": "false",
+          "COREPACK_ENABLE_NETWORK": "0",
+          "TSX_DISABLE_CACHE": "1",
+          "CI": "1",
+          "NO_COLOR": "1"
+        },
+        "exit_capture": "subprocess.run returncode for this command, independently; no pipeline or tail"
+      },
+      {
+        "name": "frozen-emitted-consumer",
+        "argv": [
+          "node",
+          "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers/node_modules/typescript/bin/tsc",
+          "-p",
+          "tsconfig.emitted-consumer.json"
+        ],
+        "cwd": "/private/tmp/asma-8342-api-attach-correction/frozen",
+        "started": "2026-10-03T13:45:35.205089+00:00",
+        "ended": "2026-10-03T13:45:35.322229+00:00",
+        "exit": 1,
+        "stdout": "lib/_consumer.ts(11,29): error TS7006: Parameter 'ctx' implicitly has an 'any' type.\nlib/_consumer.ts(15,29): error TS7006: Parameter 'ctx' implicitly has an 'any' type.\nlib/_consumer.ts(20,29): error TS7006: Parameter 'ctx' implicitly has an 'any' type.\nlib/_consumer.ts(29,29): error TS7006: Parameter 'ctx' implicitly has an 'any' type.\n",
+        "stderr": "",
+        "stdout_sha256": "85c6c5a2c6c451ff3c30e647870010f725f56c816f98dae20a3ebb6e71ca8008",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "environment_overrides": {
+          "pnpm_config_verify_deps_before_run": "false",
+          "COREPACK_ENABLE_NETWORK": "0",
+          "TSX_DISABLE_CACHE": "1",
+          "CI": "1",
+          "NO_COLOR": "1"
+        },
+        "exit_capture": "subprocess.run returncode for this command, independently; no pipeline or tail"
+      },
+      {
+        "name": "frozen-disposed",
+        "argv": [
+          "node",
+          "--import",
+          "tsx",
+          "--test",
+          "--test-name-pattern=disposed attachment failure",
+          "src/helpers/generateSrvAuthBindings.test.ts"
+        ],
+        "cwd": "/private/tmp/asma-8342-api-attach-correction/frozen",
+        "started": "2026-10-03T13:45:35.322990+00:00",
+        "ended": "2026-10-03T13:45:35.712419+00:00",
+        "exit": 1,
+        "stdout": "✖ disposed attachment failure cannot poison a later login or replacement (30.243042ms)\nℹ Error: Test hook \"after\" at src/helpers/generateSrvAuthBindings.test.ts:1:1618 generated asynchronous activity after the test ended. This activity created the error \"SharedContextError: cleanup_failed\" and would have caused the test to fail, but instead triggered an unhandledRejection event.\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 310.453917\n\n✖ failing tests:\n\ntest at src/helpers/generateSrvAuthBindings.test.ts:1:3035\n✖ disposed attachment failure cannot poison a later login or replacement (30.243042ms)\n  Error [SharedContextError]: cleanup_failed\n      at invalidateContexts (/private/tmp/asma-8342-api-attach-correction/frozen/src/helpers/generateSrvAuthBindings.ts:208:27)\n      at resetData (/private/tmp/asma-8342-api-attach-correction/frozen/src/helpers/generateSrvAuthBindings.ts:387:9)\n      at setAuthData (/private/tmp/asma-8342-api-attach-correction/frozen/src/helpers/generateSrvAuthBindings.ts:395:9)\n      at <anonymous> (/private/tmp/asma-8342-api-attach-correction/frozen/src/helpers/generateSrvAuthBindings.ts:236:17)\n      at async _handleSrvAuthRequest (/private/tmp/asma-8342-api-attach-correction/frozen/src/helpers/generateSrvAuthBindings.ts:244:22)\n      at async TestContext.<anonymous> (/private/tmp/asma-8342-api-attach-correction/frozen/src/helpers/generateSrvAuthBindings.test.ts:69:5)\n      at async Test.run (node:internal/test_runner/test:1110:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {\n    code: 'cleanup_failed'\n  }\n",
+        "stderr": "",
+        "stdout_sha256": "b60b67f93f554514700d9202d8c5a3a189b95b2f893eb08b48bc143f69c4671c",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "environment_overrides": {
+          "pnpm_config_verify_deps_before_run": "false",
+          "COREPACK_ENABLE_NETWORK": "0",
+          "TSX_DISABLE_CACHE": "1",
+          "CI": "1",
+          "NO_COLOR": "1"
+        },
+        "exit_capture": "subprocess.run returncode for this command, independently; no pipeline or tail"
+      },
+      {
+        "name": "frozen-unsubscribable",
+        "argv": [
+          "node",
+          "--import",
+          "tsx",
+          "--test",
+          "--test-name-pattern=failed subscription does not retain",
+          "src/helpers/generateSrvAuthBindings.test.ts"
+        ],
+        "cwd": "/private/tmp/asma-8342-api-attach-correction/frozen",
+        "started": "2026-10-03T13:45:35.713064+00:00",
+        "ended": "2026-10-03T13:45:36.052614+00:00",
+        "exit": 1,
+        "stdout": "✖ failed subscription does not retain an otherwise live controller (28.309916ms)\nℹ Error: Test hook \"after\" at src/helpers/generateSrvAuthBindings.test.ts:1:1618 generated asynchronous activity after the test ended. This activity created the error \"SharedContextError: cleanup_failed\" and would have caused the test to fail, but instead triggered an unhandledRejection event.\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 262.320958\n\n✖ failing tests:\n\ntest at src/helpers/generateSrvAuthBindings.test.ts:1:3832\n✖ failed subscription does not retain an otherwise live controller (28.309916ms)\n  Error [SharedContextError]: cleanup_failed\n      at invalidateContexts (/private/tmp/asma-8342-api-attach-correction/frozen/src/helpers/generateSrvAuthBindings.ts:208:27)\n      at resetData (/private/tmp/asma-8342-api-attach-correction/frozen/src/helpers/generateSrvAuthBindings.ts:387:9)\n      at setAuthData (/private/tmp/asma-8342-api-attach-correction/frozen/src/helpers/generateSrvAuthBindings.ts:395:9)\n      at <anonymous> (/private/tmp/asma-8342-api-attach-correction/frozen/src/helpers/generateSrvAuthBindings.ts:236:17)\n      at async _handleSrvAuthRequest (/private/tmp/asma-8342-api-attach-correction/frozen/src/helpers/generateSrvAuthBindings.ts:244:22)\n      at async TestContext.<anonymous> (/private/tmp/asma-8342-api-attach-correction/frozen/src/helpers/generateSrvAuthBindings.test.ts:89:5)\n      at async Test.run (node:internal/test_runner/test:1110:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {\n    code: 'cleanup_failed'\n  }\n",
+        "stderr": "",
+        "stdout_sha256": "2dfb49e7664654e3f51e9c8c8b9e70dafd3d41c31ec4161ebf9bdc59dd2f7c26",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "environment_overrides": {
+          "pnpm_config_verify_deps_before_run": "false",
+          "COREPACK_ENABLE_NETWORK": "0",
+          "TSX_DISABLE_CACHE": "1",
+          "CI": "1",
+          "NO_COLOR": "1"
+        },
+        "exit_capture": "subprocess.run returncode for this command, independently; no pipeline or tail"
+      },
+      {
+        "name": "frozen-unsubscribe",
+        "argv": [
+          "node",
+          "--import",
+          "tsx",
+          "--test",
+          "--test-name-pattern=successful attachment unsubscribes",
+          "src/helpers/generateSrvAuthBindings.test.ts"
+        ],
+        "cwd": "/private/tmp/asma-8342-api-attach-correction/frozen",
+        "started": "2026-10-03T13:45:36.053208+00:00",
+        "ended": "2026-10-03T13:45:36.381321+00:00",
+        "exit": 1,
+        "stdout": "✖ successful attachment unsubscribes on disposal and permits login (32.335208ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 251.494417\n\n✖ failing tests:\n\ntest at src/helpers/generateSrvAuthBindings.test.ts:1:4387\n✖ successful attachment unsubscribes on disposal and permits login (32.335208ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  0 !== 1\n  \n      at TestContext.<anonymous> (/private/tmp/asma-8342-api-attach-correction/frozen/src/helpers/generateSrvAuthBindings.test.ts:111:12)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1103:25)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 0,\n    expected: 1,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+        "stderr": "",
+        "stdout_sha256": "2c8b7de6c15de787a2ab8c6fad0318f1111419863d36b884505695575382b803",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "environment_overrides": {
+          "pnpm_config_verify_deps_before_run": "false",
+          "COREPACK_ENABLE_NETWORK": "0",
+          "TSX_DISABLE_CACHE": "1",
+          "CI": "1",
+          "NO_COLOR": "1"
+        },
+        "exit_capture": "subprocess.run returncode for this command, independently; no pipeline or tail"
+      },
+      {
+        "name": "corrected-focused",
+        "argv": [
+          "node",
+          "--import",
+          "tsx",
+          "--test",
+          "src/context/createSharedContext.test.ts",
+          "src/helpers/generateSrvAuthBindings.test.ts",
+          "src/helpers/createTadaBrowserClient.test.ts"
+        ],
+        "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+        "started": "2026-10-03T13:46:41.046832+00:00",
+        "ended": "2026-10-03T13:46:41.611399+00:00",
+        "exit": 0,
+        "stdout": "✔ reentrant cleanup cannot publish before all old capabilities are revoked (7.202833ms)\n✔ requires host publication; pending/anonymous/denied never inherit actor or selected record (1.274625ms)\n✔ actor remains separate from owner-authorized participant/ward; deselection is explicit null (1.607416ms)\n✔ snapshots copy only safe fields and cannot be changed through retained producer objects (0.320333ms)\n✔ rejects wrong revision, tenant, missing record, conflicting self/ward and UNKNOWN journal (0.242042ms)\n✔ old lookups cannot publish after a newer organization/record lookup resolves (0.173333ms)\n✔ invalidation revokes before every cleanup and denies late work even when abort is ignored (0.365458ms)\n✔ role/org/record changes and A→B→A never resurrect prior leases (0.248666ms)\n✔ unmount revokes that instance, unsubscribes it and cannot affect another concurrent mount (0.398833ms)\n✔ expiry revokes without interaction, and delayed timers cannot permit a lease at the deadline (0.637458ms)\n✔ incompatible consumer denies without globals; cleanup failures revoke every lease (0.208958ms)\n✔ owner factory and request completions cannot escape revocation; other endpoints deny (25.601458ms)\n✔ reconnect and retained subscription callbacks cannot refill a cleared owner cache (0.242709ms)\n✔ bound clients use owner capabilities, dedup creation within a generation and rebuild across actor/record changes (38.859334ms)\n✔ async owner factory completion after a newer generation cannot install a stale cached client (3.069417ms)\n✔ async exchange setup must recheck mount liveness before returning or caching a client (3.317792ms)\n✔ revocation settles an active query without protected data even when the fetch ignores abort (1.3995ms)\n✔ outer guard sanitizes cached and streamed results, forwards teardown and denies old-client reconnect (0.650708ms)\n✔ disposing one instance cannot revoke another mounted owner client (0.877958ms)\n✔ legacy API retains auth headers, exchange callbacks, client caching and anonymous option (1.872375ms)\n✔ bound init returns before any global auth or environment fallback (0.732958ms)\n✔ disposed attachment failure cannot poison a later login or replacement (34.585458ms)\n✔ failed subscription does not retain an otherwise live controller (3.55725ms)\n✔ successful attachment unsubscribes on disposal and permits login (1.091125ms)\n✔ live cleanup failure clears credentials and revokes every context before reporting failure (2.443625ms)\n✔ legacy producer is reused; login invalidates but cannot authorize or publish a selected record (0.731542ms)\n✔ failed signout clears credentials, metadata, context and caches before logout observers (1.541958ms)\n✔ late signout success carrying metadata cannot overwrite a newer login (1.508625ms)\n✔ GET dedup includes full query and headers; ceremonies are never coalesced (3.170666ms)\n✔ record change retires pending auth lookup; an old response cannot install credentials (0.66125ms)\n✔ late token refresh failure cannot sign out the replacement actor/customer/role (0.91225ms)\n✔ expiry clears every cached identity/grant read even when the timer is delayed (1.081916ms)\n✔ activity cache and pending dedup are generation scoped; old completion cannot refill after deselection (1.733208ms)\n✔ explicit activity invalidation rejects an abort-ignoring pending request and permits a new lookup (0.697833ms)\n✔ owner capability never exposes credentials and denies late JWT resolution after unmount (2.625333ms)\n✔ owner 401 refresh rechecks generation and mount liveness; stale refresh cannot retry (1.567333ms)\n✔ owner adapter preserves a current-generation 401 retry and rejects foreign endpoints (1.248042ms)\n✔ owner initial dispatch denies generation revocation queued before its await continuation (2.000084ms)\n✔ owner retry dispatch denies generation revocation queued before its await continuation (1.335792ms)\n✔ owner initial dispatch denies unmount revocation queued before its await continuation (0.629875ms)\n✔ owner retry dispatch denies unmount revocation queued before its await continuation (0.67025ms)\nℹ tests 41\nℹ suites 0\nℹ pass 41\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 464.282042\n",
+        "stderr": "",
+        "stdout_sha256": "a4d494ddcaadb21db3689f082f84aaf8ce6bd07f95d58cce5a8f31c6f8fff9ac",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "environment_overrides": {
+          "pnpm_config_verify_deps_before_run": "false",
+          "COREPACK_ENABLE_NETWORK": "0",
+          "TSX_DISABLE_CACHE": "1",
+          "CI": "1",
+          "NO_COLOR": "1"
+        },
+        "exit_capture": "subprocess.run returncode for this command, independently; no pipeline or tail"
+      },
+      {
+        "name": "corrected-types",
+        "argv": [
+          "node",
+          "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers/node_modules/typescript/bin/tsc",
+          "--noEmit"
+        ],
+        "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+        "started": "2026-10-03T13:46:41.612393+00:00",
+        "ended": "2026-10-03T13:46:42.139097+00:00",
+        "exit": 0,
+        "stdout": "",
+        "stderr": "",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "environment_overrides": {
+          "pnpm_config_verify_deps_before_run": "false",
+          "COREPACK_ENABLE_NETWORK": "0",
+          "TSX_DISABLE_CACHE": "1",
+          "CI": "1",
+          "NO_COLOR": "1"
+        },
+        "exit_capture": "subprocess.run returncode for this command, independently; no pipeline or tail"
+      },
+      {
+        "name": "corrected-full",
+        "argv": [
+          "node",
+          "--import",
+          "tsx",
+          "--test",
+          "src/**/*.test.ts"
+        ],
+        "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+        "started": "2026-10-03T13:47:50.410305+00:00",
+        "ended": "2026-10-03T13:47:52.640580+00:00",
+        "exit": 0,
+        "stdout": "▶ applyOperation\n  ✔ bumps the revision by one and leaves its input untouched (1.521042ms)\n  ✔ inserts at the requested index and clamps one past the end (0.157708ms)\n  ✔ moves by removing first, so the index counts the other questions only (0.089542ms)\n  ✔ creates an ordered grid-owned column without adding it to the top-level order (0.122459ms)\n  ✔ refuses every grid-column operation through a non-grid question (0.303667ms)\n  ✔ moves a column only inside its grid and refuses to inject it into the top-level order (0.120458ms)\n  ✔ sets and clears a grid column layout as one atomic placement (0.115417ms)\n  ✔ deletes a column from grid cells and every convention-named presentation map (0.639167ms)\n  ✔ drops the bindings that targeted a deleted question, keeping the shared node (0.232625ms)\n  ✔ removes a collection that just became empty rather than storing it empty (0.205584ms)\n  ✔ writes a nested per-type field through a dotted path (0.154875ms)\n  ✔ removes the nested group when its last key is unset, never storing it empty (0.081625ms)\n  ✔ keeps sibling keys when one nested key is unset (0.082625ms)\n  ✔ does not mutate the document a nested write was derived from (0.066416ms)\n  ✔ renames an alternative in place, keeping the id every answer references (0.136416ms)\n  ✔ reorders alternatives without touching their values (0.085625ms)\n  ✔ refuses to edit or move an alternative through the wrong question (0.104167ms)\n  ✔ refuses to edit an alternative that does not exist (0.05675ms)\n  ✔ refuses a duplicate create as a conflict (0.069042ms)\n  ✔ reports an unknown op in the shape the service error resolver maps (0.0885ms)\n  ✔ drops a deleted question's own rule records along with its order entries (0.211ms)\n  ✔ stores narrative and qnr rules in root collections with per-question primitive order (0.172ms)\n  ✔ drops the prefill rules that fill a deleted question, and its highlight settings (0.084542ms)\n  ✔ keeps a prefill rule that merely SOURCES from the deleted question, dangling (0.074667ms)\n  ✔ keeps the highlight settings of a question whose rules are stored but disabled (0.10375ms)\n  ✔ keeps another question's rule that references the deleted question, for validation to surface (0.082917ms)\n  ✔ rejects a binding update that would put two bindings on one target (0.124708ms)\n  ✔ moves a rule instead of listing it under two questions when it is set again elsewhere (0.072208ms)\n  ✔ refuses to set a rule on a question that does not exist (0.169042ms)\n  ✔ refuses to delete or edit a grid row through the wrong grid (0.143417ms)\n  ✔ refuses to delete an alternative through the wrong question (0.099333ms)\n  ✔ moves a grid row relative to its anchor, and to the front on a null anchor (0.128708ms)\n  ✔ reserves the column list and the row-editor layout for the grid-column operations (16.970875ms)\n  ✔ refuses to write a question's type, so a grid cannot be flipped out from under its columns (0.232666ms)\n  ✔ drops a deleted question from every grid's column list (0.119833ms)\n  ✔ drops the grid config key when its last field goes with a deleted column (0.080542ms)\n  ✔ takes a deleted grid's columns and predefined rows with it (0.375917ms)\n  ✔ deletes a grid whose column list is malformed without recursing forever (0.077666ms)\n  ✔ attaches a mapping root and maintains bindingOrder across create and delete (0.23875ms)\n  ✔ adopts bindings authored before the tree was attached into bindingOrder (0.09625ms)\n  ✔ rejects a dataMapping on a node that is not a root, and cascades the tree on delete (0.284708ms)\n✔ applyOperation (25.39025ms)\n▶ mappingBinding behaviours\n  ✔ stores a behaviour the author narrowed away from its default (0.114416ms)\n  ✔ omits each behaviour the author explicitly set to its own default (DOC-LAW-2) (0.085375ms)\n  ✔ makes an explicitly-defaulted binding byte-identical to an untouched one (0.460542ms)\n  ✔ sets, replaces and unsets a behaviour through update (0.066959ms)\n  ✔ leaves a behaviour alone when the patch does not name it (0.059458ms)\n  ✔ never writes an explicit null into the document (0.058875ms)\n  ✔ hydrates absent behaviours to the defaults every reader must agree on (0.059916ms)\n  ✔ reads exactly the starred cardinalities as multi-valued (0.082667ms)\n✔ mappingBinding behaviours (1.086833ms)\n▶ applyOperation determinism\n  ✔ exercises every ASMA-7676 operation in the seeded generator (11.778833ms)\n  ✔ reproduces the identical document from the same seed (3.523541ms)\n  ✔ different seeds produce different documents (5.631042ms)\n✔ applyOperation determinism (21.481416ms)\n▶ DOC-LAW invariants under random op sequences\n  ✔ holds for seed 4 (4.919083ms)\n  ✔ holds for seed 7 (4.683ms)\n  ✔ holds for seed 13 (3.476791ms)\n  ✔ holds for seed 99 (3.728292ms)\n✔ DOC-LAW invariants under random op sequences (16.982583ms)\n▶ the combined repair operations are reached by the property run\n  ✔ applies each new operation successfully and refuses each at least once (332.1535ms)\n✔ the combined repair operations are reached by the property run (332.278375ms)\n▶ canonicalization stability\n  ✔ is a fixed point (2.225542ms)\n  ✔ ignores object key order (2.201709ms)\n  ✔ normalises NFC and NFD spellings to the same bytes (§8.2) (0.137541ms)\n✔ canonicalization stability (4.688667ms)\n▶ hash round-trips and golden vectors\n  ✔ matches the pinned golden hash for a fixed document (5.876084ms)\n  ✔ agrees with node:crypto on the same canonical bytes (WebCrypto ↔ sync) (15.535583ms)\n  ✔ round-trips: equal canonical bytes ⇔ equal hash (18.428833ms)\n✔ hash round-trips and golden vectors (40.470875ms)\n▶ question type register\n  ✔ maps every legacy type to a v2 type (0.621667ms)\n  ✔ round-trips every type in both directions (5.488709ms)\n  ✔ covers the whole v2 union, so no type is reachable only from legacy (14.509959ms)\n  ✔ renames CompositeQuestion and nothing else (0.104291ms)\n  ✔ refuses an unknown legacy type instead of passing it through (0.06175ms)\n✔ question type register (21.610584ms)\n▶ document schemas\n  ✔ accepts the empty template document (0.979708ms)\n  ✔ rejects explicit null and unknown question types (1.4125ms)\n  ✔ leaves empty-collection rejection to the instance lint (DOC-LAW-2, layered) (0.391417ms)\n  ✔ accepts a fully-populated document in minimal form (0.929583ms)\n✔ document schemas (4.274584ms)\n▶ question ownership invariant\n  ✔ admits `grid` on a question grid alone (0.279792ms)\n  ✔ does not read a non-grid question as a column owner (0.830375ms)\n  ✔ reports orphaned, top-level-and-column, multi-grid, and dangling column questions (0.1995ms)\n✔ question ownership invariant (1.416916ms)\n▶ schema lint (DOC-LAW-1 / DOC-LAW-2, by construction)\n  ✔ finds no violations in the template document schema (1.047708ms)\n  ✔ finds no violations in the answer document schema with its null exception (0.179625ms)\n  ✔ flags an array of objects in a synthetic schema (0.995417ms)\n  ✔ flags a null union in a synthetic schema (0.341875ms)\n  ✔ honours the answer-document null exception at answer-value leaves (0.604708ms)\n✔ schema lint (DOC-LAW-1 / DOC-LAW-2, by construction) (3.314ms)\n▶ binding-target uniqueness\n  ✔ finds two bindings sharing a target (0.124333ms)\n  ✔ treats gridColumn targets as distinct from question targets (0.05ms)\n✔ binding-target uniqueness (0.217583ms)\n▶ prefill and highlight contract (M-067 / M-068)\n  ✔ accepts the widened rule shapes and the two new collections (0.225583ms)\n  ✔ refuses a prefill rule with no source address (0.521792ms)\n  ✔ refuses a false in the true-only settings, so absent stays the only \"not set\" (0.166584ms)\n  ✔ keeps the new shapes inside the document laws (0.51725ms)\n  ✔ survives a reduction round trip unchanged (0.436ms)\n✔ prefill and highlight contract (M-067 / M-068) (1.94075ms)\n▶ DOC-LAW-2 default registry\n  ✔ treats sentinel-boolean defaults as omittable (0.066541ms)\n  ✔ never strips a scalar that merely equals false on a non-default path (0.047125ms)\n  ✔ hashes a spelled-out default identically to its absence (0.064542ms)\n  ✔ reports present-and-default keys on a stored document (0.048ms)\n✔ DOC-LAW-2 default registry (0.2795ms)\n▶ op schemas\n  ✔ validates a representative op and rejects an unknown one (0.391125ms)\n  ✔ accepts the explicit-unset tri-state in op payloads (0.109541ms)\n  ✔ accepts narrative rules and makes a qnr rule version reference unrepresentable (0.332125ms)\n  ✔ validates answer ops including the answer-side move (0.203583ms)\n✔ op schemas (1.093916ms)\n▶ schema ↔ vocabulary parity\n  ✔ the template op schema covers exactly IMPLEMENTED_OP_TYPES (0.074542ms)\n  ✔ the answer op schema covers exactly IMPLEMENTED_ANSWER_OP_TYPES (0.0365ms)\n  ✔ the answer document schema accepts a fresh answer document (0.102083ms)\n✔ schema ↔ vocabulary parity (0.255083ms)\n▶ mappingBinding behaviour schemas\n  ✔ accepts every declared behaviour value on the create op (0.216625ms)\n  ✔ refuses a behaviour value outside the closed set (0.290291ms)\n  ✔ refuses a behaviour value outside the closed set on a STORED binding too (0.667667ms)\n  ✔ admits null in an update patch and refuses it in the document (0.22075ms)\n  ✔ counts a stored behaviour at its default as a DOC-LAW-2 violation (0.074667ms)\n  ✔ never reads a mapping NODE cardinality as an omittable default (0.046125ms)\n✔ mappingBinding behaviour schemas (1.591416ms)\n▶ QnrQuestionBundle tab order\n  ✔ loses the authored order when it lives in key positions (23.713375ms)\n  ✔ normalizes shorter keys first, not plain alphabetically (0.100583ms)\n  ✔ round-trips the authored order through tabOrder (0.07575ms)\n  ✔ is absent, not empty, on a bundle with nothing to order (0.079125ms)\n✔ QnrQuestionBundle tab order (24.555458ms)\n▶ the released shapes still replay byte for byte\n  ✔ keeps mappingFilter.set with an operator outside the closed set (38.185916ms)\n  ✔ keeps action.create and action.updateField on an unknown kind, buffers included (0.355709ms)\n  ✔ reads an old broad stored action and filter (0.270083ms)\n✔ the released shapes still replay byte for byte (39.355292ms)\n▶ mappingFilter.setTyped\n  ✔ writes exactly the four operators and their canonical payloads (0.646458ms)\n  ✔ registers the filter in its node order, exactly once (0.125417ms)\n  ✔ deletes every stale member when the operator switches (0.1535ms)\n  ✔ refuses at the schema what the typed path may not express (19.248583ms)\n  ✔ refuses a node that does not exist (0.814958ms)\n✔ mappingFilter.setTyped (21.223333ms)\n▶ gridColumn.setFilter and setAction\n  ✔ inserts, moves and removes one member at a time (21.390708ms)\n  ✔ lets two authors add DIFFERENT filters concurrently without either being lost (0.160375ms)\n  ✔ refuses a filter on a question the grid does not own (0.109625ms)\n  ✔ keeps a grid action owned by at most one grid (0.21175ms)\n  ✔ reserves both lists from question.updateField, in both directions (8.088208ms)\n✔ gridColumn.setFilter and setAction (30.652042ms)\n▶ tab.setLayout\n  ✔ writes and clears a whole placement atomically (1.739333ms)\n  ✔ never tears a placement into a row/cell hybrid (0.133084ms)\n  ✔ lets concurrent moves of different questions both survive (0.281167ms)\n  ✔ reserves the placements map from tab.updateField (0.85275ms)\n  ✔ scrubs a deleted question from every tab layout (2.252542ms)\n  ✔ scrubs a deleted tab from every grid that named it as header (0.260292ms)\n✔ tab.setLayout (5.703416ms)\n▶ typed actions\n  ✔ creates a known action in minimal form (0.416125ms)\n  ✔ refuses actionType on a top-level action (0.146125ms)\n  ✔ cannot mint a UI edit buffer through the typed path (7.529083ms)\n  ✔ refuses UI buffers and reserved collections on a KNOWN action, and permits label (1.891125ms)\n  ✔ refuses the typed ops on a legacy unknown-kind record (0.544792ms)\n  ✔ keeps a top-level grid reference member-wise and ordered (0.458667ms)\n  ✔ lets two concurrent reference inserts both survive (0.168583ms)\n  ✔ refuses a reference to an action the grid does not own, or to a top-level one (0.277667ms)\n  ✔ writes canonical metadata and refuses the ambiguous shapes (1.358542ms)\n  ✔ keeps all:true through canonical reduction and the hash (0.783209ms)\n  ✔ refuses ambiguous metadata in the REDUCER too, not only at the wire (0.393792ms)\n  ✔ refuses metadata for a question that is not a column of the owning grid (0.142167ms)\n  ✔ scrubs references when a grid action is removed or deleted (0.273583ms)\n  ✔ scrubs a deleted column from the grid filter list, layout and widths (0.172667ms)\n✔ typed actions (15.280334ms)\n▶ the bundle carries a mapping fragment\n  ✔ types the four graph collections beside the question collections (0.122917ms)\n✔ the bundle carries a mapping fragment (0.153959ms)\n▶ tab membership\n  ✔ appends, does not duplicate, and moves to a clamped index (0.139916ms)\n  ✔ omits the emptied list and keeps the tab (0.077166ms)\n  ✔ refuses including a question the document does not have, but allows excluding one (0.288917ms)\n  ✔ two clients adding different members converge in either order (0.0705ms)\n  ✔ removing membership atomically drops that question count and placement (0.129875ms)\n  ✔ one question in two tabs leaves the other tab alone (0.065375ms)\n✔ tab membership (0.837541ms)\n▶ the counted-grid subset\n  ✔ counts a member grid and leaves membership and layout untouched (0.101334ms)\n  ✔ refuses a scalar question, a non-member grid, a missing question and a missing tab (0.374917ms)\n  ✔ refuses a DANGLING member id, so the existence check is what does the work (0.144833ms)\n  ✔ repairs every one of those malformed cases by excluding (0.078708ms)\n  ✔ does not add or remove membership (0.053541ms)\n✔ the counted-grid subset (0.809041ms)\n▶ tab.updateField reserves all three tab-owned collections\n  ✔ refuses the exact path, an ancestor and a descendant for each (0.059041ms)\n  ✔ still accepts the label and an unrelated legacy field (0.056208ms)\n  ✔ refuses a whole-snapshot write through every reserved spelling at the reducer (0.227292ms)\n✔ tab.updateField reserves all three tab-owned collections (0.391458ms)\n▶ question deletion scrubs all three tab locations\n  ✔ removes the id from membership, count and layout across multiple tabs (0.192583ms)\n  ✔ scrubs a recursively deleted grid column from every tab location (0.105125ms)\n✔ question deletion scrubs all three tab locations (0.337875ms)\n▶ tab.setLayout is not narrowed by the membership repair\n  ✔ still places a question that is not a member, so v0.31 logs replay (0.069ms)\n  ✔ produces a byte-identical tab to the one a v0.31 reducer produced (0.072917ms)\n✔ tab.setLayout is not narrowed by the membership repair (0.172083ms)\n▶ the canonical expression tokens\n  ✔ is injective where legacy was not (0.091875ms)\n  ✔ encodes the complete id as lowercase UTF-8 hex and round-trips non-ASCII (0.047833ms)\n  ✔ keeps the two token spaces disjoint (0.140125ms)\n  ✔ refuses every non-canonical spelling, including the legacy one (0.040375ms)\n✔ the canonical expression tokens (0.36325ms)\n▶ alternative.setExpressionFormula\n  ✔ writes the formula and its ordered targets as one value (0.223292ms)\n  ✔ omits an empty target list rather than storing [] (0.076833ms)\n  ✔ is draft-permissive: text and targets need not agree (0.097709ms)\n  ✔ refuses a duplicate, missing, wrong-type, Chart or flag-off target (0.61675ms)\n  ✔ refuses a wrong owner type and an alternative of another question (0.1755ms)\n  ✔ is last-writer-wins on the whole value, and different alternatives converge (0.07625ms)\n✔ alternative.setExpressionFormula (1.326375ms)\n▶ chartLegend.create\n  ✔ inserts the record and the order entry atomically, appending by default (0.156125ms)\n  ✔ clamps atIndex, which is what makes a bundle pick lossless (0.076209ms)\n  ✔ refuses an empty id or label, a duplicate id, and a duplicate label (0.273625ms)\n  ✔ refuses a non-Chart owner and a non-radar Chart (0.252208ms)\n✔ chartLegend.create (0.803166ms)\n▶ chartLegend.delete\n  ✔ removes the record and every order occurrence, and clears its owned assignments (0.139042ms)\n  ✔ prunes the emptied containers without deleting the Chart (0.075625ms)\n  ✔ leaves an identically-named legend on another Chart alone (0.121375ms)\n  ✔ repairs imported non-radar state and refuses an unknown legend (0.250166ms)\n✔ chartLegend.delete (0.628ms)\n▶ alternative.setChartLegend\n  ✔ derives the label from the owning legend and writes the whole value at once (0.0775ms)\n  ✔ replaces the whole value and clears it entirely (0.082208ms)\n  ✔ refuses a missing legend, a missing target, a Chart target and an unflagged target (0.331625ms)\n  ✔ refuses a wrong owner and a non-radar Chart, but still clears them (0.262167ms)\n  ✔ refuses a client-supplied label at the schema (0.287333ms)\n✔ alternative.setChartLegend (1.092416ms)\n▶ AC-9 deletion cascades\n  ✔ deleting a target scrubs the list, every token occurrence, and the Chart assignment (0.252625ms)\n  ✔ never substring-matches, so legacy text and other tokens are untouched (0.102041ms)\n  ✔ scrubs a recursively deleted grid column from a formula and an assignment (0.134208ms)\n  ✔ deleting an alternative scrubs only its own canonical token from its own question (0.144833ms)\n  ✔ prunes the emptied expression bag rather than leaving an empty string (0.093125ms)\n  ✔ leaves a legacy noncanonical token alone when its alternative goes (0.056458ms)\n✔ AC-9 deletion cascades (0.875042ms)\n▶ the AC-9 released bags are not narrowed\n  ✔ still writes every new path through the old updateField ops (0.213792ms)\n  ✔ keeps an imported pie/unknown chart and a malformed legend bag readable (0.145542ms)\n  ✔ replays a v0.31 alternative.updateField log to byte-identical bytes (0.071667ms)\n✔ the AC-9 released bags are not narrowed (0.46825ms)\n▶ the target gate refuses for the stated reason, not an incidental one\n  ✔ refuses a target whose flag is present but not true (51.4375ms)\n  ✔ refuses a Chart target even when its is_expression flag is on (1.103084ms)\n✔ the target gate refuses for the stated reason, not an incidental one (52.604708ms)\n▶ the Chart assignment label is derived even on a replayed op\n  ✔ ignores a label that reached the reducer without passing the schema (0.61925ms)\n✔ the Chart assignment label is derived even on a replayed op (0.665667ms)\n▶ alternative.delete rewrites only its own owner formula\n  ✔ does nothing when the owning question has no base formula, even if another question does (0.324417ms)\n✔ alternative.delete rewrites only its own owner formula (1.140458ms)\n▶ the alternative token recognizer enforces the same exact grammar as the target one\n  ✔ refuses uppercase, odd-length, empty and claimant spellings (1.278584ms)\n✔ the alternative token recognizer enforces the same exact grammar as the target one (1.770917ms)\n▶ the tab document members are typed, not admitted by the open index\n  ✔ refuses an array of objects and a non-string member for both lists (0.931917ms)\n  ✔ still validates the legal primitive-id arrays and an unrelated open member (2.720959ms)\n✔ the tab document members are typed, not admitted by the open index (3.712084ms)\n▶ the Expression/Chart target vocabulary\n  ✔ admits exactly the six selectable-or-LinearScale types (1.229458ms)\n  ✔ refuses every other type in the shared register (1.389583ms)\n  ✔ applies the same vocabulary to a Chart assignment target (1.096042ms)\n  ✔ covers the whole register, so a new question type cannot slip past undecided (0.051792ms)\n✔ the Expression/Chart target vocabulary (3.837625ms)\n▶ the typed unions are closed at compile time\n  ✔ is enforced by src/collaboration/typeContracts.ts, not from here (33.986292ms)\n✔ the typed unions are closed at compile time (34.591042ms)\n▶ the wire schema discriminates createTyped\n  ✔ refuses actionType on a topLevelAction (0.725667ms)\n  ✔ still accepts both legal shapes (0.170417ms)\n  ✔ refuses an invalid actionType on the gridAction arm (0.196375ms)\n✔ the wire schema discriminates createTyped (1.211709ms)\n▶ action.updateField on a known action is closed by a whitelist\n  ✔ refuses a field that is simply not in the vocabulary (1.5685ms)\n  ✔ permits exactly label on both kinds, and actionType only on a gridAction (0.948083ms)\n  ✔ explains WHICH rule refused, not merely that something did (0.153834ms)\n  ✔ validates the VALUE, so a permitted field cannot be written malformed (0.273417ms)\n  ✔ leaves LEGACY unknown-kind records completely unrestricted (0.134208ms)\n✔ action.updateField on a known action is closed by a whitelist (3.23875ms)\n▶ a grid may only own a known gridAction\n  ✔ refuses a topLevelAction and an unknown legacy action on include (0.203167ms)\n  ✔ still scrubs a malformed or legacy reference on include:false (0.2105ms)\n  ✔ keeps one-owner enforcement (0.155584ms)\n✔ a grid may only own a known gridAction (0.640458ms)\n▶ action.setMetadata does not depend on key order\n  ✔ refuses ambiguous metadata whichever grid appears first (0.15075ms)\n  ✔ names the ambiguity rather than a missing column (0.072458ms)\n  ✔ lets metadata:null repair an UNOWNED record (0.0765ms)\n  ✔ still requires the action itself to be a known gridAction, even for null (0.071917ms)\n✔ action.setMetadata does not depend on key order (0.440417ms)\n▶ mappingFilter.setTyped is validated in the reducer, not only at the wire\n  ✔ refuses every malformed payload that bypassed the wire (0.390041ms)\n  ✔ refuses an unknown operator instead of storing it as a boundless range (0.146083ms)\n  ✔ still accepts every legal payload and replaces canonically (0.255167ms)\n  ✔ leaves the legacy mappingFilter.set path untouched (0.097958ms)\n✔ mappingFilter.setTyped is validated in the reducer, not only at the wire (0.953125ms)\n▶ parseLegacyBindingOverride is total over three outcomes\n  ✔ separates absent from malformed, which a boolean guard would merge (0.081209ms)\n  ✔ accepts each single member and the all-member record (0.067458ms)\n  ✔ classifies every forbidden shape as malformed rather than known (0.079333ms)\n✔ parseLegacyBindingOverride is total over three outcomes (0.277791ms)\n▶ mappingBinding.setLegacyOverride is member-only\n  ✔ sets, replaces, clears, and leaves no empty object behind (0.363417ms)\n  ✔ is idempotent for the same value and last-writer-wins for the same binding (0.345167ms)\n  ✔ leaves node, field, target, options and every bindingOrder byte-identical (0.204166ms)\n  ✔ refuses a missing binding and refuses a malformed value on replay (17.230709ms)\n  ✔ changes on distinct bindings both survive (0.164084ms)\n✔ mappingBinding.setLegacyOverride is member-only (18.445041ms)\n▶ historical binding values stay readable and replayable\n  ✔ keeps an arbitrary stored override readable, and the parser calls it malformed (0.867042ms)\n  ✔ replays a v0.31 create/update log to a byte-identical document (0.111041ms)\n  ✔ survives canonical reduction when non-empty, and is pruned only by an explicit clear (0.298791ms)\n✔ historical binding values stay readable and replayable (1.3365ms)\n▶ reserved unresolved-evidence ids\n  ✔ is deterministic and disjoint by discriminator (0.135292ms)\n  ✔ is deliberately invalid under the engine MachineId grammar (0.077667ms)\n  ✔ recognizes exactly the canonical grammar (0.085916ms)\n  ✔ refuses every prefix claimant, which is what splits the quarantine into two classes (0.068833ms)\n  ✔ refuses to build from a digest that is not 64 lowercase hex characters (0.149666ms)\n  ✔ is usable as a node entityId and a binding fieldId that still validate (3.682583ms)\n✔ reserved unresolved-evidence ids (4.299166ms)\n▶ the setLegacyOverride op schema is closed at the wire\n  ✔ refuses an undeclared member on every arm of the union (0.823916ms)\n  ✔ refuses the empty record, an empty string, a wrong scalar and a nested object (0.257959ms)\n  ✔ accepts each legal arm and the null clear (0.079125ms)\n✔ the setLegacyOverride op schema is closed at the wire (1.223167ms)\n▶ the parser array guard is load-bearing\n  ✔ refuses an array carrying a whitelisted own-property (0.061375ms)\n✔ the parser array guard is load-bearing (0.087375ms)\n✔ reentrant cleanup cannot publish before all old capabilities are revoked (1.806625ms)\n✔ requires host publication; pending/anonymous/denied never inherit actor or selected record (1.16925ms)\n✔ actor remains separate from owner-authorized participant/ward; deselection is explicit null (0.2745ms)\n✔ snapshots copy only safe fields and cannot be changed through retained producer objects (0.195875ms)\n✔ rejects wrong revision, tenant, missing record, conflicting self/ward and UNKNOWN journal (0.216041ms)\n✔ old lookups cannot publish after a newer organization/record lookup resolves (0.160792ms)\n✔ invalidation revokes before every cleanup and denies late work even when abort is ignored (0.32925ms)\n✔ role/org/record changes and A→B→A never resurrect prior leases (0.240417ms)\n✔ unmount revokes that instance, unsubscribes it and cannot affect another concurrent mount (0.290625ms)\n✔ expiry revokes without interaction, and delayed timers cannot permit a lease at the deadline (0.665625ms)\n✔ incompatible consumer denies without globals; cleanup failures revoke every lease (0.187167ms)\n✔ owner factory and request completions cannot escape revocation; other endpoints deny (111.115042ms)\n✔ reconnect and retained subscription callbacks cannot refill a cleared owner cache (0.26775ms)\nadopusSlugFromJwt: subdomain claim 'undefined' is not a valid namespace slug\nadopusSlugFromJwt: subdomain claim '1-bad!' is not a valid namespace slug\n▶ namespaceDocument (transforms 1-3)\n  ✔ wraps the operation, prefixes variable definition types, leaves builtins alone (1.973708ms)\n  ✔ prefixes wrapped list/non-null variable types (0.189208ms)\n  ✔ prefixes inline and named fragment type conditions, at any depth (0.230709ms)\n  ✔ wraps mutations too (0.12625ms)\n✔ namespaceDocument (transforms 1-3) (3.086125ms)\n▶ denamespaceData (transforms 4-5)\n  ✔ unwraps the namespace and strips __typename prefixes deeply (1.061542ms)\n  ✔ leaves unprefixed __typename values and non-typename fields untouched (0.078708ms)\n  ✔ passes data through when the namespace key is absent (0.062875ms)\n✔ denamespaceData (transforms 4-5) (1.5925ms)\n▶ adopusSlugFromJwt\n  ✔ reads and sanitizes the subdomain claim (0.207209ms)\n  ✔ returns undefined for missing token, missing claim, or unsanitizable subdomain (0.56075ms)\n✔ adopusSlugFromJwt (0.859125ms)\n✔ bound clients use owner capabilities, dedup creation within a generation and rebuild across actor/record changes (70.822417ms)\n✔ async owner factory completion after a newer generation cannot install a stale cached client (1.383959ms)\n✔ async exchange setup must recheck mount liveness before returning or caching a client (30.099417ms)\n✔ revocation settles an active query without protected data even when the fetch ignores abort (2.232708ms)\n✔ outer guard sanitizes cached and streamed results, forwards teardown and denies old-client reconnect (0.818042ms)\n✔ disposing one instance cannot revoke another mounted owner client (3.238375ms)\n✔ legacy API retains auth headers, exchange callbacks, client caching and anonymous option (2.860125ms)\n✔ bound init returns before any global auth or environment fallback (0.81175ms)\n✔ forwards the exact request JWT to the upstream GraphQL service (48.2565ms)\n▶ generateEnvConfigsBindings (shared module instance)\n  ✔ throws when nothing has been registered yet (1.281708ms)\n  ✔ keeps every app's service resolvable after several apps register (no last-write-wins) (1.524083ms)\n✔ generateEnvConfigsBindings (shared module instance) (3.351625ms)\n✔ disposed attachment failure cannot poison a later login or replacement (39.574125ms)\n✔ failed subscription does not retain an otherwise live controller (1.340833ms)\n✔ successful attachment unsubscribes on disposal and permits login (0.919333ms)\n✔ live cleanup failure clears credentials and revokes every context before reporting failure (1.525584ms)\n✔ legacy producer is reused; login invalidates but cannot authorize or publish a selected record (14.44125ms)\n✔ failed signout clears credentials, metadata, context and caches before logout observers (1.209666ms)\n✔ late signout success carrying metadata cannot overwrite a newer login (0.662542ms)\n✔ GET dedup includes full query and headers; ceremonies are never coalesced (3.466917ms)\n✔ record change retires pending auth lookup; an old response cannot install credentials (0.592ms)\n✔ late token refresh failure cannot sign out the replacement actor/customer/role (0.467208ms)\n✔ expiry clears every cached identity/grant read even when the timer is delayed (1.412833ms)\n✔ activity cache and pending dedup are generation scoped; old completion cannot refill after deselection (3.819291ms)\n✔ explicit activity invalidation rejects an abort-ignoring pending request and permits a new lookup (0.919625ms)\n✔ owner capability never exposes credentials and denies late JWT resolution after unmount (1.846667ms)\n✔ owner 401 refresh rechecks generation and mount liveness; stale refresh cannot retry (2.819125ms)\n✔ owner adapter preserves a current-generation 401 retry and rejects foreign endpoints (1.076583ms)\n✔ owner initial dispatch denies generation revocation queued before its await continuation (0.624708ms)\n✔ owner retry dispatch denies generation revocation queued before its await continuation (0.687375ms)\n✔ owner initial dispatch denies unmount revocation queued before its await continuation (0.534583ms)\n✔ owner retry dispatch denies unmount revocation queued before its await continuation (0.575042ms)\n▶ generateSyntheticPnrWithRetries\n  ✔ uses individual numbers 000–499 for births in 1900–1999 (BankID RA century rule) (4.1125ms)\n  ✔ uses individual numbers 500–999 for births in 2000–2039 (0.190583ms)\n  ✔ encodes gender in the individual number parity (even = female, odd = male) (0.248083ms)\n  ✔ marks the number as synthetic by adding 80 to the month by default (0.062667ms)\n  ✔ produces 11 digits with valid mod-11 control digits (0.414791ms)\n✔ generateSyntheticPnrWithRetries (5.6395ms)\n▶ getInjectedPlatform\n  ✔ returns undefined when there is no window (node/SSR) (0.629ms)\n  ✔ reads window.__ASMA_PLATFORM__ (0.8425ms)\n  ✔ prefers window.rawWindow when present (qiankun child app) (0.101125ms)\n✔ getInjectedPlatform (2.107959ms)\n▶ getDefaultAppVersions\n  ✔ prefers the injected map over the fallback (first-hit wins) (0.143916ms)\n  ✔ falls back to the auth-response value when nothing is injected (0.108292ms)\n  ✔ falls back when the injected map is empty (treated as absent) (0.110833ms)\n  ✔ returns undefined when neither injected nor fallback is present (0.105792ms)\n✔ getDefaultAppVersions (0.600458ms)\n▶ isHtmlFragment\n  ✔ recognizes the marks TipTap actually emits (0.91675ms)\n  ✔ recognizes markup carrying attributes (0.074292ms)\n  ✔ ignores leading whitespace before the first tag (0.065125ms)\n  ✔ rejects plain text, including text that merely mentions brackets (0.066666ms)\n  ✔ rejects RTF-conversion artifacts that look bracket-ish (0.062167ms)\n  ✔ rejects non-string and empty inputs (0.044375ms)\n  ✔ detects markup that does not start at the first character (0.042042ms)\n  ✔ recognizes table markup, which pasted content can carry (0.041209ms)\n✔ isHtmlFragment (1.938666ms)\n▶ htmlToPlainText\n  ✔ returns non-HTML input byte-identical (0.168541ms)\n  ✔ returns an empty string for nullish input (0.080583ms)\n  ✔ drops inline marks and keeps the text (0.369791ms)\n  ✔ turns paragraphs into newline-separated lines (0.055792ms)\n  ✔ turns line breaks into newlines (0.05775ms)\n  ✔ prefixes list items with a dash (0.043042ms)\n  ✔ keeps headings as their own lines (0.049708ms)\n  ✔ decodes the entities TipTap emits (0.062459ms)\n  ✔ collapses the blank lines empty paragraphs would leave (0.045791ms)\n  ✔ degrades malformed markup to text rather than leaking tags (0.044583ms)\n  ✔ keeps table cells apart instead of running them together (0.042542ms)\n  ✔ never leaves an angle bracket from a real tag behind (0.052833ms)\n✔ htmlToPlainText (1.294584ms)\n▶ createSectionPath\n  ✔ parses the bare root as the default (no) tab (1.387709ms)\n  ✔ parses a known tab segment (0.146417ms)\n  ✔ treats an unknown tab segment as no tab (1.739625ms)\n  ✔ returns undefined outside the section, so an embedded widget never rewrites the URL (0.158709ms)\n  ✔ builds a tab path, defaulting to defaultTab (0.104875ms)\n  ✔ goToTab pushes the tab path with detail params stripped from the current search (0.318709ms)\n  ✔ replaceTab issues a replace, not a push (0.088208ms)\n  ✔ forwards a navigation-guard state marker verbatim (0.068375ms)\n  ✔ searchWithoutDetail is a no-op when nothing to strip (0.075667ms)\n✔ createSectionPath (4.797ms)\n▶ createDetailPath\n  ✔ parses the bare root as the list (no detail) (0.244583ms)\n  ✔ treats a non-UUID first segment as the list, not a detail id (0.104375ms)\n  ✔ parses a detail id with no tab (0.138833ms)\n  ✔ parses a detail id with a known tab (0.080375ms)\n  ✔ returns undefined outside the section (0.073291ms)\n  ✔ builds a detail path, defaulting the tab (0.069084ms)\n  ✔ goToList pushes the bare root with detail params stripped (0.120292ms)\n  ✔ goToDetail and replaceDetail push/replace the same shape (0.102583ms)\n✔ createDetailPath (1.095042ms)\n▶ DEFAULT_PHONE_COUNTRY\n  ✔ pre-selects Norway (ASMA-7485) (2.035375ms)\n✔ DEFAULT_PHONE_COUNTRY (2.589417ms)\n▶ listPhoneCountries\n  ✔ covers every supported country with its calling code (14.913875ms)\n  ✔ localizes names per locale instead of shipping a translation table (0.82525ms)\n  ✔ sorts by localized name, so the order differs between locales (0.588792ms)\n  ✔ memoizes per locale — the Intl lookup runs once per country (0.076667ms)\n✔ listPhoneCountries (19.52675ms)\n▶ getPhoneDialCode\n  ✔ returns the calling code without a plus (0.078708ms)\n✔ getPhoneDialCode (0.154125ms)\n▶ matchesPhoneCountry\n  ✔ matches by country name, case-insensitively (0.175375ms)\n  ✔ matches by calling code, with or without the plus (0.071ms)\n  ✔ keeps every row for an empty or whitespace query (0.053542ms)\n✔ matchesPhoneCountry (0.40075ms)\n▶ findCountryByDialCode\n  ✔ resolves the main country of a shared calling code (0.239875ms)\n  ✔ prefers the longest matching calling code (0.057292ms)\n  ✔ returns undefined when no calling code matches (0.040208ms)\n✔ findCountryByDialCode (0.400083ms)\n▶ phoneExample\n  ✔ supplies the actionable half of a validation message (REQ-003) (1.249833ms)\n  ✔ always yields something to show, even without example metadata (0.596334ms)\n✔ phoneExample (2.363708ms)\n▶ parsePhoneNr\n  ✔ canonicalises 45456565 under NO to +4745456565 (3.379292ms)\n  ✔ canonicalises 4745456565 under NO to +4745456565 (0.639625ms)\n  ✔ canonicalises 004745456565 under NO to +4745456565 (0.123041ms)\n  ✔ canonicalises +47 454 56 565 under NO to +4745456565 (0.077708ms)\n  ✔ canonicalises 47123456 under NO to +4747123456 (0.178417ms)\n  ✔ canonicalises +37379094538 under NO to +37379094538 (0.112958ms)\n  ✔ canonicalises 0701234567 under NO to INVALID (1.855667ms)\n  ✔ canonicalises 0701234567 under SE to +46701234567 (0.255209ms)\n  ✔ canonicalises 12345 under NO to INVALID (0.109292ms)\n  ✔ reports the country and calling code the value resolved to (0.144917ms)\n  ✔ separates an empty value from an invalid one so a report can tell them apart (0.07325ms)\n  ✔ reports rather than rewrites a number that is not real for the region (0.160416ms)\n✔ parsePhoneNr (7.914292ms)\n▶ parsePhoneValue\n  ✔ splits a stored E.164 value into country and national number (0.491167ms)\n  ✔ reads a pre-ASMA-7485 bare national number as the fallback country (0.263959ms)\n  ✔ keeps the caller country while a matching number is still being typed (0.233583ms)\n  ✔ switches country when the typed prefix belongs to another one (0.052291ms)\n  ✔ treats empty, whitespace and nullish values as an empty number (0.06125ms)\n  ✔ falls back to the given country for an unknown calling code (1.277292ms)\n✔ parsePhoneValue (2.489417ms)\n▶ toE164\n  ✔ composes the stored value from the country and the typed digits (0.400667ms)\n  ✔ drops mask separators so the stored value is digits and a plus only (0.128834ms)\n  ✔ stores nothing rather than a bare dial code for an empty number (0.048ms)\n  ✔ does not validate — an in-progress number must still round-trip (0.100542ms)\n  ✔ does not double a country code the input already carries (0.114333ms)\n  ✔ drops the trunk prefix countries write their national numbers with (2.376625ms)\n  ✔ keeps a genuine national number that merely starts with the dial code (0.1ms)\n  ✔ round-trips through parsePhoneValue (0.096416ms)\n✔ toE164 (3.494584ms)\n▶ formatNationalAsYouType\n  ✔ groups by the country format, progressively (1.99475ms)\n  ✔ uses each country own grouping, not a Norwegian one (0.329708ms)\n  ✔ groups countries that carry a trunk prefix, which the national format cannot (0.768459ms)\n  ✔ returns an empty string when there is nothing to format (0.06125ms)\n✔ formatNationalAsYouType (3.270166ms)\n▶ isValidPhone\n  ✔ accepts a real number for the country (0.166667ms)\n  ✔ rejects by country pattern, not merely by digit count (0.090042ms)\n  ✔ accepts a short number where the plan is genuinely short (0.137666ms)\n  ✔ rejects numbers outside the E.164 length bounds (0.042917ms)\n  ✔ accepts a number that is valid elsewhere but not for the selected country (0.06775ms)\n  ✔ ignores mask separators (0.060875ms)\n✔ isValidPhone (0.663125ms)\n▶ isValidPhoneValue\n  ✔ resolves the country from the stored value (0.173542ms)\n  ✔ validates a legacy bare number against the fallback country (0.106ms)\n  ✔ treats an empty value as invalid — emptiness is the required rule job (0.042208ms)\n✔ isValidPhoneValue (0.383667ms)\n▶ formatPhoneForDisplay\n  ✔ renders the international form for read-only views (0.549834ms)\n  ✔ upgrades a legacy bare number to the international form (0.127084ms)\n  ✔ returns an empty string for an empty value (0.037916ms)\n  ✔ shows a value it cannot resolve exactly as stored, inventing no country (0.217042ms)\n  ✔ resolves the same digits once the country is known (5.960834ms)\n✔ formatPhoneForDisplay (6.98125ms)\n▶ phoneTelHref\n  ✔ is the only place the tel: scheme is added (ASMA-7485) (0.356208ms)\n  ✔ carries no spaces or dashes (0.105125ms)\n  ✔ returns an empty string when there is nothing to dial (0.093ms)\n  ✔ still dials a value it cannot resolve, using the digits as stored (2.7205ms)\n  ✔ keeps a stored `+` and never invents one (0.134125ms)\n  ✔ offers no link when the value holds no number at all (0.057208ms)\n  ✔ still dials a legacy bare number that is valid for the fallback country (0.065542ms)\n✔ phoneTelHref (3.655333ms)\n▶ REQ-007 — the two parsers agree (TEST-009)\n  ✔ agrees on 45456565 (0.124666ms)\n  ✔ agrees on 48012345 (0.051583ms)\n  ✔ agrees on +4745456565 (0.040042ms)\n  ✔ agrees on 4745456565 (0.041667ms)\n  ✔ agrees on 004745456565 (0.053417ms)\n  ✔ agrees on +47 454 56 565 (0.048667ms)\n  ✔ agrees on +46701234567 (0.045375ms)\n  ✔ agrees on +37379094538 (0.092875ms)\n  ✔ agrees on 37376002949 (0.062625ms)\n  ✔ agrees on 0701234567 (0.052541ms)\n  ✔ agrees on 12345678 (0.03725ms)\n  ✔ agrees on 00000000 (0.04775ms)\n  ✔ agrees on 123 (0.028667ms)\n  ✔ agrees on ana@example.com (0.051375ms)\n  ✔ agrees on (empty) (0.018792ms)\n  ✔ still offers a country to edit with even when it does not know one (0.04525ms)\n✔ REQ-007 — the two parsers agree (TEST-009) (0.98325ms)\n▶ REQ-007 — idempotence (TEST-010)\n  ✔ normalising 45456565 twice changes nothing the second time (0.111291ms)\n  ✔ normalising +4745456565 twice changes nothing the second time (0.053292ms)\n  ✔ normalising 4745456565 twice changes nothing the second time (0.050709ms)\n  ✔ normalising 004745456565 twice changes nothing the second time (0.04975ms)\n  ✔ normalising +47 454 56 565 twice changes nothing the second time (0.057166ms)\n  ✔ normalising 0701234567 twice changes nothing the second time (0.058125ms)\n  ✔ normalising +46701234567 twice changes nothing the second time (0.043833ms)\n  ✔ normalising 2015550123 twice changes nothing the second time (0.079625ms)\n  ✔ is idempotent through parsePhoneNr as well (0.055541ms)\n✔ REQ-007 — idempotence (TEST-010) (0.652042ms)\n▶ REQ-007 — no value gains validity (TEST-011)\n  ✔ does not turn a Swedish national number into a Norwegian one (0.055667ms)\n  ✔ does not resolve a plus-less Moldovan number to Norway (0.036459ms)\n  ✔ keeps junk invalid rather than prefixing it (0.075542ms)\n✔ REQ-007 — no value gains validity (TEST-011) (0.246584ms)\n▶ REQ-007 — one case per measured shape class (TEST-012)\n  ✔ bare 8 digits · 90,190 rows (0.152ms)\n  ✔ already E.164 +47 · 1,730 rows (0.043458ms)\n  ✔ 47 + 8, no plus · 268 rows (0.036375ms)\n  ✔ contains separators · 127 rows (0.030916ms)\n  ✔ E.164, not Norway · 25 rows (0.030459ms)\n  ✔ 1–7 digits · 16 rows (0.028458ms)\n  ✔ 0047 + 8 · 9 rows (0.04875ms)\n  ✔ 9+ digits, no plus · 9 rows (0.02575ms)\n  ✔ leading zero national · 4 rows (0.028917ms)\n  ✔ contains @ · 26 rows (0.044083ms)\n✔ REQ-007 — one case per measured shape class (TEST-012) (0.59925ms)\n▶ REQ-007 — the shared-plan collision is known, not solved (TEST-013)\n  ✔ reads the same digits as two different valid numbers depending on the region (0.081166ms)\n  ✔ is why a default region may never stand in for a user choice (0.083459ms)\n✔ REQ-007 — the shared-plan collision is known, not solved (TEST-013) (0.200583ms)\n▶ validationMessages catalog\n  ✔ exposes distinct NB and EN strings for every key (1.740708ms)\n  ✔ MUT-004: wrong language must fail — nb required is not the en string (0.104583ms)\n  ✔ getValidationMessages applies shallow overrides (0.06275ms)\n✔ validationMessages catalog (2.510208ms)\n▶ errorWithHint\n  ✔ composes actionable \"what — how to fix\" (REQ-003) (0.066375ms)\n✔ errorWithHint (0.123875ms)\n▶ required\n  ✔ rejects empty, whitespace, null, undefined (0.566333ms)\n  ✔ accepts non-empty strings and other values (0.0605ms)\n✔ required (1.147709ms)\n▶ email\n  ✔ MUT-004: email without @ must fail (0.168666ms)\n  ✔ accepts a normal address (1.042709ms)\n✔ email (1.372125ms)\n▶ name\n  ✔ requires a Unicode uppercase first letter (5.444041ms)\n  ✔ accepts the real names it has to accept (0.099584ms)\n  ✔ accepts every dash an editor may have substituted for the typed hyphen (0.645084ms)\n  ✔ accepts both apostrophes — editors substitute the typographic one silently (0.063917ms)\n  ✔ treats Norwegian letters as ordinary letters (0.04975ms)\n  ✔ rejects digits anywhere, not just as the first character (0.12575ms)\n  ✔ rejects a lower-case opening and punctuation the set does not cover (0.095417ms)\n✔ name (8.304958ms)\n▶ nameChars\n  ✔ accepts every character a name is built from (1.394125ms)\n  ✔ rejects anything else, which is what lets the field name the real problem (0.317458ms)\n  ✔ agrees with nameRegex about every character it allows (1.297417ms)\n✔ nameChars (3.210916ms)\n▶ hasDigit\n  ✔ separates \"there is a number in here\" from every other name failure (0.086959ms)\n✔ hasDigit (0.125375ms)\n▶ phoneNr\n  ✔ matches the directory pilot regex (0.074417ms)\n✔ phoneNr (0.102375ms)\n▶ pattern\n  ✔ delegates to the given regex (0.074584ms)\n✔ pattern (0.097875ms)\n▶ pnr\n  ✔ accepts a valid Norwegian personal number via getValidNorwegianPersonalNumber (2.999666ms)\n  ✔ rejects invalid values (0.125875ms)\n✔ pnr (3.172542ms)\n▶ httpUrl\n  ✔ accepts ordinary web addresses (0.097208ms)\n  ✔ accepts ports, fragments, internationalised hosts and full path/query syntax (0.074458ms)\n  ✔ rejects non-web schemes and scheme-less input (0.084208ms)\n✔ httpUrl (0.303292ms)\nℹ tests 477\nℹ suites 95\nℹ pass 477\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 2138.311416\n",
+        "stderr": "",
+        "stdout_sha256": "ee5f891cef8ede794f20dfbf9b2723a7e4dd1baccd913e7727a7c5087a1651db",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "environment_overrides": {
+          "pnpm_config_verify_deps_before_run": "false",
+          "COREPACK_ENABLE_NETWORK": "0",
+          "TSX_DISABLE_CACHE": "1",
+          "CI": "1",
+          "NO_COLOR": "1"
+        },
+        "exit_capture": "subprocess.run returncode for this command, independently; no pipeline or tail"
+      },
+      {
+        "name": "corrected-source-consumer",
+        "argv": [
+          "node",
+          "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers/node_modules/typescript/bin/tsc",
+          "-p",
+          "tsconfig.consumer.json"
+        ],
+        "cwd": "/private/tmp/asma-8342-api-attach-correction/corrected",
+        "started": "2026-10-03T13:47:50.506230+00:00",
+        "ended": "2026-10-03T13:47:50.831402+00:00",
+        "exit": 0,
+        "stdout": "",
+        "stderr": "",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "environment_overrides": {
+          "pnpm_config_verify_deps_before_run": "false",
+          "COREPACK_ENABLE_NETWORK": "0",
+          "TSX_DISABLE_CACHE": "1",
+          "CI": "1",
+          "NO_COLOR": "1"
+        },
+        "exit_capture": "subprocess.run returncode for this command, independently; no pipeline or tail"
+      },
+      {
+        "name": "corrected-private-build",
+        "argv": [
+          "node",
+          "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers/node_modules/typescript/bin/tsc",
+          "-p",
+          "tsconfig.build.json"
+        ],
+        "cwd": "/private/tmp/asma-8342-api-attach-correction/corrected",
+        "started": "2026-10-03T13:47:50.832032+00:00",
+        "ended": "2026-10-03T13:47:51.529144+00:00",
+        "exit": 0,
+        "stdout": "",
+        "stderr": "",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "environment_overrides": {
+          "pnpm_config_verify_deps_before_run": "false",
+          "COREPACK_ENABLE_NETWORK": "0",
+          "TSX_DISABLE_CACHE": "1",
+          "CI": "1",
+          "NO_COLOR": "1"
+        },
+        "exit_capture": "subprocess.run returncode for this command, independently; no pipeline or tail"
+      },
+      {
+        "name": "corrected-emitted-consumer",
+        "argv": [
+          "node",
+          "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers/node_modules/typescript/bin/tsc",
+          "-p",
+          "tsconfig.emitted-consumer.json"
+        ],
+        "cwd": "/private/tmp/asma-8342-api-attach-correction/corrected",
+        "started": "2026-10-03T13:47:51.530265+00:00",
+        "ended": "2026-10-03T13:47:51.703063+00:00",
+        "exit": 0,
+        "stdout": "",
+        "stderr": "",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "environment_overrides": {
+          "pnpm_config_verify_deps_before_run": "false",
+          "COREPACK_ENABLE_NETWORK": "0",
+          "TSX_DISABLE_CACHE": "1",
+          "CI": "1",
+          "NO_COLOR": "1"
+        },
+        "exit_capture": "subprocess.run returncode for this command, independently; no pipeline or tail"
+      },
+      {
+        "name": "corrected-build",
+        "argv": [
+          "node",
+          "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers/node_modules/typescript/bin/tsc"
+        ],
+        "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+        "started": "2026-10-03T13:47:51.703683+00:00",
+        "ended": "2026-10-03T13:47:52.358336+00:00",
+        "exit": 0,
+        "stdout": "",
+        "stderr": "",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "environment_overrides": {
+          "pnpm_config_verify_deps_before_run": "false",
+          "COREPACK_ENABLE_NETWORK": "0",
+          "TSX_DISABLE_CACHE": "1",
+          "CI": "1",
+          "NO_COLOR": "1"
+        },
+        "exit_capture": "subprocess.run returncode for this command, independently; no pipeline or tail"
+      },
+      {
+        "name": "corrected-package",
+        "argv": [
+          "node",
+          "--import",
+          "tsx",
+          "--test",
+          "tests/*.test.ts"
+        ],
+        "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+        "started": "2026-10-03T13:47:52.359571+00:00",
+        "ended": "2026-10-03T13:47:53.149672+00:00",
+        "exit": 0,
+        "stdout": "✔ publishes the document contract validator from the collaboration subpath (429.064292ms)\n✔ publishes the ASMA-7683 combined repair surface from the collaboration subpath (4.713333ms)\n✔ imports the built phone subpath without browser globals (79.102833ms)\n✔ canonicalises from the built output, so backends and the backfill share one rule (2.189041ms)\n✔ imports the built server subpath without browser globals (22.319459ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 689.234875\n",
+        "stderr": "",
+        "stdout_sha256": "8c8b9a3ee074ec397312c2a16f2fe3a38cd81b976274f19675386b7c3319ac97",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "environment_overrides": {
+          "pnpm_config_verify_deps_before_run": "false",
+          "COREPACK_ENABLE_NETWORK": "0",
+          "TSX_DISABLE_CACHE": "1",
+          "CI": "1",
+          "NO_COLOR": "1"
+        },
+        "exit_capture": "subprocess.run returncode for this command, independently; no pipeline or tail"
+      },
+      {
+        "name": "corrected-diff-check",
+        "argv": [
+          "git",
+          "diff",
+          "--check"
+        ],
+        "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+        "started": "2026-10-03T13:47:53.150211+00:00",
+        "ended": "2026-10-03T13:47:53.174237+00:00",
+        "exit": 0,
+        "stdout": "",
+        "stderr": "",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "environment_overrides": {
+          "pnpm_config_verify_deps_before_run": "false",
+          "COREPACK_ENABLE_NETWORK": "0",
+          "TSX_DISABLE_CACHE": "1",
+          "CI": "1",
+          "NO_COLOR": "1"
+        },
+        "exit_capture": "subprocess.run returncode for this command, independently; no pipeline or tail"
+      }
+    ],
+    "functional_disposition": {
+      "ROOT_dispatch": "Retained initial+retry await-local Request then synchronous lease.assertCurrent immediately before fetch; no await intervenes. Four existing deterministic generation/unmount races green in41/477. Historical frozen source defect preserved. New lines846-857.",
+      "QA_P2": "Distinct public legacy and bound overloads for BOTH factories (create103-105/init65-67), union only implementation; unchanged client/return/auth/exchange behavior. Exact unannotated ctx.getJwt both calls and unannotated snapshot callbacks both calls frozen4TS7006 source/emitted vs corrected0. Fixture private only, no Node dependency/suppression.",
+      "Audit_P3_attachment": "Subscribe successfully before retaining context; disposed callback removes and unsubscribes; synchronous disposal callback also handled. New disposed-attach then current login/replacement revokes old lease; live unsubscribable fixture never invalidated; successful duplicate attach subscribes once and unsubscribes once ondispose. Frozen reds all exit1, correctedfocused/runtimefull0.",
+      "Audit_cleanup_failure": "Deliberately retained failclosed behavior, no swallow workaround: throwing live cleanup clears token/metadata, revokes and aborts both healthy+failed contexts before cleanup_failed; failed snapshot denied; later login can recover.",
+      "API_compatibility": "Only additive overload signatures and explicit equivalent init return type; no runtime factory bodies changed; legacy fixture retained headers/exchanges/caching/anonymous. Generic union-typed input is not a public overload by required disposition. No deps/package/version/exportmap/rootindex/type-contract change.",
+      "Audit_refresh_limitation": "Real producer refresh invalidates context; host must revalidate/republish and obtain a new capability/client. No host supplier/server/transport adoption implemented or proven.",
+      "Audit_other_findings_retained": [
+        "Signout metadata cannot repopulate current auth; prior probe evidence retained, no newly claimed dedicated signout regression",
+        "Cross-bundle owner_unavailable and real producer refresh remain unproven",
+        "default_app_versions dispatch only after ok response remains disclosed minor behavior change",
+        "Existing intentional auth behavior changes and frozen old defect truth preserved"
+      ]
+    },
+    "omissions": [
+      "No Node test-file type-check claim: runtime tests use tsx; production tsc excludes test files; QA supplemental missing Node declarations retained. Consumer fixtures are explicitly strict compiler-checked independently without suppression.",
+      "No original sources/results replay or earlier full test campaign rerun beyond relevant new correction checks",
+      "No broad Lefthook qualification or final staged-source validators: index empty and effects withheld",
+      "No real-flow/browser/server/supplier/consumer/transport/whole mutation/integration evidence"
+    ]
+  },
+  "reviews": {
+    "pins": [
+      {
+        "path": "/private/tmp/ASMA-8108-task08-qa-3b42d0c0/four-path-recheck/qa-recheck.json",
+        "bytes": 241097,
+        "sha256": "c4044f8b8e7efd273a12678646d7d15dbab3e95186445e4ce459dcae6d7a8f6e",
+        "full_read": true
+      },
+      {
+        "path": "/private/tmp/ASMA-8108-task08-qa-3b42d0c0/four-path-recheck/qa-recheck.md",
+        "bytes": 19275,
+        "sha256": "d9cf35f03863056d3a056947a7e14baf5f8391a240b7e1e6c84c82760e9c311e",
+        "full_read": true
+      },
+      {
+        "path": "/Users/igor/.local/state/asma/watchdogs/ASMA-8108/audit/task08-successor-review/final-report-four-path-recheck.md",
+        "bytes": 8839,
+        "sha256": "e8d763bdec786a7051b4538b54efad43ebbf22f6187efa9d45b32e290d7de7e2",
+        "full_read": true
+      },
+      {
+        "path": "/Users/igor/.local/state/asma/watchdogs/ASMA-8108/history/operator-core-scope-20261003/2026-10-03-root-task08-exact-correction-checkpoint-admission.md",
+        "bytes": 7317,
+        "sha256": "fd71d8a2f702029361b22a22b9dd56496672419c70f0e78b20b1ce1f8d5242fe",
+        "full_read": true
+      },
+      {
+        "path": "/Users/igor/.local/state/asma/watchdogs/ASMA-8108/history/operator-core-scope-20261003/task08-renewed-shared-hook-qualification.json",
+        "bytes": 25054,
+        "sha256": "5c62007e4673d723c324e083befeb234afc50c9fbbc1ec4d64f601394cda9886",
+        "full_read": true
+      }
+    ],
+    "qaPassed": true,
+    "qa_scope": "technical contribution only, exact four blobs together; same OpenAI vendor/model under Igor2026-10-03 exception, never vendor-independent; owning recheck11 independent records and41 focused tests, consumed full JSON+md; no QA full477 rerun claim",
+    "affected_Audit": "All affected P1/P2/P3 findings satisfied by static affected recheck e8d763b...; no Audit/security/fullGoal PASS implied; historical process deviations retained"
+  },
+  "qualified_current_route": {
+    "schema": "TPM TASK08 precise prospective effect qualification; no effect admission",
+    "at": "2026-10-03T14:39:50.680623+00:00",
+    "candidate_packet": "c0e3c1a67ce45452059cf035548e16042949aceb3b273553266f1e4a74ec5144",
+    "qaPassed": true,
+    "qa_scope": "Exact unpublished four-path candidate only; ROOT accepted full QA terminal d9cf35f/c4044f; historical failures preserved",
+    "audit": "e8d763bdec786a7051b4538b54efad43ebbf22f6187efa9d45b32e290d7de7e2 static affected satisfaction",
+    "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+    "HEAD": "6bfe8267549eaced9eb6f3b0ae3dafc8091918af",
+    "branch": "feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding",
+    "index_empty": true,
+    "own_hashes": {
+      "src/helpers/generateSrvAuthBindings.ts": "6e4cac43a77b0e06ff81cf7a9dcbe3f0b432ac26320871a8fbf91931ee681647",
+      "src/helpers/generateSrvAuthBindings.test.ts": "5fd52e3e22a7853b2cec6bc4f2c60c51e3728c2c1eb927391724180179d47400",
+      "src/helpers/createTadaBrowserClient.ts": "16cc4ce4b8d07cc164c288556bd270231e8a5f02ab10aa79cfc6c818d9000b97",
+      "src/helpers/initTadaBrowserClient.ts": "b646c109ec0c37af1f9544f4507f954170e13793f7a7991b460e7562f5c6dd43"
+    },
+    "route_pin_check": [
+      {
+        "group": "process_hooks",
+        "name": "commit-msg",
+        "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/commit-msg",
+        "expected": "1b1250b1afdd9d5cf8fc4a3fb5a6b03d5ed7a1a7c92095e1fd433be70d0c51c9",
+        "observed": "1b1250b1afdd9d5cf8fc4a3fb5a6b03d5ed7a1a7c92095e1fd433be70d0c51c9",
+        "match": true
+      },
+      {
+        "group": "process_hooks",
+        "name": "pre-commit",
+        "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/pre-commit",
+        "expected": "2ad3626327578e0c40b67c74b73573a918f426912faa3505f9c86c19ce2e3df3",
+        "observed": "2ad3626327578e0c40b67c74b73573a918f426912faa3505f9c86c19ce2e3df3",
+        "match": true
+      },
+      {
+        "group": "process_hooks",
+        "name": "pre-push",
+        "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/pre-push",
+        "expected": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+        "observed": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+        "match": true
+      },
+      {
+        "group": "process_hooks",
+        "name": "prepare-commit-msg",
+        "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/prepare-commit-msg",
+        "expected": "975cec878e0e8522693c66a75e81e3916b19f3a694290ee4ad7f622af7215e2a",
+        "observed": "975cec878e0e8522693c66a75e81e3916b19f3a694290ee4ad7f622af7215e2a",
+        "match": true
+      },
+      {
+        "group": "shared_hooks",
+        "name": "commit-msg",
+        "path": "/Users/igor/carasent/asma-modules/.githooks/commit-msg",
+        "expected": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+        "observed": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+        "match": true
+      },
+      {
+        "group": "shared_hooks",
+        "name": "pre-commit",
+        "path": "/Users/igor/carasent/asma-modules/.githooks/pre-commit",
+        "expected": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+        "observed": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+        "match": true
+      },
+      {
+        "group": "shared_hooks",
+        "name": "pre-push",
+        "path": "/Users/igor/carasent/asma-modules/.githooks/pre-push",
+        "expected": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+        "observed": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+        "match": true
+      },
+      {
+        "group": "shared_hooks",
+        "name": "prepare-commit-msg",
+        "path": "/Users/igor/carasent/asma-modules/.githooks/prepare-commit-msg",
+        "expected": "afc37a4d37c385ce2bea9f0584146f093752d6ad788bb84914cd4ae769b00bb0",
+        "observed": "afc37a4d37c385ce2bea9f0584146f093752d6ad788bb84914cd4ae769b00bb0",
+        "match": true
+      },
+      {
+        "group": "shared_hooks",
+        "name": "commit-msg.old",
+        "path": "/Users/igor/carasent/asma-modules/.githooks/commit-msg.old",
+        "expected": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+        "observed": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+        "match": true
+      },
+      {
+        "group": "shared_hooks",
+        "name": "pre-commit.old",
+        "path": "/Users/igor/carasent/asma-modules/.githooks/pre-commit.old",
+        "expected": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+        "observed": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+        "match": true
+      },
+      {
+        "group": "shared_hooks",
+        "name": "pre-push.old",
+        "path": "/Users/igor/carasent/asma-modules/.githooks/pre-push.old",
+        "expected": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+        "observed": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+        "match": true
+      },
+      {
+        "group": "validators",
+        "name": "validate-doc-refs.py",
+        "path": "/Users/igor/carasent/asma-modules/_tools/lefthook/_scripts/validate-doc-refs.py",
+        "expected": "62a5aa537cddace14bf6456f8aae25d0df3ffe7b2ef1df27a33972075bc9c7f3",
+        "observed": "62a5aa537cddace14bf6456f8aae25d0df3ffe7b2ef1df27a33972075bc9c7f3",
+        "match": true
+      },
+      {
+        "group": "validators",
+        "name": "validate-commit-msg.py",
+        "path": "/Users/igor/carasent/asma-modules/_tools/lefthook/_scripts/validate-commit-msg.py",
+        "expected": "f13e67dd9dbf69ef8387a5212210b07b15856eea2a2dcde05a6290a1c1faeadb",
+        "observed": "f13e67dd9dbf69ef8387a5212210b07b15856eea2a2dcde05a6290a1c1faeadb",
+        "match": true
+      },
+      {
+        "group": "config",
+        "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/lefthook.yml",
+        "expected": "1ed1c0b495efc6b6aa96457220b9474ead8a9838cebdedbb44840321f9a96a51",
+        "observed": "1ed1c0b495efc6b6aa96457220b9474ead8a9838cebdedbb44840321f9a96a51",
+        "match": true
+      },
+      {
+        "group": "lefthook_bin",
+        "path": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers/node_modules/.pnpm/lefthook-darwin-arm64@2.1.1/node_modules/lefthook-darwin-arm64/bin/lefthook",
+        "expected": "90e53a15be1630791dde4d802fe0a382fd2c93cbef3db1fbbfd33d62f2f6a0af",
+        "observed": "90e53a15be1630791dde4d802fe0a382fd2c93cbef3db1fbbfd33d62f2f6a0af",
+        "match": true
+      }
+    ],
+    "installed_provenance": [
+      {
+        "path": "/Users/igor/carasent/asma-modules/_tools/asma-cli/src/asma_cli/commands/git_commit.py",
+        "sha256": "163a0a956e523cf646af31b8a1620e5138a250a47ca1aa0db1e91638b375959e"
+      },
+      {
+        "path": "/Users/igor/carasent/asma-modules/_tools/asma-cli/src/asma_cli/commands/git_commit_flows.py",
+        "sha256": "8565d0a709e893b762bcffe9f83e80940f75ccd9b282c9017c8bbcaca22f1aa2"
+      },
+      {
+        "path": "/Users/igor/carasent/asma-modules/_tools/asma-cli/src/asma_cli/commands/git_commit_root_external_flows.py",
+        "sha256": "6befb9eb05008af43d52b14772f59516e61e9fdf6d81673ba290e74cd55c90c9"
+      }
+    ],
+    "prospective_operations": {
+      "authorized_now": false,
+      "dry_run_executed": false,
+      "staging_executed": false,
+      "source_or_results_checkpoint_executed": false,
+      "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+      "no_repo_option": true,
+      "expected_branch": "feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding",
+      "expected_SOURCE_parent": "6bfe8267549eaced9eb6f3b0ae3dafc8091918af",
+      "required_before_effect": [
+        "ROOT precise effect admission using renewed current shared pins 5c62007; historical old mismatch alone is resolved, further drift denies",
+        "Concrete external index write approval if sandbox requires it; authorization only for exact checkpoint",
+        "Recheck HEAD/branch/index, every tested own-path hash, process4/config/binary/canonical2/shared7 pins immediately before each effect",
+        "Stop on drift; no receipt replacement/repair or config mutation",
+        "Safely append validated preexisting GIT_CONFIG_COUNT entries; reject malformed count, missing/orphan keys/values, bypass inputs",
+        "Stage only explicit own paths and verify staged path set and staged blobs against this frozen tested candidate",
+        "ASMA dry-run first; actual pre-commit and commit-msg on final staged bytes; preserve prepare-commit-msg and actual pre-push validators; independently capture full outputs/exits"
+      ],
+      "process_environment": {
+        "ASMA_DISABLE_AUTO_ROOT_PULL": "1",
+        "GIT_CONFIG_COUNT": "validated existing count + 1",
+        "GIT_CONFIG_KEY_n": "core.hooksPath at appended n",
+        "GIT_CONFIG_VALUE_n": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81 (only if freshly qualified)",
+        "LEFTHOOK_CONFIG": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/lefthook.yml (only if freshly qualified)",
+        "LEFTHOOK_BIN": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers/node_modules/.pnpm/lefthook-darwin-arm64@2.1.1/node_modules/lefthook-darwin-arm64/bin/lefthook",
+        "pnpm_config_verify_deps_before_run": "false",
+        "COREPACK_ENABLE_NETWORK": "0"
+      },
+      "SOURCE": {
+        "paths": [
+          "src/helpers/generateSrvAuthBindings.ts",
+          "src/helpers/generateSrvAuthBindings.test.ts",
+          "src/helpers/createTadaBrowserClient.ts",
+          "src/helpers/initTadaBrowserClient.ts"
+        ],
+        "subject": "fix(context): ASMA-8342 Fix dispatch and client lifecycle",
+        "prospective_stage": [
+          "git",
+          "add",
+          "--",
+          "src/helpers/generateSrvAuthBindings.ts",
+          "src/helpers/generateSrvAuthBindings.test.ts",
+          "src/helpers/createTadaBrowserClient.ts",
+          "src/helpers/initTadaBrowserClient.ts"
+        ],
+        "prospective_dry_run": [
+          "asma",
+          "git",
+          "commit",
+          "-m",
+          "fix(context): ASMA-8342 Fix dispatch and client lifecycle",
+          "--push",
+          "--verbose",
+          "--dry-run"
+        ],
+        "prospective_commit_push": [
+          "asma",
+          "git",
+          "commit",
+          "-m",
+          "fix(context): ASMA-8342 Fix dispatch and client lifecycle",
+          "--push",
+          "--verbose"
+        ],
+        "prospective_SHA": null,
+        "effect_scope": "Only this task branch and four frozen own paths; no foreign files/canonical integration"
+      },
+      "RESULTS": {
+        "paths": [
+          "docs/evidence/ASMA-8342/2026-10-03-15-54-report-helpers-correction-results.md",
+          "docs/evidence/ASMA-8342/2026-10-03-15-54-report-helpers-correction-results.json"
+        ],
+        "subject": "docs(context): ASMA-8342 Record corrected helpers evidence",
+        "prospective_stage": [
+          "git",
+          "add",
+          "--",
+          "docs/evidence/ASMA-8342/2026-10-03-15-54-report-helpers-correction-results.md",
+          "docs/evidence/ASMA-8342/2026-10-03-15-54-report-helpers-correction-results.json"
+        ],
+        "prospective_dry_run": [
+          "asma",
+          "git",
+          "commit",
+          "-m",
+          "docs(context): ASMA-8342 Record corrected helpers evidence",
+          "--push",
+          "--verbose",
+          "--dry-run"
+        ],
+        "prospective_commit_push": [
+          "asma",
+          "git",
+          "commit",
+          "-m",
+          "docs(context): ASMA-8342 Record corrected helpers evidence",
+          "--push",
+          "--verbose"
+        ],
+        "prospective_SHA": null,
+        "prepare_only_after_authority": "Create separate report/JSON with actual correction SOURCE SHA, actual final staged validators/ASMA/prepush outputs and exact ledger; no source bytes or existing original report rewritten; index/router unchanged"
+      },
+      "forbidden_effects": [
+        "No raw Git commit/push/operator fallback",
+        "No PR/default/merge/JiraDone/release",
+        "No LEFTHOOK=0 or ASMA_ALLOW_AGENT_PUSH",
+        "No persistent config/hooks/install",
+        "No foreign adapters/.cursor/.pnpm-store/comment lefthook/shared hooks/backups staged",
+        "No old checkpoint script replay: it expects e793130 and eleven source paths"
+      ]
+    },
+    "qualification": [
+      "Installed ASMA executable resolves /Users/igor/.local/bin/asma -> /Users/igor/carasent/asma-modules/.venv/bin/asma; imported commit source provenance separately pinned.",
+      "Read-only native resolver selects exactly .worktrees/asma-8342/asma-core-helpers, no dependents. Submodule flow explicitly include_workspace_root=False; no canonical pointer checkpoint.",
+      "Current local lefthook.yml is comment-only; source preflight regex finds no active pre-commit, so it does not invoke pnpm. Native private pre-commit executes qualified canonical doc-ref validator; prepare must choose exact pinned LEFTHOOK_BIN first with no_auto_install config.",
+      "ASMA push builder targets all configured remotes. Before effect enumerate exact push URLs/refspecs and reject any target outside qualified task branch; preserve real agent identity for pre-push.",
+      "Immediately before each effect recheck installed source hashes, topology target/dependents, local comment-only config hash, all current route pins, exact branch/HEAD/index and tested blobs. No assumption that current pins stay current.",
+      "Validate existing GIT_CONFIG_COUNT decimal nonnegative and exactly complete KEY_n/VALUE_n pairs; reject orphan entries and conflicting core.hooksPath/bypass inputs; append one core.hooksPath entry without overwriting any prior entries. Reject malformed/conflicting input instead of repairing.",
+      "Only after ROOT admission: stage explicit four SOURCE paths; verify NUL-delimited staged path set and each staged blob hash, then ASMA dry-run; reject plan expansion or root/dependent/remote effects. Execute actual qualified pre-commit, prepare-commit-msg, commit-msg and native pre-push with full independent exits.",
+      "Capture subprocess returncode directly, UTC argv/cwd/stdout/stderr; no tail/pipeline exit substitution. Check resulting SOURCE parent, exact four changed paths/blobs, remote task ref; reconcile any partial commit/push before retry.",
+      "RESULTS authored only after real SOURCE exists with actual SHA, validators/publication outputs and reconciled ledger. Freeze exactly two new evidence bytes; repeat path/blob checks and separate dry-run/checkpoint on SOURCE parent. No old report/index relabeling."
+    ],
+    "ledger": {
+      "current": ".733+U consumed /7.447-U mandatory /7.697-U contingent; whole8.18/8.43",
+      "own_qualification_transfer": ".01 MODEL estimate once within retained TPM .30; provisional .743+U /7.437-U /7.687-U; TPM known .12 consumed/.18-beforeU remaining",
+      "limits": "No measured active-time/finite fit; unknown prior remains U; no fresh phase/allowance"
+    },
+    "effects": "Only read-only source/hash/resolver checks and private ECP receipts; no stage, ASMA commit dry-run, commit, push, config/hook mutation, install or Dev wake",
+    "remaining_admission": "ROOT precise effect admission and final just-in-time target/environment/staged validations; whole Goal OPEN"
+  },
+  "actual_source_operator_evidence": {
+    "source-effect-commands.json": [
+      {
+        "name": "remote-task-before",
+        "argv": [
+          "git",
+          "ls-remote",
+          "origin",
+          "refs/heads/feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding"
+        ],
+        "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+        "started": "2026-10-03T16:23:47.267153+00:00",
+        "ended": "2026-10-03T16:23:49.262545+00:00",
+        "exit": 0,
+        "stdin": null,
+        "stdout": "6bfe8267549eaced9eb6f3b0ae3dafc8091918af\trefs/heads/feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding\n",
+        "stderr": ""
+      },
+      {
+        "name": "ASMA-commit-push",
+        "argv": [
+          "asma",
+          "git",
+          "commit",
+          "-m",
+          "fix(context): ASMA-8342 Fix dispatch and client lifecycle",
+          "--push",
+          "--verbose"
+        ],
+        "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+        "started": "2026-10-03T16:23:49.262971+00:00",
+        "ended": "2026-10-03T16:24:00.167828+00:00",
+        "exit": 0,
+        "stdin": null,
+        "stdout": "ℹ Commit scope: asma-core-helpers\nℹ Workspace root pointer commit: disabled for submodule flow; asma-modules may still be pulled for sync\nℹ Generating 1 commit message(s) in parallel...\nℹ ✓ .worktrees/asma-8342/asma-core-helpers (manual)\nℹ Submodule target: asma-core-helpers\nℹ Commit message for asma-core-helpers (manual):\n› fix(context): ASMA-8342 Fix dispatch and client lifecycle\n› git -C /Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers commit -m fix(context): ASMA-8342 Fix dispatch and client lifecycle\n› git -C /Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers push origin\n› git: ✅ doc refs OK (4 files)\n› git: ✅ Commit message valid: fix(context): ASMA-8342 Fix dispatch and client lifecycle\n› git: [feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding 0c71872] fix(context): ASMA-8342 Fix dispatch and client lifecycle\n› git:  4 files changed, 164 insertions(+), 6 deletions(-)\n⚠ Kontor would refuse 'feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding' (binding_unconfirmed); publishing anyway (paseo-direct surface; ASMA_ORCHESTRATION_SURFACE=kontor fails closed)\nℹ Refusal recorded as attestation 01a10294-5106-7430-9252-bd04336fa507\n› git: remote:\n› git: remote: GitHub found 4 vulnerabilities on Carasent-ASMA/asma-core-helpers's default branch (2 high, 2 moderate). To find out more, visit:\n› git: remote:      https://github.com/Carasent-ASMA/asma-core-helpers/security/dependabot\n› git: remote:\n› git: To github.com:Carasent-ASMA/asma-core-helpers.git\n› git:    6bfe826..0c71872  feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding -> feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding\n✅ Commit flow complete for asma-core-helpers\n",
+        "stderr": ""
+      },
+      {
+        "name": "remote-task-after",
+        "argv": [
+          "git",
+          "ls-remote",
+          "origin",
+          "refs/heads/feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding"
+        ],
+        "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+        "started": "2026-10-03T16:24:00.375812+00:00",
+        "ended": "2026-10-03T16:24:02.229421+00:00",
+        "exit": 0,
+        "stdin": null,
+        "stdout": "0c71872d34f2dfe586ec6654f2df8c0f3f7c5bc5\trefs/heads/feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding\n",
+        "stderr": ""
+      }
+    ],
+    "source-stage-preflight.json": {
+      "UTC": "2026-10-03T15:14:53.011843+00:00",
+      "HEAD": "6bfe8267549eaced9eb6f3b0ae3dafc8091918af",
+      "staged_paths_nul_hex": "",
+      "staged_hashes": {},
+      "source_hashes": {
+        "src/helpers/generateSrvAuthBindings.ts": "6e4cac43a77b0e06ff81cf7a9dcbe3f0b432ac26320871a8fbf91931ee681647",
+        "src/helpers/generateSrvAuthBindings.test.ts": "5fd52e3e22a7853b2cec6bc4f2c60c51e3728c2c1eb927391724180179d47400",
+        "src/helpers/createTadaBrowserClient.ts": "16cc4ce4b8d07cc164c288556bd270231e8a5f02ab10aa79cfc6c818d9000b97",
+        "src/helpers/initTadaBrowserClient.ts": "b646c109ec0c37af1f9544f4507f954170e13793f7a7991b460e7562f5c6dd43"
+      },
+      "route_pins": [
+        {
+          "group": "process_hooks",
+          "name": "commit-msg",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/commit-msg",
+          "expected": "1b1250b1afdd9d5cf8fc4a3fb5a6b03d5ed7a1a7c92095e1fd433be70d0c51c9",
+          "observed": "1b1250b1afdd9d5cf8fc4a3fb5a6b03d5ed7a1a7c92095e1fd433be70d0c51c9",
+          "match": true
+        },
+        {
+          "group": "process_hooks",
+          "name": "pre-commit",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/pre-commit",
+          "expected": "2ad3626327578e0c40b67c74b73573a918f426912faa3505f9c86c19ce2e3df3",
+          "observed": "2ad3626327578e0c40b67c74b73573a918f426912faa3505f9c86c19ce2e3df3",
+          "match": true
+        },
+        {
+          "group": "process_hooks",
+          "name": "pre-push",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/pre-push",
+          "expected": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "observed": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "match": true
+        },
+        {
+          "group": "process_hooks",
+          "name": "prepare-commit-msg",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/prepare-commit-msg",
+          "expected": "975cec878e0e8522693c66a75e81e3916b19f3a694290ee4ad7f622af7215e2a",
+          "observed": "975cec878e0e8522693c66a75e81e3916b19f3a694290ee4ad7f622af7215e2a",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "commit-msg",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/commit-msg",
+          "expected": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+          "observed": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "pre-commit",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/pre-commit",
+          "expected": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+          "observed": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "pre-push",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/pre-push",
+          "expected": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "observed": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "prepare-commit-msg",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/prepare-commit-msg",
+          "expected": "afc37a4d37c385ce2bea9f0584146f093752d6ad788bb84914cd4ae769b00bb0",
+          "observed": "afc37a4d37c385ce2bea9f0584146f093752d6ad788bb84914cd4ae769b00bb0",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "commit-msg.old",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/commit-msg.old",
+          "expected": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+          "observed": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "pre-commit.old",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/pre-commit.old",
+          "expected": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+          "observed": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "pre-push.old",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/pre-push.old",
+          "expected": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "observed": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "match": true
+        },
+        {
+          "group": "validators",
+          "name": "validate-doc-refs.py",
+          "path": "/Users/igor/carasent/asma-modules/_tools/lefthook/_scripts/validate-doc-refs.py",
+          "expected": "62a5aa537cddace14bf6456f8aae25d0df3ffe7b2ef1df27a33972075bc9c7f3",
+          "observed": "62a5aa537cddace14bf6456f8aae25d0df3ffe7b2ef1df27a33972075bc9c7f3",
+          "match": true
+        },
+        {
+          "group": "validators",
+          "name": "validate-commit-msg.py",
+          "path": "/Users/igor/carasent/asma-modules/_tools/lefthook/_scripts/validate-commit-msg.py",
+          "expected": "f13e67dd9dbf69ef8387a5212210b07b15856eea2a2dcde05a6290a1c1faeadb",
+          "observed": "f13e67dd9dbf69ef8387a5212210b07b15856eea2a2dcde05a6290a1c1faeadb",
+          "match": true
+        },
+        {
+          "group": "config",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/lefthook.yml",
+          "expected": "1ed1c0b495efc6b6aa96457220b9474ead8a9838cebdedbb44840321f9a96a51",
+          "observed": "1ed1c0b495efc6b6aa96457220b9474ead8a9838cebdedbb44840321f9a96a51",
+          "match": true
+        },
+        {
+          "group": "lefthook_bin",
+          "path": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers/node_modules/.pnpm/lefthook-darwin-arm64@2.1.1/node_modules/lefthook-darwin-arm64/bin/lefthook",
+          "expected": "90e53a15be1630791dde4d802fe0a382fd2c93cbef3db1fbbfd33d62f2f6a0af",
+          "observed": "90e53a15be1630791dde4d802fe0a382fd2c93cbef3db1fbbfd33d62f2f6a0af",
+          "match": true
+        }
+      ],
+      "installed3": [
+        {
+          "path": "/Users/igor/carasent/asma-modules/_tools/asma-cli/src/asma_cli/commands/git_commit.py",
+          "sha256": "163a0a956e523cf646af31b8a1620e5138a250a47ca1aa0db1e91638b375959e"
+        },
+        {
+          "path": "/Users/igor/carasent/asma-modules/_tools/asma-cli/src/asma_cli/commands/git_commit_flows.py",
+          "sha256": "8565d0a709e893b762bcffe9f83e80940f75ccd9b282c9017c8bbcaca22f1aa2"
+        },
+        {
+          "path": "/Users/igor/carasent/asma-modules/_tools/asma-cli/src/asma_cli/commands/git_commit_root_external_flows.py",
+          "sha256": "6befb9eb05008af43d52b14772f59516e61e9fdf6d81673ba290e74cd55c90c9"
+        }
+      ],
+      "local_config_sha256": "d531e69079f552aeb6c961a1196000889523ec9a9dc5bdb46889cb13edb2ee5e",
+      "topology": {
+        "root": "/Users/igor/carasent/asma-modules",
+        "scope": ".worktrees/asma-8342/asma-core-helpers",
+        "targets": [
+          ".worktrees/asma-8342/asma-core-helpers"
+        ],
+        "auto_changed_dependents": []
+      },
+      "remote_configuration": "push.autosetupremote true\ncore.hookspath /Users/igor/carasent/asma-modules/.githooks\nremote.origin.url git@github.com:Carasent-ASMA/asma-core-helpers.git\nremote.origin.fetch +refs/heads/*:refs/remotes/origin/*\nbranch.feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding.remote origin\nbranch.feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding.merge refs/heads/feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding\ncore.hookspath /private/tmp/asma-8342-qualified-hooks-1mlg6v81",
+      "push_urls": [
+        "git@github.com:Carasent-ASMA/asma-core-helpers.git"
+      ],
+      "environment": {
+        "native_agent_id": "2f71ba5c-8d9e-4283-b4f6-31ce0da52d66",
+        "GIT_CONFIG_COUNT_before": 0,
+        "GIT_CONFIG_COUNT_after": 1,
+        "ASMA_DISABLE_AUTO_ROOT_PULL": "1",
+        "LEFTHOOK_CONFIG": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/lefthook.yml",
+        "LEFTHOOK_BIN": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers/node_modules/.pnpm/lefthook-darwin-arm64@2.1.1/node_modules/lefthook-darwin-arm64/bin/lefthook",
+        "pnpm_config_verify_deps_before_run": "false",
+        "COREPACK_ENABLE_NETWORK": "0"
+      }
+    },
+    "source-stage-commands.json": [
+      {
+        "name": "explicit-stage",
+        "argv": [
+          "git",
+          "add",
+          "--",
+          "src/helpers/generateSrvAuthBindings.ts",
+          "src/helpers/generateSrvAuthBindings.test.ts",
+          "src/helpers/createTadaBrowserClient.ts",
+          "src/helpers/initTadaBrowserClient.ts"
+        ],
+        "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+        "started": "2026-10-03T15:14:53.012572+00:00",
+        "ended": "2026-10-03T15:14:53.038482+00:00",
+        "exit": 0,
+        "stdin": null,
+        "stdout": "",
+        "stderr": ""
+      }
+    ],
+    "source-effect-preflight.json": {
+      "UTC": "2026-10-03T16:23:47.265620+00:00",
+      "HEAD": "6bfe8267549eaced9eb6f3b0ae3dafc8091918af",
+      "staged_paths_nul_hex": "7372632f68656c706572732f6372656174655461646142726f77736572436c69656e742e7473007372632f68656c706572732f67656e65726174655372764175746842696e64696e67732e746573742e7473007372632f68656c706572732f67656e65726174655372764175746842696e64696e67732e7473007372632f68656c706572732f696e69745461646142726f77736572436c69656e742e747300",
+      "staged_hashes": {
+        "src/helpers/generateSrvAuthBindings.ts": "6e4cac43a77b0e06ff81cf7a9dcbe3f0b432ac26320871a8fbf91931ee681647",
+        "src/helpers/generateSrvAuthBindings.test.ts": "5fd52e3e22a7853b2cec6bc4f2c60c51e3728c2c1eb927391724180179d47400",
+        "src/helpers/createTadaBrowserClient.ts": "16cc4ce4b8d07cc164c288556bd270231e8a5f02ab10aa79cfc6c818d9000b97",
+        "src/helpers/initTadaBrowserClient.ts": "b646c109ec0c37af1f9544f4507f954170e13793f7a7991b460e7562f5c6dd43"
+      },
+      "source_hashes": {
+        "src/helpers/generateSrvAuthBindings.ts": "6e4cac43a77b0e06ff81cf7a9dcbe3f0b432ac26320871a8fbf91931ee681647",
+        "src/helpers/generateSrvAuthBindings.test.ts": "5fd52e3e22a7853b2cec6bc4f2c60c51e3728c2c1eb927391724180179d47400",
+        "src/helpers/createTadaBrowserClient.ts": "16cc4ce4b8d07cc164c288556bd270231e8a5f02ab10aa79cfc6c818d9000b97",
+        "src/helpers/initTadaBrowserClient.ts": "b646c109ec0c37af1f9544f4507f954170e13793f7a7991b460e7562f5c6dd43"
+      },
+      "route_pins": [
+        {
+          "group": "process_hooks",
+          "name": "commit-msg",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/commit-msg",
+          "expected": "1b1250b1afdd9d5cf8fc4a3fb5a6b03d5ed7a1a7c92095e1fd433be70d0c51c9",
+          "observed": "1b1250b1afdd9d5cf8fc4a3fb5a6b03d5ed7a1a7c92095e1fd433be70d0c51c9",
+          "match": true
+        },
+        {
+          "group": "process_hooks",
+          "name": "pre-commit",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/pre-commit",
+          "expected": "2ad3626327578e0c40b67c74b73573a918f426912faa3505f9c86c19ce2e3df3",
+          "observed": "2ad3626327578e0c40b67c74b73573a918f426912faa3505f9c86c19ce2e3df3",
+          "match": true
+        },
+        {
+          "group": "process_hooks",
+          "name": "pre-push",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/pre-push",
+          "expected": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "observed": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "match": true
+        },
+        {
+          "group": "process_hooks",
+          "name": "prepare-commit-msg",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/prepare-commit-msg",
+          "expected": "975cec878e0e8522693c66a75e81e3916b19f3a694290ee4ad7f622af7215e2a",
+          "observed": "975cec878e0e8522693c66a75e81e3916b19f3a694290ee4ad7f622af7215e2a",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "commit-msg",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/commit-msg",
+          "expected": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+          "observed": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "pre-commit",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/pre-commit",
+          "expected": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+          "observed": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "pre-push",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/pre-push",
+          "expected": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "observed": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "prepare-commit-msg",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/prepare-commit-msg",
+          "expected": "afc37a4d37c385ce2bea9f0584146f093752d6ad788bb84914cd4ae769b00bb0",
+          "observed": "afc37a4d37c385ce2bea9f0584146f093752d6ad788bb84914cd4ae769b00bb0",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "commit-msg.old",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/commit-msg.old",
+          "expected": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+          "observed": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "pre-commit.old",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/pre-commit.old",
+          "expected": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+          "observed": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "pre-push.old",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/pre-push.old",
+          "expected": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "observed": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "match": true
+        },
+        {
+          "group": "validators",
+          "name": "validate-doc-refs.py",
+          "path": "/Users/igor/carasent/asma-modules/_tools/lefthook/_scripts/validate-doc-refs.py",
+          "expected": "62a5aa537cddace14bf6456f8aae25d0df3ffe7b2ef1df27a33972075bc9c7f3",
+          "observed": "62a5aa537cddace14bf6456f8aae25d0df3ffe7b2ef1df27a33972075bc9c7f3",
+          "match": true
+        },
+        {
+          "group": "validators",
+          "name": "validate-commit-msg.py",
+          "path": "/Users/igor/carasent/asma-modules/_tools/lefthook/_scripts/validate-commit-msg.py",
+          "expected": "f13e67dd9dbf69ef8387a5212210b07b15856eea2a2dcde05a6290a1c1faeadb",
+          "observed": "f13e67dd9dbf69ef8387a5212210b07b15856eea2a2dcde05a6290a1c1faeadb",
+          "match": true
+        },
+        {
+          "group": "config",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/lefthook.yml",
+          "expected": "1ed1c0b495efc6b6aa96457220b9474ead8a9838cebdedbb44840321f9a96a51",
+          "observed": "1ed1c0b495efc6b6aa96457220b9474ead8a9838cebdedbb44840321f9a96a51",
+          "match": true
+        },
+        {
+          "group": "lefthook_bin",
+          "path": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers/node_modules/.pnpm/lefthook-darwin-arm64@2.1.1/node_modules/lefthook-darwin-arm64/bin/lefthook",
+          "expected": "90e53a15be1630791dde4d802fe0a382fd2c93cbef3db1fbbfd33d62f2f6a0af",
+          "observed": "90e53a15be1630791dde4d802fe0a382fd2c93cbef3db1fbbfd33d62f2f6a0af",
+          "match": true
+        }
+      ],
+      "installed3": [
+        {
+          "path": "/Users/igor/carasent/asma-modules/_tools/asma-cli/src/asma_cli/commands/git_commit.py",
+          "sha256": "163a0a956e523cf646af31b8a1620e5138a250a47ca1aa0db1e91638b375959e"
+        },
+        {
+          "path": "/Users/igor/carasent/asma-modules/_tools/asma-cli/src/asma_cli/commands/git_commit_flows.py",
+          "sha256": "8565d0a709e893b762bcffe9f83e80940f75ccd9b282c9017c8bbcaca22f1aa2"
+        },
+        {
+          "path": "/Users/igor/carasent/asma-modules/_tools/asma-cli/src/asma_cli/commands/git_commit_root_external_flows.py",
+          "sha256": "6befb9eb05008af43d52b14772f59516e61e9fdf6d81673ba290e74cd55c90c9"
+        }
+      ],
+      "local_config_sha256": "d531e69079f552aeb6c961a1196000889523ec9a9dc5bdb46889cb13edb2ee5e",
+      "topology": {
+        "root": "/Users/igor/carasent/asma-modules",
+        "scope": ".worktrees/asma-8342/asma-core-helpers",
+        "targets": [
+          ".worktrees/asma-8342/asma-core-helpers"
+        ],
+        "auto_changed_dependents": []
+      },
+      "remote_configuration": "push.autosetupremote true\ncore.hookspath /Users/igor/carasent/asma-modules/.githooks\nremote.origin.url git@github.com:Carasent-ASMA/asma-core-helpers.git\nremote.origin.fetch +refs/heads/*:refs/remotes/origin/*\nbranch.feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding.remote origin\nbranch.feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding.merge refs/heads/feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding\ncore.hookspath /private/tmp/asma-8342-qualified-hooks-1mlg6v81",
+      "push_urls": [
+        "git@github.com:Carasent-ASMA/asma-core-helpers.git"
+      ],
+      "environment": {
+        "native_agent_id": "2f71ba5c-8d9e-4283-b4f6-31ce0da52d66",
+        "GIT_CONFIG_COUNT_before": 0,
+        "GIT_CONFIG_COUNT_after": 1,
+        "ASMA_DISABLE_AUTO_ROOT_PULL": "1",
+        "LEFTHOOK_CONFIG": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/lefthook.yml",
+        "LEFTHOOK_BIN": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers/node_modules/.pnpm/lefthook-darwin-arm64@2.1.1/node_modules/lefthook-darwin-arm64/bin/lefthook",
+        "pnpm_config_verify_deps_before_run": "false",
+        "COREPACK_ENABLE_NETWORK": "0"
+      }
+    },
+    "source-dry-run-preflight.json": {
+      "UTC": "2026-10-03T15:15:21.182085+00:00",
+      "HEAD": "6bfe8267549eaced9eb6f3b0ae3dafc8091918af",
+      "staged_paths_nul_hex": "7372632f68656c706572732f6372656174655461646142726f77736572436c69656e742e7473007372632f68656c706572732f67656e65726174655372764175746842696e64696e67732e746573742e7473007372632f68656c706572732f67656e65726174655372764175746842696e64696e67732e7473007372632f68656c706572732f696e69745461646142726f77736572436c69656e742e747300",
+      "staged_hashes": {
+        "src/helpers/generateSrvAuthBindings.ts": "6e4cac43a77b0e06ff81cf7a9dcbe3f0b432ac26320871a8fbf91931ee681647",
+        "src/helpers/generateSrvAuthBindings.test.ts": "5fd52e3e22a7853b2cec6bc4f2c60c51e3728c2c1eb927391724180179d47400",
+        "src/helpers/createTadaBrowserClient.ts": "16cc4ce4b8d07cc164c288556bd270231e8a5f02ab10aa79cfc6c818d9000b97",
+        "src/helpers/initTadaBrowserClient.ts": "b646c109ec0c37af1f9544f4507f954170e13793f7a7991b460e7562f5c6dd43"
+      },
+      "source_hashes": {
+        "src/helpers/generateSrvAuthBindings.ts": "6e4cac43a77b0e06ff81cf7a9dcbe3f0b432ac26320871a8fbf91931ee681647",
+        "src/helpers/generateSrvAuthBindings.test.ts": "5fd52e3e22a7853b2cec6bc4f2c60c51e3728c2c1eb927391724180179d47400",
+        "src/helpers/createTadaBrowserClient.ts": "16cc4ce4b8d07cc164c288556bd270231e8a5f02ab10aa79cfc6c818d9000b97",
+        "src/helpers/initTadaBrowserClient.ts": "b646c109ec0c37af1f9544f4507f954170e13793f7a7991b460e7562f5c6dd43"
+      },
+      "route_pins": [
+        {
+          "group": "process_hooks",
+          "name": "commit-msg",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/commit-msg",
+          "expected": "1b1250b1afdd9d5cf8fc4a3fb5a6b03d5ed7a1a7c92095e1fd433be70d0c51c9",
+          "observed": "1b1250b1afdd9d5cf8fc4a3fb5a6b03d5ed7a1a7c92095e1fd433be70d0c51c9",
+          "match": true
+        },
+        {
+          "group": "process_hooks",
+          "name": "pre-commit",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/pre-commit",
+          "expected": "2ad3626327578e0c40b67c74b73573a918f426912faa3505f9c86c19ce2e3df3",
+          "observed": "2ad3626327578e0c40b67c74b73573a918f426912faa3505f9c86c19ce2e3df3",
+          "match": true
+        },
+        {
+          "group": "process_hooks",
+          "name": "pre-push",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/pre-push",
+          "expected": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "observed": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "match": true
+        },
+        {
+          "group": "process_hooks",
+          "name": "prepare-commit-msg",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/prepare-commit-msg",
+          "expected": "975cec878e0e8522693c66a75e81e3916b19f3a694290ee4ad7f622af7215e2a",
+          "observed": "975cec878e0e8522693c66a75e81e3916b19f3a694290ee4ad7f622af7215e2a",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "commit-msg",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/commit-msg",
+          "expected": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+          "observed": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "pre-commit",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/pre-commit",
+          "expected": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+          "observed": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "pre-push",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/pre-push",
+          "expected": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "observed": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "prepare-commit-msg",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/prepare-commit-msg",
+          "expected": "afc37a4d37c385ce2bea9f0584146f093752d6ad788bb84914cd4ae769b00bb0",
+          "observed": "afc37a4d37c385ce2bea9f0584146f093752d6ad788bb84914cd4ae769b00bb0",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "commit-msg.old",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/commit-msg.old",
+          "expected": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+          "observed": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "pre-commit.old",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/pre-commit.old",
+          "expected": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+          "observed": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "pre-push.old",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/pre-push.old",
+          "expected": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "observed": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "match": true
+        },
+        {
+          "group": "validators",
+          "name": "validate-doc-refs.py",
+          "path": "/Users/igor/carasent/asma-modules/_tools/lefthook/_scripts/validate-doc-refs.py",
+          "expected": "62a5aa537cddace14bf6456f8aae25d0df3ffe7b2ef1df27a33972075bc9c7f3",
+          "observed": "62a5aa537cddace14bf6456f8aae25d0df3ffe7b2ef1df27a33972075bc9c7f3",
+          "match": true
+        },
+        {
+          "group": "validators",
+          "name": "validate-commit-msg.py",
+          "path": "/Users/igor/carasent/asma-modules/_tools/lefthook/_scripts/validate-commit-msg.py",
+          "expected": "f13e67dd9dbf69ef8387a5212210b07b15856eea2a2dcde05a6290a1c1faeadb",
+          "observed": "f13e67dd9dbf69ef8387a5212210b07b15856eea2a2dcde05a6290a1c1faeadb",
+          "match": true
+        },
+        {
+          "group": "config",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/lefthook.yml",
+          "expected": "1ed1c0b495efc6b6aa96457220b9474ead8a9838cebdedbb44840321f9a96a51",
+          "observed": "1ed1c0b495efc6b6aa96457220b9474ead8a9838cebdedbb44840321f9a96a51",
+          "match": true
+        },
+        {
+          "group": "lefthook_bin",
+          "path": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers/node_modules/.pnpm/lefthook-darwin-arm64@2.1.1/node_modules/lefthook-darwin-arm64/bin/lefthook",
+          "expected": "90e53a15be1630791dde4d802fe0a382fd2c93cbef3db1fbbfd33d62f2f6a0af",
+          "observed": "90e53a15be1630791dde4d802fe0a382fd2c93cbef3db1fbbfd33d62f2f6a0af",
+          "match": true
+        }
+      ],
+      "installed3": [
+        {
+          "path": "/Users/igor/carasent/asma-modules/_tools/asma-cli/src/asma_cli/commands/git_commit.py",
+          "sha256": "163a0a956e523cf646af31b8a1620e5138a250a47ca1aa0db1e91638b375959e"
+        },
+        {
+          "path": "/Users/igor/carasent/asma-modules/_tools/asma-cli/src/asma_cli/commands/git_commit_flows.py",
+          "sha256": "8565d0a709e893b762bcffe9f83e80940f75ccd9b282c9017c8bbcaca22f1aa2"
+        },
+        {
+          "path": "/Users/igor/carasent/asma-modules/_tools/asma-cli/src/asma_cli/commands/git_commit_root_external_flows.py",
+          "sha256": "6befb9eb05008af43d52b14772f59516e61e9fdf6d81673ba290e74cd55c90c9"
+        }
+      ],
+      "local_config_sha256": "d531e69079f552aeb6c961a1196000889523ec9a9dc5bdb46889cb13edb2ee5e",
+      "topology": {
+        "root": "/Users/igor/carasent/asma-modules",
+        "scope": ".worktrees/asma-8342/asma-core-helpers",
+        "targets": [
+          ".worktrees/asma-8342/asma-core-helpers"
+        ],
+        "auto_changed_dependents": []
+      },
+      "remote_configuration": "push.autosetupremote true\ncore.hookspath /Users/igor/carasent/asma-modules/.githooks\nremote.origin.url git@github.com:Carasent-ASMA/asma-core-helpers.git\nremote.origin.fetch +refs/heads/*:refs/remotes/origin/*\nbranch.feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding.remote origin\nbranch.feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding.merge refs/heads/feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding\ncore.hookspath /private/tmp/asma-8342-qualified-hooks-1mlg6v81",
+      "push_urls": [
+        "git@github.com:Carasent-ASMA/asma-core-helpers.git"
+      ],
+      "environment": {
+        "native_agent_id": "2f71ba5c-8d9e-4283-b4f6-31ce0da52d66",
+        "GIT_CONFIG_COUNT_before": 0,
+        "GIT_CONFIG_COUNT_after": 1,
+        "ASMA_DISABLE_AUTO_ROOT_PULL": "1",
+        "LEFTHOOK_CONFIG": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/lefthook.yml",
+        "LEFTHOOK_BIN": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers/node_modules/.pnpm/lefthook-darwin-arm64@2.1.1/node_modules/lefthook-darwin-arm64/bin/lefthook",
+        "pnpm_config_verify_deps_before_run": "false",
+        "COREPACK_ENABLE_NETWORK": "0"
+      }
+    },
+    "source-dry-run-commands.json": [
+      {
+        "name": "ASMA-dry-run",
+        "argv": [
+          "asma",
+          "git",
+          "commit",
+          "-m",
+          "fix(context): ASMA-8342 Fix dispatch and client lifecycle",
+          "--push",
+          "--verbose",
+          "--dry-run"
+        ],
+        "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+        "started": "2026-10-03T15:15:21.182605+00:00",
+        "ended": "2026-10-03T15:15:22.049330+00:00",
+        "exit": 0,
+        "stdin": null,
+        "stdout": "ℹ Commit scope: asma-core-helpers\nℹ Workspace root pointer commit: disabled for submodule flow; asma-modules may still be pulled for sync\nℹ Generating 1 commit message(s) in parallel...\nℹ ✓ .worktrees/asma-8342/asma-core-helpers (manual)\nℹ Submodule target: asma-core-helpers\nℹ Commit message for asma-core-helpers (manual):\n› fix(context): ASMA-8342 Fix dispatch and client lifecycle\n› git -C /Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers commit -m fix(context): ASMA-8342 Fix dispatch and client lifecycle\n› git -C /Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers push origin\nℹ Dry run complete\n✅ Commit flow complete for asma-core-helpers\n",
+        "stderr": ""
+      }
+    ],
+    "source-check-preflight.json": {
+      "UTC": "2026-10-03T15:14:31.596243+00:00",
+      "HEAD": "6bfe8267549eaced9eb6f3b0ae3dafc8091918af",
+      "staged_paths_nul_hex": "",
+      "staged_hashes": {},
+      "source_hashes": {
+        "src/helpers/generateSrvAuthBindings.ts": "6e4cac43a77b0e06ff81cf7a9dcbe3f0b432ac26320871a8fbf91931ee681647",
+        "src/helpers/generateSrvAuthBindings.test.ts": "5fd52e3e22a7853b2cec6bc4f2c60c51e3728c2c1eb927391724180179d47400",
+        "src/helpers/createTadaBrowserClient.ts": "16cc4ce4b8d07cc164c288556bd270231e8a5f02ab10aa79cfc6c818d9000b97",
+        "src/helpers/initTadaBrowserClient.ts": "b646c109ec0c37af1f9544f4507f954170e13793f7a7991b460e7562f5c6dd43"
+      },
+      "route_pins": [
+        {
+          "group": "process_hooks",
+          "name": "commit-msg",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/commit-msg",
+          "expected": "1b1250b1afdd9d5cf8fc4a3fb5a6b03d5ed7a1a7c92095e1fd433be70d0c51c9",
+          "observed": "1b1250b1afdd9d5cf8fc4a3fb5a6b03d5ed7a1a7c92095e1fd433be70d0c51c9",
+          "match": true
+        },
+        {
+          "group": "process_hooks",
+          "name": "pre-commit",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/pre-commit",
+          "expected": "2ad3626327578e0c40b67c74b73573a918f426912faa3505f9c86c19ce2e3df3",
+          "observed": "2ad3626327578e0c40b67c74b73573a918f426912faa3505f9c86c19ce2e3df3",
+          "match": true
+        },
+        {
+          "group": "process_hooks",
+          "name": "pre-push",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/pre-push",
+          "expected": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "observed": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "match": true
+        },
+        {
+          "group": "process_hooks",
+          "name": "prepare-commit-msg",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/prepare-commit-msg",
+          "expected": "975cec878e0e8522693c66a75e81e3916b19f3a694290ee4ad7f622af7215e2a",
+          "observed": "975cec878e0e8522693c66a75e81e3916b19f3a694290ee4ad7f622af7215e2a",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "commit-msg",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/commit-msg",
+          "expected": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+          "observed": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "pre-commit",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/pre-commit",
+          "expected": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+          "observed": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "pre-push",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/pre-push",
+          "expected": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "observed": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "prepare-commit-msg",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/prepare-commit-msg",
+          "expected": "afc37a4d37c385ce2bea9f0584146f093752d6ad788bb84914cd4ae769b00bb0",
+          "observed": "afc37a4d37c385ce2bea9f0584146f093752d6ad788bb84914cd4ae769b00bb0",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "commit-msg.old",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/commit-msg.old",
+          "expected": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+          "observed": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "pre-commit.old",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/pre-commit.old",
+          "expected": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+          "observed": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "pre-push.old",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/pre-push.old",
+          "expected": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "observed": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "match": true
+        },
+        {
+          "group": "validators",
+          "name": "validate-doc-refs.py",
+          "path": "/Users/igor/carasent/asma-modules/_tools/lefthook/_scripts/validate-doc-refs.py",
+          "expected": "62a5aa537cddace14bf6456f8aae25d0df3ffe7b2ef1df27a33972075bc9c7f3",
+          "observed": "62a5aa537cddace14bf6456f8aae25d0df3ffe7b2ef1df27a33972075bc9c7f3",
+          "match": true
+        },
+        {
+          "group": "validators",
+          "name": "validate-commit-msg.py",
+          "path": "/Users/igor/carasent/asma-modules/_tools/lefthook/_scripts/validate-commit-msg.py",
+          "expected": "f13e67dd9dbf69ef8387a5212210b07b15856eea2a2dcde05a6290a1c1faeadb",
+          "observed": "f13e67dd9dbf69ef8387a5212210b07b15856eea2a2dcde05a6290a1c1faeadb",
+          "match": true
+        },
+        {
+          "group": "config",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/lefthook.yml",
+          "expected": "1ed1c0b495efc6b6aa96457220b9474ead8a9838cebdedbb44840321f9a96a51",
+          "observed": "1ed1c0b495efc6b6aa96457220b9474ead8a9838cebdedbb44840321f9a96a51",
+          "match": true
+        },
+        {
+          "group": "lefthook_bin",
+          "path": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers/node_modules/.pnpm/lefthook-darwin-arm64@2.1.1/node_modules/lefthook-darwin-arm64/bin/lefthook",
+          "expected": "90e53a15be1630791dde4d802fe0a382fd2c93cbef3db1fbbfd33d62f2f6a0af",
+          "observed": "90e53a15be1630791dde4d802fe0a382fd2c93cbef3db1fbbfd33d62f2f6a0af",
+          "match": true
+        }
+      ],
+      "installed3": [
+        {
+          "path": "/Users/igor/carasent/asma-modules/_tools/asma-cli/src/asma_cli/commands/git_commit.py",
+          "sha256": "163a0a956e523cf646af31b8a1620e5138a250a47ca1aa0db1e91638b375959e"
+        },
+        {
+          "path": "/Users/igor/carasent/asma-modules/_tools/asma-cli/src/asma_cli/commands/git_commit_flows.py",
+          "sha256": "8565d0a709e893b762bcffe9f83e80940f75ccd9b282c9017c8bbcaca22f1aa2"
+        },
+        {
+          "path": "/Users/igor/carasent/asma-modules/_tools/asma-cli/src/asma_cli/commands/git_commit_root_external_flows.py",
+          "sha256": "6befb9eb05008af43d52b14772f59516e61e9fdf6d81673ba290e74cd55c90c9"
+        }
+      ],
+      "local_config_sha256": "d531e69079f552aeb6c961a1196000889523ec9a9dc5bdb46889cb13edb2ee5e",
+      "topology": {
+        "root": "/Users/igor/carasent/asma-modules",
+        "scope": ".worktrees/asma-8342/asma-core-helpers",
+        "targets": [
+          ".worktrees/asma-8342/asma-core-helpers"
+        ],
+        "auto_changed_dependents": []
+      },
+      "remote_configuration": "push.autosetupremote true\ncore.hookspath /Users/igor/carasent/asma-modules/.githooks\nremote.origin.url git@github.com:Carasent-ASMA/asma-core-helpers.git\nremote.origin.fetch +refs/heads/*:refs/remotes/origin/*\nbranch.feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding.remote origin\nbranch.feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding.merge refs/heads/feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding\ncore.hookspath /private/tmp/asma-8342-qualified-hooks-1mlg6v81",
+      "push_urls": [
+        "git@github.com:Carasent-ASMA/asma-core-helpers.git"
+      ],
+      "environment": {
+        "native_agent_id": "2f71ba5c-8d9e-4283-b4f6-31ce0da52d66",
+        "GIT_CONFIG_COUNT_before": 0,
+        "GIT_CONFIG_COUNT_after": 1,
+        "ASMA_DISABLE_AUTO_ROOT_PULL": "1",
+        "LEFTHOOK_CONFIG": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/lefthook.yml",
+        "LEFTHOOK_BIN": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers/node_modules/.pnpm/lefthook-darwin-arm64@2.1.1/node_modules/lefthook-darwin-arm64/bin/lefthook",
+        "pnpm_config_verify_deps_before_run": "false",
+        "COREPACK_ENABLE_NETWORK": "0"
+      }
+    },
+    "source-validate-commands.json": [
+      {
+        "name": "pre-commit",
+        "argv": [
+          "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/pre-commit"
+        ],
+        "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+        "started": "2026-10-03T15:15:24.087820+00:00",
+        "ended": "2026-10-03T15:15:24.207341+00:00",
+        "exit": 0,
+        "stdin": null,
+        "stdout": "\u001b[92m✅ doc refs OK\u001b[0m \u001b[90m(4 files)\u001b[0m\n",
+        "stderr": ""
+      },
+      {
+        "name": "prepare-commit-msg",
+        "argv": [
+          "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/prepare-commit-msg",
+          "/private/tmp/asma-8342-current-checkpoint/source-message.txt",
+          "message"
+        ],
+        "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+        "started": "2026-10-03T15:15:25.183360+00:00",
+        "ended": "2026-10-03T15:15:25.317173+00:00",
+        "exit": 0,
+        "stdin": null,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "name": "commit-msg",
+        "argv": [
+          "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/commit-msg",
+          "/private/tmp/asma-8342-current-checkpoint/source-message.txt"
+        ],
+        "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+        "started": "2026-10-03T15:15:26.295005+00:00",
+        "ended": "2026-10-03T15:15:26.343822+00:00",
+        "exit": 0,
+        "stdin": null,
+        "stdout": "\u001b[92m✅ Commit message valid: fix(context): ASMA-8342 Fix dispatch and client lifecycle\u001b[0m\n",
+        "stderr": ""
+      },
+      {
+        "name": "pre-push",
+        "argv": [
+          "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/pre-push",
+          "origin",
+          "git@github.com:Carasent-ASMA/asma-core-helpers.git"
+        ],
+        "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+        "started": "2026-10-03T15:15:27.345974+00:00",
+        "ended": "2026-10-03T15:15:27.362968+00:00",
+        "exit": 0,
+        "stdin": "refs/heads/feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding 6bfe8267549eaced9eb6f3b0ae3dafc8091918af refs/heads/feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding 6bfe8267549eaced9eb6f3b0ae3dafc8091918af\n",
+        "stdout": "",
+        "stderr": ""
+      }
+    ],
+    "source-hooks-executed.json": [
+      {
+        "start": {
+          "event": "child_start",
+          "sid": "20261003T162350.598489Z-H2a39f0fb-P0001120e",
+          "thread": "main",
+          "time": "2026-10-03T16:23:50.611947Z",
+          "file": "run-command.c",
+          "line": 740,
+          "child_id": 0,
+          "child_class": "hook",
+          "hook_name": "pre-commit",
+          "use_shell": false,
+          "argv": [
+            "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/pre-commit"
+          ]
+        },
+        "exit": {
+          "event": "child_exit",
+          "sid": "20261003T162350.598489Z-H2a39f0fb-P0001120e",
+          "thread": "main",
+          "time": "2026-10-03T16:23:50.803880Z",
+          "file": "run-command.c",
+          "line": 996,
+          "child_id": 0,
+          "pid": 70163,
+          "code": 0,
+          "t_rel": 0.191892
+        }
+      },
+      {
+        "start": {
+          "event": "child_start",
+          "sid": "20261003T162350.598489Z-H2a39f0fb-P0001120e",
+          "thread": "main",
+          "time": "2026-10-03T16:23:50.805603Z",
+          "file": "run-command.c",
+          "line": 740,
+          "child_id": 1,
+          "child_class": "hook",
+          "hook_name": "prepare-commit-msg",
+          "use_shell": false,
+          "argv": [
+            "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/prepare-commit-msg",
+            "/Users/igor/carasent/asma-modules/.git/modules/shared/asma-helpers/worktrees/asma-core-helpers1/COMMIT_EDITMSG",
+            "message"
+          ]
+        },
+        "exit": {
+          "event": "child_exit",
+          "sid": "20261003T162350.598489Z-H2a39f0fb-P0001120e",
+          "thread": "main",
+          "time": "2026-10-03T16:23:50.920542Z",
+          "file": "run-command.c",
+          "line": 996,
+          "child_id": 1,
+          "pid": 70196,
+          "code": 0,
+          "t_rel": 0.11491
+        }
+      },
+      {
+        "start": {
+          "event": "child_start",
+          "sid": "20261003T162350.598489Z-H2a39f0fb-P0001120e",
+          "thread": "main",
+          "time": "2026-10-03T16:23:50.925125Z",
+          "file": "run-command.c",
+          "line": 740,
+          "child_id": 2,
+          "child_class": "hook",
+          "hook_name": "commit-msg",
+          "use_shell": false,
+          "argv": [
+            "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/commit-msg",
+            "/Users/igor/carasent/asma-modules/.git/modules/shared/asma-helpers/worktrees/asma-core-helpers1/COMMIT_EDITMSG"
+          ]
+        },
+        "exit": {
+          "event": "child_exit",
+          "sid": "20261003T162350.598489Z-H2a39f0fb-P0001120e",
+          "thread": "main",
+          "time": "2026-10-03T16:23:51.016806Z",
+          "file": "run-command.c",
+          "line": 996,
+          "child_id": 2,
+          "pid": 70217,
+          "code": 0,
+          "t_rel": 0.09167
+        }
+      },
+      {
+        "start": {
+          "event": "child_start",
+          "sid": "20261003T162356.962360Z-H2a39f0fb-P000115f2",
+          "thread": "main",
+          "time": "2026-10-03T16:23:59.051664Z",
+          "file": "run-command.c",
+          "line": 740,
+          "child_id": 1,
+          "child_class": "hook",
+          "hook_name": "pre-push",
+          "use_shell": false,
+          "argv": [
+            "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/pre-push",
+            "origin",
+            "git@github.com:Carasent-ASMA/asma-core-helpers.git"
+          ]
+        },
+        "exit": {
+          "event": "child_exit",
+          "sid": "20261003T162356.962360Z-H2a39f0fb-P000115f2",
+          "thread": "main",
+          "time": "2026-10-03T16:23:59.068776Z",
+          "file": "run-command.c",
+          "line": 996,
+          "child_id": 1,
+          "pid": 71523,
+          "code": 0,
+          "t_rel": 0.017098
+        }
+      }
+    ],
+    "source-effect.json": {
+      "phase": "source",
+      "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+      "parent_expected": "6bfe8267549eaced9eb6f3b0ae3dafc8091918af",
+      "HEAD_after": "0c71872d34f2dfe586ec6654f2df8c0f3f7c5bc5",
+      "index_after": "",
+      "status_after": "M .cursor/rules/copilot-instructions.mdc\n?? .agents/\n?? .asma/\n?? .claude/\n?? .cursor/rules/asma-workspace-asma-doc-routing.mdc\n?? .cursor/rules/asma-workspace-asma-playwright-routing.mdc\n?? .cursor/rules/asma-workspace-asma-python-routing.mdc\n?? .cursor/rules/asma-workspace-asma-qnr-index.mdc\n?? .cursor/rules/asma-workspace-asma-yaml-routing.mdc\n?? .cursor/rules/asma-workspace-docs-navigation.mdc\n?? .pnpm-store/\n?? AGENTS.md\n?? CLAUDE.md\n?? lefthook.yml",
+      "commands": [
+        {
+          "name": "remote-task-before",
+          "argv": [
+            "git",
+            "ls-remote",
+            "origin",
+            "refs/heads/feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding"
+          ],
+          "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+          "started": "2026-10-03T16:23:47.267153+00:00",
+          "ended": "2026-10-03T16:23:49.262545+00:00",
+          "exit": 0,
+          "stdin": null,
+          "stdout": "6bfe8267549eaced9eb6f3b0ae3dafc8091918af\trefs/heads/feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding\n",
+          "stderr": ""
+        },
+        {
+          "name": "ASMA-commit-push",
+          "argv": [
+            "asma",
+            "git",
+            "commit",
+            "-m",
+            "fix(context): ASMA-8342 Fix dispatch and client lifecycle",
+            "--push",
+            "--verbose"
+          ],
+          "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+          "started": "2026-10-03T16:23:49.262971+00:00",
+          "ended": "2026-10-03T16:24:00.167828+00:00",
+          "exit": 0,
+          "stdin": null,
+          "stdout": "ℹ Commit scope: asma-core-helpers\nℹ Workspace root pointer commit: disabled for submodule flow; asma-modules may still be pulled for sync\nℹ Generating 1 commit message(s) in parallel...\nℹ ✓ .worktrees/asma-8342/asma-core-helpers (manual)\nℹ Submodule target: asma-core-helpers\nℹ Commit message for asma-core-helpers (manual):\n› fix(context): ASMA-8342 Fix dispatch and client lifecycle\n› git -C /Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers commit -m fix(context): ASMA-8342 Fix dispatch and client lifecycle\n› git -C /Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers push origin\n› git: ✅ doc refs OK (4 files)\n› git: ✅ Commit message valid: fix(context): ASMA-8342 Fix dispatch and client lifecycle\n› git: [feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding 0c71872] fix(context): ASMA-8342 Fix dispatch and client lifecycle\n› git:  4 files changed, 164 insertions(+), 6 deletions(-)\n⚠ Kontor would refuse 'feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding' (binding_unconfirmed); publishing anyway (paseo-direct surface; ASMA_ORCHESTRATION_SURFACE=kontor fails closed)\nℹ Refusal recorded as attestation 01a10294-5106-7430-9252-bd04336fa507\n› git: remote:\n› git: remote: GitHub found 4 vulnerabilities on Carasent-ASMA/asma-core-helpers's default branch (2 high, 2 moderate). To find out more, visit:\n› git: remote:      https://github.com/Carasent-ASMA/asma-core-helpers/security/dependabot\n› git: remote:\n› git: To github.com:Carasent-ASMA/asma-core-helpers.git\n› git:    6bfe826..0c71872  feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding -> feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding\n✅ Commit flow complete for asma-core-helpers\n",
+          "stderr": ""
+        },
+        {
+          "name": "remote-task-after",
+          "argv": [
+            "git",
+            "ls-remote",
+            "origin",
+            "refs/heads/feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding"
+          ],
+          "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+          "started": "2026-10-03T16:24:00.375812+00:00",
+          "ended": "2026-10-03T16:24:02.229421+00:00",
+          "exit": 0,
+          "stdin": null,
+          "stdout": "0c71872d34f2dfe586ec6654f2df8c0f3f7c5bc5\trefs/heads/feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding\n",
+          "stderr": ""
+        }
+      ],
+      "trace_path": "/private/tmp/asma-8342-current-checkpoint/source-effect-trace.jsonl",
+      "exit": 0,
+      "remote_task_SHA": "0c71872d34f2dfe586ec6654f2df8c0f3f7c5bc5"
+    },
+    "source-validate-preflight.json": {
+      "UTC": "2026-10-03T15:15:23.082060+00:00",
+      "HEAD": "6bfe8267549eaced9eb6f3b0ae3dafc8091918af",
+      "staged_paths_nul_hex": "7372632f68656c706572732f6372656174655461646142726f77736572436c69656e742e7473007372632f68656c706572732f67656e65726174655372764175746842696e64696e67732e746573742e7473007372632f68656c706572732f67656e65726174655372764175746842696e64696e67732e7473007372632f68656c706572732f696e69745461646142726f77736572436c69656e742e747300",
+      "staged_hashes": {
+        "src/helpers/generateSrvAuthBindings.ts": "6e4cac43a77b0e06ff81cf7a9dcbe3f0b432ac26320871a8fbf91931ee681647",
+        "src/helpers/generateSrvAuthBindings.test.ts": "5fd52e3e22a7853b2cec6bc4f2c60c51e3728c2c1eb927391724180179d47400",
+        "src/helpers/createTadaBrowserClient.ts": "16cc4ce4b8d07cc164c288556bd270231e8a5f02ab10aa79cfc6c818d9000b97",
+        "src/helpers/initTadaBrowserClient.ts": "b646c109ec0c37af1f9544f4507f954170e13793f7a7991b460e7562f5c6dd43"
+      },
+      "source_hashes": {
+        "src/helpers/generateSrvAuthBindings.ts": "6e4cac43a77b0e06ff81cf7a9dcbe3f0b432ac26320871a8fbf91931ee681647",
+        "src/helpers/generateSrvAuthBindings.test.ts": "5fd52e3e22a7853b2cec6bc4f2c60c51e3728c2c1eb927391724180179d47400",
+        "src/helpers/createTadaBrowserClient.ts": "16cc4ce4b8d07cc164c288556bd270231e8a5f02ab10aa79cfc6c818d9000b97",
+        "src/helpers/initTadaBrowserClient.ts": "b646c109ec0c37af1f9544f4507f954170e13793f7a7991b460e7562f5c6dd43"
+      },
+      "route_pins": [
+        {
+          "group": "process_hooks",
+          "name": "commit-msg",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/commit-msg",
+          "expected": "1b1250b1afdd9d5cf8fc4a3fb5a6b03d5ed7a1a7c92095e1fd433be70d0c51c9",
+          "observed": "1b1250b1afdd9d5cf8fc4a3fb5a6b03d5ed7a1a7c92095e1fd433be70d0c51c9",
+          "match": true
+        },
+        {
+          "group": "process_hooks",
+          "name": "pre-commit",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/pre-commit",
+          "expected": "2ad3626327578e0c40b67c74b73573a918f426912faa3505f9c86c19ce2e3df3",
+          "observed": "2ad3626327578e0c40b67c74b73573a918f426912faa3505f9c86c19ce2e3df3",
+          "match": true
+        },
+        {
+          "group": "process_hooks",
+          "name": "pre-push",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/pre-push",
+          "expected": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "observed": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "match": true
+        },
+        {
+          "group": "process_hooks",
+          "name": "prepare-commit-msg",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/prepare-commit-msg",
+          "expected": "975cec878e0e8522693c66a75e81e3916b19f3a694290ee4ad7f622af7215e2a",
+          "observed": "975cec878e0e8522693c66a75e81e3916b19f3a694290ee4ad7f622af7215e2a",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "commit-msg",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/commit-msg",
+          "expected": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+          "observed": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "pre-commit",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/pre-commit",
+          "expected": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+          "observed": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "pre-push",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/pre-push",
+          "expected": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "observed": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "prepare-commit-msg",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/prepare-commit-msg",
+          "expected": "afc37a4d37c385ce2bea9f0584146f093752d6ad788bb84914cd4ae769b00bb0",
+          "observed": "afc37a4d37c385ce2bea9f0584146f093752d6ad788bb84914cd4ae769b00bb0",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "commit-msg.old",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/commit-msg.old",
+          "expected": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+          "observed": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "pre-commit.old",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/pre-commit.old",
+          "expected": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+          "observed": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+          "match": true
+        },
+        {
+          "group": "shared_hooks",
+          "name": "pre-push.old",
+          "path": "/Users/igor/carasent/asma-modules/.githooks/pre-push.old",
+          "expected": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "observed": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+          "match": true
+        },
+        {
+          "group": "validators",
+          "name": "validate-doc-refs.py",
+          "path": "/Users/igor/carasent/asma-modules/_tools/lefthook/_scripts/validate-doc-refs.py",
+          "expected": "62a5aa537cddace14bf6456f8aae25d0df3ffe7b2ef1df27a33972075bc9c7f3",
+          "observed": "62a5aa537cddace14bf6456f8aae25d0df3ffe7b2ef1df27a33972075bc9c7f3",
+          "match": true
+        },
+        {
+          "group": "validators",
+          "name": "validate-commit-msg.py",
+          "path": "/Users/igor/carasent/asma-modules/_tools/lefthook/_scripts/validate-commit-msg.py",
+          "expected": "f13e67dd9dbf69ef8387a5212210b07b15856eea2a2dcde05a6290a1c1faeadb",
+          "observed": "f13e67dd9dbf69ef8387a5212210b07b15856eea2a2dcde05a6290a1c1faeadb",
+          "match": true
+        },
+        {
+          "group": "config",
+          "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/lefthook.yml",
+          "expected": "1ed1c0b495efc6b6aa96457220b9474ead8a9838cebdedbb44840321f9a96a51",
+          "observed": "1ed1c0b495efc6b6aa96457220b9474ead8a9838cebdedbb44840321f9a96a51",
+          "match": true
+        },
+        {
+          "group": "lefthook_bin",
+          "path": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers/node_modules/.pnpm/lefthook-darwin-arm64@2.1.1/node_modules/lefthook-darwin-arm64/bin/lefthook",
+          "expected": "90e53a15be1630791dde4d802fe0a382fd2c93cbef3db1fbbfd33d62f2f6a0af",
+          "observed": "90e53a15be1630791dde4d802fe0a382fd2c93cbef3db1fbbfd33d62f2f6a0af",
+          "match": true
+        }
+      ],
+      "installed3": [
+        {
+          "path": "/Users/igor/carasent/asma-modules/_tools/asma-cli/src/asma_cli/commands/git_commit.py",
+          "sha256": "163a0a956e523cf646af31b8a1620e5138a250a47ca1aa0db1e91638b375959e"
+        },
+        {
+          "path": "/Users/igor/carasent/asma-modules/_tools/asma-cli/src/asma_cli/commands/git_commit_flows.py",
+          "sha256": "8565d0a709e893b762bcffe9f83e80940f75ccd9b282c9017c8bbcaca22f1aa2"
+        },
+        {
+          "path": "/Users/igor/carasent/asma-modules/_tools/asma-cli/src/asma_cli/commands/git_commit_root_external_flows.py",
+          "sha256": "6befb9eb05008af43d52b14772f59516e61e9fdf6d81673ba290e74cd55c90c9"
+        }
+      ],
+      "local_config_sha256": "d531e69079f552aeb6c961a1196000889523ec9a9dc5bdb46889cb13edb2ee5e",
+      "topology": {
+        "root": "/Users/igor/carasent/asma-modules",
+        "scope": ".worktrees/asma-8342/asma-core-helpers",
+        "targets": [
+          ".worktrees/asma-8342/asma-core-helpers"
+        ],
+        "auto_changed_dependents": []
+      },
+      "remote_configuration": "push.autosetupremote true\ncore.hookspath /Users/igor/carasent/asma-modules/.githooks\nremote.origin.url git@github.com:Carasent-ASMA/asma-core-helpers.git\nremote.origin.fetch +refs/heads/*:refs/remotes/origin/*\nbranch.feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding.remote origin\nbranch.feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding.merge refs/heads/feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding\ncore.hookspath /private/tmp/asma-8342-qualified-hooks-1mlg6v81",
+      "push_urls": [
+        "git@github.com:Carasent-ASMA/asma-core-helpers.git"
+      ],
+      "environment": {
+        "native_agent_id": "2f71ba5c-8d9e-4283-b4f6-31ce0da52d66",
+        "GIT_CONFIG_COUNT_before": 0,
+        "GIT_CONFIG_COUNT_after": 1,
+        "ASMA_DISABLE_AUTO_ROOT_PULL": "1",
+        "LEFTHOOK_CONFIG": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/lefthook.yml",
+        "LEFTHOOK_BIN": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers/node_modules/.pnpm/lefthook-darwin-arm64@2.1.1/node_modules/lefthook-darwin-arm64/bin/lefthook",
+        "pnpm_config_verify_deps_before_run": "false",
+        "COREPACK_ENABLE_NETWORK": "0"
+      }
+    }
+  },
+  "actual_source_auto_hooks": [
+    {
+      "start": {
+        "event": "child_start",
+        "sid": "20261003T162350.598489Z-H2a39f0fb-P0001120e",
+        "thread": "main",
+        "time": "2026-10-03T16:23:50.611947Z",
+        "file": "run-command.c",
+        "line": 740,
+        "child_id": 0,
+        "child_class": "hook",
+        "hook_name": "pre-commit",
+        "use_shell": false,
+        "argv": [
+          "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/pre-commit"
+        ]
+      },
+      "exit": {
+        "event": "child_exit",
+        "sid": "20261003T162350.598489Z-H2a39f0fb-P0001120e",
+        "thread": "main",
+        "time": "2026-10-03T16:23:50.803880Z",
+        "file": "run-command.c",
+        "line": 996,
+        "child_id": 0,
+        "pid": 70163,
+        "code": 0,
+        "t_rel": 0.191892
+      }
+    },
+    {
+      "start": {
+        "event": "child_start",
+        "sid": "20261003T162350.598489Z-H2a39f0fb-P0001120e",
+        "thread": "main",
+        "time": "2026-10-03T16:23:50.805603Z",
+        "file": "run-command.c",
+        "line": 740,
+        "child_id": 1,
+        "child_class": "hook",
+        "hook_name": "prepare-commit-msg",
+        "use_shell": false,
+        "argv": [
+          "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/prepare-commit-msg",
+          "/Users/igor/carasent/asma-modules/.git/modules/shared/asma-helpers/worktrees/asma-core-helpers1/COMMIT_EDITMSG",
+          "message"
+        ]
+      },
+      "exit": {
+        "event": "child_exit",
+        "sid": "20261003T162350.598489Z-H2a39f0fb-P0001120e",
+        "thread": "main",
+        "time": "2026-10-03T16:23:50.920542Z",
+        "file": "run-command.c",
+        "line": 996,
+        "child_id": 1,
+        "pid": 70196,
+        "code": 0,
+        "t_rel": 0.11491
+      }
+    },
+    {
+      "start": {
+        "event": "child_start",
+        "sid": "20261003T162350.598489Z-H2a39f0fb-P0001120e",
+        "thread": "main",
+        "time": "2026-10-03T16:23:50.925125Z",
+        "file": "run-command.c",
+        "line": 740,
+        "child_id": 2,
+        "child_class": "hook",
+        "hook_name": "commit-msg",
+        "use_shell": false,
+        "argv": [
+          "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/commit-msg",
+          "/Users/igor/carasent/asma-modules/.git/modules/shared/asma-helpers/worktrees/asma-core-helpers1/COMMIT_EDITMSG"
+        ]
+      },
+      "exit": {
+        "event": "child_exit",
+        "sid": "20261003T162350.598489Z-H2a39f0fb-P0001120e",
+        "thread": "main",
+        "time": "2026-10-03T16:23:51.016806Z",
+        "file": "run-command.c",
+        "line": 996,
+        "child_id": 2,
+        "pid": 70217,
+        "code": 0,
+        "t_rel": 0.09167
+      }
+    },
+    {
+      "start": {
+        "event": "child_start",
+        "sid": "20261003T162356.962360Z-H2a39f0fb-P000115f2",
+        "thread": "main",
+        "time": "2026-10-03T16:23:59.051664Z",
+        "file": "run-command.c",
+        "line": 740,
+        "child_id": 1,
+        "child_class": "hook",
+        "hook_name": "pre-push",
+        "use_shell": false,
+        "argv": [
+          "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/pre-push",
+          "origin",
+          "git@github.com:Carasent-ASMA/asma-core-helpers.git"
+        ]
+      },
+      "exit": {
+        "event": "child_exit",
+        "sid": "20261003T162356.962360Z-H2a39f0fb-P000115f2",
+        "thread": "main",
+        "time": "2026-10-03T16:23:59.068776Z",
+        "file": "run-command.c",
+        "line": 996,
+        "child_id": 1,
+        "pid": 71523,
+        "code": 0,
+        "t_rel": 0.017098
+      }
+    }
+  ],
+  "source_stage_sandbox_failure": [
+    {
+      "name": "explicit-stage",
+      "argv": [
+        "git",
+        "add",
+        "--",
+        "src/helpers/generateSrvAuthBindings.ts",
+        "src/helpers/generateSrvAuthBindings.test.ts",
+        "src/helpers/createTadaBrowserClient.ts",
+        "src/helpers/initTadaBrowserClient.ts"
+      ],
+      "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+      "started": "2026-10-03T15:14:12.084767+00:00",
+      "ended": "2026-10-03T15:14:12.104102+00:00",
+      "exit": 128,
+      "stdin": null,
+      "stdout": "",
+      "stderr": "fatal: Unable to create '/Users/igor/carasent/asma-modules/.git/modules/shared/asma-helpers/worktrees/asma-core-helpers1/index.lock': Operation not permitted\n"
+    }
+  ],
+  "source_operator_summary": "dry-run0, four standalone actual validators0 each, actual ASMA commit/push0, Git trace2 actual precommit/prepare/commitmsg/prepush child exits0 each, source parent/path/blob/remote checks hold; full raw stdout/stderr/UTC/argv independent records retained",
+  "RESULTS_at_freeze": "Only this new .md and .json proposed from actual SOURCE parent; RESULTS staging/dry-run/validators/commit/push not performed yet. Own RESULTS SHA deliberately omitted; exact frozen hashes and actual outcomes follow in terminal callback, no self-reference or invented SHA. Historical reports and index untouched.",
+  "preservation": {
+    "HEAD_at_freeze": "0c71872d34f2dfe586ec6654f2df8c0f3f7c5bc5",
+    "index_empty": true,
+    "foreign_status": "M .cursor/rules/copilot-instructions.mdc\n?? .agents/\n?? .asma/\n?? .claude/\n?? .cursor/rules/asma-workspace-asma-doc-routing.mdc\n?? .cursor/rules/asma-workspace-asma-playwright-routing.mdc\n?? .cursor/rules/asma-workspace-asma-python-routing.mdc\n?? .cursor/rules/asma-workspace-asma-qnr-index.mdc\n?? .cursor/rules/asma-workspace-asma-yaml-routing.mdc\n?? .cursor/rules/asma-workspace-docs-navigation.mdc\n?? .pnpm-store/\n?? AGENTS.md\n?? CLAUDE.md\n?? lefthook.yml",
+    "foreign_commit_exclusion": "NUL staged-set/blob proof and actual diff-tree exact four paths; preserved foreign Cursor/adapters/.pnpm-store/local comment config/shared hooks/backups. No canonical pointer/default/ASMA8339 integration/Jira/PR/release/source rewrite."
+  },
+  "ledger": {
+    "before": ".743+U consumed /7.437-U mandatory /7.687-U contingent; whole8.18/8.43",
+    "current_publication_terminal_forecast": ".03 inside retained Dev1.00-beforeU; final part of accepted ENTIRE .08 correction, no new allowance",
+    "closing_publication_terminal_consumption_model_estimate": ".03 once for source/results operators, qualification, packet and both callbacks; engineering MODEL estimate, not certified active time/billing",
+    "closing": ".773+U consumed /7.407-U mandatory /7.657-U contingent; whole8.18/8.43 unchanged; net expansion0",
+    "Dev": ".28 consumed/.97-beforeU remaining within1.25 once; original.18+race.02+P2P3.05+publication.03=.28; entire correction.08=.05+.03",
+    "TPM": ".12 consumed/.18-beforeU remaining within.30; latest .01 qualification already inside input.743, no repeat",
+    "unknown": "U and owner subsets unresolved within retained allocations; QA/Audit predecessor/supplement/ROOT recovery/hooks/retired intervals not zero or double-charged; finite fit uncertified",
+    "wait_limit": "Native turn15:06:47.878Z and actual effect16:23:47Z form idle/approval-inclusive envelope, not engineering consumption. Sandbox SOURCE stage denied128, index empty verified; scoped stage approved15:14:53. SOURCE effect approval wait extends into16:23, exact active engineering unmeasured. Do not convert approval/idle span into consumption. Stop before any net forecast/path expansion."
+  },
+  "orchestration_Reports_row": {
+    "ticket": "ASMA-8342",
+    "surface": "Paseo-direct",
+    "observation": "Installed ASMA emits advisory Kontor binding_unconfirmed attestation01a10294-5106-7430-9252-bd04336fa507 and continues approved task push. Logged as one Reports row in this evidence; canonical orchestration-index reconciliation separately owned, no Kontor containment/repair step or effect introduced.",
+    "receipt": "actual source ASMA raw output preserved",
+    "action": "Carry on approved task-only checkpoint"
+  },
+  "retained_full_scope": {
+    "accepted_current_routes": [
+      177,
+      180
+    ],
+    "selectors": 81,
+    "mount_sources": 303,
+    "hosts": 189,
+    "target_files": 176,
+    "provider_faces": 39,
+    "lexical_hits": 955,
+    "suppliers": "S1-S7 retained; current host-validated session/policy+owner-authorized record only grants ready; URL/cache/decoded metadata cannot grant. Guardian future correlation same captured authenticated wards response/session/customer/generation/member; stale/unknown/conflict deny, no ward actor/schema/backend guess.",
+    "lifecycle": "L1-L12 retained, local fixture contribution evidence only",
+    "verification": "V1-V10 retained, real browser/consumer/supplier/server/transport proof open",
+    "Artifact": "ESM-only, eight missing owner joins OPEN001 retained, no Artifact source change",
+    "ASMA8339": "Foreign collaboration source/checkouts/ceadb178... and canonicala0dfc955 unchanged; separate ancestry/source/integration qualification remains, no merge",
+    "whole_obligations": "Real suppliers, consumer adoption without direct auth reads, real transport/stream/cache flows, server authorization, whole seeded mutation, combined-source integration, review/release/closure OPEN"
+  },
+  "whole_Goal": "OPEN; all actual S1-S7/L1-L12/V1-V10 supplier/consumer/server/transport/browser/adoption, whole mutations/combined-source/integration/release/closure remain required; primitive is coordination only and cannot close Goal"
+}

@@ -1,0 +1,677 @@
+{
+  "schema": "ASMA-8342 frozen helpers contribution results v1; Dev local evidence, no independent acceptance",
+  "goal": "A shared context module exposes actor, organization and selected-record state plus the shell-to-widget auth binding, and target widgets consume it without reading authentication directly.",
+  "full_goal_status": "OPEN; real suppliers/consumers/server authorization/transports/combined source/independent QA-Audit remain unperformed",
+  "identity": {
+    "agent": "2f71ba5c-8d9e-4283-b4f6-31ce0da52d66",
+    "native": "01a1016a-d566-7fb2-8722-4dda4f0a48ec",
+    "provider": "codex-personal",
+    "vendor": "OpenAI",
+    "model": "gpt-6.1-sol",
+    "effort": "xhigh",
+    "mode": "auto",
+    "project": "prj_fc87bc1f96af0ed3",
+    "workspace": "wks_128565ef9e09dc1d",
+    "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+    "role": "n-dev",
+    "designed_rung": 2,
+    "pending_permissions_at_readback": []
+  },
+  "personal_capacity_observation": {
+    "initial_used_percent": 10,
+    "latest_used_percent": 12,
+    "window_minutes": 10080,
+    "reset_utc": "2026-10-09T21:14:13Z",
+    "not_work_quota": true
+  },
+  "full_denominator": {
+    "accepted_routes": 177,
+    "current_routes": 180,
+    "selectors": 81,
+    "mount_sources": 303,
+    "host_sites": 189,
+    "target_host_files": 176,
+    "provider_faces": 39,
+    "lexical_candidates": 955,
+    "supplier_obligations": [
+      "S1",
+      "S2",
+      "S3",
+      "S4",
+      "S5",
+      "S6",
+      "S7"
+    ],
+    "lifecycle_obligations": [
+      "L1",
+      "L2",
+      "L3",
+      "L4",
+      "L5",
+      "L6",
+      "L7",
+      "L8",
+      "L9",
+      "L10",
+      "L11",
+      "L12"
+    ],
+    "verification_obligations": [
+      "V1",
+      "V2",
+      "V3",
+      "V4",
+      "V5",
+      "V6",
+      "V7",
+      "V8",
+      "V9",
+      "V10"
+    ]
+  },
+  "functional": {
+    "source_head": "e793130bcc3ecf0b8fd01b8b21336e9d6042dc36",
+    "source_paths_sha256": {
+      "src/context/context.types.ts": "ac56d3a0c98aad00e7502a2dee18f382e86fd05859c386c08ce8fe9dcb48b098",
+      "src/context/createSharedContext.test.ts": "e2a50c03baf1bc4c6ea0bb2e402656998a3f9d25ce74b3879d1fa24d3f2acfa5",
+      "src/context/createSharedContext.ts": "fa34f92b53237788798d578ac454e64a40d254c5295f62ea7cdef65fd5c2a3c1",
+      "src/context/index.ts": "bcc865dcf5b3b6942e88aa12bef2f4c27e5b87fe18e28d9c975b5ae81a4a613b",
+      "src/helpers/createTadaBrowserClient.test.ts": "10a7c54160aa606b7000a1977755773b2e2a92c73757c1d2ec433575c7be28f6",
+      "src/helpers/createTadaBrowserClient.ts": "a9b0f6536b594c0a290a80c59a78da82767a61868ddc4f1bcbdb0ec65ed69734",
+      "src/helpers/generateSrvAuthBindings.test.ts": "dfe3d9629fca66e6c998c0fab6db56ff211ef2eed08468447ce975492f6b48db",
+      "src/helpers/generateSrvAuthBindings.ts": "34dc7388c75d83efe2742bdfac0cacd1618e6b9a87f8edb79c24c0d938939b96",
+      "src/helpers/generateSrvAuthBindings.types.ts": "df654b39ef8b743a3e4379ebb5ff624209b36af3087a3cf37ebdf2c3d284d899",
+      "src/helpers/initTadaBrowserClient.ts": "eb98a1f32cb5ac28d5804a60201633bfaf50615451e76a53c7f1c397a18ec2ee",
+      "src/index.ts": "1e8b8f855a09dc82c682897c65141a77759f1a585ee43932508b1eda5699e793"
+    },
+    "checks": [
+      {
+        "command": [
+          "pnpm",
+          "test"
+        ],
+        "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+        "start": "2026-10-03T11:50:28.269804+00:00",
+        "end": "2026-10-03T11:50:33.186342+00:00",
+        "exit": 0,
+        "stdout": "▶ applyOperation\n  ✔ bumps the revision by one and leaves its input untouched (1.430167ms)\n  ✔ inserts at the requested index and clamps one past the end (0.128791ms)\n  ✔ moves by removing first, so the index counts the other questions only (0.086625ms)\n  ✔ creates an ordered grid-owned column without adding it to the top-level order (0.123958ms)\n  ✔ refuses every grid-column operation through a non-grid question (0.307875ms)\n  ✔ moves a column only inside its grid and refuses to inject it into the top-level order (0.119ms)\n  ✔ sets and clears a grid column layout as one atomic placement (0.10025ms)\n  ✔ deletes a column from grid cells and every convention-named presentation map (0.601709ms)\n  ✔ drops the bindings that targeted a deleted question, keeping the shared node (0.219917ms)\n  ✔ removes a collection that just became empty rather than storing it empty (0.177291ms)\n  ✔ writes a nested per-type field through a dotted path (0.114916ms)\n  ✔ removes the nested group when its last key is unset, never storing it empty (0.089208ms)\n  ✔ keeps sibling keys when one nested key is unset (0.07925ms)\n  ✔ does not mutate the document a nested write was derived from (0.072125ms)\n  ✔ renames an alternative in place, keeping the id every answer references (0.093125ms)\n  ✔ reorders alternatives without touching their values (0.090084ms)\n  ✔ refuses to edit or move an alternative through the wrong question (0.09575ms)\n  ✔ refuses to edit an alternative that does not exist (0.080167ms)\n  ✔ refuses a duplicate create as a conflict (0.072417ms)\n  ✔ reports an unknown op in the shape the service error resolver maps (0.079541ms)\n  ✔ drops a deleted question's own rule records along with its order entries (0.214375ms)\n  ✔ stores narrative and qnr rules in root collections with per-question primitive order (52.237375ms)\n  ✔ drops the prefill rules that fill a deleted question, and its highlight settings (0.177291ms)\n  ✔ keeps a prefill rule that merely SOURCES from the deleted question, dangling (0.106375ms)\n  ✔ keeps the highlight settings of a question whose rules are stored but disabled (0.097458ms)\n  ✔ keeps another question's rule that references the deleted question, for validation to surface (53.743375ms)\n  ✔ rejects a binding update that would put two bindings on one target (0.319417ms)\n  ✔ moves a rule instead of listing it under two questions when it is set again elsewhere (0.094584ms)\n  ✔ refuses to set a rule on a question that does not exist (0.165417ms)\n  ✔ refuses to delete or edit a grid row through the wrong grid (0.156167ms)\n  ✔ refuses to delete an alternative through the wrong question (0.112333ms)\n  ✔ moves a grid row relative to its anchor, and to the front on a null anchor (0.140417ms)\n  ✔ reserves the column list and the row-editor layout for the grid-column operations (0.263375ms)\n  ✔ refuses to write a question's type, so a grid cannot be flipped out from under its columns (0.17625ms)\n  ✔ drops a deleted question from every grid's column list (0.097041ms)\n  ✔ drops the grid config key when its last field goes with a deleted column (0.073ms)\n  ✔ takes a deleted grid's columns and predefined rows with it (0.34125ms)\n  ✔ deletes a grid whose column list is malformed without recursing forever (0.072958ms)\n  ✔ attaches a mapping root and maintains bindingOrder across create and delete (0.230042ms)\n  ✔ adopts bindings authored before the tree was attached into bindingOrder (0.096875ms)\n  ✔ rejects a dataMapping on a node that is not a root, and cascades the tree on delete (0.264625ms)\n✔ applyOperation (114.349167ms)\n▶ mappingBinding behaviours\n  ✔ stores a behaviour the author narrowed away from its default (0.109792ms)\n  ✔ omits each behaviour the author explicitly set to its own default (DOC-LAW-2) (0.082458ms)\n  ✔ makes an explicitly-defaulted binding byte-identical to an untouched one (0.460917ms)\n  ✔ sets, replaces and unsets a behaviour through update (0.067625ms)\n  ✔ leaves a behaviour alone when the patch does not name it (0.054541ms)\n  ✔ never writes an explicit null into the document (0.06125ms)\n  ✔ hydrates absent behaviours to the defaults every reader must agree on (0.063208ms)\n  ✔ reads exactly the starred cardinalities as multi-valued (0.08ms)\n✔ mappingBinding behaviours (1.080166ms)\n▶ applyOperation determinism\n  ✔ exercises every ASMA-7676 operation in the seeded generator (11.166125ms)\n  ✔ reproduces the identical document from the same seed (3.254167ms)\n  ✔ different seeds produce different documents (1.7355ms)\n✔ applyOperation determinism (16.690166ms)\n▶ DOC-LAW invariants under random op sequences\n  ✔ holds for seed 4 (2.820834ms)\n  ✔ holds for seed 7 (1.266541ms)\n  ✔ holds for seed 13 (1.369875ms)\n  ✔ holds for seed 99 (1.525916ms)\n✔ DOC-LAW invariants under random op sequences (7.131083ms)\n▶ the combined repair operations are reached by the property run\n  ✔ applies each new operation successfully and refuses each at least once (308.806459ms)\n✔ the combined repair operations are reached by the property run (308.937125ms)\n▶ canonicalization stability\n  ✔ is a fixed point (2.089416ms)\n  ✔ ignores object key order (2.099916ms)\n  ✔ normalises NFC and NFD spellings to the same bytes (§8.2) (0.137625ms)\n✔ canonicalization stability (4.436292ms)\n▶ hash round-trips and golden vectors\n  ✔ matches the pinned golden hash for a fixed document (282.7995ms)\n  ✔ agrees with node:crypto on the same canonical bytes (WebCrypto ↔ sync) (5.726166ms)\n  ✔ round-trips: equal canonical bytes ⇔ equal hash (65.508042ms)\n✔ hash round-trips and golden vectors (354.216666ms)\n▶ question type register\n  ✔ maps every legacy type to a v2 type (0.608667ms)\n  ✔ round-trips every type in both directions (0.088583ms)\n  ✔ covers the whole v2 union, so no type is reachable only from legacy (0.833875ms)\n  ✔ renames CompositeQuestion and nothing else (0.074708ms)\n  ✔ refuses an unknown legacy type instead of passing it through (0.054667ms)\n✔ question type register (2.289167ms)\n▶ document schemas\n  ✔ accepts the empty template document (0.81975ms)\n  ✔ rejects explicit null and unknown question types (1.345208ms)\n  ✔ leaves empty-collection rejection to the instance lint (DOC-LAW-2, layered) (0.423125ms)\n  ✔ accepts a fully-populated document in minimal form (1.020542ms)\n✔ document schemas (4.154209ms)\n▶ question ownership invariant\n  ✔ admits `grid` on a question grid alone (21.170834ms)\n  ✔ does not read a non-grid question as a column owner (12.775125ms)\n  ✔ reports orphaned, top-level-and-column, multi-grid, and dangling column questions (0.468584ms)\n✔ question ownership invariant (34.681334ms)\n▶ schema lint (DOC-LAW-1 / DOC-LAW-2, by construction)\n  ✔ finds no violations in the template document schema (110.672041ms)\n  ✔ finds no violations in the answer document schema with its null exception (0.262291ms)\n  ✔ flags an array of objects in a synthetic schema (1.096125ms)\n  ✔ flags a null union in a synthetic schema (0.350917ms)\n  ✔ honours the answer-document null exception at answer-value leaves (0.671542ms)\n✔ schema lint (DOC-LAW-1 / DOC-LAW-2, by construction) (113.237958ms)\n▶ binding-target uniqueness\n  ✔ finds two bindings sharing a target (0.130875ms)\n  ✔ treats gridColumn targets as distinct from question targets (0.054125ms)\n✔ binding-target uniqueness (0.228583ms)\n▶ prefill and highlight contract (M-067 / M-068)\n  ✔ accepts the widened rule shapes and the two new collections (0.232625ms)\n  ✔ refuses a prefill rule with no source address (3.467083ms)\n  ✔ refuses a false in the true-only settings, so absent stays the only \"not set\" (0.60125ms)\n  ✔ keeps the new shapes inside the document laws (2.068875ms)\n  ✔ survives a reduction round trip unchanged (0.524625ms)\n✔ prefill and highlight contract (M-067 / M-068) (7.004792ms)\n▶ DOC-LAW-2 default registry\n  ✔ treats sentinel-boolean defaults as omittable (0.085042ms)\n  ✔ never strips a scalar that merely equals false on a non-default path (0.061ms)\n  ✔ hashes a spelled-out default identically to its absence (0.073834ms)\n  ✔ reports present-and-default keys on a stored document (0.072791ms)\n✔ DOC-LAW-2 default registry (0.357917ms)\n▶ op schemas\n  ✔ validates a representative op and rejects an unknown one (0.460875ms)\n  ✔ accepts the explicit-unset tri-state in op payloads (0.111875ms)\n  ✔ accepts narrative rules and makes a qnr rule version reference unrepresentable (0.347ms)\n  ✔ validates answer ops including the answer-side move (0.2555ms)\n✔ op schemas (1.23275ms)\n▶ schema ↔ vocabulary parity\n  ✔ the template op schema covers exactly IMPLEMENTED_OP_TYPES (0.07325ms)\n  ✔ the answer op schema covers exactly IMPLEMENTED_ANSWER_OP_TYPES (0.037125ms)\n  ✔ the answer document schema accepts a fresh answer document (0.107875ms)\n✔ schema ↔ vocabulary parity (0.262167ms)\n▶ mappingBinding behaviour schemas\n  ✔ accepts every declared behaviour value on the create op (0.239583ms)\n  ✔ refuses a behaviour value outside the closed set (0.297917ms)\n  ✔ refuses a behaviour value outside the closed set on a STORED binding too (0.665458ms)\n  ✔ admits null in an update patch and refuses it in the document (0.21425ms)\n  ✔ counts a stored behaviour at its default as a DOC-LAW-2 violation (0.073875ms)\n  ✔ never reads a mapping NODE cardinality as an omittable default (0.045792ms)\n✔ mappingBinding behaviour schemas (1.615584ms)\n▶ QnrQuestionBundle tab order\n  ✔ loses the authored order when it lives in key positions (22.180625ms)\n  ✔ normalizes shorter keys first, not plain alphabetically (0.102125ms)\n  ✔ round-trips the authored order through tabOrder (0.088416ms)\n  ✔ is absent, not empty, on a bundle with nothing to order (0.075833ms)\n✔ QnrQuestionBundle tab order (33.682166ms)\n▶ the released shapes still replay byte for byte\n  ✔ keeps mappingFilter.set with an operator outside the closed set (2.976333ms)\n  ✔ keeps action.create and action.updateField on an unknown kind, buffers included (0.265166ms)\n  ✔ reads an old broad stored action and filter (0.210542ms)\n✔ the released shapes still replay byte for byte (3.9675ms)\n▶ mappingFilter.setTyped\n  ✔ writes exactly the four operators and their canonical payloads (0.512708ms)\n  ✔ registers the filter in its node order, exactly once (0.097417ms)\n  ✔ deletes every stale member when the operator switches (0.12625ms)\n  ✔ refuses at the schema what the typed path may not express (42.663875ms)\n  ✔ refuses a node that does not exist (7.273958ms)\n✔ mappingFilter.setTyped (50.883583ms)\n▶ gridColumn.setFilter and setAction\n  ✔ inserts, moves and removes one member at a time (0.298875ms)\n  ✔ lets two authors add DIFFERENT filters concurrently without either being lost (0.167166ms)\n  ✔ refuses a filter on a question the grid does not own (0.1155ms)\n  ✔ keeps a grid action owned by at most one grid (0.236875ms)\n  ✔ reserves both lists from question.updateField, in both directions (0.243666ms)\n✔ gridColumn.setFilter and setAction (1.171292ms)\n▶ tab.setLayout\n  ✔ writes and clears a whole placement atomically (0.117917ms)\n  ✔ never tears a placement into a row/cell hybrid (0.071375ms)\n  ✔ lets concurrent moves of different questions both survive (0.081208ms)\n  ✔ reserves the placements map from tab.updateField (0.307458ms)\n  ✔ scrubs a deleted question from every tab layout (0.521292ms)\n  ✔ scrubs a deleted tab from every grid that named it as header (0.136875ms)\n✔ tab.setLayout (1.304416ms)\n▶ typed actions\n  ✔ creates a known action in minimal form (0.102333ms)\n  ✔ refuses actionType on a top-level action (0.130042ms)\n  ✔ cannot mint a UI edit buffer through the typed path (0.288292ms)\n  ✔ refuses UI buffers and reserved collections on a KNOWN action, and permits label (0.600834ms)\n  ✔ refuses the typed ops on a legacy unknown-kind record (0.133583ms)\n  ✔ keeps a top-level grid reference member-wise and ordered (0.133959ms)\n  ✔ lets two concurrent reference inserts both survive (0.10225ms)\n  ✔ refuses a reference to an action the grid does not own, or to a top-level one (0.208958ms)\n  ✔ writes canonical metadata and refuses the ambiguous shapes (0.478084ms)\n  ✔ keeps all:true through canonical reduction and the hash (0.701708ms)\n  ✔ refuses ambiguous metadata in the REDUCER too, not only at the wire (0.365958ms)\n  ✔ refuses metadata for a question that is not a column of the owning grid (0.143208ms)\n  ✔ scrubs references when a grid action is removed or deleted (0.307125ms)\n  ✔ scrubs a deleted column from the grid filter list, layout and widths (0.162208ms)\n✔ typed actions (3.998541ms)\n▶ the bundle carries a mapping fragment\n  ✔ types the four graph collections beside the question collections (0.109458ms)\n✔ the bundle carries a mapping fragment (0.137084ms)\n▶ tab membership\n  ✔ appends, does not duplicate, and moves to a clamped index (0.131375ms)\n  ✔ omits the emptied list and keeps the tab (0.077208ms)\n  ✔ refuses including a question the document does not have, but allows excluding one (0.248208ms)\n  ✔ two clients adding different members converge in either order (0.068375ms)\n  ✔ removing membership atomically drops that question count and placement (0.114833ms)\n  ✔ one question in two tabs leaves the other tab alone (0.069125ms)\n✔ tab membership (0.77ms)\n▶ the counted-grid subset\n  ✔ counts a member grid and leaves membership and layout untouched (0.096375ms)\n  ✔ refuses a scalar question, a non-member grid, a missing question and a missing tab (0.378084ms)\n  ✔ refuses a DANGLING member id, so the existence check is what does the work (0.132459ms)\n  ✔ repairs every one of those malformed cases by excluding (0.079667ms)\n  ✔ does not add or remove membership (0.053917ms)\n✔ the counted-grid subset (0.794208ms)\n▶ tab.updateField reserves all three tab-owned collections\n  ✔ refuses the exact path, an ancestor and a descendant for each (0.059708ms)\n  ✔ still accepts the label and an unrelated legacy field (0.058125ms)\n  ✔ refuses a whole-snapshot write through every reserved spelling at the reducer (0.245625ms)\n✔ tab.updateField reserves all three tab-owned collections (0.4115ms)\n▶ question deletion scrubs all three tab locations\n  ✔ removes the id from membership, count and layout across multiple tabs (0.199125ms)\n  ✔ scrubs a recursively deleted grid column from every tab location (0.139334ms)\n✔ question deletion scrubs all three tab locations (0.376208ms)\n▶ tab.setLayout is not narrowed by the membership repair\n  ✔ still places a question that is not a member, so v0.31 logs replay (0.064833ms)\n  ✔ produces a byte-identical tab to the one a v0.31 reducer produced (0.086917ms)\n✔ tab.setLayout is not narrowed by the membership repair (0.180208ms)\n▶ the canonical expression tokens\n  ✔ is injective where legacy was not (0.103334ms)\n  ✔ encodes the complete id as lowercase UTF-8 hex and round-trips non-ASCII (0.051ms)\n  ✔ keeps the two token spaces disjoint (0.136125ms)\n  ✔ refuses every non-canonical spelling, including the legacy one (0.038875ms)\n✔ the canonical expression tokens (0.370958ms)\n▶ alternative.setExpressionFormula\n  ✔ writes the formula and its ordered targets as one value (0.212542ms)\n  ✔ omits an empty target list rather than storing [] (0.075458ms)\n  ✔ is draft-permissive: text and targets need not agree (0.108417ms)\n  ✔ refuses a duplicate, missing, wrong-type, Chart or flag-off target (0.56375ms)\n  ✔ refuses a wrong owner type and an alternative of another question (0.164625ms)\n  ✔ is last-writer-wins on the whole value, and different alternatives converge (0.072417ms)\n✔ alternative.setExpressionFormula (1.253917ms)\n▶ chartLegend.create\n  ✔ inserts the record and the order entry atomically, appending by default (0.144834ms)\n  ✔ clamps atIndex, which is what makes a bundle pick lossless (0.076166ms)\n  ✔ refuses an empty id or label, a duplicate id, and a duplicate label (0.268709ms)\n  ✔ refuses a non-Chart owner and a non-radar Chart (0.256167ms)\n✔ chartLegend.create (0.78925ms)\n▶ chartLegend.delete\n  ✔ removes the record and every order occurrence, and clears its owned assignments (0.129416ms)\n  ✔ prunes the emptied containers without deleting the Chart (0.075208ms)\n  ✔ leaves an identically-named legend on another Chart alone (0.123167ms)\n  ✔ repairs imported non-radar state and refuses an unknown legend (0.263542ms)\n✔ chartLegend.delete (0.632ms)\n▶ alternative.setChartLegend\n  ✔ derives the label from the owning legend and writes the whole value at once (0.082042ms)\n  ✔ replaces the whole value and clears it entirely (0.085125ms)\n  ✔ refuses a missing legend, a missing target, a Chart target and an unflagged target (0.329666ms)\n  ✔ refuses a wrong owner and a non-radar Chart, but still clears them (0.271ms)\n  ✔ refuses a client-supplied label at the schema (0.280541ms)\n✔ alternative.setChartLegend (1.099916ms)\n▶ AC-9 deletion cascades\n  ✔ deleting a target scrubs the list, every token occurrence, and the Chart assignment (0.235459ms)\n  ✔ never substring-matches, so legacy text and other tokens are untouched (0.113042ms)\n  ✔ scrubs a recursively deleted grid column from a formula and an assignment (0.144125ms)\n  ✔ deleting an alternative scrubs only its own canonical token from its own question (0.141459ms)\n  ✔ prunes the emptied expression bag rather than leaving an empty string (0.088041ms)\n  ✔ leaves a legacy noncanonical token alone when its alternative goes (0.062458ms)\n✔ AC-9 deletion cascades (0.877167ms)\n▶ the AC-9 released bags are not narrowed\n  ✔ still writes every new path through the old updateField ops (0.223833ms)\n  ✔ keeps an imported pie/unknown chart and a malformed legend bag readable (0.147916ms)\n  ✔ replays a v0.31 alternative.updateField log to byte-identical bytes (0.069166ms)\n✔ the AC-9 released bags are not narrowed (0.476542ms)\n▶ the target gate refuses for the stated reason, not an incidental one\n  ✔ refuses a target whose flag is present but not true (0.316834ms)\n  ✔ refuses a Chart target even when its is_expression flag is on (0.245916ms)\n✔ the target gate refuses for the stated reason, not an incidental one (0.588583ms)\n▶ the Chart assignment label is derived even on a replayed op\n  ✔ ignores a label that reached the reducer without passing the schema (0.070084ms)\n✔ the Chart assignment label is derived even on a replayed op (0.087625ms)\n▶ alternative.delete rewrites only its own owner formula\n  ✔ does nothing when the owning question has no base formula, even if another question does (0.094ms)\n✔ alternative.delete rewrites only its own owner formula (0.110125ms)\n▶ the alternative token recognizer enforces the same exact grammar as the target one\n  ✔ refuses uppercase, odd-length, empty and claimant spellings (0.04725ms)\n✔ the alternative token recognizer enforces the same exact grammar as the target one (0.063167ms)\n▶ the tab document members are typed, not admitted by the open index\n  ✔ refuses an array of objects and a non-string member for both lists (0.792041ms)\n  ✔ still validates the legal primitive-id arrays and an unrelated open member (0.054042ms)\n✔ the tab document members are typed, not admitted by the open index (0.870625ms)\n▶ the Expression/Chart target vocabulary\n  ✔ admits exactly the six selectable-or-LinearScale types (0.195709ms)\n  ✔ refuses every other type in the shared register (1.293958ms)\n  ✔ applies the same vocabulary to a Chart assignment target (1.082375ms)\n  ✔ covers the whole register, so a new question type cannot slip past undecided (0.042833ms)\n✔ the Expression/Chart target vocabulary (2.65675ms)\n▶ the typed unions are closed at compile time\n  ✔ is enforced by src/collaboration/typeContracts.ts, not from here (0.501917ms)\n✔ the typed unions are closed at compile time (0.955709ms)\n▶ the wire schema discriminates createTyped\n  ✔ refuses actionType on a topLevelAction (0.647542ms)\n  ✔ still accepts both legal shapes (0.147916ms)\n  ✔ refuses an invalid actionType on the gridAction arm (0.181167ms)\n✔ the wire schema discriminates createTyped (1.069292ms)\n▶ action.updateField on a known action is closed by a whitelist\n  ✔ refuses a field that is simply not in the vocabulary (1.512209ms)\n  ✔ permits exactly label on both kinds, and actionType only on a gridAction (0.885792ms)\n  ✔ explains WHICH rule refused, not merely that something did (0.1295ms)\n  ✔ validates the VALUE, so a permitted field cannot be written malformed (0.241292ms)\n  ✔ leaves LEGACY unknown-kind records completely unrestricted (0.121042ms)\n✔ action.updateField on a known action is closed by a whitelist (3.043625ms)\n▶ a grid may only own a known gridAction\n  ✔ refuses a topLevelAction and an unknown legacy action on include (0.180125ms)\n  ✔ still scrubs a malformed or legacy reference on include:false (0.193875ms)\n  ✔ keeps one-owner enforcement (0.135875ms)\n✔ a grid may only own a known gridAction (0.581625ms)\n▶ action.setMetadata does not depend on key order\n  ✔ refuses ambiguous metadata whichever grid appears first (0.15575ms)\n  ✔ names the ambiguity rather than a missing column (0.069083ms)\n  ✔ lets metadata:null repair an UNOWNED record (0.071666ms)\n  ✔ still requires the action itself to be a known gridAction, even for null (0.075584ms)\n✔ action.setMetadata does not depend on key order (0.445167ms)\n▶ mappingFilter.setTyped is validated in the reducer, not only at the wire\n  ✔ refuses every malformed payload that bypassed the wire (0.415833ms)\n  ✔ refuses an unknown operator instead of storing it as a boundless range (0.156542ms)\n  ✔ still accepts every legal payload and replaces canonically (0.264ms)\n  ✔ leaves the legacy mappingFilter.set path untouched (0.092792ms)\n✔ mappingFilter.setTyped is validated in the reducer, not only at the wire (0.998583ms)\n▶ parseLegacyBindingOverride is total over three outcomes\n  ✔ separates absent from malformed, which a boolean guard would merge (0.084292ms)\n  ✔ accepts each single member and the all-member record (0.06425ms)\n  ✔ classifies every forbidden shape as malformed rather than known (0.081833ms)\n✔ parseLegacyBindingOverride is total over three outcomes (0.284542ms)\n▶ mappingBinding.setLegacyOverride is member-only\n  ✔ sets, replaces, clears, and leaves no empty object behind (0.329ms)\n  ✔ is idempotent for the same value and last-writer-wins for the same binding (0.319ms)\n  ✔ leaves node, field, target, options and every bindingOrder byte-identical (0.196292ms)\n  ✔ refuses a missing binding and refuses a malformed value on replay (0.184125ms)\n  ✔ changes on distinct bindings both survive (0.115792ms)\n✔ mappingBinding.setLegacyOverride is member-only (1.228208ms)\n▶ historical binding values stay readable and replayable\n  ✔ keeps an arbitrary stored override readable, and the parser calls it malformed (0.679583ms)\n  ✔ replays a v0.31 create/update log to a byte-identical document (0.097334ms)\n  ✔ survives canonical reduction when non-empty, and is pruned only by an explicit clear (0.302417ms)\n✔ historical binding values stay readable and replayable (1.137958ms)\n▶ reserved unresolved-evidence ids\n  ✔ is deterministic and disjoint by discriminator (0.127416ms)\n  ✔ is deliberately invalid under the engine MachineId grammar (0.073875ms)\n  ✔ recognizes exactly the canonical grammar (0.086583ms)\n  ✔ refuses every prefix claimant, which is what splits the quarantine into two classes (0.065833ms)\n  ✔ refuses to build from a digest that is not 64 lowercase hex characters (0.101292ms)\n  ✔ is usable as a node entityId and a binding fieldId that still validate (0.167334ms)\n✔ reserved unresolved-evidence ids (0.71725ms)\n▶ the setLegacyOverride op schema is closed at the wire\n  ✔ refuses an undeclared member on every arm of the union (0.76325ms)\n  ✔ refuses the empty record, an empty string, a wrong scalar and a nested object (0.242417ms)\n  ✔ accepts each legal arm and the null clear (0.076333ms)\n✔ the setLegacyOverride op schema is closed at the wire (1.143542ms)\n▶ the parser array guard is load-bearing\n  ✔ refuses an array carrying a whitelisted own-property (0.0635ms)\n✔ the parser array guard is load-bearing (0.097ms)\n✔ reentrant cleanup cannot publish before all old capabilities are revoked (1.918333ms)\n✔ requires host publication; pending/anonymous/denied never inherit actor or selected record (1.204458ms)\n✔ actor remains separate from owner-authorized participant/ward; deselection is explicit null (0.292833ms)\n✔ snapshots copy only safe fields and cannot be changed through retained producer objects (0.196875ms)\n✔ rejects wrong revision, tenant, missing record, conflicting self/ward and UNKNOWN journal (0.24ms)\n✔ old lookups cannot publish after a newer organization/record lookup resolves (14.832833ms)\n✔ invalidation revokes before every cleanup and denies late work even when abort is ignored (12.013542ms)\n✔ role/org/record changes and A→B→A never resurrect prior leases (0.399958ms)\n✔ unmount revokes that instance, unsubscribes it and cannot affect another concurrent mount (0.375583ms)\n✔ expiry revokes without interaction, and delayed timers cannot permit a lease at the deadline (69.553708ms)\n✔ incompatible consumer denies without globals; cleanup failures revoke every lease (0.257458ms)\n✔ owner factory and request completions cannot escape revocation; other endpoints deny (185.723458ms)\n✔ reconnect and retained subscription callbacks cannot refill a cleared owner cache (0.230125ms)\nadopusSlugFromJwt: subdomain claim 'undefined' is not a valid namespace slug\nadopusSlugFromJwt: subdomain claim '1-bad!' is not a valid namespace slug\n▶ namespaceDocument (transforms 1-3)\n  ✔ wraps the operation, prefixes variable definition types, leaves builtins alone (17.752541ms)\n  ✔ prefixes wrapped list/non-null variable types (0.239583ms)\n  ✔ prefixes inline and named fragment type conditions, at any depth (0.252208ms)\n  ✔ wraps mutations too (0.136292ms)\n✔ namespaceDocument (transforms 1-3) (19.068334ms)\n▶ denamespaceData (transforms 4-5)\n  ✔ unwraps the namespace and strips __typename prefixes deeply (0.956041ms)\n  ✔ leaves unprefixed __typename values and non-typename fields untouched (0.07325ms)\n  ✔ passes data through when the namespace key is absent (0.060125ms)\n✔ denamespaceData (transforms 4-5) (1.183208ms)\n▶ adopusSlugFromJwt\n  ✔ reads and sanitizes the subdomain claim (0.198417ms)\n  ✔ returns undefined for missing token, missing claim, or unsanitizable subdomain (0.624625ms)\n✔ adopusSlugFromJwt (0.911708ms)\n✔ bound clients use owner capabilities, dedup creation within a generation and rebuild across actor/record changes (150.066208ms)\n✔ async owner factory completion after a newer generation cannot install a stale cached client (1.129625ms)\n✔ async exchange setup must recheck mount liveness before returning or caching a client (117.973792ms)\n✔ revocation settles an active query without protected data even when the fetch ignores abort (1.442709ms)\n✔ outer guard sanitizes cached and streamed results, forwards teardown and denies old-client reconnect (0.620709ms)\n✔ disposing one instance cannot revoke another mounted owner client (0.863667ms)\n✔ legacy API retains auth headers, exchange callbacks, client caching and anonymous option (1.817584ms)\n✔ bound init returns before any global auth or environment fallback (0.742833ms)\n✔ forwards the exact request JWT to the upstream GraphQL service (234.511625ms)\n▶ generateEnvConfigsBindings (shared module instance)\n  ✔ throws when nothing has been registered yet (0.542708ms)\n  ✔ keeps every app's service resolvable after several apps register (no last-write-wins) (1.300583ms)\n✔ generateEnvConfigsBindings (shared module instance) (7.095792ms)\n✔ legacy producer is reused; login invalidates but cannot authorize or publish a selected record (295.433417ms)\n✔ failed signout clears credentials, metadata, context and caches before logout observers (41.780334ms)\n✔ late signout success carrying metadata cannot overwrite a newer login (12.676ms)\n✔ GET dedup includes full query and headers; ceremonies are never coalesced (2.84275ms)\n✔ record change retires pending auth lookup; an old response cannot install credentials (3.410167ms)\n✔ late token refresh failure cannot sign out the replacement actor/customer/role (1.111833ms)\n✔ expiry clears every cached identity/grant read even when the timer is delayed (3.947041ms)\n✔ activity cache and pending dedup are generation scoped; old completion cannot refill after deselection (22.868917ms)\n✔ explicit activity invalidation rejects an abort-ignoring pending request and permits a new lookup (2.528042ms)\n✔ owner capability never exposes credentials and denies late JWT resolution after unmount (19.197667ms)\n✔ owner 401 refresh rechecks generation and mount liveness; stale refresh cannot retry (22.183417ms)\n✔ owner adapter preserves a current-generation 401 retry and rejects foreign endpoints (4.032583ms)\n▶ generateSyntheticPnrWithRetries\n  ✔ uses individual numbers 000–499 for births in 1900–1999 (BankID RA century rule) (1.515792ms)\n  ✔ uses individual numbers 500–999 for births in 2000–2039 (0.182083ms)\n  ✔ encodes gender in the individual number parity (even = female, odd = male) (0.223583ms)\n  ✔ marks the number as synthetic by adding 80 to the month by default (0.057916ms)\n  ✔ produces 11 digits with valid mod-11 control digits (0.39125ms)\n✔ generateSyntheticPnrWithRetries (2.968583ms)\n▶ getInjectedPlatform\n  ✔ returns undefined when there is no window (node/SSR) (0.620583ms)\n  ✔ reads window.__ASMA_PLATFORM__ (0.844792ms)\n  ✔ prefers window.rawWindow when present (qiankun child app) (0.10775ms)\n✔ getInjectedPlatform (2.135458ms)\n▶ getDefaultAppVersions\n  ✔ prefers the injected map over the fallback (first-hit wins) (0.148833ms)\n  ✔ falls back to the auth-response value when nothing is injected (0.098292ms)\n  ✔ falls back when the injected map is empty (treated as absent) (0.109541ms)\n  ✔ returns undefined when neither injected nor fallback is present (0.071333ms)\n✔ getDefaultAppVersions (0.547959ms)\n▶ isHtmlFragment\n  ✔ recognizes the marks TipTap actually emits (0.884625ms)\n  ✔ recognizes markup carrying attributes (0.06475ms)\n  ✔ ignores leading whitespace before the first tag (0.048375ms)\n  ✔ rejects plain text, including text that merely mentions brackets (0.055916ms)\n  ✔ rejects RTF-conversion artifacts that look bracket-ish (0.058917ms)\n  ✔ rejects non-string and empty inputs (0.043834ms)\n  ✔ detects markup that does not start at the first character (0.040958ms)\n  ✔ recognizes table markup, which pasted content can carry (0.044625ms)\n✔ isHtmlFragment (1.838709ms)\n▶ htmlToPlainText\n  ✔ returns non-HTML input byte-identical (0.154458ms)\n  ✔ returns an empty string for nullish input (0.071958ms)\n  ✔ drops inline marks and keeps the text (0.363292ms)\n  ✔ turns paragraphs into newline-separated lines (0.051916ms)\n  ✔ turns line breaks into newlines (0.058042ms)\n  ✔ prefixes list items with a dash (0.057416ms)\n  ✔ keeps headings as their own lines (0.054875ms)\n  ✔ decodes the entities TipTap emits (0.065667ms)\n  ✔ collapses the blank lines empty paragraphs would leave (0.138209ms)\n  ✔ degrades malformed markup to text rather than leaking tags (0.05175ms)\n  ✔ keeps table cells apart instead of running them together (0.046041ms)\n  ✔ never leaves an angle bracket from a real tag behind (0.0445ms)\n✔ htmlToPlainText (2.657042ms)\n▶ createSectionPath\n  ✔ parses the bare root as the default (no) tab (1.524084ms)\n  ✔ parses a known tab segment (0.155167ms)\n  ✔ treats an unknown tab segment as no tab (0.072208ms)\n  ✔ returns undefined outside the section, so an embedded widget never rewrites the URL (0.083333ms)\n  ✔ builds a tab path, defaulting to defaultTab (0.08275ms)\n  ✔ goToTab pushes the tab path with detail params stripped from the current search (0.265958ms)\n  ✔ replaceTab issues a replace, not a push (0.078541ms)\n  ✔ forwards a navigation-guard state marker verbatim (0.06275ms)\n  ✔ searchWithoutDetail is a no-op when nothing to strip (1.198958ms)\n✔ createSectionPath (5.385792ms)\n▶ createDetailPath\n  ✔ parses the bare root as the list (no detail) (0.272875ms)\n  ✔ treats a non-UUID first segment as the list, not a detail id (0.195292ms)\n  ✔ parses a detail id with no tab (0.171625ms)\n  ✔ parses a detail id with a known tab (0.102958ms)\n  ✔ returns undefined outside the section (0.079292ms)\n  ✔ builds a detail path, defaulting the tab (0.085833ms)\n  ✔ goToList pushes the bare root with detail params stripped (0.196209ms)\n  ✔ goToDetail and replaceDetail push/replace the same shape (0.155584ms)\n✔ createDetailPath (1.455625ms)\n▶ DEFAULT_PHONE_COUNTRY\n  ✔ pre-selects Norway (ASMA-7485) (1.027125ms)\n✔ DEFAULT_PHONE_COUNTRY (1.6155ms)\n▶ listPhoneCountries\n  ✔ covers every supported country with its calling code (296.714208ms)\n  ✔ localizes names per locale instead of shipping a translation table (0.86675ms)\n  ✔ sorts by localized name, so the order differs between locales (0.316125ms)\n  ✔ memoizes per locale — the Intl lookup runs once per country (0.085875ms)\n✔ listPhoneCountries (298.157584ms)\n▶ getPhoneDialCode\n  ✔ returns the calling code without a plus (0.091333ms)\n✔ getPhoneDialCode (0.292125ms)\n▶ matchesPhoneCountry\n  ✔ matches by country name, case-insensitively (0.334333ms)\n  ✔ matches by calling code, with or without the plus (0.079958ms)\n  ✔ keeps every row for an empty or whitespace query (0.05525ms)\n✔ matchesPhoneCountry (0.6715ms)\n▶ findCountryByDialCode\n  ✔ resolves the main country of a shared calling code (0.302542ms)\n  ✔ prefers the longest matching calling code (0.05875ms)\n  ✔ returns undefined when no calling code matches (0.050708ms)\n✔ findCountryByDialCode (0.492542ms)\n▶ phoneExample\n  ✔ supplies the actionable half of a validation message (REQ-003) (1.257459ms)\n  ✔ always yields something to show, even without example metadata (0.625ms)\n✔ phoneExample (2.40875ms)\n▶ parsePhoneNr\n  ✔ canonicalises 45456565 under NO to +4745456565 (2.084542ms)\n  ✔ canonicalises 4745456565 under NO to +4745456565 (0.600125ms)\n  ✔ canonicalises 004745456565 under NO to +4745456565 (0.120333ms)\n  ✔ canonicalises +47 454 56 565 under NO to +4745456565 (0.071583ms)\n  ✔ canonicalises 47123456 under NO to +4747123456 (0.166583ms)\n  ✔ canonicalises +37379094538 under NO to +37379094538 (0.124208ms)\n  ✔ canonicalises 0701234567 under NO to INVALID (0.8245ms)\n  ✔ canonicalises 0701234567 under SE to +46701234567 (0.193125ms)\n  ✔ canonicalises 12345 under NO to INVALID (0.09825ms)\n  ✔ reports the country and calling code the value resolved to (0.138791ms)\n  ✔ separates an empty value from an invalid one so a report can tell them apart (0.070167ms)\n  ✔ reports rather than rewrites a number that is not real for the region (0.156833ms)\n✔ parsePhoneNr (5.3445ms)\n▶ parsePhoneValue\n  ✔ splits a stored E.164 value into country and national number (0.486417ms)\n  ✔ reads a pre-ASMA-7485 bare national number as the fallback country (33.324375ms)\n  ✔ keeps the caller country while a matching number is still being typed (0.301334ms)\n  ✔ switches country when the typed prefix belongs to another one (0.072708ms)\n  ✔ treats empty, whitespace and nullish values as an empty number (0.059583ms)\n  ✔ falls back to the given country for an unknown calling code (0.113833ms)\n✔ parsePhoneValue (34.496ms)\n▶ toE164\n  ✔ composes the stored value from the country and the typed digits (0.409083ms)\n  ✔ drops mask separators so the stored value is digits and a plus only (0.105333ms)\n  ✔ stores nothing rather than a bare dial code for an empty number (0.045459ms)\n  ✔ does not validate — an in-progress number must still round-trip (0.094125ms)\n  ✔ does not double a country code the input already carries (0.107042ms)\n  ✔ drops the trunk prefix countries write their national numbers with (1.513042ms)\n  ✔ keeps a genuine national number that merely starts with the dial code (0.080791ms)\n  ✔ round-trips through parsePhoneValue (0.077916ms)\n✔ toE164 (2.544292ms)\n▶ formatNationalAsYouType\n  ✔ groups by the country format, progressively (1.983792ms)\n  ✔ uses each country own grouping, not a Norwegian one (0.323ms)\n  ✔ groups countries that carry a trunk prefix, which the national format cannot (2.691417ms)\n  ✔ returns an empty string when there is nothing to format (0.066166ms)\n✔ formatNationalAsYouType (5.160833ms)\n▶ isValidPhone\n  ✔ accepts a real number for the country (0.156875ms)\n  ✔ rejects by country pattern, not merely by digit count (0.087791ms)\n  ✔ accepts a short number where the plan is genuinely short (0.12775ms)\n  ✔ rejects numbers outside the E.164 length bounds (0.043041ms)\n  ✔ accepts a number that is valid elsewhere but not for the selected country (0.06125ms)\n  ✔ ignores mask separators (0.05325ms)\n✔ isValidPhone (0.625459ms)\n▶ isValidPhoneValue\n  ✔ resolves the country from the stored value (0.155ms)\n  ✔ validates a legacy bare number against the fallback country (0.093708ms)\n  ✔ treats an empty value as invalid — emptiness is the required rule job (0.0395ms)\n✔ isValidPhoneValue (0.347334ms)\n▶ formatPhoneForDisplay\n  ✔ renders the international form for read-only views (0.507042ms)\n  ✔ upgrades a legacy bare number to the international form (0.114709ms)\n  ✔ returns an empty string for an empty value (0.037458ms)\n  ✔ shows a value it cannot resolve exactly as stored, inventing no country (0.201ms)\n  ✔ resolves the same digits once the country is known (0.247917ms)\n✔ formatPhoneForDisplay (1.176167ms)\n▶ phoneTelHref\n  ✔ is the only place the tel: scheme is added (ASMA-7485) (0.178375ms)\n  ✔ carries no spaces or dashes (0.092333ms)\n  ✔ returns an empty string when there is nothing to dial (0.040167ms)\n  ✔ still dials a value it cannot resolve, using the digits as stored (0.132208ms)\n  ✔ keeps a stored `+` and never invents one (0.102083ms)\n  ✔ offers no link when the value holds no number at all (0.066167ms)\n  ✔ still dials a legacy bare number that is valid for the fallback country (0.087667ms)\n✔ phoneTelHref (0.837958ms)\n▶ REQ-007 — the two parsers agree (TEST-009)\n  ✔ agrees on 45456565 (99.218791ms)\n  ✔ agrees on 48012345 (0.118625ms)\n  ✔ agrees on +4745456565 (0.05025ms)\n  ✔ agrees on 4745456565 (0.046292ms)\n  ✔ agrees on 004745456565 (0.045042ms)\n  ✔ agrees on +47 454 56 565 (0.049583ms)\n  ✔ agrees on +46701234567 (0.051084ms)\n  ✔ agrees on +37379094538 (0.092542ms)\n  ✔ agrees on 37376002949 (0.073916ms)\n  ✔ agrees on 0701234567 (0.047125ms)\n  ✔ agrees on 12345678 (0.038834ms)\n  ✔ agrees on 00000000 (0.04125ms)\n  ✔ agrees on 123 (0.043209ms)\n  ✔ agrees on ana@example.com (0.049583ms)\n  ✔ agrees on (empty) (0.019041ms)\n  ✔ still offers a country to edit with even when it does not know one (0.049625ms)\n✔ REQ-007 — the two parsers agree (TEST-009) (100.204084ms)\n▶ REQ-007 — idempotence (TEST-010)\n  ✔ normalising 45456565 twice changes nothing the second time (0.113125ms)\n  ✔ normalising +4745456565 twice changes nothing the second time (0.057625ms)\n  ✔ normalising 4745456565 twice changes nothing the second time (0.055833ms)\n  ✔ normalising 004745456565 twice changes nothing the second time (0.056125ms)\n  ✔ normalising +47 454 56 565 twice changes nothing the second time (0.050667ms)\n  ✔ normalising 0701234567 twice changes nothing the second time (0.066125ms)\n  ✔ normalising +46701234567 twice changes nothing the second time (0.053333ms)\n  ✔ normalising 2015550123 twice changes nothing the second time (0.087417ms)\n  ✔ is idempotent through parsePhoneNr as well (0.062833ms)\n✔ REQ-007 — idempotence (TEST-010) (0.700917ms)\n▶ REQ-007 — no value gains validity (TEST-011)\n  ✔ does not turn a Swedish national number into a Norwegian one (0.060583ms)\n  ✔ does not resolve a plus-less Moldovan number to Norway (0.041083ms)\n  ✔ keeps junk invalid rather than prefixing it (0.080334ms)\n✔ REQ-007 — no value gains validity (TEST-011) (0.216667ms)\n▶ REQ-007 — one case per measured shape class (TEST-012)\n  ✔ bare 8 digits · 90,190 rows (0.077292ms)\n  ✔ already E.164 +47 · 1,730 rows (0.025917ms)\n  ✔ 47 + 8, no plus · 268 rows (0.028208ms)\n  ✔ contains separators · 127 rows (0.040709ms)\n  ✔ E.164, not Norway · 25 rows (0.025917ms)\n  ✔ 1–7 digits · 16 rows (0.024417ms)\n  ✔ 0047 + 8 · 9 rows (0.043ms)\n  ✔ 9+ digits, no plus · 9 rows (0.024625ms)\n  ✔ leading zero national · 4 rows (0.025ms)\n  ✔ contains @ · 26 rows (0.033791ms)\n✔ REQ-007 — one case per measured shape class (TEST-012) (0.454292ms)\n▶ REQ-007 — the shared-plan collision is known, not solved (TEST-013)\n  ✔ reads the same digits as two different valid numbers depending on the region (0.077583ms)\n  ✔ is why a default region may never stand in for a user choice (33.001458ms)\n✔ REQ-007 — the shared-plan collision is known, not solved (TEST-013) (33.124166ms)\n▶ validationMessages catalog\n  ✔ exposes distinct NB and EN strings for every key (0.590291ms)\n  ✔ MUT-004: wrong language must fail — nb required is not the en string (0.084792ms)\n  ✔ getValidationMessages applies shallow overrides (0.056791ms)\n✔ validationMessages catalog (1.269209ms)\n▶ errorWithHint\n  ✔ composes actionable \"what — how to fix\" (REQ-003) (0.064917ms)\n✔ errorWithHint (0.1175ms)\n▶ required\n  ✔ rejects empty, whitespace, null, undefined (0.568875ms)\n  ✔ accepts non-empty strings and other values (0.059333ms)\n✔ required (1.329291ms)\n▶ email\n  ✔ MUT-004: email without @ must fail (0.171416ms)\n  ✔ accepts a normal address (0.05275ms)\n✔ email (0.299834ms)\n▶ name\n  ✔ requires a Unicode uppercase first letter (0.5275ms)\n  ✔ accepts the real names it has to accept (0.066417ms)\n  ✔ accepts every dash an editor may have substituted for the typed hyphen (0.618166ms)\n  ✔ accepts both apostrophes — editors substitute the typographic one silently (0.063ms)\n  ✔ treats Norwegian letters as ordinary letters (0.044208ms)\n  ✔ rejects digits anywhere, not just as the first character (0.088792ms)\n  ✔ rejects a lower-case opening and punctuation the set does not cover (0.042791ms)\n✔ name (1.614375ms)\n▶ nameChars\n  ✔ accepts every character a name is built from (0.20375ms)\n  ✔ rejects anything else, which is what lets the field name the real problem (0.036125ms)\n  ✔ agrees with nameRegex about every character it allows (0.231833ms)\n✔ nameChars (0.524834ms)\n▶ hasDigit\n  ✔ separates \"there is a number in here\" from every other name failure (0.063584ms)\n✔ hasDigit (0.091417ms)\n▶ phoneNr\n  ✔ matches the directory pilot regex (0.062833ms)\n✔ phoneNr (0.087208ms)\n▶ pattern\n  ✔ delegates to the given regex (0.062166ms)\n✔ pattern (0.084333ms)\n▶ pnr\n  ✔ accepts a valid Norwegian personal number via getValidNorwegianPersonalNumber (0.864958ms)\n  ✔ rejects invalid values (0.120458ms)\n✔ pnr (1.029041ms)\n▶ httpUrl\n  ✔ accepts ordinary web addresses (0.099041ms)\n  ✔ accepts ports, fragments, internationalised hosts and full path/query syntax (1.122709ms)\n  ✔ rejects non-web schemes and scheme-less input (0.097292ms)\n✔ httpUrl (1.380917ms)\nℹ tests 469\nℹ suites 95\nℹ pass 469\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 3811.235125\n",
+        "stderr": "$ node --import tsx --test \"src/**/*.test.ts\"\n"
+      },
+      {
+        "command": [
+          "pnpm",
+          "exec",
+          "tsc",
+          "--noEmit"
+        ],
+        "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+        "start": "2026-10-03T11:50:33.186434+00:00",
+        "end": "2026-10-03T11:50:35.788649+00:00",
+        "exit": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "pnpm",
+          "run",
+          "test:package"
+        ],
+        "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+        "start": "2026-10-03T11:50:35.788707+00:00",
+        "end": "2026-10-03T11:50:39.010201+00:00",
+        "exit": 0,
+        "stdout": "✔ publishes the document contract validator from the collaboration subpath (544.370167ms)\n✔ publishes the ASMA-7683 combined repair surface from the collaboration subpath (4.652542ms)\n✔ imports the built phone subpath without browser globals (112.947875ms)\n✔ canonicalises from the built output, so backends and the backfill share one rule (2.047875ms)\n✔ imports the built server subpath without browser globals (24.038083ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 808.634333\n",
+        "stderr": "$ pnpm build && node --import tsx --test \"tests/*.test.ts\"\n$ pnpm ts:check\n$ tsc\n"
+      }
+    ],
+    "frozen_source_sha": "f6763bd252f5462bebdfb6d5e4a43959cc76504b",
+    "frozen_source_path_hashes_match": true,
+    "test_source_head_at_execution": "e793130bcc3ecf0b8fd01b8b21336e9d6042dc36"
+  },
+  "source_dry_run": {
+    "phase": "source",
+    "mode": "dry-run",
+    "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+    "branch": "feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding",
+    "head_before": "e793130bcc3ecf0b8fd01b8b21336e9d6042dc36",
+    "head_after": "e793130bcc3ecf0b8fd01b8b21336e9d6042dc36",
+    "staged_paths": [
+      "src/context/context.types.ts",
+      "src/context/createSharedContext.test.ts",
+      "src/context/createSharedContext.ts",
+      "src/context/index.ts",
+      "src/helpers/createTadaBrowserClient.test.ts",
+      "src/helpers/createTadaBrowserClient.ts",
+      "src/helpers/generateSrvAuthBindings.test.ts",
+      "src/helpers/generateSrvAuthBindings.ts",
+      "src/helpers/generateSrvAuthBindings.types.ts",
+      "src/helpers/initTadaBrowserClient.ts",
+      "src/index.ts"
+    ],
+    "git_config_count_before": 0,
+    "git_config_count_after": 1,
+    "process_hooks": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81",
+    "process_config_sha256": "1ed1c0b495efc6b6aa96457220b9474ead8a9838cebdedbb44840321f9a96a51",
+    "validated_pins": [
+      {
+        "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/commit-msg",
+        "sha256": "1b1250b1afdd9d5cf8fc4a3fb5a6b03d5ed7a1a7c92095e1fd433be70d0c51c9"
+      },
+      {
+        "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/pre-commit",
+        "sha256": "2ad3626327578e0c40b67c74b73573a918f426912faa3505f9c86c19ce2e3df3"
+      },
+      {
+        "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/pre-push",
+        "sha256": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b"
+      },
+      {
+        "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/prepare-commit-msg",
+        "sha256": "975cec878e0e8522693c66a75e81e3916b19f3a694290ee4ad7f622af7215e2a"
+      },
+      {
+        "path": "/Users/igor/carasent/asma-modules/.githooks/commit-msg",
+        "sha256": "4caaaad43bc4d0436ef95bf9c51f4e86583da372b09b3a676899ff49685ff173"
+      },
+      {
+        "path": "/Users/igor/carasent/asma-modules/.githooks/pre-commit",
+        "sha256": "721fd62fec88687ece9b3bf98c5dda2bf1a2fd1750606a5eb791436bfffa35d6"
+      },
+      {
+        "path": "/Users/igor/carasent/asma-modules/.githooks/pre-push",
+        "sha256": "ef8faa942215c449051cd2c3cc3eb6f13057f3731bfcac0e07fc9c3796a6874c"
+      },
+      {
+        "path": "/Users/igor/carasent/asma-modules/.githooks/prepare-commit-msg",
+        "sha256": "975cec878e0e8522693c66a75e81e3916b19f3a694290ee4ad7f622af7215e2a"
+      },
+      {
+        "path": "/Users/igor/carasent/asma-modules/.githooks/commit-msg.old",
+        "sha256": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e"
+      },
+      {
+        "path": "/Users/igor/carasent/asma-modules/.githooks/pre-commit.old",
+        "sha256": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a"
+      },
+      {
+        "path": "/Users/igor/carasent/asma-modules/.githooks/pre-push.old",
+        "sha256": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b"
+      },
+      {
+        "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/lefthook.yml",
+        "sha256": "1ed1c0b495efc6b6aa96457220b9474ead8a9838cebdedbb44840321f9a96a51"
+      },
+      {
+        "path": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers/node_modules/.pnpm/lefthook-darwin-arm64@2.1.1/node_modules/lefthook-darwin-arm64/bin/lefthook",
+        "sha256": "90e53a15be1630791dde4d802fe0a382fd2c93cbef3db1fbbfd33d62f2f6a0af"
+      },
+      {
+        "path": "/Users/igor/carasent/asma-modules/_tools/lefthook/_scripts/validate-doc-refs.py",
+        "sha256": "62a5aa537cddace14bf6456f8aae25d0df3ffe7b2ef1df27a33972075bc9c7f3"
+      },
+      {
+        "path": "/Users/igor/carasent/asma-modules/_tools/lefthook/_scripts/validate-commit-msg.py",
+        "sha256": "f13e67dd9dbf69ef8387a5212210b07b15856eea2a2dcde05a6290a1c1faeadb"
+      }
+    ],
+    "commands": [
+      {
+        "command": [
+          "asma",
+          "git",
+          "commit",
+          "-m",
+          "feat(context): ASMA-8342 Add revocable shared context",
+          "--push",
+          "--verbose",
+          "--dry-run"
+        ],
+        "stdin": null,
+        "started": "2026-10-03T11:58:34.880151+00:00",
+        "ended": "2026-10-03T11:58:37.103970+00:00",
+        "exit": 0,
+        "stdout": "ℹ Commit scope: asma-core-helpers\nℹ Workspace root pointer commit: disabled for submodule flow; asma-modules may still be pulled for sync\nℹ Generating 1 commit message(s) in parallel...\nℹ ✓ .worktrees/asma-8342/asma-core-helpers (manual)\nℹ Submodule target: asma-core-helpers\nℹ Commit message for asma-core-helpers (manual):\n› feat(context): ASMA-8342 Add revocable shared context\n› git -C /Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers commit -m feat(context): ASMA-8342 Add revocable shared context\n› git -C /Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers push origin\nℹ Dry run complete\n✅ Commit flow complete for asma-core-helpers\n",
+        "stderr": ""
+      }
+    ],
+    "exit": 0,
+    "index_after": "src/context/context.types.ts\nsrc/context/createSharedContext.test.ts\nsrc/context/createSharedContext.ts\nsrc/context/index.ts\nsrc/helpers/createTadaBrowserClient.test.ts\nsrc/helpers/createTadaBrowserClient.ts\nsrc/helpers/generateSrvAuthBindings.test.ts\nsrc/helpers/generateSrvAuthBindings.ts\nsrc/helpers/generateSrvAuthBindings.types.ts\nsrc/helpers/initTadaBrowserClient.ts\nsrc/index.ts",
+    "status_after": "M .cursor/rules/copilot-instructions.mdc\nA  src/context/context.types.ts\nA  src/context/createSharedContext.test.ts\nA  src/context/createSharedContext.ts\nA  src/context/index.ts\nA  src/helpers/createTadaBrowserClient.test.ts\nM  src/helpers/createTadaBrowserClient.ts\nA  src/helpers/generateSrvAuthBindings.test.ts\nM  src/helpers/generateSrvAuthBindings.ts\nM  src/helpers/generateSrvAuthBindings.types.ts\nM  src/helpers/initTadaBrowserClient.ts\nM  src/index.ts\n?? .agents/\n?? .asma/\n?? .claude/\n?? .cursor/rules/asma-workspace-asma-doc-routing.mdc\n?? .cursor/rules/asma-workspace-asma-playwright-routing.mdc\n?? .cursor/rules/asma-workspace-asma-python-routing.mdc\n?? .cursor/rules/asma-workspace-asma-qnr-index.mdc\n?? .cursor/rules/asma-workspace-asma-yaml-routing.mdc\n?? .cursor/rules/asma-workspace-docs-navigation.mdc\n?? .pnpm-store/\n?? AGENTS.md\n?? CLAUDE.md\n?? lefthook.yml"
+  },
+  "source_effect": {
+    "phase": "source",
+    "mode": "effect",
+    "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+    "branch": "feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding",
+    "head_before": "e793130bcc3ecf0b8fd01b8b21336e9d6042dc36",
+    "head_after": "f6763bd252f5462bebdfb6d5e4a43959cc76504b",
+    "staged_paths": [
+      "src/context/context.types.ts",
+      "src/context/createSharedContext.test.ts",
+      "src/context/createSharedContext.ts",
+      "src/context/index.ts",
+      "src/helpers/createTadaBrowserClient.test.ts",
+      "src/helpers/createTadaBrowserClient.ts",
+      "src/helpers/generateSrvAuthBindings.test.ts",
+      "src/helpers/generateSrvAuthBindings.ts",
+      "src/helpers/generateSrvAuthBindings.types.ts",
+      "src/helpers/initTadaBrowserClient.ts",
+      "src/index.ts"
+    ],
+    "git_config_count_before": 0,
+    "git_config_count_after": 1,
+    "process_hooks": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81",
+    "process_config_sha256": "1ed1c0b495efc6b6aa96457220b9474ead8a9838cebdedbb44840321f9a96a51",
+    "validated_pins": [
+      {
+        "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/commit-msg",
+        "sha256": "1b1250b1afdd9d5cf8fc4a3fb5a6b03d5ed7a1a7c92095e1fd433be70d0c51c9"
+      },
+      {
+        "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/pre-commit",
+        "sha256": "2ad3626327578e0c40b67c74b73573a918f426912faa3505f9c86c19ce2e3df3"
+      },
+      {
+        "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/pre-push",
+        "sha256": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b"
+      },
+      {
+        "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/prepare-commit-msg",
+        "sha256": "975cec878e0e8522693c66a75e81e3916b19f3a694290ee4ad7f622af7215e2a"
+      },
+      {
+        "path": "/Users/igor/carasent/asma-modules/.githooks/commit-msg",
+        "sha256": "4caaaad43bc4d0436ef95bf9c51f4e86583da372b09b3a676899ff49685ff173"
+      },
+      {
+        "path": "/Users/igor/carasent/asma-modules/.githooks/pre-commit",
+        "sha256": "721fd62fec88687ece9b3bf98c5dda2bf1a2fd1750606a5eb791436bfffa35d6"
+      },
+      {
+        "path": "/Users/igor/carasent/asma-modules/.githooks/pre-push",
+        "sha256": "ef8faa942215c449051cd2c3cc3eb6f13057f3731bfcac0e07fc9c3796a6874c"
+      },
+      {
+        "path": "/Users/igor/carasent/asma-modules/.githooks/prepare-commit-msg",
+        "sha256": "975cec878e0e8522693c66a75e81e3916b19f3a694290ee4ad7f622af7215e2a"
+      },
+      {
+        "path": "/Users/igor/carasent/asma-modules/.githooks/commit-msg.old",
+        "sha256": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e"
+      },
+      {
+        "path": "/Users/igor/carasent/asma-modules/.githooks/pre-commit.old",
+        "sha256": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a"
+      },
+      {
+        "path": "/Users/igor/carasent/asma-modules/.githooks/pre-push.old",
+        "sha256": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b"
+      },
+      {
+        "path": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/lefthook.yml",
+        "sha256": "1ed1c0b495efc6b6aa96457220b9474ead8a9838cebdedbb44840321f9a96a51"
+      },
+      {
+        "path": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers/node_modules/.pnpm/lefthook-darwin-arm64@2.1.1/node_modules/lefthook-darwin-arm64/bin/lefthook",
+        "sha256": "90e53a15be1630791dde4d802fe0a382fd2c93cbef3db1fbbfd33d62f2f6a0af"
+      },
+      {
+        "path": "/Users/igor/carasent/asma-modules/_tools/lefthook/_scripts/validate-doc-refs.py",
+        "sha256": "62a5aa537cddace14bf6456f8aae25d0df3ffe7b2ef1df27a33972075bc9c7f3"
+      },
+      {
+        "path": "/Users/igor/carasent/asma-modules/_tools/lefthook/_scripts/validate-commit-msg.py",
+        "sha256": "f13e67dd9dbf69ef8387a5212210b07b15856eea2a2dcde05a6290a1c1faeadb"
+      }
+    ],
+    "commands": [
+      {
+        "command": [
+          "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/pre-commit"
+        ],
+        "stdin": null,
+        "started": "2026-10-03T11:59:04.730796+00:00",
+        "ended": "2026-10-03T11:59:04.848295+00:00",
+        "exit": 0,
+        "stdout": "\u001b[92m✅ doc refs OK\u001b[0m \u001b[90m(11 files)\u001b[0m\n",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/commit-msg",
+          "/private/tmp/asma-8342-source-message.txt"
+        ],
+        "stdin": null,
+        "started": "2026-10-03T11:59:04.848388+00:00",
+        "ended": "2026-10-03T11:59:04.893277+00:00",
+        "exit": 0,
+        "stdout": "\u001b[92m✅ Commit message valid: feat(context): ASMA-8342 Add revocable shared context\u001b[0m\n",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "asma",
+          "git",
+          "commit",
+          "-m",
+          "feat(context): ASMA-8342 Add revocable shared context",
+          "--push",
+          "--verbose"
+        ],
+        "stdin": null,
+        "started": "2026-10-03T11:59:04.893378+00:00",
+        "ended": "2026-10-03T11:59:09.143879+00:00",
+        "exit": 0,
+        "stdout": "ℹ Commit scope: asma-core-helpers\nℹ Workspace root pointer commit: disabled for submodule flow; asma-modules may still be pulled for sync\nℹ Generating 1 commit message(s) in parallel...\nℹ ✓ .worktrees/asma-8342/asma-core-helpers (manual)\nℹ Submodule target: asma-core-helpers\nℹ Commit message for asma-core-helpers (manual):\n› feat(context): ASMA-8342 Add revocable shared context\n› git -C /Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers commit -m feat(context): ASMA-8342 Add revocable shared context\n› git -C /Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers push origin\n› git: ✅ doc refs OK (11 files)\n› git: ✅ Commit message valid: feat(context): ASMA-8342 Add revocable shared context\n› git: [feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding f6763bd] feat(context): ASMA-8342 Add revocable shared context\n› git:  11 files changed, 1413 insertions(+), 86 deletions(-)\n› git:  create mode 100644 src/context/context.types.ts\n› git:  create mode 100644 src/context/createSharedContext.test.ts\n› git:  create mode 100644 src/context/createSharedContext.ts\n› git:  create mode 100644 src/context/index.ts\n› git:  create mode 100644 src/helpers/createTadaBrowserClient.test.ts\n› git:  create mode 100644 src/helpers/generateSrvAuthBindings.test.ts\n⚠ Kontor would refuse 'feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding' (binding_unconfirmed); publishing anyway (paseo-direct surface; ASMA_ORCHESTRATION_SURFACE=kontor fails closed)\nℹ Refusal recorded as attestation 01a101a1-d74c-7b03-8edd-6c6acb20d221\n› git: remote:\n› git: remote: GitHub found 4 vulnerabilities on Carasent-ASMA/asma-core-helpers's default branch (2 high, 2 moderate). To find out more, visit:\n› git: remote:      https://github.com/Carasent-ASMA/asma-core-helpers/security/dependabot\n› git: remote:\n› git: To github.com:Carasent-ASMA/asma-core-helpers.git\n› git:    e793130..f6763bd  feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding -> feat/ASMA-8342-shared-actor-organization-and-selected-record-context-with-shell-to-widget-auth-binding\n✅ Commit flow complete for asma-core-helpers\n",
+        "stderr": ""
+      }
+    ],
+    "exit": 0,
+    "index_after": "",
+    "status_after": "M .cursor/rules/copilot-instructions.mdc\n?? .agents/\n?? .asma/\n?? .claude/\n?? .cursor/rules/asma-workspace-asma-doc-routing.mdc\n?? .cursor/rules/asma-workspace-asma-playwright-routing.mdc\n?? .cursor/rules/asma-workspace-asma-python-routing.mdc\n?? .cursor/rules/asma-workspace-asma-qnr-index.mdc\n?? .cursor/rules/asma-workspace-asma-yaml-routing.mdc\n?? .cursor/rules/asma-workspace-docs-navigation.mdc\n?? .pnpm-store/\n?? AGENTS.md\n?? CLAUDE.md\n?? lefthook.yml"
+  },
+  "source_reconciliation": {
+    "modules": [
+      {
+        "module": "shell/asma-app-shell",
+        "expected_head": "96683d612d6330905d5210d51e3292f812e13b49",
+        "head": "96683d612d6330905d5210d51e3292f812e13b49"
+      },
+      {
+        "module": "shell/asma-app-advoca",
+        "expected_head": "c2262cbe22a3c2efb5fc8d1ed97cf885bb94511f",
+        "head": "c2262cbe22a3c2efb5fc8d1ed97cf885bb94511f"
+      },
+      {
+        "module": "shell/asma-app-layouts",
+        "expected_head": "042db39cb1aca5d33e20b67497256d19c4407c58",
+        "head": "042db39cb1aca5d33e20b67497256d19c4407c58"
+      },
+      {
+        "module": "chat/asma-app-chat",
+        "expected_head": "5d46e28c3c5369a25721642caa405b2f67257d5f",
+        "head": "5d46e28c3c5369a25721642caa405b2f67257d5f"
+      },
+      {
+        "module": "calendar/asma-app-calendar",
+        "expected_head": "a93b03ea63d189393a13c7381cdb1a38a35a03ab",
+        "head": "a93b03ea63d189393a13c7381cdb1a38a35a03ab"
+      },
+      {
+        "module": "storage/asma-app-storage",
+        "expected_head": "03b9a65c65bc711f929af5f10cf1cb6abada10f7",
+        "head": "03b9a65c65bc711f929af5f10cf1cb6abada10f7"
+      },
+      {
+        "module": "editor/asma-app-editor",
+        "expected_head": "816de674a12395edbfa7065581edb4b232cc989c",
+        "head": "816de674a12395edbfa7065581edb4b232cc989c"
+      },
+      {
+        "module": "artifact/asma-app-artifact",
+        "expected_head": "021897627b986609c5335bf83790857c08920e50",
+        "head": "021897627b986609c5335bf83790857c08920e50"
+      },
+      {
+        "module": "directory/asma-app-directory",
+        "expected_head": "50ec45bcffb24a1e52c8cb3782747692c5ab2452",
+        "head": "50ec45bcffb24a1e52c8cb3782747692c5ab2452"
+      },
+      {
+        "module": "directory/adopus-app-directory",
+        "expected_head": "3ec2143969ebe79b81f295a97ea65574871474cb",
+        "head": "3ec2143969ebe79b81f295a97ea65574871474cb"
+      },
+      {
+        "module": "crm/asma-app-crm",
+        "expected_head": "893e1fdde5a841c2c3f1680d6d04b6d8f9e7c04d",
+        "head": "893e1fdde5a841c2c3f1680d6d04b6d8f9e7c04d"
+      },
+      {
+        "module": "shared/asma-mfw-esmloader",
+        "expected_head": "2f935a744bd57e4a43d756766a1b7ed4bba720c7",
+        "head": "2f935a744bd57e4a43d756766a1b7ed4bba720c7"
+      },
+      {
+        "module": "shared/asma-qiankun-react-loader",
+        "expected_head": "0c396568da1faffd68380e0a011cfb590a63fa57",
+        "head": "0c396568da1faffd68380e0a011cfb590a63fa57"
+      },
+      {
+        "module": "shared/asma-types",
+        "expected_head": "fb6b10a5c48a2759f0ebc93fc8a2e6b8b9a7f764",
+        "head": "fb6b10a5c48a2759f0ebc93fc8a2e6b8b9a7f764"
+      },
+      {
+        "module": "auth/asma-njs-auth",
+        "expected_head": "527989ab2ab7bd9a2875706048743343b34b60e5",
+        "head": "527989ab2ab7bd9a2875706048743343b34b60e5"
+      }
+    ],
+    "files_read": 1325,
+    "read_bytes": 5192302,
+    "drift": [],
+    "8339_head": "ceadb17833963514c38b189a1ce2de8a6605a78c",
+    "canonical_helpers_head": "a0dfc9556977bc84c8332d3d2edb2265d5e52dbb",
+    "merge_base": "a0dfc9556977bc84c8332d3d2edb2265d5e52dbb",
+    "ancestry_counts": "1\t2",
+    "no_source_integration": true
+  },
+  "adapter_mirror_check": {
+    "command": [
+      "python3",
+      "/Users/igor/carasent/asma-modules/_tools/scripts/check-codex-agent-config.py"
+    ],
+    "cwd": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers",
+    "observed_at": "2026-10-03T12:03:59.354196+00:00",
+    "exit": 0,
+    "stdout": "Agent configuration passed: 65 byte-exact skills.\n",
+    "stderr": "",
+    "first_task_mirror_attempt_exit": 2,
+    "first_task_mirror_gap": "Task adapter workspace omits this _tools/scripts file; canonical absolute script was located and executed read-only."
+  },
+  "route_receipt": {
+    "path": "/Users/igor/.local/state/asma/watchdogs/ASMA-8108/history/operator-core-scope-20261003/task08-qualified-process-hooks.json",
+    "sha256": "52c2f23d53fc9b7b62dd1dc79bf003cfa9675d8da52b9381478c8192ae4635a9",
+    "full_receipt": {
+      "hooks": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81",
+      "config": "/private/tmp/asma-8342-qualified-hooks-1mlg6v81/lefthook.yml",
+      "lefthook_bin": "/Users/igor/carasent/asma-modules/.worktrees/asma-8342/asma-core-helpers/node_modules/.pnpm/lefthook-darwin-arm64@2.1.1/node_modules/lefthook-darwin-arm64/bin/lefthook",
+      "shared_hooks_unchanged": {
+        "commit-msg": "4caaaad43bc4d0436ef95bf9c51f4e86583da372b09b3a676899ff49685ff173",
+        "pre-commit": "721fd62fec88687ece9b3bf98c5dda2bf1a2fd1750606a5eb791436bfffa35d6",
+        "pre-push": "ef8faa942215c449051cd2c3cc3eb6f13057f3731bfcac0e07fc9c3796a6874c",
+        "prepare-commit-msg": "975cec878e0e8522693c66a75e81e3916b19f3a694290ee4ad7f622af7215e2a",
+        "commit-msg.old": "a6137b73fd73003949efcb01a42eafb831811add9a4d1038360ccc1f1b783e4e",
+        "pre-commit.old": "d615368e36b1ebae54026759b7e9520ac877ef45c37f12730c9aa08db2bc723a",
+        "pre-push.old": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b"
+      },
+      "process_hooks": {
+        "commit-msg": "1b1250b1afdd9d5cf8fc4a3fb5a6b03d5ed7a1a7c92095e1fd433be70d0c51c9",
+        "pre-commit": "2ad3626327578e0c40b67c74b73573a918f426912faa3505f9c86c19ce2e3df3",
+        "pre-push": "0a556000f98a6a8c029ba14ff017f976e45241a1cacbdd32b6af0c54974bd49b",
+        "prepare-commit-msg": "975cec878e0e8522693c66a75e81e3916b19f3a694290ee4ad7f622af7215e2a"
+      },
+      "checks": [
+        {
+          "name": "commit-message-valid",
+          "exit": 0,
+          "output": "\u001b[92m✅ Commit message valid: feat(context): ASMA-8342 add revocable shared context\u001b[0m\n"
+        },
+        {
+          "name": "commit-message-invalid",
+          "exit": 1,
+          "output": "\n❌ Invalid commit message format!\n\n❌ Invalid type. Must be one of: feat, fix, docs, style, refactor, test, chore, perf, ci, build\n  ❌ Format must be: <type>(<scope>): <Description>\n\n📖 Required format:\n  <type>(<scope>): <Short description>\n\n🛡️ Rules:\n    ✅ Type: feat, fix, docs, style, refactor, test, chore, perf, ci, build\n  ✅ Scope: optional (lowercase, kebab-case)\n  ✅ Description: starts with CAPITAL letter\n      ✅ Subject: max 78 characters\n  ✅ No period at end\n  🔥 Breaking changes: add ! after type\n\n✨ Examples:\n    ✅ feat(auth): Add SSO login\n    ✅ fix(chat): Resolve timeout issue\n    ✅ docs(readme): Update setup guide\n    ✅ refactor(tools): Simplify commit flow\n    ✅ ci: Update pipeline cache config\n    ✅ feat!(api): Change response format\n\n👉 Your message:\n  bad subject\n\n📖 See: _docs/git/COMMIT_BEST_PRACTICES.md\n\n"
+        },
+        {
+          "name": "push-guard-canonical-task",
+          "exit": 0,
+          "output": ""
+        },
+        {
+          "name": "push-guard-protected-default",
+          "exit": 1,
+          "output": "\nBLOCKED: agent push to refs/heads/master\n\n  An agent commit reaching master IS the delivery — there is no\n  review step behind it. Push a branch and open a PR instead:\n\n    asma git checkout -b <branch> --from master\n    asma git commit --auto --push --create-pr\n\n  Deliberate exception, with the user's explicit go-ahead:\n    ASMA_ALLOW_AGENT_PUSH=1 git push ...\n\n"
+        },
+        {
+          "name": "push-guard-keyless",
+          "exit": 1,
+          "output": "\nBLOCKED: agent push of branch 'feat/missing-key' (branch_key_missing or not canonical)\n\n  Every published branch carries its Jira key, derived, not typed:\n    <type>/ASMA-<number>-<slug>   e.g. feat/ASMA-8101-publication-identity\n\n  Create it deterministically and move your commits over:\n    asma git --repo <context> checkout -b --from ASMA-<number>\n\n  Deliberate exception, with the user's explicit go-ahead:\n    ASMA_ALLOW_AGENT_PUSH=1 git push ...\n\n"
+        },
+        {
+          "name": "installed-lefthook-version",
+          "exit": 0,
+          "output": "2.1.1\n"
+        },
+        {
+          "name": "prepare-with-process-config",
+          "exit": 0,
+          "output": ""
+        },
+        {
+          "name": "pre-commit-validator-invoked-with-current-index",
+          "exit": 0,
+          "output": ""
+        }
+      ],
+      "limits": "No immediate pre-install prepare-hook snapshot; no canonical rollback. Original three .old hooks are byte-exact canonical HEAD. ROOT resolver changed only in process-local commit-msg/pre-commit. Prepare copied current generated hook and pinned installed bin/config. No prepare-specific configured jobs; no attribution or product-test pass claimed. Actual staged source validators must rerun at checkpoint. Persistent config, generated task lefthook.yml and other writers preserved.",
+      "installed_bin_sha256": "90e53a15be1630791dde4d802fe0a382fd2c93cbef3db1fbbfd33d62f2f6a0af",
+      "config_sha256": "1ed1c0b495efc6b6aa96457220b9474ead8a9838cebdedbb44840321f9a96a51",
+      "prepare_reference_discrepancy": "Older publication-hooks.json lists canonical working f38b40f5; its current preserved process prepare copy is afc37a4d and equals canonical committed HEAD. These are distinct sources, not an immediate pre-install snapshot; no f38 restoration or retroactive pass inferred.",
+      "canonical_effect_disposition": "Current generated prepare hook differs from the committed/available process reference only by its two hard-coded binary path occurrences. Preserve catalog dirt and backups; do not guess a missing immediate preimage. Use the explicitly qualified process-local source checkpoint route; canonical reconciliation remains separately owned."
+    }
+  },
+  "canonical_validator_supplement": {
+    "path": "/Users/igor/.local/state/kontor/asma/runtime-roots/01a0064a-e056-7603-9968-ef64fdaacb75/01a072f5-f35c-7cc2-8367-43cba653a951/receipts/task08-canonical-validator-hash-supplement.json",
+    "sha256": "b24171b2e628af46f464c6821a22e0bc4d163099ed2262aa6244fec218fea6ea",
+    "full_receipt": {
+      "readAt": "2026-10-03T11:53:41.100893+00:00",
+      "canonicalHead": "884f9f66587cbeaf562a3dec9baf8d602a9ca2f4",
+      "validators": [
+        {
+          "path": "_tools/lefthook/_scripts/validate-doc-refs.py",
+          "sha256": "62a5aa537cddace14bf6456f8aae25d0df3ffe7b2ef1df27a33972075bc9c7f3",
+          "headSha256": "62a5aa537cddace14bf6456f8aae25d0df3ffe7b2ef1df27a33972075bc9c7f3",
+          "sameBytes": true
+        },
+        {
+          "path": "_tools/lefthook/_scripts/validate-commit-msg.py",
+          "sha256": "f13e67dd9dbf69ef8387a5212210b07b15856eea2a2dcde05a6290a1c1faeadb",
+          "headSha256": "f13e67dd9dbf69ef8387a5212210b07b15856eea2a2dcde05a6290a1c1faeadb",
+          "sameBytes": true
+        }
+      ],
+      "scope": "Supplement missing hashes only; existing qualified task08 process route; no executable/config mutation or additional check result"
+    }
+  },
+  "ledger": {
+    "cutoff_utc": "2026-10-03T12:08:47.208865+00:00",
+    "proxy_basis": "Own native turn-start to freeze elapsed / 28800 seconds; not certified active engineering time; bootstrap .03 included once.",
+    "own_start_utc": "2026-10-03T10:59:01.605000+00:00",
+    "own_elapsed_seconds": 4185.603865,
+    "dev_total_elapsed_proxy_days": 0.15,
+    "dev_bootstrap_included_days": 0.03,
+    "dev_postbootstrap_transfer_days": 0.12,
+    "root_consumed_model_days": 0.08,
+    "root_remaining_before_U_days": 0.05,
+    "tpm_consumed_model_days": 0.11,
+    "tpm_remaining_before_U_days": 0.19,
+    "tpm_additional_task08_model_days": 0.01,
+    "architect_consumed_authored_days": 0.08,
+    "scope_remaining_before_U_days": 0.67,
+    "dev_remaining_before_U_days": 1.1,
+    "known_model_plus_elapsed_proxy_days": 0.42,
+    "unknown_prior_and_recovery": "U retained; native-null predecessors and uncertified retired/recovery intervals not zero; allocate within retained owning phases before certifying fit",
+    "mandatory_whole_days": 8.18,
+    "contingent_whole_days": 8.43,
+    "mandatory_remaining_before_U_days": 7.76,
+    "contingent_remaining_before_U_days": 8.01,
+    "net_forecast_expansion_days": 0,
+    "original_M3_days": 3,
+    "original_M3_mandatory_excess_days": 5.18,
+    "original_M3_contingent_excess_days": 5.43,
+    "retired_native_observed_turn_envelopes_seconds": 80.757,
+    "retired_native_elapsed_proxy_days": 0.0028040625,
+    "retired_proxy_accounting": "Attributed observation within U; no automatic certified-engineering charge or retrospective zero."
+  },
+  "retired_work_interval_observation": {
+    "native": "01a10140-5c23-7b33-a97a-45d23579e712",
+    "first": "2026-10-03T10:12:37.974Z",
+    "last": "2026-10-03T10:55:56.049Z",
+    "observable_turn_events": [
+      {
+        "timestamp": "2026-10-03T10:12:37.975Z",
+        "event": "task_started"
+      },
+      {
+        "timestamp": "2026-10-03T10:13:57.802Z",
+        "event": "task_complete"
+      },
+      {
+        "timestamp": "2026-10-03T10:55:55.119Z",
+        "event": "task_started"
+      },
+      {
+        "timestamp": "2026-10-03T10:55:56.049Z",
+        "event": "task_complete"
+      }
+    ],
+    "limit": "Wall intervals are not active engineering or model-consumed person-days. Native-null Claude predecessors and recovery coordination intervals remain U; never treated as zero."
+  },
+  "root_ledger_authority": {
+    "commit": "f1c8faffe576fcea0f80d6d9347ebd7e8f84dcbe",
+    "path": "_docs/mobile-app/reports/2026-10-03-11-25-report-context-effort-and-integration-route.md",
+    "sha256": "32c656d4262115c17e768666e540b50970ebe5fb94175d0b77a34dee0ee04ffc",
+    "read_full": true,
+    "root_consumed": 0.08,
+    "root_remaining": 0.05,
+    "root_total": 0.13
+  },
+  "intake_pins": [
+    {
+      "path": "docs/evidence/ASMA-8342/index.md",
+      "bytes": 1866,
+      "sha256": "cc286281a90f98339123c86b7189fd4d1f56c104b7267cad04a1c0ac99755957"
+    },
+    {
+      "path": "docs/evidence/ASMA-8342/2026-10-03-11-48-report-context-scope-acceptance.md",
+      "bytes": 49966,
+      "sha256": "236c3affa63dc0942a6e1f970496a2b3ffd02e1b2b3e66b1e50e54f59d9a035f"
+    },
+    {
+      "path": "docs/evidence/ASMA-8342/source-consumer-ownership-manifest.json",
+      "bytes": 1277517,
+      "sha256": "09f73745e9acc670d734f67eb1480dc5b3b6363474213bffd1fe415ae2b596dd"
+    }
+  ],
+  "limitations": [
+    "No real authenticated guardian supplier correlation or owner-authorized record proof",
+    "No actual Shell/Advoca/layout/target consumer wiring",
+    "No server authorization, tenant or journal acceptance verdict",
+    "No browser or real transport/loader/app@version/key joins",
+    "No ASMA8339 combined-source merge/test or canonical edits",
+    "Existing package tests do not verify the built root browser entry with an actual browser",
+    "Behavior tests use tsx transpilation; test files excluded from production tsc; no separate test-type-check claim",
+    "No mutation run or independent QA/Audit; same-OpenAI vendor collisions prohibit PASS",
+    "Results checkpoint publication is subsequent to this frozen JSON and is returned separately in callback"
+  ],
+  "development_corrections": [
+    "Initial primitive test expected Reflect.set on a frozen object to throw; corrected to false before final passing runs",
+    "Initial compile errors in timer unref narrowing/unused declarations fixed before final passing checks",
+    "Initial combined test/compiler shell call masked one failing test with compiler exit0; final commands captured independent exits",
+    "Offline dependency install lacked tarballs; sandbox network attempt failed; permitted frozen online install succeeded with package/lock unchanged",
+    "Install invoked lefthook prepare-hook sync; missing immediate canonical preimage remains separately owned; qualified process route used with all seven shared hook/backups preserved",
+    "Adapter mirror checker first path via task mirror was absent; canonical absolute checker executed exit0"
+  ],
+  "effects_not_performed": [
+    "No PR",
+    "No merge/integration",
+    "No default-branch push",
+    "No Jira status change",
+    "No dependency/package/version/export-map change",
+    "No canonical hook restoration or repair",
+    "No second auth session",
+    "No reviewer dispatch or PASS flags"
+  ]
+}

@@ -3,10 +3,16 @@ import { EnvConfigsFnInternal } from './generateEnvConfigsBindings.js'
 import { realWindow } from './getSubdomain.js'
 import { getInjectedPlatform } from './getDefaultAppVersions.js'
 import { get as _ } from 'idb-keyval'
-import type { ICheckSigninOptions, ICheckSigninTransformedOptions } from './generateSrvAuthBindings.types.js'
-import { domain, type ActivityStatus, type IAuthBindings } from '../index.js'
+import type { ICheckSigninOptions, ICheckSigninTransformedOptions, GenerateSrvAuthBindingsOptions } from './generateSrvAuthBindings.types.js'
+import { domain } from './initEnvConfigsVars.js'
+import type { ActivityStatus } from './getActivityStatus.js'
+import type { IAuthBindings } from '../g-definitions.js'
 import type { IBaseJwtClaims, IUUID } from 'asma-types'
 import { ActivityStatuses, getActivityStatus } from './getActivityStatus.js'
+import { SharedContextError } from '../context/createSharedContext.js'
+import type { SharedContextController, SharedContextLease, SharedContextOwnerClientSource } from '../context/context.types.js'
+
+const managedAuthContexts = new WeakMap<object, (context: SharedContextController) => void>()
 
 //let logoutSuccessful = false
 
@@ -144,54 +150,136 @@ export type ICheckRegisteredSubdomainResponse<FE extends string> = {
     token?: string
 }
 
-export function generateSrvAuthBindings<FE extends string>(logout?: () => void) {
-    if (logout) {
-        registerCallbackOnSrvAuthEvents('logout_event', logout)
-    }
-
+export function generateSrvAuthBindings<FE extends string>(logout?: () => void, options: GenerateSrvAuthBindingsOptions = {}) {
     if (realWindow.__ASMA__SHELL__?.auth_bindings) {
+        if (options.sharedContext) {
+            const attach = managedAuthContexts.get(realWindow.__ASMA__SHELL__.auth_bindings)
+            if (!attach) throw new SharedContextError('owner_unavailable')
+            attach(options.sharedContext)
+        }
+        if (logout) registerCallbackOnSrvAuthEvents('logout_event', logout)
         return realWindow.__ASMA__SHELL__.auth_bindings as typeof auth_bindings
     }
     let jwtToken = ''
 
     let metadata: ICheckSigninTransformedOptions<FE> | undefined
+    let requestGeneration = 0
+    let identityGeneration = 0
+    let sessionGeneration = 0
+    let contextGeneration = 0
+    let authRequestSequence = 0
+    let establishedBySequence = 0
+    let authOperation = 0
+    let refreshableSession = false
+    let expiryTimer: ReturnType<typeof setTimeout> | undefined
+    const contexts = new Set<SharedContextController>()
+    const promiseRegistry = new Map<string, Promise<unknown>>()
+    type CachedActivityStatus = { value: ActivityStatus; expiresAt: number }
+    const CACHE_TTL = 1000 * 60 * 5
+    const activityStatusesCached = new Map<string, CachedActivityStatus>()
+    const pendingRequests = new Map<string, Promise<Map<string, ActivityStatus>>>()
+    let activityGeneration = 0
+
+    function invalidateRequests() {
+        ++requestGeneration
+        ++activityGeneration
+        promiseRegistry.clear()
+        activityStatusesCached.clear()
+        pendingRequests.clear()
+    }
+
+    function assertIdentityCurrent(captured: number) {
+        if (captured !== identityGeneration) throw new SharedContextError('stale_context')
+    }
+
+    function assertAuthOperation(operation: number) {
+        if (operation !== authOperation) throw new SharedContextError('stale_context')
+    }
+
+    function attachContext(context: SharedContextController) {
+        if (contexts.has(context)) return
+        const initial = context.getSnapshot()
+        let observed = initial.generation
+        let observedStatus = initial.status
+        let disposed = false
+        let unsubscribe: (() => void) | undefined
+        unsubscribe = context.subscribe(snapshot => {
+            if (snapshot.generation !== observed || snapshot.status !== observedStatus) {
+                observed = snapshot.generation
+                observedStatus = snapshot.status
+                invalidateRequests()
+                // A new ready context is an external record/organization change; a token-bearing
+                // auth response already in flight must not install credentials against it.
+                if (snapshot.status === 'ready') ++contextGeneration
+            }
+            if (snapshot.status === 'disposed') {
+                disposed = true
+                contexts.delete(context)
+                unsubscribe?.()
+            }
+        })
+        // Retain only a successful subscription, including synchronous disposal callbacks.
+        if (disposed) { unsubscribe(); return }
+        contexts.add(context)
+        invalidateRequests()
+    }
+
+    function invalidateContexts(status: 'pending' | 'anonymous' | 'denied') {
+        // Do not let one owner's failed cleanup prevent the other contexts from revoking.
+        let failed = false
+        for (const context of contexts) {
+            try { context.invalidate(status) } catch { failed = true }
+        }
+        if (failed) throw new SharedContextError('cleanup_failed')
+    }
 
     const isJwtInvalid = () => (jwtToken && accessTokenHasExpired()) || !jwtToken
 
     const isJwtValid = () => !isJwtInvalid()
-
-    const promiseRegistry: Record<string, Promise<Response>> = <{}>{}
 
     async function _handleSrvAuthRequest<R>(url: string | URL, fetchOptions: RequestInit): Promise<R> {
         if (typeof url === 'string') {
             url = buildURL(url)
         }
 
-        if (!promiseRegistry[url.pathname]) {
-            promiseRegistry[url.pathname] = fetch(url.toString(), fetchOptions)
+        const endpoint = url
+        const capturedIdentity = identityGeneration
+        const capturedContext = contextGeneration
+        const capturedSequence = ++authRequestSequence
+        // Never coalesce write/ceremony requests. Read keys include query, headers and scope.
+        const read = !fetchOptions.method || fetchOptions.method === 'GET'
+        const headers = [...new Headers(fetchOptions.headers)].sort(([a], [b]) => a.localeCompare(b))
+        const key = JSON.stringify([capturedIdentity, requestGeneration, endpoint.href, headers])
+        const existing = read ? promiseRegistry.get(key) : undefined
+        if (existing) return existing as Promise<R>
+        const request = (async () => {
+            const res = await fetch(endpoint.toString(), fetchOptions)
+            assertIdentityCurrent(capturedIdentity)
+            const responseData = await res.json() as R
+            assertIdentityCurrent(capturedIdentity)
+            if (!res.ok) throw responseData
+            // A failed/late signout must never repopulate credentials or metadata.
+            if (!endpoint.pathname.endsWith('/signout')) {
+                if (capturedContext !== contextGeneration && typeof responseData === 'object' && responseData !== null && 'token' in responseData) {
+                    throw new SharedContextError('stale_context')
+                }
+                // A request started before the one that established a different actor must not
+                // replace that session; a same-actor response stays current in either order.
+                if (tokenBearing(responseData) && jwtToken && capturedSequence < establishedBySequence &&
+                    !sameAuthenticationActor(responseData.metadata, metadata)) {
+                    throw new SharedContextError('stale_context')
+                }
+                setAuthData(responseData as Partial<ISigninResponse<FE>>, capturedSequence)
+                if (typeof responseData === 'object' && responseData !== null && 'default_app_versions' in responseData) {
+                    dispatchCustomerUserRelatedAppVersions(responseData.default_app_versions as Record<string, string>)
+                }
+            }
+            return responseData
+        })()
+        if (read) promiseRegistry.set(key, request)
+        try { return await request } finally {
+            if (promiseRegistry.get(key) === request) promiseRegistry.delete(key)
         }
-
-        const res = await promiseRegistry[url.pathname]!.finally(() => {
-            delete promiseRegistry[url.pathname]
-        })
-
-        const responseData = (await res.clone().json()) as R
-
-        if (typeof responseData === 'object' && responseData !== null && 'default_app_versions' in responseData) {
-            dispatchCustomerUserRelatedAppVersions(responseData.default_app_versions as Record<string, string>)
-        }
-
-        if (!res.ok) {
-            throw responseData
-        }
-
-        if (res.status === 299 && EnvConfigsFnInternal().DEVELOPMENT) {
-            console.info(responseData)
-        }
-
-        setAuthData(responseData as Partial<ISigninResponse<FE>>)
-
-        return responseData
     }
 
     async function srvAuthPost<T = unknown, R = unknown>(
@@ -222,7 +310,10 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         headers?: Record<string, string>
         signal?: AbortSignal
     }): Promise<R> {
+        const capturedIdentity = identityGeneration
         const token = await getCachedJwt()
+        assertIdentityCurrent(capturedIdentity)
+        if (!token || !isJwtValid()) throw new SharedContextError('context_unavailable')
         const fetchOptions: RequestInit = {
             method: 'POST',
             headers: {
@@ -239,10 +330,13 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
             new URL(`${baseURL.replace(/\/+$/, '')}${url}`, window.location.origin).toString(),
             fetchOptions,
         )
+        assertIdentityCurrent(capturedIdentity)
 
         if (!response.ok) throw new Error(`Editor request failed with status ${response.status}`)
 
-        return response.json() as R
+        const data = await response.json() as R
+        assertIdentityCurrent(capturedIdentity)
+        return data
     }
 
     async function srvAuthGet<R>(url: string | URL, headers?: Record<string, string>): Promise<R> {
@@ -258,13 +352,34 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     }
 
     function accessTokenHasExpired(): boolean {
-        const tokenObj = getMetadata()
-
-        const accessTokenExpDate = tokenObj?.exp || 0
+        const accessTokenExpDate = metadata?.exp || 0
 
         const nowTime = Math.floor(new Date().getTime() / 1000)
 
-        return accessTokenExpDate - 10 <= nowTime
+        const expired = accessTokenExpDate - 10 <= nowTime
+        if (expired && jwtToken) {
+            try {
+                resetData('denied')
+            } catch {
+                // Expiry reads and timers must not throw after denial/cleanup. Report only
+                // the sanitized classification; explicit invalidation still fails closed.
+                console.warn('Auth expiry cleanup failed')
+            }
+        }
+        return expired
+    }
+
+    function scheduleAuthExpiry() {
+        if (expiryTimer !== undefined) clearTimeout(expiryTimer)
+        expiryTimer = undefined
+        if (!metadata?.exp || !jwtToken) return
+        const delay = Math.max(Math.ceil(metadata.exp - 10) * 1000 - Date.now(), 0)
+        expiryTimer = setTimeout(() => {
+            expiryTimer = undefined
+            if (!accessTokenHasExpired()) scheduleAuthExpiry()
+        }, Math.min(delay, 2_147_483_647))
+        const processTimer: unknown = expiryTimer
+        if (typeof processTimer === 'object' && processTimer !== null && 'unref' in processTimer && typeof processTimer.unref === 'function') processTimer.unref()
     }
 
     /**
@@ -272,13 +387,30 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
      * TODO: need to investigate smarter way of registering and unregister on `logout_event`
      **/
     registerCallbackOnSrvAuthEvents('logout_event', async ({ device }) => {
-        resetData()
-        const url = buildURL('/signout')
-        if (device === 'UNTRUSTED') {
-            url.searchParams.append('unset', 'device_authorization_token')
+        let cleanupFailed = false
+        // Revoke locally first; a throwing lease/subscriber must not skip the server signout.
+        try {
+            resetData('anonymous')
+        } catch {
+            cleanupFailed = true
         }
-        await srvAuthGet(url)
+        try {
+            const url = buildURL('/signout')
+            if (device === 'UNTRUSTED') {
+                url.searchParams.append('unset', 'device_authorization_token')
+            }
+            try {
+                await srvAuthGet(url)
+            } catch {
+                console.warn('Signout request failed')
+            }
+        } catch {
+            console.warn('Signout request unavailable')
+        }
+        if (cleanupFailed) console.warn('Logout completed with cleanup_failed')
     })
+    // Local revocation runs before downstream logout observers.
+    if (logout) registerCallbackOnSrvAuthEvents('logout_event', logout)
 
     async function signin(url: string | URL, headers?: Record<string, string>): Promise<ISigninResponse<FE>> {
         const isLegalGuardianPath = url.toString().includes('advoca.lg.change-user')
@@ -302,37 +434,152 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     function getUserId() {
         return getMetadata()?.user_id
     }
-    function resetData() {
+    function resetData(
+        status: 'anonymous' | 'denied' = 'anonymous',
+        owner?: number,
+        advanceIdentity = true,
+    ) {
+        // A nested reset (normally a logout from old-context cleanup) retires every outer
+        // replacement; the owning setAuthData call passes its own operation identity.
+        if (owner === undefined) ++authOperation
+        if (status === 'anonymous') {
+            refreshableSession = false
+            ++sessionGeneration
+        }
+        if (advanceIdentity) ++identityGeneration
         jwtToken = ''
+        metadata = undefined
+        if (expiryTimer !== undefined) clearTimeout(expiryTimer)
+        expiryTimer = undefined
+        invalidateRequests()
+        invalidateContexts(status)
     }
 
-    function setAuthData(data?: Partial<ISigninResponse<FE>>) {
-        if (data?.metadata) {
-            metadata = {
-                ...data.metadata,
-                features: new Set(data.metadata?.features),
-                overviews: data.metadata?.overviews ? data.metadata.overviews : metadata?.overviews,
-            }
+    function transformedMetadata(data: ICheckSigninOptions<FE>): ICheckSigninTransformedOptions<FE> {
+        return {
+            ...data,
+            features: new Set(data.features),
+            overviews: data.overviews,
         }
-        if (data?.token) {
-            jwtToken = data?.token
+    }
 
-            dispatchJwtChangedEvent(data.metadata)
+    // Actor/session equality is conservative: every metadata field is included except volatile
+    // token timing and presentation/configuration fields that may legitimately change on a
+    // same-session read. Unknown fields are included, so a new actor claim is never silently
+    // ignored by a partial allow-list; legal_guardian and has_wards are part of the fingerprint.
+    const NON_AUTHORIZATION_METADATA = new Set([
+        'exp', 'iat', 'vt', 'srv_urls', 'theme', 'overviews', 'tabbar', 'default_app_versions',
+        'openreplay', 'privacy_policy', 'advoca_info_link', 'step2_active_options',
+        'of_max_connections', 'of_connections_per_user',
+    ])
 
-            //data.metadata?.theme!== metadata?.theme setTheme(data.metadata.theme)
+    function stableStringify(value: unknown): string {
+        if (value === null) return 'null'
+        if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`
+        if (typeof value === 'object') {
+            const entries = Object.entries(value as Record<string, unknown>)
+                .filter(([, item]) => item !== undefined)
+                .sort(([a], [b]) => a.localeCompare(b))
+            return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${stableStringify(item)}`).join(',')}}`
         }
-        if (!data?.metadata && !data?.token) {
-            console.warn('no metadata or token present in the response', 'data: ', data)
+        return JSON.stringify(value) ?? 'undefined'
+    }
+
+    function authorizationFingerprint(metadata: ICheckSigninTransformedOptions<FE>): string {
+        const entries = Object.entries(metadata)
+            .filter(([key, value]) => !NON_AUTHORIZATION_METADATA.has(key) && value !== undefined)
+            .map(([key, value]) => [
+                key,
+                key === 'features' && value instanceof Set ? [...value].sort() : value,
+            ])
+        return stableStringify(Object.fromEntries(entries))
+    }
+
+    function sameAuthorization(
+        previous: ICheckSigninTransformedOptions<FE>,
+        next: ICheckSigninTransformedOptions<FE>,
+    ): boolean {
+        return authorizationFingerprint(previous) === authorizationFingerprint(next)
+    }
+
+    function tokenBearing(data: unknown): data is { token: string; metadata?: ICheckSigninOptions<FE> } {
+        return typeof data === 'object' && data !== null && 'token' in data &&
+            typeof (data as { token?: unknown }).token === 'string' &&
+            (data as { token: string }).token.length > 0
+    }
+
+    function sameAuthenticationActor(
+        candidate: ICheckSigninOptions<FE> | undefined,
+        current: ICheckSigninTransformedOptions<FE> | undefined,
+    ): boolean {
+        // Equality here is only a conservative stale-response check; it never grants authority
+        // and fails closed for missing or ambiguous actor claims. Auth's admin-legacy branch can
+        // omit customer_id or journal, so neither is required for actor equality.
+        if (!candidate?.user_id || !current?.user_id) return false
+        try {
+            return sameAuthorization(current, transformedMetadata(candidate))
+        } catch {
+            return false
         }
+    }
+
+    function setAuthData(data?: Partial<ISigninResponse<FE>>, sequence = 0) {
+        if (!data?.metadata && !data?.token) return
+        const previousMetadata = metadata
+        const previousToken = jwtToken
+        const previousAuthenticated = !!previousToken || !!previousMetadata?.user_id
+        const suppliedMetadata = data.metadata ? transformedMetadata(data.metadata) : undefined
+
+        // Public metadata-only configuration must not overwrite an authenticated session or
+        // retire its in-flight reads. It is still accepted while there is no authenticated work.
+        if (!data.token) {
+            if (previousAuthenticated) return
+            if (suppliedMetadata) metadata = suppliedMetadata
+            return
+        }
+
+        // A token-bearing response is authentication, including from /check. Only an actual
+        // authorization/identity change advances the legacy-read identity generation; a
+        // same-session refresh or first-hit token keeps concurrent legacy reads valid.
+        const nextMetadata = suppliedMetadata && (suppliedMetadata.user_id || !previousAuthenticated)
+            ? suppliedMetadata
+            : previousMetadata
+        const authorizationChanged = previousAuthenticated &&
+            !!previousMetadata?.user_id &&
+            !!nextMetadata?.user_id &&
+            !sameAuthorization(previousMetadata, nextMetadata)
+        // Establish this replacement before cleanup can run a reentrant logout/reset.
+        const operation = ++authOperation
+        const wasRefreshable = refreshableSession
+        const sessionChanged = !wasRefreshable || authorizationChanged
+        // Clear and revoke before exposing a replacement; identity advances only on auth change.
+        resetData('denied', operation, authorizationChanged)
+        assertAuthOperation(operation)
+        invalidateContexts('pending')
+        assertAuthOperation(operation)
+        const capturedIdentity = identityGeneration
+        metadata = nextMetadata
+        jwtToken = data.token ?? ''
+        // Only a first token installation or an actual authorization change establishes a new
+        // start-order boundary; a same-actor refresh keeps the one it already has.
+        if (!previousToken || authorizationChanged) establishedBySequence = sequence
+        refreshableSession = true
+        if (sessionChanged) ++sessionGeneration
+        scheduleAuthExpiry()
+        dispatchJwtChangedEvent(data.metadata)
+        assertAuthOperation(operation)
+        assertIdentityCurrent(capturedIdentity)
     }
 
     function getJwtToken() {
+        accessTokenHasExpired()
         return jwtToken
     }
 
     function getOpenReplay() {
+        accessTokenHasExpired()
         if (!metadata?.openreplay) {
-            console.warn('openreplay is not defined in metadata: ', metadata)
+            console.warn('openreplay is not defined in metadata')
         }
         return metadata?.openreplay
     }
@@ -348,8 +595,9 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     }
 
     function isTeamLeader() {
+        accessTokenHasExpired()
         if (!metadata?.isTeamLeader) {
-            console.warn('isTeamLeader is not defined in metadata: ', metadata)
+            console.warn('isTeamLeader is not defined in metadata')
         }
         return metadata?.isTeamLeader || false
     }
@@ -382,6 +630,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         _cache_ttl = 24,
         _do_not_cache = false,
     ): Promise<ICheckRegisteredSubdomainResponse<FE> | undefined> {
+        accessTokenHasExpired()
         const url = buildURL(`/check?context=subdomain`)
 
         if (metadata) {
@@ -405,11 +654,10 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     }
 
     async function getNewJwtToken() {
+        const captured = requestGeneration
         try {
             const url = buildURL(`/token` + realWindow.location.search)
             const data = await srvAuthGet<ISigninResponse<FE> & { signout?: boolean }>(url)
-
-            data.signout && logout?.()
 
             if (!data || 'errors' in data || data.signout) {
                 dispatchLogoutEvent()
@@ -418,16 +666,21 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
             }
 
             return jwtToken
-        } catch (error) {
+        } catch {
+            // A stale failure belongs to the retired request, not a newer login.
+            if (captured !== requestGeneration) throw new SharedContextError('stale_context')
+            let cleanupFailed = false
+            try { resetData('denied') } catch { cleanupFailed = true }
+            // A local cleanup or subscriber failure must never skip the server signout and the
+            // host logout callback. Report only the sanitized classification.
             dispatchLogoutEvent()
-
-            console.warn(error)
-
-            return jwtToken
+            console.warn(cleanupFailed ? 'Token refresh failed after cleanup failure' : 'Token refresh failed')
+            return undefined
         }
     }
 
     function getMetadata() {
+        accessTokenHasExpired()
         return metadata
     }
     /**
@@ -438,6 +691,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
      * @var id = customer_id
      */
     function getParsedJwt() {
+        accessTokenHasExpired()
         if (metadata && metadata.user_role) {
             return {
                 //...metadata,
@@ -465,16 +719,18 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     }
 
     function getFeatures() {
+        accessTokenHasExpired()
         if (!metadata?.features) {
-            console.warn('no features present in the metadata', 'metadata: ', metadata)
+            console.warn('no features present in the metadata')
             return
         }
         return Array.from(metadata.features)
     }
 
     function getSrvUrls() {
+        accessTokenHasExpired()
         if (!metadata?.srv_urls) {
-            console.warn('no srv_urls present in the metadata', 'metadata: ', metadata)
+            console.warn('no srv_urls present in the metadata')
             return
         }
         return metadata?.srv_urls
@@ -485,6 +741,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
      * @returns boolean
      */
     function hasFeature(featureName: FE) {
+        accessTokenHasExpired()
         //let hasFeature = false
 
         //const asmaFeaturesIgnoreList: string | null = localStorage.getItem('asma-features-ignore-list')
@@ -523,28 +780,22 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     }
 
     function getConnector() {
+        accessTokenHasExpired()
         return metadata?.journal
     }
 
     function getTheme() {
+        accessTokenHasExpired()
         if (!metadata?.theme) {
-            console.warn('no theme present in the metadata', 'metadata: ', metadata)
+            console.warn('no theme present in the metadata')
             return
         }
         return metadata.theme
     }
 
-    type CachedActivityStatus = {
-        value: ActivityStatus
-        expiresAt: number
-    }
-
-    const CACHE_TTL = 1000 * 60 * 5
-    const activityStatusesCached = new Map<string, CachedActivityStatus>()
-
-    const pendingRequests = new Map<string, Promise<Map<string, ActivityStatus>>>()
-
     function invalidateActivityStatuses(activityIds?: string[]) {
+        ++activityGeneration
+        pendingRequests.clear()
         if (!activityIds?.length) {
             activityStatusesCached.clear()
             pendingRequests.clear()
@@ -560,78 +811,107 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
         activityIds: string[],
         signal?: AbortSignal,
     ): Promise<Map<string, ActivityStatus>> {
-        const result = new Map<string, ActivityStatus>()
-        const missingIds: number[] = []
-        const now = Date.now()
+        if (!activityIds.length) return new Map()
+        // A logged-out producer must not start a fresh refresh merely to answer a lookup.
+        if (!refreshableSession) return new Map()
+        const initialSession = sessionGeneration
+        try {
+            // Explicit recovery before the lookup preserves the legacy near-expiry behaviour.
+            const token = await getCachedJwt()
+            if (!token || !refreshableSession || sessionGeneration !== initialSession) return new Map()
+        } catch {
+            return new Map()
+        }
 
-        for (const id of activityIds) {
-            const cached = activityStatusesCached.get(id)
-            if (cached && cached.expiresAt > now) {
-                result.set(id, cached.value)
-            } else {
-                const numeric = Number(id)
-                if (!Number.isNaN(numeric)) missingIds.push(numeric)
+        const capturedIdentity = identityGeneration
+        const capturedActivity = activityGeneration
+        const assertCurrent = () => {
+            if (capturedIdentity !== identityGeneration) throw new SharedContextError('stale_context')
+            if (capturedActivity !== activityGeneration || signal?.aborted) throw new SharedContextError('stale_context')
+        }
+
+        try {
+            assertCurrent()
+            const result = new Map<string, ActivityStatus>()
+            const missingIds: number[] = []
+            const now = Date.now()
+
+            for (const id of activityIds) {
+                const cached = activityStatusesCached.get(id)
+                if (cached && cached.expiresAt > now) {
+                    result.set(id, cached.value)
+                } else {
+                    const numeric = Number(id)
+                    if (!Number.isNaN(numeric)) missingIds.push(numeric)
+                }
             }
-        }
 
-        if (!missingIds.length) return result
+            if (!missingIds.length) return result
 
-        const requestKey = missingIds.join(',')
+            const requestKey = JSON.stringify([capturedIdentity, capturedActivity, missingIds])
 
-        if (pendingRequests.has(requestKey)) {
-            const ongoing = await pendingRequests.get(requestKey)!
-            ongoing.forEach((v, k) => result.set(k, v))
-            return result
-        }
+            if (pendingRequests.has(requestKey)) {
+                const ongoing = await pendingRequests.get(requestKey)!
+                assertCurrent()
+                ongoing.forEach((v, k) => result.set(k, v))
+                return result
+            }
 
-        const requestPromise = (async () => {
-            try {
-                const response = await editorPost<
-                    { SoknadID: number[]; AdVoca: 0 | 1 },
-                    { soknadID?: number | null; adgangkode?: number | null }[]
-                >({
-                    url: '/legacy-ao/ReadOnlyAccessCheck',
-                    body: { SoknadID: missingIds, AdVoca: domain === 'advoca' ? 1 : 0 },
-                    signal,
-                })
-
-                const map = new Map<string, ActivityStatus>()
-
-                const unresolved = new Set(missingIds.map((id) => id.toString()))
-
-                response?.forEach(({ soknadID, adgangkode }) => {
-                    if (!soknadID || !adgangkode) return
-
-                    const key = soknadID.toString()
-                    const status = getActivityStatus(adgangkode)
-                    map.set(key, status)
-                    activityStatusesCached.set(key, { value: status, expiresAt: Date.now() + CACHE_TTL })
-                    unresolved.delete(key)
-                })
-
-                unresolved.forEach((key) => {
-                    map.set(key, ActivityStatuses.NO_ACCESS)
-                    activityStatusesCached.set(key, {
-                        value: ActivityStatuses.NO_ACCESS,
-                        expiresAt: Date.now() + CACHE_TTL,
+            const requestPromise = (async () => {
+                try {
+                    const response = await editorPost<
+                        { SoknadID: number[]; AdVoca: 0 | 1 },
+                        { soknadID?: number | null; adgangkode?: number | null }[]
+                    >({
+                        url: '/legacy-ao/ReadOnlyAccessCheck',
+                        body: { SoknadID: missingIds, AdVoca: domain === 'advoca' ? 1 : 0 },
+                        signal,
                     })
-                })
+                    assertCurrent()
 
-                return map
-            } catch (error) {
-                console.error(error)
-                return new Map<string, ActivityStatus>()
-            } finally {
-                pendingRequests.delete(requestKey)
-            }
-        })()
+                    const map = new Map<string, ActivityStatus>()
 
-        pendingRequests.set(requestKey, requestPromise)
+                    const unresolved = new Set(missingIds.map((id) => id.toString()))
 
-        const fetched = await requestPromise
-        fetched.forEach((v, k) => result.set(k, v))
+                    response?.forEach(({ soknadID, adgangkode }) => {
+                        if (!soknadID || !adgangkode) return
 
-        return result
+                        const key = soknadID.toString()
+                        const status = getActivityStatus(adgangkode)
+                        map.set(key, status)
+                        activityStatusesCached.set(key, { value: status, expiresAt: Date.now() + CACHE_TTL })
+                        unresolved.delete(key)
+                    })
+
+                    unresolved.forEach((key) => {
+                        map.set(key, ActivityStatuses.NO_ACCESS)
+                        activityStatusesCached.set(key, {
+                            value: ActivityStatuses.NO_ACCESS,
+                            expiresAt: Date.now() + CACHE_TTL,
+                        })
+                    })
+
+                    return map
+                } catch (error) {
+                    if (error instanceof SharedContextError) throw error
+                    console.warn('Activity access request failed')
+                    return new Map<string, ActivityStatus>()
+                } finally {
+                    if (capturedActivity === activityGeneration) pendingRequests.delete(requestKey)
+                }
+            })()
+
+            pendingRequests.set(requestKey, requestPromise)
+
+            const fetched = await requestPromise
+            assertCurrent()
+            fetched.forEach((v, k) => result.set(k, v))
+
+            return result
+        } catch {
+            // Legacy callers receive a Map, including stale/abort/unrelated invalidation.
+            return new Map()
+        }
     }
 
     const auth_bindings = {
@@ -681,6 +961,8 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void) 
     realWindow.__ASMA__SHELL__ = realWindow.__ASMA__SHELL__ || {}
 
     realWindow.__ASMA__SHELL__.auth_bindings = auth_bindings
+    managedAuthContexts.set(auth_bindings, attachContext)
+    if (options.sharedContext) attachContext(options.sharedContext)
 
     // Seed the overrides bus from the server-injected first-hit versions so the map is available
     // before any auth response arrives (later responses still dispatch updates). ASMA-7544.
@@ -704,6 +986,63 @@ export function generateSrvAuthBindingsMicroApp(
         realWindow.__ASMA__SHELL__?.auth_bindings ||
         generateSrvAuthBindings(/* SRV_AUTH, DEVELOPMENT, ENVIRONMENT_TO_OPERATE, */ /* EnvConfigsFn, */ logout)
     )
+}
+
+/** Parse the trusted owner endpoint without echoing malformed input or an error cause. */
+function ownerEndpoint(url: string): string {
+    let parsed: URL
+    try {
+        parsed = new URL(url)
+    } catch {
+        throw new SharedContextError('wrong_owner_endpoint')
+    }
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') throw new SharedContextError('wrong_owner_endpoint')
+    if (parsed.username || parsed.password) throw new SharedContextError('wrong_owner_endpoint')
+    return parsed.href
+}
+
+/**
+ * Host-only adapter for an already qualified owner URL and the SAME auth producer.
+ * Consumers receive fetch/client capability, never a token getter or second session.
+ *
+ * A successful real-producer refresh invalidates the attached context. This adapter never keeps
+ * the retired lease alive to force a retry: on 401 the host must revalidate/republish the context
+ * and obtain a new owner client. With a non-retiring test producer, the same-lease guard remains.
+ */
+export function createSrvAuthContextOwnerClient(
+    auth: Pick<IAuthBindings<string>, 'getCachedJwt' | 'isJwtValid' | 'getNewJwtToken'>,
+    url: string,
+    lease: SharedContextLease,
+): SharedContextOwnerClientSource {
+    const endpoint = ownerEndpoint(url)
+    const ownerFetch: typeof fetch = async (input, init) => {
+        const request = new Request(input, init)
+        lease.assertCurrent()
+        if (request.url !== endpoint) throw new SharedContextError('wrong_owner_endpoint')
+        async function authorizedRequest() {
+            const token = await lease.run(() => auth.getCachedJwt())
+            if (!token || !auth.isJwtValid()) throw new SharedContextError('context_unavailable')
+            lease.assertCurrent()
+            const headers = new Headers(request.headers)
+            headers.set('Authorization', `Bearer ${token}`)
+            return new Request(request.clone(), { headers, redirect: 'error', signal: AbortSignal.any([request.signal, lease.signal]) })
+        }
+        let response = await lease.run(async () => {
+            const authorized = await authorizedRequest()
+            lease.assertCurrent()
+            return fetch(authorized)
+        })
+        if (response.status === 401) {
+            await lease.run(() => auth.getNewJwtToken())
+            response = await lease.run(async () => {
+                const authorized = await authorizedRequest()
+                lease.assertCurrent()
+                return fetch(authorized)
+            })
+        }
+        return response
+    }
+    return Object.freeze({ url: endpoint, fetch: ownerFetch })
 }
 
 let current_app_version: Record<string, string> | undefined = undefined
