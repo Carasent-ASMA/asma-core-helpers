@@ -309,6 +309,13 @@ function runPendingNav(win: Window, internal: OverlayBackInternalState, pending:
         internal.originalReplace?.(pending.to, pending.state)
     }
     internal.lastSeenIdx = readState(win)?.idx
+    // A route intent only runs unguarded while overlays are still open when one deliberately
+    // outlived the navigation (fail-open). Guard the destination again so the next Back closes it
+    // instead of leaving the page; `arm` keeps the kill switch and the gesture/activation gate,
+    // which the user click behind the refused navigation passes. Never reached by a POP traversal.
+    if (!internal.guard && !internal.suspended && internal.openCount > 0 && internal.currentRequestClose) {
+        arm(win, internal, internal.currentRequestClose)
+    }
 }
 
 function failOpenPendingNavigation(win: Window, internal: OverlayBackInternalState): void {
