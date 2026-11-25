@@ -368,6 +368,26 @@ describe('overlayBack adapter', () => {
         }
     })
 
+    it('a refused close navigates from the base entry, leaving no same-URL guard entry behind', async () => {
+        for (const kind of ['push', 'replace'] as const) {
+            const { win, adapter, history } = setUp('https://example.test/home')
+            history.push('/list')
+            adapter.enabled = true
+            adapter.register(() => false)
+
+            history[kind]('/checkout')
+            await waitUntil(() => history.location.pathname === '/checkout')
+
+            const backs = kind === 'push' ? 2 : 1
+            for (let i = 0; i < backs; i += 1) {
+                const before = win.history.state
+                win.history.back()
+                await waitUntil(() => win.history.state !== before)
+            }
+            assert.equal(history.location.pathname, '/home')
+        }
+    })
+
     it('continues a pending route through each registry layer before draining', async () => {
         const { adapter, history } = setUp('https://example.test/list')
         adapter.enabled = true
