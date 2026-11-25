@@ -56,6 +56,39 @@ async function waitUntil(predicate: () => boolean, timeoutMs = 2000): Promise<vo
     }
 }
 
+const settle = () => new Promise((resolve) => setTimeout(resolve, 20))
+
+interface DockedOverlay {
+    closeCalls: number
+    refusals: number
+    isOpen: () => boolean
+    unregister: () => void
+}
+
+/** An overlay that deliberately outlives navigation (docked panel, Admin flyout): it refuses to
+ *  close for a pending route, but a plain Back closes it. `sticky` ignores Back and stays open. */
+function registerDocked(adapter: ReturnType<typeof setUp>['adapter'], sticky = false): DockedOverlay {
+    let open = true
+    const docked: DockedOverlay = {
+        closeCalls: 0,
+        refusals: 0,
+        isOpen: () => open,
+        unregister: () => {},
+    }
+    docked.unregister = adapter.register(() => {
+        docked.closeCalls += 1
+        if (adapter.pendingNavigation) {
+            docked.refusals += 1
+            return false
+        }
+        if (sticky) return undefined
+        open = false
+        docked.unregister()
+        return undefined
+    })
+    return docked
+}
+
 function dispatchPersistedPageShow(win: Window): void {
     const event = new win.Event('pageshow')
     Object.defineProperty(event, 'persisted', { value: true })
@@ -360,29 +393,32 @@ describe('overlayBack adapter', () => {
             history[kind]('/checkout')
             await waitUntil(() => history.location.pathname === '/checkout')
 
+            // The overlay outlived the navigation, so the destination is guarded again.
+            const internal = __inspectOverlayBackForTests__(win)!
             assert.equal(closeCalls, 1)
-            assert.equal(__inspectOverlayBackForTests__(win)?.pendingNav, null)
-            assert.equal(__inspectOverlayBackForTests__(win)?.guard, null)
-            assert.equal((win.history.state as Record<string, unknown>).__asmaOverlayBack, undefined)
+            assert.equal(internal.pendingNav, null)
+            assert.notEqual(internal.guard, null)
+            assert.deepEqual((win.history.state as Record<string, unknown>).__asmaOverlayBack, internal.guard!.marker)
+            assert.equal(win.history.length, kind === 'push' ? 3 : 2)
             unregister()
         }
     })
 
-    it('a refused close navigates from the base entry, leaving no same-URL guard entry behind', async () => {
+    it('a refused close navigates from the base entry, leaving no dead same-URL step behind', async () => {
         for (const kind of ['push', 'replace'] as const) {
             const { win, adapter, history } = setUp('https://example.test/home')
             history.push('/list')
             adapter.enabled = true
-            adapter.register(() => false)
+            registerDocked(adapter)
 
             history[kind]('/checkout')
             await waitUntil(() => history.location.pathname === '/checkout')
 
-            const backs = kind === 'push' ? 2 : 1
+            // First Back closes the overlay on the destination, then one step per entry.
+            const backs = kind === 'push' ? 3 : 2
             for (let i = 0; i < backs; i += 1) {
-                const before = win.history.state
                 win.history.back()
-                await waitUntil(() => win.history.state !== before)
+                await settle()
             }
             assert.equal(history.location.pathname, '/home')
         }
@@ -874,8 +910,6 @@ describe('overlayBack foreign landings and races (ASMA-8470)', () => {
         internal.lastGestureAt = Math.max(Date.now(), internal.lastPopstateAt + 1)
     }
 
-    const settle = () => new Promise((resolve) => setTimeout(resolve, 20))
-
     /** A dirty dialog whose first close (the deferred push) waits on the user forever, and whose
      *  next close (the fail-open after the user leaves) unmounts it. */
     function registerDirtyDialog(adapter: ReturnType<typeof setUp>['adapter']): void {
@@ -1042,5 +1076,214 @@ describe('overlayBack foreign landings and races (ASMA-8470)', () => {
         await waitUntil(() => internal.phase === null)
 
         assert.deepEqual(closed, ['lower'])
+    })
+})
+
+describe('overlayBack re-arm after a fail-open navigation (ASMA-8470)', () => {
+    const markerOf = (win: Window) => (win.history.state as Record<string, unknown>).__asmaOverlayBack
+
+    it('guards the destination: Back closes the overlay and stays, the next Back leaves with no dead step', async () => {
+        const { win, adapter, history } = setUp('https://example.test/a')
+        adapter.enabled = true
+        const internal = __inspectOverlayBackForTests__(win)!
+        const docked = registerDocked(adapter)
+
+        history.push('/b')
+        await waitUntil(() => history.location.pathname === '/b')
+
+        assert.equal(docked.refusals, 1)
+        assert.deepEqual(markerOf(win), internal.guard?.marker)
+        assert.ok(win.history.length <= 1 + 1 + 1, 'base + one navigation + one guard at most')
+
+        win.history.back()
+        await waitUntil(() => !docked.isOpen())
+        await waitUntil(() => internal.guard === null && internal.phase === null)
+        assert.equal(docked.closeCalls, 2)
+        assert.equal(win.location.pathname, '/b')
+        assert.equal(history.location.pathname, '/b')
+
+        win.history.back()
+        await waitUntil(() => win.location.pathname === '/a')
+        await settle()
+        assert.equal(history.location.pathname, '/a')
+        assert.equal(markerOf(win), undefined)
+    })
+
+    it('three successive refused pushes leave exactly one Back step per entry (0.43.3 regression)', async () => {
+        const { win, adapter, history } = setUp('https://example.test/list')
+        adapter.enabled = true
+        const internal = __inspectOverlayBackForTests__(win)!
+        const docked = registerDocked(adapter)
+
+        for (const path of ['/a', '/b', '/c']) {
+            history.push(path)
+            await waitUntil(() => history.location.pathname === path)
+            assert.deepEqual(markerOf(win), internal.guard?.marker)
+        }
+        assert.equal(docked.refusals, 3)
+        assert.ok(win.history.length <= 1 + 3 + 1, 'base + three navigations + one guard at most')
+
+        win.history.back()
+        await waitUntil(() => !docked.isOpen())
+        await waitUntil(() => internal.guard === null && internal.phase === null)
+        assert.equal(history.location.pathname, '/c')
+
+        for (const path of ['/b', '/a', '/list']) {
+            win.history.back()
+            await waitUntil(() => history.location.pathname === path)
+            await settle()
+            assert.equal(win.location.pathname, path)
+        }
+    })
+
+    it('a POP traversal never re-arms the guard, and Forward still works', async () => {
+        const { win, adapter, history } = setUp('https://example.test/list')
+        adapter.enabled = true
+        const internal = __inspectOverlayBackForTests__(win)!
+        const docked = registerDocked(adapter, true)
+
+        for (const path of ['/a', '/b']) {
+            history.push(path)
+            await waitUntil(() => history.location.pathname === path)
+        }
+        assert.deepEqual(markerOf(win), internal.guard?.marker, 'armed on /b before the traversal')
+        const lengthBefore = win.history.length
+
+        win.history.go(-2) // past the guard and /b: a foreign multi-step landing on /a
+        await waitUntil(() => history.location.pathname === '/a')
+        await settle()
+        assert.equal(docked.isOpen(), true)
+        assert.equal(internal.guard, null)
+        assert.equal(markerOf(win), undefined)
+        assert.equal(win.history.length, lengthBefore)
+
+        win.history.forward()
+        await waitUntil(() => history.location.pathname === '/b')
+        await settle()
+        assert.equal(internal.guard, null)
+        assert.equal(markerOf(win), undefined)
+        assert.equal(win.history.length, lengthBefore)
+    })
+
+    it('kill switch off: a refused push navigates unguarded; disabling after the re-arm drains it', async () => {
+        const off = setUp('https://example.test/a')
+        const offInternal = __inspectOverlayBackForTests__(off.win)!
+        registerDocked(off.adapter)
+        off.history.push('/b')
+        assert.equal(off.history.location.pathname, '/b')
+        assert.equal(offInternal.guard, null)
+        assert.equal(off.win.history.length, 2)
+
+        const { win, adapter, history } = setUp('https://example.test/a')
+        adapter.enabled = true
+        const internal = __inspectOverlayBackForTests__(win)!
+        registerDocked(adapter)
+        history.push('/b')
+        await waitUntil(() => history.location.pathname === '/b')
+        assert.notEqual(internal.guard, null, 're-armed while the switch is on')
+
+        adapter.enabled = false
+        await waitUntil(() => internal.guard === null && internal.phase === null)
+        assert.equal(markerOf(win), undefined)
+        history.push('/c')
+        assert.equal(history.location.pathname, '/c')
+        assert.equal(internal.guard, null)
+
+        const flipped = setUp('https://example.test/a')
+        flipped.adapter.enabled = true
+        const flippedInternal = __inspectOverlayBackForTests__(flipped.win)!
+        registerDocked(flipped.adapter)
+        flipped.history.push('/b')
+        flipped.adapter.enabled = false // flipped while the fail-open drain is in flight
+        await waitUntil(() => flipped.history.location.pathname === '/b')
+        await settle()
+        assert.equal(flippedInternal.guard, null)
+        assert.equal(markerOf(flipped.win), undefined)
+    })
+
+    it('an overlay that unregisters during the navigation is not re-armed; one opened during it is', async () => {
+        const gone = setUp('https://example.test/a')
+        gone.adapter.enabled = true
+        const goneInternal = __inspectOverlayBackForTests__(gone.win)!
+        const goneDocked = registerDocked(gone.adapter)
+        gone.history.push('/b')
+        goneDocked.unregister()
+        await waitUntil(() => gone.history.location.pathname === '/b')
+        await settle()
+        assert.equal(goneInternal.guard, null)
+        assert.equal(markerOf(gone.win), undefined)
+        assert.equal(gone.win.history.length, 2)
+
+        const late = setUp('https://example.test/a')
+        late.adapter.enabled = true
+        const lateInternal = __inspectOverlayBackForTests__(late.win)!
+        registerDocked(late.adapter)
+        late.history.push('/b')
+        const opened = registerDocked(late.adapter) // registered while the drain is in flight
+        await waitUntil(() => late.history.location.pathname === '/b')
+        assert.deepEqual(markerOf(late.win), lateInternal.guard?.marker)
+        late.win.history.back()
+        await waitUntil(() => !opened.isOpen())
+        await settle()
+        assert.equal(late.history.location.pathname, '/b')
+    })
+
+    it('does not re-arm while the page is suspended or the gate fails', async () => {
+        const { win, adapter, history } = setUp('https://example.test/a')
+        adapter.enabled = true
+        const internal = __inspectOverlayBackForTests__(win)!
+        registerDocked(adapter)
+        // A programmatic redirect long after the last gesture: no fresh click, no guard.
+        history.push('/b')
+        internal.lastGestureAt = Number.NEGATIVE_INFINITY
+        await waitUntil(() => history.location.pathname === '/b')
+        assert.equal(internal.guard, null)
+        assert.equal(markerOf(win), undefined)
+    })
+
+    it('treats a replace to an absolute URL of the same page as a same-path replace', async () => {
+        const { win, adapter, history } = setUp('https://example.test/list')
+        adapter.enabled = true
+        const internal = __inspectOverlayBackForTests__(win)!
+        const docked = registerDocked(adapter)
+        const guard = internal.guard
+
+        history.replace('https://example.test/list?tab=2')
+        await settle()
+
+        assert.equal(win.location.search, '?tab=2')
+        assert.equal(docked.closeCalls, 0)
+        assert.equal(adapter.pendingNavigation, false)
+        assert.equal(internal.guard, guard)
+        assert.deepEqual(markerOf(win), guard?.marker)
+        assert.equal(win.history.length, 2)
+    })
+
+    it('stops re-arming when a route keeps failing open in a loop', async () => {
+        const { win, adapter, history } = setUp('https://example.test/a')
+        adapter.enabled = true
+        registerDocked(adapter)
+        let arms = 0
+        const realPushState = win.history.pushState.bind(win.history)
+        win.history.pushState = (state: unknown, unused: string, url?: string | URL | null) => {
+            if ((state as Record<string, unknown> | null)?.__asmaOverlayBack) arms += 1
+            realPushState(state, unused, url)
+        }
+        // An effect that re-issues a cross-path replace on every location change.
+        let replaces = 0
+        history.listen(() => {
+            if (replaces >= 30) return
+            replaces += 1
+            const to = replaces % 2 ? '/x' : '/y'
+            setTimeout(() => history.replace(to), 0)
+        })
+
+        history.push('/b')
+        await waitUntil(() => replaces >= 30, 8000)
+        await settle()
+        await settle()
+
+        assert.ok(arms <= 6, `re-armed ${arms} times`)
+        assert.equal(__inspectOverlayBackForTests__(win)?.pendingNav, null)
     })
 })
