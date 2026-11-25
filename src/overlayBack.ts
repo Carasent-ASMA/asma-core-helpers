@@ -297,8 +297,8 @@ function finishDrain(win: Window, internal: OverlayBackInternalState): void {
 
     if (pendingNav) {
         queueMicrotask(() => runPendingNav(win, internal, pendingNav))
-    } else if (pendingRearm) {
-        arm(win, internal, pendingRearm)
+    } else if (pendingRearm && internal.openCount > 0 && internal.currentRequestClose) {
+        arm(win, internal, internal.currentRequestClose)
     }
 }
 
@@ -463,7 +463,7 @@ function register(
         if (index !== -1) internal.registrations.splice(index, 1)
         internal.openCount = internal.registrations.length
         internal.currentRequestClose = internal.registrations.at(-1) ?? null
-        if (internal.guard && internal.phase === null && internal.currentRequestClose) {
+        if (internal.guard && internal.phase !== 'draining' && internal.currentRequestClose) {
             internal.guard = { ...internal.guard, requestClose: internal.currentRequestClose }
         }
         if (internal.phase === 'draining') {
@@ -522,7 +522,10 @@ function handlePopstate(win: Window, internal: OverlayBackInternalState, event: 
     }
 
     const landedOnGuard = markerMatches(marker, guard.marker)
-    const landedOnBase = !landedOnGuard && (state?.key ?? undefined) === guard.baseKey
+    // `idx` as well as `key`: the first entry of a tab has no history@5 key, so a keyless landing
+    // (a `#hash` navigation fires popstate with `state: null`) would otherwise pass for the base.
+    const landedOnBase =
+        !landedOnGuard && (state?.key ?? undefined) === guard.baseKey && (state?.idx ?? undefined) === guard.baseIdx
 
     if (internal.phase === 'rearming') {
         if (landedOnGuard) {
@@ -541,11 +544,7 @@ function handlePopstate(win: Window, internal: OverlayBackInternalState, event: 
             else void guard.requestClose()
             return
         }
-        internal.lastPopstateAt = Date.now()
-        internal.retiredMarker = guard.marker
-        internal.retiredBaseKey = guard.baseKey
-        internal.guard = null
-        internal.phase = null
+        dropGuardOnForeignLanding(internal, guard)
         void guard.requestClose()
         return
     }
@@ -556,12 +555,13 @@ function handlePopstate(win: Window, internal: OverlayBackInternalState, event: 
             finishDrain(win, internal)
             return
         }
-        internal.lastPopstateAt = Date.now()
-        internal.retiredMarker = guard.marker
-        internal.retiredBaseKey = guard.baseKey
-        internal.guard = null
-        internal.phase = null
-        internal.pendingDrainSnapshot = null
+        dropGuardOnForeignLanding(internal, guard)
+        return
+    }
+
+    // Back from an entry raw-pushed on top of G with G's state cloned into it (a picker's own Back
+    // entry, say): the document is still on the guard and the overlay is still open.
+    if (landedOnGuard) {
         return
     }
 
@@ -579,12 +579,23 @@ function handlePopstate(win: Window, internal: OverlayBackInternalState, event: 
     }
 
     // Landed somewhere neither B nor G recognises (multi-step jump, foreign navigation): fail open.
+    dropGuardOnForeignLanding(internal, guard)
+    void guard.requestClose()
+}
+
+/** The user left the guard by their own traversal, so everything queued against it goes with it:
+ *  a route intent left behind would block every later push and run as a ghost navigation on the
+ *  next drain, and a re-arm closer would arm a guard with no overlay open. */
+function dropGuardOnForeignLanding(internal: OverlayBackInternalState, guard: GuardState): void {
     internal.lastPopstateAt = Date.now()
     internal.retiredMarker = guard.marker
     internal.retiredBaseKey = guard.baseKey
     internal.guard = null
     internal.phase = null
-    void guard.requestClose()
+    internal.pendingNav = null
+    internal.pendingDrainSnapshot = null
+    internal.pendingRearmRequestClose = null
+    internal.disablePending = false
 }
 
 function pathOf(to: To, fallback: string): string {
@@ -664,7 +675,7 @@ export function finishOverlayBackInstall(win: Window, history: History): void {
 
     history.push = (to: To, state?: unknown) => {
         const guard = internal.guard
-        if (!guard || internal.phase === 'draining') {
+        if (!guard) {
             navigateUnguarded(() => originalPush(to, state))
             return
         }
@@ -683,7 +694,7 @@ export function finishOverlayBackInstall(win: Window, history: History): void {
 
     history.replace = (to: To, state?: unknown) => {
         const guard = internal.guard
-        if (!guard || internal.phase === 'draining') {
+        if (!guard) {
             navigateUnguarded(() => originalReplace(to, state))
             return
         }
