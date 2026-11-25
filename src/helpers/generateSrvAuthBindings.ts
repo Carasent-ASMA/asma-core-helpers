@@ -359,7 +359,11 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void, 
         const expired = accessTokenExpDate - 10 <= nowTime
         if (expired && jwtToken) {
             try {
-                resetData('denied')
+                // Expiry is not a logout (CRB-006): the token, identity, requests and shared
+                // contexts retire exactly as before, but the legacy session metadata stays
+                // readable until the refresh outcome. It grants nothing: no token remains and
+                // the contexts are denied. The timer path reaches this same reset.
+                resetData('denied', undefined, true, true)
             } catch {
                 // Expiry reads and timers must not throw after denial/cleanup. Report only
                 // the sanitized classification; explicit invalidation still fails closed.
@@ -438,6 +442,7 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void, 
         status: 'anonymous' | 'denied' = 'anonymous',
         owner?: number,
         advanceIdentity = true,
+        retainMetadata = false,
     ) {
         // A nested reset (normally a logout from old-context cleanup) retires every outer
         // replacement; the owning setAuthData call passes its own operation identity.
@@ -448,7 +453,9 @@ export function generateSrvAuthBindings<FE extends string>(logout?: () => void, 
         }
         if (advanceIdentity) ++identityGeneration
         jwtToken = ''
-        metadata = undefined
+        // CRB-006: only expiry retains the legacy session metadata; a refresh failure, a signout
+        // response and a logout clear it through the default.
+        if (!retainMetadata) metadata = undefined
         if (expiryTimer !== undefined) clearTimeout(expiryTimer)
         expiryTimer = undefined
         invalidateRequests()

@@ -231,7 +231,10 @@ test('late token refresh failure cannot sign out the replacement actor/customer/
     assert.equal(auth.getMetadata()?.user_role, 'recipient')
 })
 
-test('expiry clears every cached identity/grant read even when the timer is delayed', async t => {
+// CRB-006 (rework-r4): expiry is not a logout. The token, identity and every shared context
+// still retire, but the legacy session metadata stays readable until the refresh outcome, so
+// legacy getters (getMetadata, getUserId, hasFeature, getSrvUrls) no longer go blank at expiry.
+test('CRB-006: the expiry read path retires the token and contexts but keeps the legacy session metadata', async t => {
     t.mock.method(console, 'warn', () => {})
     const context = createSharedContext()
     t.after(() => context.dispose())
@@ -240,14 +243,36 @@ test('expiry clears every cached identity/grant read even when the timer is dela
     await login({ exp: started / 1000 + 11 })
     publish(context)
     const lease = context.mount().capture()
+    // Revocation callbacks run inside the expiry reset; at expiry they still see the retained
+    // session so legacy readers that react to revocation keep their identity context.
+    const observedAtRevoke: (string | undefined)[] = []
+    lease.onRevoke(() => { observedAtRevoke.push(auth.getMetadata()?.user_id) })
+    const read = deferred<Response>()
+    fetchHandler = async () => read.promise
+    const inFlight = auth.srvAuthGet<{ value: string }>(new URL('/wards?phase=expiry-read', authUrl))
+    await idle()
     // accessTokenHasExpired uses the Date constructor, matching legacy epoch rounding.
     t.mock.timers.enable({ apis: ['Date'], now: started + 12_000 })
-    assert.equal(auth.getFeatures(), undefined)
-    assert.equal(auth.getTheme(), undefined)
-    assert.equal(auth.getSrvUrls(), undefined)
-    assert.equal(auth.getUserId(), undefined)
-    assert.equal(auth.getMetadata(), undefined)
+    assert.equal(auth.isJwtValid(), false)
+    assert.equal(auth.getJwtToken(), '')
+    assert.equal(auth.getMetadata()?.user_role, 'therapist')
+    assert.equal(auth.getUserId(), 'actor')
+    assert.equal(auth.hasFeature('allowed'), true)
+    assert.equal(auth.getTheme(), 'host-theme')
+    assert.deepEqual(auth.getSrvUrls(), metadata().srv_urls)
+    assert.equal(auth.getConnector(), 'ADOPUS')
+    assert.deepEqual(observedAtRevoke, ['actor'])
     assert.equal(lease.signal.aborted, true)
+    assert.equal(context.getSnapshot().status, 'denied')
+    read.resolve(Response.json({ value: 'pre-expiry' }))
+    const [result] = await Promise.allSettled([inFlight])
+    assert.equal(result!.status, 'rejected')
+    assert.equal(stale((result as PromiseRejectedResult).reason), true)
+    // Reads after the reset still answer from the retained session, and still hold no token.
+    assert.equal(auth.getFeatures()?.includes('allowed'), true)
+    assert.equal(auth.getMetadata()?.user_id, 'actor')
+    assert.equal(auth.getJwtToken(), '')
+    assert.equal(auth.isJwtValid(), false)
 })
 
 test('activity cache and pending dedup are generation scoped; stale completions resolve empty without refill', async t => {
@@ -348,7 +373,12 @@ test('CRB-002: auth expiry read contains cleanup failure and stays denied', asyn
 
     assert.doesNotThrow(() => auth.getMetadata())
     assert.equal(auth.isJwtValid(), false)
-    assert.equal(auth.getMetadata(), undefined)
+    // CRB-006: the contained cleanup failure still clears the token and denies the context.
+    // Only the legacy session metadata survives, so a consumer read cannot throw at expiry.
+    assert.equal(auth.getJwtToken(), '')
+    assert.equal(auth.getMetadata()?.user_id, 'actor')
+    assert.equal(lease.isCurrent(), false)
+    assert.equal(context.getSnapshot().status, 'denied')
 })
 
 test('CRB-002: auth expiry timer contains cleanup failure', async t => {
@@ -364,7 +394,237 @@ test('CRB-002: auth expiry timer contains cleanup failure', async t => {
 
     assert.doesNotThrow(() => t.mock.timers.tick(60_000))
     assert.equal(auth.isJwtValid(), false)
+    // CRB-006: the timer reaches the same expiry reset; the contained failure clears the token
+    // and denies the context, and only the legacy session metadata survives.
+    assert.equal(auth.getJwtToken(), '')
+    assert.equal(auth.getMetadata()?.user_id, 'actor')
+    assert.equal(lease.isCurrent(), false)
+    assert.equal(context.getSnapshot().status, 'denied')
+})
+
+test('CRB-006: the expiry timer retires the token and contexts but keeps the legacy session metadata', async t => {
+    t.mock.method(console, 'warn', () => {})
+    const started = Date.now()
+    t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: started })
+    const context = createSharedContext()
+    t.after(() => context.dispose())
+    bindings.generateSrvAuthBindings(undefined, { sharedContext: context })
+    await login({ exp: started / 1000 + 60 })
+    publish(context)
+    const lease = context.mount().capture()
+    const read = deferred<Response>()
+    fetchHandler = async () => read.promise
+    const inFlight = auth.srvAuthGet<{ value: string }>(new URL('/wards?phase=expiry-timer', authUrl))
+    await idle()
+    assert.equal(auth.isJwtValid(), true)
+
+    t.mock.timers.tick(60_000)
+
+    assert.equal(auth.getJwtToken(), '')
+    assert.equal(auth.isJwtValid(), false)
+    assert.equal(auth.getMetadata()?.customer_id, customer)
+    assert.equal(auth.getUserId(), 'actor')
+    assert.equal(auth.hasFeature('allowed'), true)
+    assert.deepEqual(auth.getSrvUrls(), metadata().srv_urls)
+    assert.equal(lease.isCurrent(), false)
+    assert.equal(lease.signal.aborted, true)
+    assert.equal(context.getSnapshot().status, 'denied')
+    read.resolve(Response.json({ value: 'pre-expiry' }))
+    const [result] = await Promise.allSettled([inFlight])
+    assert.equal(result!.status, 'rejected')
+    assert.equal(stale((result as PromiseRejectedResult).reason), true)
+})
+
+test('CRB-006: a same-actor refresh after expiry installs the new token and keeps the identity generation', async t => {
+    const started = Date.now()
+    await login({}, 'tok-before-expiry')
+    t.mock.timers.enable({ apis: ['Date'], now: started + 120_000 })
+    assert.equal(auth.isJwtValid(), false)
+    assert.equal(auth.getMetadata()?.user_id, 'actor')
+    const read = deferred<Response>()
+    fetchHandler = async input => {
+        const url = String(input)
+        if (url.includes('/token')) {
+            return Response.json({ message: 'Success', token: 'tok-after-expiry', metadata: metadata({ exp: started / 1000 + 600 }) })
+        }
+        if (url.includes('/wards')) return read.promise
+        throw new Error(`Unexpected fixture request: ${url}`)
+    }
+    const reading = auth.srvAuthGet<{ value: string }>(new URL('/wards?phase=post-expiry', authUrl))
+    await idle()
+    await auth.getNewJwtToken()
+    assert.equal(auth.getJwtToken(), 'tok-after-expiry')
+    assert.equal(auth.getMetadata()?.user_id, 'actor')
+    assert.equal(auth.isJwtValid(), true)
+    // The refresh replaced a token-less session, so it is not an authorization change: a read
+    // started under the retained identity is still current.
+    read.resolve(Response.json({ value: 'post-expiry-read' }))
+    assert.deepEqual(await reading, { value: 'post-expiry-read' })
+})
+
+test('CRB-006: a different actor installed after expiry is an authorization change', async t => {
+    const started = Date.now()
+    await login({}, 'tok-actor')
+    t.mock.timers.enable({ apis: ['Date'], now: started + 120_000 })
+    assert.equal(auth.isJwtValid(), false)
+    assert.equal(auth.getUserId(), 'actor')
+    const read = deferred<Response>()
+    fetchHandler = async input => {
+        const url = String(input)
+        if (url.includes('/switch')) {
+            return Response.json({
+                message: 'Success',
+                token: 'tok-other-actor',
+                metadata: metadata({
+                    user_id: 'other',
+                    customer_id: '00000000-0000-0000-0000-000000000002',
+                    journal_user_id: 'other-staff',
+                    exp: started / 1000 + 600,
+                }),
+            })
+        }
+        if (url.includes('/wards')) return read.promise
+        throw new Error(`Unexpected fixture request: ${url}`)
+    }
+    const reading = auth.srvAuthGet<{ value: string }>(new URL('/wards?phase=post-expiry', authUrl))
+    await idle()
+    await auth.srvAuthGet(new URL('/switch', authUrl))
+    assert.equal(auth.getUserId(), 'other')
+    assert.equal(auth.getJwtToken(), 'tok-other-actor')
+    read.resolve(Response.json({ value: 'post-expiry-read' }))
+    const [result] = await Promise.allSettled([reading])
+    assert.equal(result!.status, 'rejected')
+    assert.equal(stale((result as PromiseRejectedResult).reason), true)
+})
+
+test('CRB-006: the first token after expiry is the start-order boundary, so an older different-actor response cannot replace it', async t => {
+    const started = Date.now()
+    await login({}, 'tok-first')
+    t.mock.timers.enable({ apis: ['Date'], now: started + 120_000 })
+    assert.equal(auth.isJwtValid(), false)
+    assert.equal(auth.getMetadata()?.user_id, 'actor')
+    const older = deferred<Response>()
+    fetchHandler = async input => {
+        const url = new URL(String(input))
+        if (url.searchParams.get('phase') === 'older') return older.promise
+        if (url.pathname.endsWith('/token')) {
+            return Response.json({ message: 'Success', token: 'tok-refreshed', metadata: metadata({ exp: started / 1000 + 600 }) })
+        }
+        if (url.pathname.endsWith('/signout')) return Response.json({ message: 'Success' })
+        throw new Error(`Unexpected fixture request: ${url}`)
+    }
+    const olderPromise = auth.srvAuthPost(new URL('/signin?phase=older', authUrl), {})
+    await idle()
+    await auth.getNewJwtToken()
+    assert.equal(auth.getJwtToken(), 'tok-refreshed')
+    // No token existed at expiry, so this install is the session's first one and fixes the
+    // start-order boundary; an older-started token for another actor must not replace it.
+    older.resolve(Response.json({ message: 'Success', token: 'tok-older-actor', metadata: metadata({ user_id: 'actor-b', journal_user_id: 'staff-b' }) }))
+    const [result] = await Promise.allSettled([olderPromise])
+    assert.equal(result!.status, 'rejected')
+    assert.equal(stale((result as PromiseRejectedResult).reason), true)
+    assert.equal(auth.getJwtToken(), 'tok-refreshed')
+    assert.equal(auth.getUserId(), 'actor')
+})
+
+test('CRB-006: a failed refresh after expiry clears the retained metadata before revoking the contexts', async t => {
+    t.mock.method(console, 'warn', () => {})
+    const started = Date.now()
+    const expired = createSharedContext()
+    const replacement = createSharedContext()
+    t.after(() => {
+        try { expired.dispose() } catch {}
+        try { replacement.dispose() } catch {}
+    })
+    bindings.generateSrvAuthBindings(undefined, { sharedContext: expired })
+    await login()
+    publish(expired)
+    t.mock.timers.enable({ apis: ['Date'], now: started + 120_000 })
+    assert.equal(auth.isJwtValid(), false)
+    assert.equal(auth.getMetadata()?.user_id, 'actor')
+    // A context published after expiry is current, so its revocation callback runs inside the
+    // failed-refresh reset. Unlike expiry, cleanup must not observe the retired session.
+    bindings.generateSrvAuthBindings(undefined, { sharedContext: replacement })
+    publish(replacement)
+    const lease = replacement.mount().capture()
+    const observedAtRevoke: (string | undefined)[] = []
+    lease.onRevoke(() => { observedAtRevoke.push(auth.getMetadata()?.user_id) })
+    let signouts = 0
+    fetchHandler = async input => {
+        const url = String(input)
+        if (url.includes('/signout')) {
+            ++signouts
+            return Response.json({ message: 'Success' })
+        }
+        throw new Error(`Synthetic refresh failure: ${url}`)
+    }
+
+    assert.equal(await auth.getNewJwtToken(), undefined)
+    await idle()
+
+    assert.equal(signouts, 1)
+    assert.deepEqual(observedAtRevoke, [undefined])
+    assert.equal(auth.getJwtToken(), '')
     assert.equal(auth.getMetadata(), undefined)
+    assert.equal(auth.getUserId(), undefined)
+    assert.equal(auth.isJwtValid(), false)
+    assert.equal(replacement.getSnapshot().status, 'anonymous')
+})
+
+test('CRB-006: a /token signout response after expiry clears the retained metadata', async t => {
+    const started = Date.now()
+    const context = createSharedContext()
+    t.after(() => context.dispose())
+    bindings.generateSrvAuthBindings(undefined, { sharedContext: context })
+    await login()
+    publish(context)
+    t.mock.timers.enable({ apis: ['Date'], now: started + 120_000 })
+    assert.equal(auth.isJwtValid(), false)
+    assert.equal(auth.getMetadata()?.user_id, 'actor')
+    let signouts = 0
+    fetchHandler = async input => {
+        const url = String(input)
+        if (url.includes('/signout')) {
+            ++signouts
+            return Response.json({ message: 'Success' })
+        }
+        return Response.json({ message: 'Success', signout: true })
+    }
+
+    assert.equal(await auth.getNewJwtToken(), undefined)
+    await idle()
+
+    assert.equal(signouts, 1)
+    assert.equal(auth.getJwtToken(), '')
+    assert.equal(auth.getMetadata(), undefined)
+    assert.equal(auth.isJwtValid(), false)
+    assert.equal(context.getSnapshot().status, 'anonymous')
+})
+
+test('CRB-006: a logout after expiry clears the retained metadata', async t => {
+    const started = Date.now()
+    const context = createSharedContext()
+    t.after(() => context.dispose())
+    bindings.generateSrvAuthBindings(undefined, { sharedContext: context })
+    await login()
+    publish(context)
+    t.mock.timers.enable({ apis: ['Date'], now: started + 120_000 })
+    assert.equal(auth.isJwtValid(), false)
+    assert.equal(auth.getMetadata()?.user_id, 'actor')
+    fetchHandler = async input => {
+        const url = String(input)
+        if (url.includes('/signout')) return Response.json({ message: 'Success' })
+        throw new Error(`Unexpected fixture request: ${url}`)
+    }
+
+    auth.dispatchLogoutEvent()
+    await idle()
+
+    assert.equal(auth.getJwtToken(), '')
+    assert.equal(auth.getMetadata(), undefined)
+    assert.equal(auth.getUserId(), undefined)
+    assert.equal(auth.isJwtValid(), false)
+    assert.equal(context.getSnapshot().status, 'anonymous')
 })
 
 test('CRB-005: activity lookup refreshes an expiring token before the editor request', async t => {
