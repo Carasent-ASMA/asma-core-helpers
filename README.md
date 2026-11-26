@@ -157,7 +157,7 @@ git commit -m "fix!: Remove deprecated methods"
 **Documentation releases**: A `docs:` commit is also release-worthy and selects a
 patch bump. The current shared release gate reads full commit messages since the
 last stable tag; it does not gate publishing by changed paths. A documentation-only
-change can therefore publish a package. See the pinned shared workflow in
+change can therefore publish a package. See the shared workflow referenced by
 [the publish workflow](.github/workflows/publish.yml).
 
 Project checkpoints still carry the tracker key, for example
