@@ -1,108 +1,72 @@
 import { getHttpErrorMessage } from './httpErrorMessage.js'
-import type { HttpErrorMessageOptions } from './httpErrorMessages.js'
+import { httpErrorLocale, type HttpErrorMessageOptions, httpFallback } from './httpErrorMessages.js'
+import { readableErrorText } from './readableErrorText.js'
 
 export type { HttpErrorMessageOptions } from './httpErrorMessages.js'
 
-export function _processServerError(
-    error: string | Record<string, any>,
-    options: HttpErrorMessageOptions = {},
-): string {
+export function _processServerError(error: unknown, options: HttpErrorMessageOptions = {}): string {
     console['error'](error)
-
     const httpMessage = getHttpErrorMessage(error, options)
     if (httpMessage !== undefined) return httpMessage
-
-    let errorMessage = _getServerErrorMessage(error, options)
-
-    /* if (i18n[errorMessage]) {
-        ;(errorMessage = (window as any).strings)[errorMessage]
-    } */
-
-    //showErrorMessage(operationName || 'Error', errorMessage)
-    return errorMessage.slice(0, 250)
+    return _getServerErrorMessage(error, options).slice(0, 250)
 }
 
-export function _getServerErrorMessage(
-    error: Record<string, any> | string,
-    options: HttpErrorMessageOptions = {},
-): string {
+export function _getServerErrorMessage(error: unknown, options: HttpErrorMessageOptions = {}): string {
     const httpMessage = getHttpErrorMessage(error, options)
     if (httpMessage !== undefined) return httpMessage
-    if (typeof error == 'string') {
-        return error
-    } else if (error['data'] && error['data']['Message']) {
-        return error['data']['Message']
-    }
-    if (Array.isArray(error)) {
-        return _getArrayErrorsMessage(error as Record<string, unknown>[])
-    }
-    if (Array.isArray(error?.['errors'])) {
-        return _getArrayErrorsMessage(error['errors'] as Record<string, unknown>[])
-    }
-    //graphql
-    else if (error['bodyText']) {
-        return error['bodyText']
-    } else if (error['response'] && error['response'].data) {
-        const data = error['response'].data?.['error'] ?? error['response'].data
-
-        if (typeof data == 'string') {
-            return data
-        } else if (data?.constructor === Object) {
-            const keys = Object.keys(data)
-
-            if (keys[0]) {
-                const objKey = keys[0]
-
-                if (data[objKey]['message']) {
-                    return data[objKey]['message']
-                } else if (data[objKey][0] && data[objKey][0]['message']) {
-                    return data[objKey][0]['message']
-                } else if (typeof data[objKey] == 'string') {
-                    return data[objKey]
-                } else if (data[objKey].constructor === Object) {
-                    const childKeys = Object.keys(data[objKey])
-
-                    if (childKeys[0]) {
-                        const objKey2 = childKeys[0]
-
-                        return `${objKey2}: ${data[objKey][objKey2]}`
-                    } else {
-                        return 'Missing child field: empty keys'
-                    }
-                } else if (data[objKey].constructor === Array) {
-                    if (data[objKey][0] === 'validation.required') {
-                        return `window.strings.field_is_required ${objKey}`
-                    } else {
-                        return `${objKey}: ${data[objKey][0]}`
-                    }
-                } else {
-                    return 'Missing field: Message not available'
-                }
-            } else {
-                return 'Missing field: Response keys are empty'
-            }
-        } else {
-            return 'Missing field: data type not processed'
-        }
-    } else if (error['message']) {
-        return error['message']
-    } else if (error['error']) {
-        return error['error']
-    } else if (error?.['request']?.['response']) {
-        return error['request']['response']
-    } else {
-        return "Missing field: Couldn't process error"
-    }
+    return readableErrorText(legacyMessage(error)) ?? httpFallback(500, httpErrorLocale(options))
 }
 
-function _getArrayErrorsMessage(error: Record<string, unknown>[]): string {
-    const processed_error = error
-        .map((err) => {
-            if ('message' in err) {
-                return err['message'] as string
-            } else return ''
-        })
-        .join()
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
 
-    return processed_error ?? 'No message field found! please check logs'
+function arrayMessage(errors: unknown[]): string | undefined {
+    const messages = errors.flatMap((error) => {
+        const message = readableErrorText(isRecord(error) ? error['message'] : error)
+        return message ? [message] : []
+    })
+    return messages.length ? messages.join() : undefined
+}
+
+/** Retain established non-HTTP GraphQL, connector and validation adapters. */
+function legacyMessage(error: unknown): unknown {
+    if (typeof error === 'string') return error
+    if (Array.isArray(error)) return arrayMessage(error)
+    if (!isRecord(error)) return undefined
+    if (isRecord(error['data']) && readableErrorText(error['data']['Message'])) return error['data']['Message']
+    if (Array.isArray(error['errors'])) return arrayMessage(error['errors'])
+    if (readableErrorText(error['bodyText'])) return error['bodyText']
+    if (isRecord(error['response']) && error['response']['data'] !== undefined) {
+        return legacyResponseMessage(error['response']['data'])
+    }
+    if (readableErrorText(error['message'])) return error['message']
+    if (readableErrorText(error['error'])) return error['error']
+    if (isRecord(error['request'])) return error['request']['response']
+    return undefined
+}
+
+function legacyResponseMessage(raw: unknown): unknown {
+    const data = isRecord(raw) ? raw['error'] ?? raw : raw
+    if (typeof data === 'string') return data
+    if (Array.isArray(data)) return arrayMessage(data)
+    if (!isRecord(data)) return undefined
+    const entry = Object.entries(data)[0]
+    if (!entry) return undefined
+    const [key, value] = entry
+    if (readableErrorText(value)) return value
+    if (Array.isArray(value)) {
+        const first = value[0]
+        if (isRecord(first) && readableErrorText(first['message'])) return first['message']
+        if (first === 'validation.required') return `window.strings.field_is_required ${key}`
+        return readableErrorText(first) ? `${key}: ${first}` : undefined
+    }
+    if (!isRecord(value)) return undefined
+    if (readableErrorText(value['message'])) return value['message']
+    const child = Object.entries(value)[0]
+    if (!child) return undefined
+    const [childKey, childValue] = child
+    return typeof childValue === 'string' || typeof childValue === 'number'
+        ? `${childKey}: ${childValue}`
+        : undefined
 }

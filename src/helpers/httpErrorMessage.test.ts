@@ -12,6 +12,44 @@ function fetchError(data: unknown, status = 422): Record<string, unknown> {
 }
 
 describe('HTTP error messages through the shared entry point', () => {
+    it('always provides readable fallback text for empty, event and malformed legacy errors', () => {
+        for (const error of [null, undefined, '', '   ', {}, new Event('error'), { response: { data: { detail: null } } }]) {
+            assert.equal(
+                _getServerErrorMessage(error, { locale: 'no' }),
+                'Noe gikk galt. Prøv igjen, og kontakt brukerstøtte hvis problemet fortsetter.',
+            )
+        }
+    })
+
+    it('does not render proxy HTML, serialized error JSON, or unreadable Blob bodies', () => {
+        for (const data of ['<!DOCTYPE html><html>private ingress</html>', '{"message":"private diagnostic"}', new Blob(['private'])]) {
+            const error = { response: { status: 413, data }, message: 'Request failed with status code 413' }
+            assert.equal(_processServerError(error), 'The request is too large. Reduce its size and try again.')
+        }
+        assert.doesNotMatch(_processServerError('<html>private ingress</html>'), /html|private|Missing field/)
+    })
+
+    it('uses status fallback for unmarked structured segment errors, never their diagnostic code', () => {
+        for (const code of ['PWY-114', 'PWY-104', 'some_future_domain_code']) {
+            assert.equal(
+                _processServerError({ response: { status: 403, data: { code, message: 'diagnostic', traceId: 'trace-1' } } }),
+                'You do not have permission to do this.',
+            )
+        }
+        assert.equal(
+            _processServerError({ response: { status: 422, data: { error: 'Select another document.' } } }),
+            'Select another document.',
+        )
+    })
+
+    it('localizes standard timeout and interruption errors without displaying their internal text', () => {
+        assert.equal(_processServerError(new DOMException('signal timed out', 'TimeoutError')), 'The request took too long. Try again.')
+        assert.equal(
+            _processServerError(new DOMException('signal aborted', 'AbortError'), { locale: 'nb' }),
+            'Forespørselen ble avbrutt. Prøv igjen.',
+        )
+    })
+
     it('reads status and body retained by non-Axios download and letter-claim clients', () => {
         const error = Object.assign(new Error('Failed to download via /internal/documents'), {
             status: 422,

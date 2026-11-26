@@ -1,4 +1,5 @@
 export * from './helpers/_processServerError.js'
+export * from './helpers/readHttpErrorBody.js'
 export * from './helpers/FormatNumberConstants.js'
 export * from './helpers/NorwegianPostalCodes.js'
 export * from './helpers/CapitalizeFistLetter.js'

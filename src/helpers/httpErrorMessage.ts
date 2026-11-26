@@ -1,6 +1,7 @@
 import { type ValidationLocale, validationMessages } from '../validation/messages.js'
 
 import { httpErrorLocale, type HttpErrorMessageOptions, httpFallback, httpTransportFallback } from './httpErrorMessages.js'
+import { readableErrorText } from './readableErrorText.js'
 
 const NETWORK_ERROR_CODES = new Set(['ERR_NETWORK', 'ECONNRESET', 'ENOTFOUND'])
 const TIMEOUT_ERROR_CODES = new Set(['ECONNABORTED', 'ETIMEDOUT'])
@@ -11,8 +12,10 @@ const FETCH_ERROR_MESSAGES = new Set([
     'fetch failed',
 ])
 
-function transportFailure(error: Record<string, unknown>, status: unknown): 'network' | 'timeout' | 'unexpected' | undefined {
+function transportFailure(error: Record<string, unknown>, status: unknown): 'network' | 'timeout' | 'unexpected' | 'interrupted' | undefined {
     if (error['code'] === 'ERR_BAD_RESPONSE') return 'unexpected'
+    if (error['name'] === 'TimeoutError') return 'timeout'
+    if (error['name'] === 'AbortError') return 'interrupted'
     if (typeof error['code'] === 'string') {
         if (TIMEOUT_ERROR_CODES.has(error['code'])) return 'timeout'
         if (NETWORK_ERROR_CODES.has(error['code'])) return 'network'
@@ -112,10 +115,10 @@ export function getHttpErrorMessage(error: unknown, options: HttpErrorMessageOpt
         if (validation.length) return validation.join('; ')
     }
     if (isRecord(body)) {
-        const message = nonEmptyText(body['publicMessage'])
+        const message = readableErrorText(body['publicMessage'])
         if (message) return message
         if (Object.hasOwn(body, 'publicMessage')) return httpFallback(status, locale)
-        if (status < 500 && nonEmptyText(body['Message'])) return nonEmptyText(body['Message'])
+        if (status < 500 && readableErrorText(body['Message'])) return readableErrorText(body['Message'])
         if (status === 400 || status === 422) {
             const validation = validationMessagesFromBody(body, locale)
             if (validation.length) return validation.join('; ')
@@ -124,7 +127,11 @@ export function getHttpErrorMessage(error: unknown, options: HttpErrorMessageOpt
     // Preserve established legacy adapters (including text/array Axios responses and urql),
     // while new private envelopes and all unmarked 5xx failures use a safe fallback.
     if (status < 500 && (!isRecord(body) || !Object.hasOwn(body, 'statusCode'))) {
-        if (response?.['data']) return undefined
+        if (typeof body === 'string' && response?.['data'] && readableErrorText(body)) return readableErrorText(body)
+        if (Array.isArray(body) && response?.['data']) return undefined
+        if (isRecord(body) && Object.keys(body).length === 1 && readableErrorText(body['error'])) {
+            return readableErrorText(body['error'])
+        }
         if (Array.isArray(error['graphQLErrors']) && error['graphQLErrors'].length) return undefined
     }
     return httpFallback(status, locale)
