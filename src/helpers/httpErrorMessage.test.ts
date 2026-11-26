@@ -285,6 +285,7 @@ describe('HTTP error messages through the shared entry point', () => {
 
     it('preserves the non-HTTP GraphQL and text compatibility paths', () => {
         assert.equal(_getServerErrorMessage({ errors: [{ message: 'GraphQL explanation' }] }), 'GraphQL explanation')
+        assert.equal(_getServerErrorMessage([{ message: 'First legacy reason' }, { message: 'Second legacy reason' }]), 'First legacy reason,Second legacy reason')
         assert.equal(_getServerErrorMessage('Existing message'), 'Existing message')
         assert.equal(
             _getServerErrorMessage({ message: "field 'deleted_at' not found" }),
@@ -357,6 +358,11 @@ describe('HTTP error messages through the shared entry point', () => {
     })
 
     it('preserves legacy Axios text/array and HTTP GraphQL adapters', () => {
+        assert.equal(_getServerErrorMessage(fetchError({ error: 'Legacy public refusal.' }, 400)), 'Legacy public refusal.')
+        assert.equal(
+            _getServerErrorMessage(fetchError({ error: 'Internal legacy diagnostic.', detail: 'private context' }, 400)),
+            'Check the form fields and try again.',
+        )
         assert.equal(
             _getServerErrorMessage({ response: { status: 403, data: 'You may not edit this.' } }),
             'You may not edit this.',
