@@ -18,6 +18,58 @@ import { ActorTypes, ActivityStatuses } from 'asma-core-helpers'
 import { parsePhoneNr, toE164, isValidPhone } from 'asma-core-helpers/phone'
 ```
 
+### The `http-errors` subpath
+
+Use this entry point for HTTP error messages without initializing browser,
+environment or authentication helpers. It exports `_getServerErrorMessage`,
+`_processServerError`, `readHttpErrorBody` and the `HttpErrorMessageOptions` type.
+
+```typescript
+import {
+    _getServerErrorMessage,
+    readHttpErrorBody,
+    type HttpErrorMessageOptions,
+} from 'asma-core-helpers/http-errors'
+
+async function refusalText(response: Response): Promise<string> {
+    const body = await readHttpErrorBody(response)
+    const options: HttpErrorMessageOptions = { locale: 'nb-NO' }
+    return _getServerErrorMessage({ status: response.status, body }, options)
+}
+```
+
+Pass the complete error to the formatter, including its HTTP status and body;
+passing only `error.message` loses the server's public reason and validation
+constraints. Axios errors can be passed directly. For a raw `fetch` response,
+use the example above and retain the original response for diagnostics.
+
+- `_getServerErrorMessage(error, options)` returns display text without logging.
+- `_processServerError(error, options)` also logs the original error to the console.
+  It retains full public reasons and validation constraints; unstructured legacy
+  text keeps the historical 250-character limit.
+- A readable `publicMessage` is explicit public copy. Its presence with `null`
+  or unreadable content selects a status-based fallback, even if other fields
+  resemble validation. A diagnostic `message` in a modern error envelope is
+  not public copy. Existing Auth, Storage, GraphQL and Laravel compatibility
+  adapters remain supported; this formatter is not a general-purpose log sanitizer.
+- Hono/Zod issues, including `details.issues`, and Laravel validation maps retain
+  their field paths and actual constraints. The formatter supplies recovery text
+  for HTTP and recognized network, timeout and interrupted-request failures.
+- `locale` selects English by default or Norwegian Bokmål for `no`/`nb`, including
+  regional forms such as `nb-NO`. Other languages fall back to English. Public
+  copy from the server is not translated.
+
+`readHttpErrorBody` decodes JSON or text from a `Response`, `Blob` or string.
+Response/Blob decoding accepts UTF-8 text/JSON or an absent content type and is
+limited to 1 MiB. Binary, unreadable and oversized bodies are returned unchanged;
+a `Response` is cloned so its original body is not consumed. Existing objects
+are passed through. The helper has no separate time limit: the caller owns
+request cancellation. Retain the original error/response and format the returned
+body with its real status.
+
+The package root continues to include browser/authentication initialization.
+Import this subpath when only error formatting is needed.
+
 ### The `phone` subpath
 
 Phone numbers live behind their own entry point and are **never** re-exported from the
@@ -64,6 +116,7 @@ read off the field rather than with a country we composed for them.
 -   **State management**: MST (MobX State Tree) helpers
 -   **Data utilities**: Validation, formatting, and transformation helpers
 -   **Phone numbers** (`/phone`): country-aware parsing, validation and E.164 canonicalisation
+-   **HTTP errors** (`/http-errors`): pure public-message formatting and bounded body decoding
 
 ## Development
 
@@ -101,10 +154,16 @@ git commit -m "fix!: Remove deprecated methods"
 -   Features (`feat:`) → **minor** version bump (if no breaking changes)
 -   Fixes (`fix:`, `perf:`) → **patch** version bump (if no features or breaking changes)
 
-**Smart Build**: The workflow intelligently skips build/publish when only documentation or configuration files change:
+**Documentation releases**: A `docs:` commit is also release-worthy and selects a
+patch bump. The current shared release gate reads full commit messages since the
+last stable tag; it does not gate publishing by changed paths. A documentation-only
+change can therefore publish a package. See the shared workflow referenced by
+[the publish workflow](.github/workflows/publish.yml).
 
--   **Triggers build**: Changes to `src/`, `package.json`, `pnpm-lock.yaml`, `tsconfig.json`, `.npmignore`
--   **Skips build**: Changes to `README.md`, `.github/`, `.vscode/`, `.prettierrc`, `cspell.json`, etc.
+Project checkpoints still carry the tracker key, for example
+`docs: ASMA-9049 Document pure HTTP error API contract`; pull-request titles start
+with the tracker key. The repository retains commit messages in the squash body,
+where the release gate can recognize their conventional prefixes.
 
 **Note**: The workflow uses [conventional commit](https://www.conventionalcommits.org/) format and follows the project's commit policy (validated by lefthook pre-commit hooks).
 
