@@ -34,6 +34,10 @@
         "./phone": {
             "types": "./lib/phone/index.d.ts",
             "default": "./lib/phone/index.js"
+        },
+        "./http-errors": {
+            "types": "./lib/http-errors/index.d.ts",
+            "default": "./lib/http-errors/index.js"
         }
     },
     "scripts": {
