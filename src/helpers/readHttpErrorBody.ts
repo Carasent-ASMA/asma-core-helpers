@@ -10,7 +10,7 @@ async function readResponseText(response: Response): Promise<string | undefined>
     if (declaredSize > MAX_ERROR_BODY_BYTES) return undefined
     const reader = response.clone().body?.getReader()
     if (!reader) return ''
-    const decoder = new TextDecoder()
+    const decoder = new TextDecoder('utf-8', { fatal: true })
     let text = ''
     let size = 0
     try {
@@ -38,13 +38,14 @@ export async function readHttpErrorBody(body: unknown): Promise<unknown> {
             if (value === undefined) return body
         } else if (typeof Blob !== 'undefined' && body instanceof Blob) {
             if (body.size > MAX_ERROR_BODY_BYTES || !isTextBody(body.type)) return body
-            value = await body.text()
+            value = new TextDecoder('utf-8', { fatal: true }).decode(await body.arrayBuffer())
         }
     } catch {
         // Reading diagnostics is optional. The caller still has the actual response/status.
         return body
     }
     if (typeof value !== 'string') return value
+    if (/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(value)) return body
     try {
         return JSON.parse(value) as unknown
     } catch {

@@ -2,7 +2,7 @@
 export function readableErrorText(value: unknown): string | undefined {
     if (typeof value !== 'string') return undefined
     const text = value.trim()
-    if (!text) return undefined
+    if (!text || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(text)) return undefined
     // Protocol documents can start with declarations/comments or an already-open wrapper.
     // Paired tags and standard HTML containers differ from prose such as '<name> is required'.
     if (
