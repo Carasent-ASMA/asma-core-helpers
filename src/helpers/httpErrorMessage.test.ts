@@ -285,7 +285,10 @@ describe('HTTP error messages through the shared entry point', () => {
 
     it('preserves the non-HTTP GraphQL and text compatibility paths', () => {
         assert.equal(_getServerErrorMessage({ errors: [{ message: 'GraphQL explanation' }] }), 'GraphQL explanation')
-        assert.equal(_getServerErrorMessage([{ message: 'First legacy reason' }, { message: 'Second legacy reason' }]), 'First legacy reason,Second legacy reason')
+        assert.equal(
+            _getServerErrorMessage([{ message: 'First legacy reason' }, { message: 'Second legacy reason' }]),
+            'First legacy reason,Second legacy reason',
+        )
         assert.equal(_getServerErrorMessage('Existing message'), 'Existing message')
         assert.equal(
             _getServerErrorMessage({ message: "field 'deleted_at' not found" }),

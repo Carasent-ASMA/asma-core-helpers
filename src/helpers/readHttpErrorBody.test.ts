@@ -4,10 +4,15 @@ import { readHttpErrorBody } from './readHttpErrorBody.js'
 
 test('decodes JSON from blob error responses without losing the public contract', async () => {
     const data = { publicMessage: 'Select a context.', message: 'private diagnostic', requestId: 'request-blob' }
-    assert.deepEqual(await readHttpErrorBody(new Blob([JSON.stringify(data)], { type: 'application/json' })), data)
+    for (const type of ['application/json', 'application/json; charset=utf-8']) {
+        assert.deepEqual(await readHttpErrorBody(new Blob([JSON.stringify(data)], { type })), data)
+    }
 })
 test('reads a cloned fetch response and leaves its original body available for diagnosis', async () => {
-    const response = new Response('{"publicMessage":"Select a context."}', { status: 422, headers: { 'content-type': 'application/problem+json' } })
+    const response = new Response('{"publicMessage":"Select a context."}', {
+        status: 422,
+        headers: { 'content-type': 'application/problem+json' },
+    })
     assert.deepEqual(await readHttpErrorBody(response), { publicMessage: 'Select a context.' })
     assert.equal(response.bodyUsed, false)
     assert.equal(await response.text(), '{"publicMessage":"Select a context."}')
