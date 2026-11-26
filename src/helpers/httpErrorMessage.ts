@@ -1,6 +1,11 @@
 import { type ValidationLocale, validationMessages } from '../validation/messages.js'
 
-import { httpErrorLocale, type HttpErrorMessageOptions, httpFallback, httpTransportFallback } from './httpErrorMessages.js'
+import {
+    httpErrorLocale,
+    type HttpErrorMessageOptions,
+    httpFallback,
+    httpTransportFallback,
+} from './httpErrorMessages.js'
 import { readableErrorText } from './readableErrorText.js'
 
 const NETWORK_ERROR_CODES = new Set(['ERR_NETWORK', 'ECONNRESET', 'ENOTFOUND'])
@@ -10,9 +15,18 @@ const FETCH_ERROR_MESSAGES = new Set([
     'Load failed',
     'NetworkError when attempting to fetch resource.',
     'fetch failed',
+    'The network connection was lost.',
+    'Network request failed',
 ])
 
-function transportFailure(error: Record<string, unknown>, status: unknown): 'network' | 'timeout' | 'unexpected' | 'interrupted' | undefined {
+function transportFailure(
+    error: Record<string, unknown>,
+    status: unknown,
+): 'network' | 'timeout' | 'unexpected' | 'interrupted' | undefined {
+    const networkError = isRecord(error['networkError']) ? error['networkError'] : undefined
+    error = networkError ?? error
+    if (error['code'] === 'ERR_CANCELED' || (error['name'] === 'TypeError' && error['message'] === 'Cancelled'))
+        return 'interrupted'
     if (error['code'] === 'ERR_BAD_RESPONSE') return 'unexpected'
     if (error['name'] === 'TimeoutError') return 'timeout'
     if (error['name'] === 'AbortError') return 'interrupted'
@@ -21,10 +35,14 @@ function transportFailure(error: Record<string, unknown>, status: unknown): 'net
         if (NETWORK_ERROR_CODES.has(error['code'])) return 'network'
     }
     if (status === 0 || error['name'] === 'NetworkError') return 'network'
-    if (error['name'] === 'TypeError' && typeof error['message'] === 'string' && FETCH_ERROR_MESSAGES.has(error['message'])) {
+    if (
+        error['name'] === 'TypeError' &&
+        typeof error['message'] === 'string' &&
+        FETCH_ERROR_MESSAGES.has(error['message'])
+    ) {
         return 'network'
     }
-    return undefined
+    return networkError ? 'network' : undefined
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -100,7 +118,12 @@ function validationMessagesFromBody(body: Record<string, unknown>, locale: Valid
  * Laravel and Hono/Zod validation payloads keep their field paths and actual constraints.
  * Undefined leaves non-HTTP errors to the existing GraphQL/text compatibility handling.
  */
-export function getHttpErrorMessage(error: unknown, options: HttpErrorMessageOptions = {}): string | undefined {
+export function getHttpErrorMessage(
+    error: unknown,
+    options: HttpErrorMessageOptions = {},
+    legacyLimit?: number,
+): string | undefined {
+    const legacyText = (value: unknown) => readableErrorText(value)?.slice(0, legacyLimit)
     if (!isRecord(error)) return undefined
     const response = isRecord(error['response']) ? error['response'] : undefined
     const status: unknown = response?.['status'] ?? error['statusCode'] ?? error['status']
@@ -118,19 +141,25 @@ export function getHttpErrorMessage(error: unknown, options: HttpErrorMessageOpt
         const message = readableErrorText(body['publicMessage'])
         if (message) return message
         if (Object.hasOwn(body, 'publicMessage')) return httpFallback(status, locale)
-        if (status < 500 && readableErrorText(body['Message'])) return readableErrorText(body['Message'])
+        if (status < 500 && readableErrorText(body['Message'])) return legacyText(body['Message'])
         if (status === 400 || status === 422) {
             const validation = validationMessagesFromBody(body, locale)
             if (validation.length) return validation.join('; ')
         }
     }
-    // Preserve established legacy adapters (including text/array Axios responses and urql),
-    // while new private envelopes and all unmarked 5xx failures use a safe fallback.
-    if (status < 500 && (!isRecord(body) || !Object.hasOwn(body, 'statusCode'))) {
-        if (typeof body === 'string' && response?.['data'] && readableErrorText(body)) return readableErrorText(body)
-        if (Array.isArray(body) && response?.['data']) return undefined
-        if (isRecord(body) && Object.keys(body).length === 1 && readableErrorText(body['error'])) {
-            return readableErrorText(body['error'])
+    // Old Auth/Storage/connector responses deliberately expose their 4xx reason. Keep that
+    // contract unless the body identifies itself as a newer private diagnostic envelope.
+    const modernEnvelope =
+        isRecord(body) &&
+        (Object.hasOwn(body, 'statusCode') ||
+            Object.hasOwn(body, 'requestId') ||
+            (Object.hasOwn(body, 'code') && Object.hasOwn(body, 'traceId')))
+    if (status < 500 && !modernEnvelope) {
+        if (typeof body === 'string' && response?.['data'] && readableErrorText(body)) return legacyText(body)
+        if (Array.isArray(body) && body.length && response?.['data']) return undefined
+        if (isRecord(body)) {
+            if (response?.['data'] && Object.keys(body).length) return undefined
+            if (Object.keys(body).length === 1 && readableErrorText(body['error'])) return legacyText(body['error'])
         }
         if (Array.isArray(error['graphQLErrors']) && error['graphQLErrors'].length) return undefined
     }

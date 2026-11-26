@@ -49,6 +49,9 @@ export function httpFallback(status: number, locale: ValidationLocale): string {
     return messages.unexpected
 }
 
-export function httpTransportFallback(reason: 'network' | 'timeout' | 'unexpected' | 'interrupted', locale: ValidationLocale): string {
+export function httpTransportFallback(
+    reason: 'network' | 'timeout' | 'unexpected' | 'interrupted',
+    locale: ValidationLocale,
+): string {
     return httpErrorMessages[locale][reason]
 }

@@ -6,7 +6,7 @@ export type { HttpErrorMessageOptions } from './httpErrorMessages.js'
 
 export function _processServerError(error: unknown, options: HttpErrorMessageOptions = {}): string {
     console['error'](error)
-    const httpMessage = getHttpErrorMessage(error, options)
+    const httpMessage = getHttpErrorMessage(error, options, 250)
     if (httpMessage !== undefined) return httpMessage
     return _getServerErrorMessage(error, options).slice(0, 250)
 }
@@ -47,10 +47,12 @@ function legacyMessage(error: unknown): unknown {
 }
 
 function legacyResponseMessage(raw: unknown): unknown {
-    const data = isRecord(raw) ? raw['error'] ?? raw : raw
+    const data = isRecord(raw) ? (raw['error'] ?? raw) : raw
     if (typeof data === 'string') return data
     if (Array.isArray(data)) return arrayMessage(data)
     if (!isRecord(data)) return undefined
+    if (readableErrorText(data['message'])) return data['message']
+    if (readableErrorText(data['detail'])) return data['detail']
     const entry = Object.entries(data)[0]
     if (!entry) return undefined
     const [key, value] = entry
@@ -66,7 +68,5 @@ function legacyResponseMessage(raw: unknown): unknown {
     const child = Object.entries(value)[0]
     if (!child) return undefined
     const [childKey, childValue] = child
-    return typeof childValue === 'string' || typeof childValue === 'number'
-        ? `${childKey}: ${childValue}`
-        : undefined
+    return typeof childValue === 'string' || typeof childValue === 'number' ? `${childKey}: ${childValue}` : undefined
 }
