@@ -1,6 +1,28 @@
 import { type ValidationLocale, validationMessages } from '../validation/messages.js'
 
-import { httpErrorLocale, type HttpErrorMessageOptions, httpFallback } from './httpErrorMessages.js'
+import { httpErrorLocale, type HttpErrorMessageOptions, httpFallback, httpTransportFallback } from './httpErrorMessages.js'
+
+const NETWORK_ERROR_CODES = new Set(['ERR_NETWORK', 'ECONNRESET', 'ENOTFOUND'])
+const TIMEOUT_ERROR_CODES = new Set(['ECONNABORTED', 'ETIMEDOUT'])
+const FETCH_ERROR_MESSAGES = new Set([
+    'Failed to fetch',
+    'Load failed',
+    'NetworkError when attempting to fetch resource.',
+    'fetch failed',
+])
+
+function transportFailure(error: Record<string, unknown>, status: unknown): 'network' | 'timeout' | 'unexpected' | undefined {
+    if (error['code'] === 'ERR_BAD_RESPONSE') return 'unexpected'
+    if (typeof error['code'] === 'string') {
+        if (TIMEOUT_ERROR_CODES.has(error['code'])) return 'timeout'
+        if (NETWORK_ERROR_CODES.has(error['code'])) return 'network'
+    }
+    if (status === 0 || error['name'] === 'NetworkError') return 'network'
+    if (error['name'] === 'TypeError' && typeof error['message'] === 'string' && FETCH_ERROR_MESSAGES.has(error['message'])) {
+        return 'network'
+    }
+    return undefined
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -78,10 +100,13 @@ function validationMessagesFromBody(body: Record<string, unknown>, locale: Valid
 export function getHttpErrorMessage(error: unknown, options: HttpErrorMessageOptions = {}): string | undefined {
     if (!isRecord(error)) return undefined
     const response = isRecord(error['response']) ? error['response'] : undefined
-    const status: unknown = response?.['status'] ?? error['statusCode']
-    if (typeof status !== 'number' || !Number.isInteger(status) || status < 400 || status > 599) return undefined
+    const status: unknown = response?.['status'] ?? error['statusCode'] ?? error['status']
     const locale = httpErrorLocale(options)
-    const body: unknown = response?.['data'] ?? error['data'] ?? error
+    if (typeof status !== 'number' || !Number.isInteger(status) || status < 400 || status > 599) {
+        const failure = transportFailure(error, status)
+        return failure ? httpTransportFallback(failure, locale) : undefined
+    }
+    const body: unknown = response?.['data'] ?? error['data'] ?? error['body'] ?? error
     if (Array.isArray(body) && (status === 400 || status === 422)) {
         const validation = validationMessagesFromBody({ issues: body }, locale)
         if (validation.length) return validation.join('; ')

@@ -12,6 +12,72 @@ function fetchError(data: unknown, status = 422): Record<string, unknown> {
 }
 
 describe('HTTP error messages through the shared entry point', () => {
+    it('reads status and body retained by non-Axios download and letter-claim clients', () => {
+        const error = Object.assign(new Error('Failed to download via /internal/documents'), {
+            status: 422,
+            body: { publicMessage: 'Select a signed document.' },
+        })
+        assert.equal(_processServerError(error), 'Select a signed document.')
+        assert.equal(error.message, 'Failed to download via /internal/documents')
+        assert.equal(error.status, 422)
+        assert.equal(error.body.publicMessage, 'Select a signed document.')
+    })
+
+    it('uses the HTTP fallback when a status-only client has no parsed body', () => {
+        assert.equal(
+            _processServerError({ status: 403, message: 'Failed to download via /private' }, { locale: 'nb' }),
+            'Du har ikke tilgang til å gjøre dette.',
+        )
+        assert.doesNotMatch(
+            _processServerError({ status: 503, body: { publicMessage: null, message: 'SQL diagnostics' } }),
+            /SQL|diagnostics|Missing field/,
+        )
+    })
+
+    it('shows readable network and timeout recovery while retaining the original error', () => {
+        for (const code of ['ERR_NETWORK', 'ECONNRESET', 'ENOTFOUND']) {
+            const error = Object.assign(new Error('Network Error'), { code, name: 'AxiosError' })
+            assert.equal(_processServerError(error), 'Could not connect. Check your connection and try again.')
+            assert.equal(error.code, code)
+            assert.equal(error.message, 'Network Error')
+        }
+        for (const code of ['ECONNABORTED', 'ETIMEDOUT']) {
+            assert.equal(
+                _processServerError({ code, message: 'timeout of 30000ms exceeded' }, { locale: 'no' }),
+                'Forespørselen tok for lang tid. Prøv igjen.',
+            )
+        }
+    })
+
+    it('handles native browser fetch failures without depending on an application error class', () => {
+        for (const message of ['Failed to fetch', 'Load failed', 'NetworkError when attempting to fetch resource.']) {
+            const error = new TypeError(message)
+            assert.equal(
+                _processServerError(error, { locale: 'nb-NO' }),
+                'Kunne ikke koble til. Kontroller forbindelsen og prøv igjen.',
+            )
+        }
+        assert.equal(_processServerError(new TypeError('A different programming error')), 'A different programming error')
+    })
+
+    it('keeps a malformed successful response distinct from an HTTP refusal', () => {
+        const response = new Response(null, { status: 200 })
+        const error = Object.assign(new Error('Editor API returned an empty response body for /private'), {
+            code: 'ERR_BAD_RESPONSE',
+            response,
+        })
+        assert.equal(
+            _processServerError(error, { locale: 'nb' }),
+            'Noe gikk galt. Prøv igjen, og kontakt brukerstøtte hvis problemet fortsetter.',
+        )
+        assert.equal(error.response, response)
+        assert.equal(error.response.status, 200)
+        assert.equal(
+            _processServerError({ ...fetchError({ publicMessage: 'Select a context.' }), code: 'ERR_BAD_RESPONSE' }),
+            'Select a context.',
+        )
+    })
+
     it('uses an explicit public message without depending on a client class', () => {
         for (const name of ['EditorResponseError', 'BunjsOpenApiResponseError', 'AxiosError']) {
             assert.equal(
