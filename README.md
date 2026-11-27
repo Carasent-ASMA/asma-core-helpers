@@ -52,6 +52,11 @@ use the example above and retain the original response for diagnostics.
   resemble validation. A diagnostic `message` in a modern error envelope is
   not public copy. Existing Auth, Storage, GraphQL and Laravel compatibility
   adapters remain supported; this formatter is not a general-purpose log sanitizer.
+- GraphQL errors can carry the same public intent in `extensions.publicMessage`.
+  A string keeps the complete public reason; `null` or unreadable content selects
+  recovery text from `extensions.statusCode` and the caller UI locale. This works
+  for direct GraphQL errors and urql responses with HTTP 200 or 400. Existing
+  GraphQL errors without that field keep their legacy display behavior.
 - Hono/Zod issues, including `details.issues`, and Laravel validation maps retain
   their field paths and actual constraints. The formatter supplies recovery text
   for HTTP and recognized network, timeout and interrupted-request failures.

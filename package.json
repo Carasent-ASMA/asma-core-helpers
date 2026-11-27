@@ -1,6 +1,6 @@
 {
     "name": "asma-core-helpers",
-    "version": "0.45.4",
+    "version": "0.45.5",
     "description": "Core helper utilities for ASMA applications",
     "files": [
         "lib/**/*",
