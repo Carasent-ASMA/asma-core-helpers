@@ -11,7 +11,7 @@ import { readableErrorText } from './readableErrorText.js'
 const NETWORK_ERROR_CODES = new Set(['ERR_NETWORK', 'ECONNRESET', 'ENOTFOUND'])
 const TIMEOUT_ERROR_CODES = new Set(['ECONNABORTED', 'ETIMEDOUT'])
 const NATIVE_EXCEPTION_NAMES = new Set([
-    'SyntaxError', 'TypeError', 'ReferenceError', 'RangeError', 'EvalError', 'URIError',
+    'SyntaxError', 'TypeError', 'ReferenceError', 'RangeError', 'EvalError', 'URIError', 'AggregateError',
 ])
 const FETCH_ERROR_MESSAGES = new Set([
     'Failed to fetch',

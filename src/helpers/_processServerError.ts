@@ -18,31 +18,32 @@ export function _getServerErrorMessage(error: unknown, options: HttpErrorMessage
     const status: unknown = response?.['status'] ?? (isRecord(error) ? error['statusCode'] ?? error['status'] : undefined)
     const fallbackStatus = typeof status === 'number' && Number.isInteger(status) && status >= 400 && status <= 599
         ? status : 500
-    return readableErrorText(legacyMessage(error)) ?? httpFallback(fallbackStatus, httpErrorLocale(options))
+    return readableErrorText(legacyMessage(error, options)) ?? httpFallback(fallbackStatus, httpErrorLocale(options))
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
-function arrayMessage(errors: unknown[]): string | undefined {
+function arrayMessage(errors: unknown[], options: HttpErrorMessageOptions): string | undefined {
     const messages = errors.flatMap((error) => {
-        const message = readableErrorText(isRecord(error) ? error['message'] : error)
+        const message = getHttpErrorMessage(error, options)
+            ?? readableErrorText(isRecord(error) ? error['message'] : error)
         return message ? [message] : []
     })
     return messages.length ? messages.join() : undefined
 }
 
 /** Retain established non-HTTP GraphQL, connector and validation adapters. */
-function legacyMessage(error: unknown): unknown {
+function legacyMessage(error: unknown, options: HttpErrorMessageOptions): unknown {
     if (typeof error === 'string') return error
-    if (Array.isArray(error)) return arrayMessage(error)
+    if (Array.isArray(error)) return arrayMessage(error, options)
     if (!isRecord(error)) return undefined
     if (isRecord(error['data']) && readableErrorText(error['data']['Message'])) return error['data']['Message']
-    if (Array.isArray(error['errors'])) return arrayMessage(error['errors'])
+    if (Array.isArray(error['errors'])) return arrayMessage(error['errors'], options)
     if (readableErrorText(error['bodyText'])) return error['bodyText']
     if (isRecord(error['response']) && error['response']['data'] !== undefined) {
-        return legacyResponseMessage(error['response']['data'])
+        return legacyResponseMessage(error['response']['data'], options)
     }
     if (readableErrorText(error['message'])) return error['message']
     if (readableErrorText(error['error'])) return error['error']
@@ -52,14 +53,14 @@ function legacyMessage(error: unknown): unknown {
 
 // HTTP response arrays have an established public {message} shape. A bare caller array
 // is a separate legacy contract; it must not make response-body diagnostics public.
-function legacyResponseArrayMessage(errors: unknown[]): string | undefined {
-    return arrayMessage(errors.filter((error) => isRecord(error)))
+function legacyResponseArrayMessage(errors: unknown[], options: HttpErrorMessageOptions): string | undefined {
+    return arrayMessage(errors.filter((error) => isRecord(error)), options)
 }
 
-function legacyResponseMessage(raw: unknown): unknown {
+function legacyResponseMessage(raw: unknown, options: HttpErrorMessageOptions): unknown {
     const data = isRecord(raw) ? (raw['error'] ?? raw) : raw
     if (typeof data === 'string') return data
-    if (Array.isArray(data)) return legacyResponseArrayMessage(data)
+    if (Array.isArray(data)) return legacyResponseArrayMessage(data, options)
     if (!isRecord(data)) return undefined
     if (readableErrorText(data['message'])) return data['message']
     if (readableErrorText(data['detail'])) return data['detail']
@@ -68,7 +69,7 @@ function legacyResponseMessage(raw: unknown): unknown {
     const [key, value] = entry
     if (readableErrorText(value)) return value
     if (Array.isArray(value)) {
-        if (key === 'errors' || key === 'message') return legacyResponseArrayMessage(value)
+        if (key === 'errors' || key === 'message') return legacyResponseArrayMessage(value, options)
         const first = value[0]
         if (isRecord(first) && readableErrorText(first['message'])) return first['message']
         if (first === 'validation.required') return `window.strings.field_is_required ${key}`

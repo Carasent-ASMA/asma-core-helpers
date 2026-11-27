@@ -64,6 +64,22 @@ describe('HTTP error messages through the shared entry point', () => {
         )
     })
 
+    it('also protects native exceptions inside legacy arrays and AggregateError', () => {
+        const fallback = 'Noe gikk galt. Prøv igjen, og kontakt brukerstøtte hvis problemet fortsetter.'
+        assert.equal(
+            _getServerErrorMessage([new SyntaxError('private parser detail'), new Error('Select a context.')], { locale: 'no' }),
+            `${fallback},Select a context.`,
+        )
+        assert.equal(
+            _getServerErrorMessage({ errors: [new DOMException('private DOM detail', 'InvalidCharacterError'), { message: 'Choose a file.' }] }, { locale: 'no' }),
+            `${fallback},Choose a file.`,
+        )
+        assert.equal(
+            _getServerErrorMessage(new AggregateError([new TypeError('private child')], 'private batch'), { locale: 'no' }),
+            fallback,
+        )
+    })
+
     it('always provides readable fallback text for empty, event and malformed legacy errors', () => {
         for (const error of [
             null,
