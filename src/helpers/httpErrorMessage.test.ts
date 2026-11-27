@@ -78,6 +78,10 @@ describe('HTTP error messages through the shared entry point', () => {
             _getServerErrorMessage(new AggregateError([new TypeError('private child')], 'private batch'), { locale: 'no' }),
             fallback,
         )
+        assert.equal(
+            _getServerErrorMessage(new AggregateError(['private aggregate child text'], 'private batch'), { locale: 'no' }),
+            fallback,
+        )
     })
 
     it('always provides readable fallback text for empty, event and malformed legacy errors', () => {
