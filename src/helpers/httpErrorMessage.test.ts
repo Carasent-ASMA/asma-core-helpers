@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
+import { runInNewContext } from 'node:vm'
 
 import { _getServerErrorMessage, _processServerError } from './_processServerError.js'
 
@@ -12,6 +13,77 @@ function fetchError(data: unknown, status = 422): Record<string, unknown> {
 }
 
 describe('HTTP error messages through the shared entry point', () => {
+    it('hides real JSON parser, runtime and base64 exceptions without changing diagnostics', async () => {
+        const errors: unknown[] = []
+        try {
+            await new Response('{"items":').json()
+        } catch (error) {
+            errors.push(error)
+        }
+        try {
+            Reflect.get(null as unknown as object, 'items')
+        } catch (error) {
+            errors.push(error)
+        }
+        try {
+            atob('Error converting file: private converter diagnostic')
+        } catch (error) {
+            errors.push(error)
+        }
+        errors.push(runInNewContext("new TypeError('private other-realm diagnostic')"))
+        errors.push(new ReferenceError('private missing variable'), new RangeError('private offset'))
+        errors.push(new EvalError('private expression'), new URIError('private encoding'))
+        errors.push(new DOMException('private browser state', 'NotReadableError'))
+        assert.equal(errors.length, 9)
+        for (const error of errors) {
+            const message = (error as Error).message
+            const stack = (error as Error).stack
+            assert.equal(
+                _getServerErrorMessage(error, { locale: 'no' }),
+                'Noe gikk galt. Prøv igjen, og kontakt brukerstøtte hvis problemet fortsetter.',
+            )
+            assert.equal((error as Error).message, message)
+            assert.equal((error as Error).stack, stack)
+            assert.equal(
+                _processServerError(error),
+                'Something went wrong. Try again, and contact support if it keeps happening.',
+            )
+        }
+    })
+
+    it('keeps explicit HTTP public reasons and legacy application messages ahead of runtime fallbacks', () => {
+        const publicError = Object.assign(new TypeError('private diagnostic'), {
+            response: { status: 422, data: { publicMessage: 'Choose a different file.' } },
+        })
+        assert.equal(_getServerErrorMessage(publicError, { locale: 'no' }), 'Choose a different file.')
+        assert.equal(_getServerErrorMessage(new Error('Select a context.')), 'Select a context.')
+        assert.equal(_getServerErrorMessage('Select a context.'), 'Select a context.')
+        assert.equal(
+            _getServerErrorMessage(new TypeError('Failed to fetch'), { locale: 'no' }),
+            'Kunne ikke koble til. Kontroller forbindelsen og prøv igjen.',
+        )
+    })
+
+    it('also protects native exceptions inside legacy arrays and AggregateError', () => {
+        const fallback = 'Noe gikk galt. Prøv igjen, og kontakt brukerstøtte hvis problemet fortsetter.'
+        assert.equal(
+            _getServerErrorMessage([new SyntaxError('private parser detail'), new Error('Select a context.')], { locale: 'no' }),
+            `${fallback},Select a context.`,
+        )
+        assert.equal(
+            _getServerErrorMessage({ errors: [new DOMException('private DOM detail', 'InvalidCharacterError'), { message: 'Choose a file.' }] }, { locale: 'no' }),
+            `${fallback},Choose a file.`,
+        )
+        assert.equal(
+            _getServerErrorMessage(new AggregateError([new TypeError('private child')], 'private batch'), { locale: 'no' }),
+            fallback,
+        )
+        assert.equal(
+            _getServerErrorMessage(new AggregateError(['private aggregate child text'], 'private batch'), { locale: 'no' }),
+            fallback,
+        )
+    })
+
     it('always provides readable fallback text for empty, event and malformed legacy errors', () => {
         for (const error of [
             null,
@@ -114,7 +186,7 @@ describe('HTTP error messages through the shared entry point', () => {
         }
         assert.equal(
             _processServerError(new TypeError('A different programming error')),
-            'A different programming error',
+            'Something went wrong. Try again, and contact support if it keeps happening.',
         )
     })
 

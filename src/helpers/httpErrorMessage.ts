@@ -10,6 +10,9 @@ import { readableErrorText } from './readableErrorText.js'
 
 const NETWORK_ERROR_CODES = new Set(['ERR_NETWORK', 'ECONNRESET', 'ENOTFOUND'])
 const TIMEOUT_ERROR_CODES = new Set(['ECONNABORTED', 'ETIMEDOUT'])
+const NATIVE_EXCEPTION_NAMES = new Set([
+    'SyntaxError', 'TypeError', 'ReferenceError', 'RangeError', 'EvalError', 'URIError', 'AggregateError',
+])
 const FETCH_ERROR_MESSAGES = new Set([
     'Failed to fetch',
     'Load failed',
@@ -42,7 +45,17 @@ function transportFailure(
     ) {
         return 'network'
     }
-    return networkError ? 'network' : undefined
+    if (networkError) return 'network'
+    // Native runtime/parser/DOM messages describe implementation failures, not a
+    // public reason. Keep recognized transport errors above and legacy app Errors below.
+    // The name/tag checks also cover exceptions produced in another browser realm.
+    if (
+        (typeof error['name'] === 'string' && NATIVE_EXCEPTION_NAMES.has(error['name'])) ||
+        Object.prototype.toString.call(error) === '[object DOMException]'
+    ) {
+        return 'unexpected'
+    }
+    return undefined
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
