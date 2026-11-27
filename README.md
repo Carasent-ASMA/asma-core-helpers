@@ -55,6 +55,9 @@ use the example above and retain the original response for diagnostics.
 - Hono/Zod issues, including `details.issues`, and Laravel validation maps retain
   their field paths and actual constraints. The formatter supplies recovery text
   for HTTP and recognized network, timeout and interrupted-request failures.
+  Native JavaScript and DOM exception diagnostics also use localized recovery text;
+  recognized transport failures keep their specific copy. Original errors remain intact.
+  Plain application `Error` messages and explicit public HTTP reasons stay supported.
 - `locale` selects English by default or Norwegian Bokmål for `no`/`nb`, including
   regional forms such as `nb-NO`. Other languages fall back to English. Public
   copy from the server is not translated.
