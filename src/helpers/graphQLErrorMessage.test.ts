@@ -98,4 +98,27 @@ describe('explicit public/private GraphQL error contract', () => {
         })
         assert.equal(_processServerError(error, { locale: 'no' }), 'HTTP reason.')
     })
+
+    it('preserves legacy status metadata without an explicit public-message contract', async () => {
+        const error = new CombinedError({ graphQLErrors: [{
+            message: 'Choose an existing activity.', extensions: { statusCode: 502 },
+        }] })
+        assert.equal(_processServerError(error, { locale: 'no' }), error.message)
+        assert.equal(_getServerErrorMessage(error, { locale: 'no' }), error.message)
+        assert.equal(_getServerErrorMessage(error.graphQLErrors[0], { locale: 'no' }), 'Choose an existing activity.')
+
+        for (const status of [200, 400]) {
+            const client = createClient({
+                url: 'https://action.invalid/graphql', exchanges: [fetchExchange],
+                fetch: () => Promise.resolve(Response.json({ errors: [{
+                    message: 'Could not check access to this activity. Try again.',
+                    extensions: { statusCode: 403, code: 'upstream_error', requestId: 'legacy-action' },
+                }] }, { status })),
+            })
+            const result = await client.query(gql`query LegacyProbe { getActivityStatuses(activity_ids: []) { data { soknadID } } }`, {}).toPromise()
+            assert.ok(result.error)
+            assert.equal(_processServerError(result.error, { locale: 'no' }), result.error.message)
+            assert.equal(_getServerErrorMessage(result.error, { locale: 'no' }), result.error.message)
+        }
+    })
 })
