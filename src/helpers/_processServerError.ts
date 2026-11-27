@@ -6,13 +6,13 @@ export type { HttpErrorMessageOptions } from './httpErrorMessages.js'
 
 export function _processServerError(error: unknown, options: HttpErrorMessageOptions = {}): string {
     console['error'](error)
-    const httpMessage = getHttpErrorMessage(error, options, 250)
+    const httpMessage = publicResponseMessage(error, options, 250)
     if (httpMessage !== undefined) return httpMessage
     return _getServerErrorMessage(error, options).slice(0, 250)
 }
 
 export function _getServerErrorMessage(error: unknown, options: HttpErrorMessageOptions = {}): string {
-    const httpMessage = getHttpErrorMessage(error, options)
+    const httpMessage = publicResponseMessage(error, options)
     if (httpMessage !== undefined) return httpMessage
     const response = isRecord(error) && isRecord(error['response']) ? error['response'] : undefined
     const status: unknown = response?.['status'] ?? (isRecord(error) ? error['statusCode'] ?? error['status'] : undefined)
@@ -25,9 +25,37 @@ function isRecord(value: unknown): value is Record<string, unknown> {
     return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
+/** Hasura preserves the producer's explicit intent; fallback copy belongs to the UI locale. */
+function publicResponseMessage(error: unknown, options: HttpErrorMessageOptions, legacyLimit?: number): string | undefined {
+    const httpMessage = getHttpErrorMessage(error, options, legacyLimit)
+    if (httpMessage !== undefined || !isRecord(error)) return httpMessage
+    const errors = Array.isArray(error['graphQLErrors']) ? error['graphQLErrors'] : [error]
+    const extensionsOf = (value: unknown): Record<string, unknown> | undefined =>
+        isRecord(value) && isRecord(value['extensions']) ? value['extensions'] : undefined
+    if (!errors.some((value) => {
+        const extensions = extensionsOf(value)
+        return extensions && Object.hasOwn(extensions, 'publicMessage')
+    })) return undefined
+    if (isRecord(error['networkError'])) return getHttpErrorMessage({ networkError: error['networkError'] }, options)
+    const messages = errors.flatMap((value) => {
+        const extensions = extensionsOf(value)
+        if (extensions && Object.hasOwn(extensions, 'publicMessage')) {
+            const publicMessage = readableErrorText(extensions['publicMessage'])
+            if (publicMessage) return [publicMessage]
+            const status = extensions['statusCode']
+            const safeStatus = typeof status === 'number' && Number.isInteger(status) && status >= 400 && status <= 599
+                ? status : 500
+            return [httpFallback(safeStatus, httpErrorLocale(options))]
+        }
+        const legacyMessage = readableErrorText(isRecord(value) ? value['message'] : value)?.slice(0, legacyLimit)
+        return legacyMessage ? [legacyMessage] : []
+    })
+    return messages.length ? messages.join('; ') : undefined
+}
+
 function arrayMessage(errors: unknown[], options: HttpErrorMessageOptions): string | undefined {
     const messages = errors.flatMap((error) => {
-        const message = getHttpErrorMessage(error, options)
+        const message = publicResponseMessage(error, options)
             ?? readableErrorText(isRecord(error) ? error['message'] : error)
         return message ? [message] : []
     })
